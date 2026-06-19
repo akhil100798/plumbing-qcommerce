@@ -10,88 +10,148 @@ const { redis, updatePlumberLocation, findNearbyPlumbers } = require('./services
 const { connectKafka } = require('./services/kafkaService');
 const { verifyToken, socketAuth } = require('./middleware/authMiddleware');
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+function createEdgeApp(options = {}) {
+    const { startKafka = true, enableRateLimit = true, dependencies = {} } = options;
+    const edgeRedis = dependencies.redis || redis;
+    const edgeFindNearbyPlumbers = dependencies.findNearbyPlumbers || findNearbyPlumbers;
+    const edgeUpdatePlumberLocation = dependencies.updatePlumberLocation || updatePlumberLocation;
+    const edgeVerifyToken = dependencies.verifyToken || verifyToken;
+    const edgeSocketAuth = dependencies.socketAuth || socketAuth;
 
-// Configure Rate Limiting (Redis-backed)
-const nearbyLimiter = rateLimit({
-    windowMs: 1 * 60 * 1000, // 1 minute
-    max: 10, // Limit each IP to 10 requests per windowMs
-    standardHeaders: true,
-    legacyHeaders: false,
-    store: new RedisStore({
-        sendCommand: (...args) => redis.call(...args),
-    }),
-    message: { error: "Too many requests. Please try again later." }
-});
+    const app = express();
+    app.use(cors());
+    app.use(express.json());
 
-const server = http.createServer(app);
+    const nearbyLimiter = enableRateLimit
+        ? rateLimit({
+            windowMs: 1 * 60 * 1000,
+            max: 10,
+            standardHeaders: true,
+            legacyHeaders: false,
+            store: new RedisStore({
+                sendCommand: (...args) => edgeRedis.call(...args),
+            }),
+            message: { error: "Too many requests. Please try again later." }
+        })
+        : (req, res, next) => next();
 
-// Configure Socket.io Gateway with Authentication
-const io = new Server(server, {
-    cors: { origin: '*' }
-});
+    const server = http.createServer(app);
+    const io = new Server(server, {
+        cors: { origin: '*' }
+    });
 
-// Middleware for Socket.io
-io.use(socketAuth);
+    io.use(edgeSocketAuth);
 
-// Start Kafka listener to forward Spring Boot events to WebSockets
-connectKafka(io);
+    if (startKafka) {
+        connectKafka(io);
+    }
 
-// REST Endpoint: Auto-assign nearby plumber (Workflow 1)
-app.post('/api/v1/edge/requests/nearby', verifyToken, nearbyLimiter, async (req, res) => {
-    const { customerId, longitude, latitude } = req.body;
-    
-    try {
-        const availablePlumbers = await findNearbyPlumbers(longitude, latitude, 5);
-        
-        if (availablePlumbers.length === 0) {
-            return res.status(404).json({ message: "No plumbers available nearby." });
+    app.post('/api/v1/edge/requests/nearby', edgeVerifyToken, nearbyLimiter, async (req, res) => {
+        const { longitude, latitude } = req.body;
+        const customerId = req.user?.userId || req.user?.id || req.user?.sub;
+
+        if (req.user?.role !== 'CUSTOMER') {
+            return res.status(403).json({ error: 'OPERATION_ERROR' });
+        }
+        if (!isValidCoordinate(longitude, latitude)) {
+            return res.status(400).json({ error: 'VALIDATION_ERROR' });
         }
 
-        const nearestPlumbers = availablePlumbers.slice(0, 5);
-        nearestPlumbers.forEach(p => {
-            io.to(`plumber_${p.plumberId}`).emit('JOB_OFFER', {
-                jobId: `job_${Date.now()}`,
-                customerId,
-                distance: p.distance
+        try {
+            const availablePlumbers = await edgeFindNearbyPlumbers(longitude, latitude, 5);
+
+            if (availablePlumbers.length === 0) {
+                return res.status(404).json({ message: "No plumbers available nearby." });
+            }
+
+            const nearestPlumbers = availablePlumbers.slice(0, 5);
+            nearestPlumbers.forEach(p => {
+                io.to(`plumber_${p.plumberId}`).emit('JOB_OFFER', {
+                    jobId: `job_${Date.now()}`,
+                    customerId,
+                    distance: p.distance
+                });
             });
+
+            res.json({ message: "Job broadcasted to nearby plumbers", notified: nearestPlumbers });
+        } catch (error) {
+            res.status(500).json({ error: "Internal Server Error" });
+        }
+    });
+
+    io.on('connection', (socket) => {
+        console.log('Client connected:', socket.id);
+        const identity = normalizeIdentity(socket.user);
+
+        if (identity?.role === 'PLUMBER') {
+            socket.join(`plumber_${identity.userId}`);
+        } else if (identity?.role === 'CUSTOMER') {
+            socket.join(`customer_${identity.userId}`);
+        }
+
+        socket.on('register_plumber', ({ plumberId }) => {
+            console.log(`Ignoring manual plumber room registration for ${plumberId}.`);
         });
 
-        res.json({ message: "Job broadcasted to nearby plumbers", notified: nearestPlumbers });
-    } catch (error) {
-        res.status(500).json({ error: "Internal Server Error" });
-    }
-});
+        socket.on('register_customer', ({ customerId }) => {
+            console.log(`Ignoring manual customer room registration for ${customerId}.`);
+        });
 
-io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
+        socket.on('location_ping', async (data, ack) => {
+            const reply = typeof ack === 'function' ? ack : () => {};
+            if (identity?.role !== 'PLUMBER') {
+                return reply({ error: 'OPERATION_ERROR' });
+            }
 
-    // Plumbers join their own room to receive direct jobs
-    socket.on('register_plumber', ({ plumberId }) => {
-        socket.join(`plumber_${plumberId}`);
-        console.log(`Plumber ${plumberId} registered socket connection.`);
+            const { longitude, latitude } = data || {};
+            if (!isValidCoordinate(longitude, latitude)) {
+                return reply({ error: 'VALIDATION_ERROR' });
+            }
+
+            try {
+                await edgeUpdatePlumberLocation(identity.userId, longitude, latitude);
+                return reply({ ok: true });
+            } catch (error) {
+                return reply({ error: 'OPERATION_ERROR' });
+            }
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Client disconnected:', socket.id);
+        });
     });
 
-    // Customers join their own room to receive updates about their orders
-    socket.on('register_customer', ({ customerId }) => {
-        socket.join(`customer_${customerId}`);
-        console.log(`Customer ${customerId} waiting for plumber assignment.`);
-    });
+    return { app, io, server };
+}
 
-    // Receive GPS ping every 5 seconds from Plumber App
-    socket.on('location_ping', async (data) => {
-        const { plumberId, longitude, latitude } = data;
-        await updatePlumberLocation(plumberId, longitude, latitude);
+function startServer() {
+    const { server } = createEdgeApp();
+    const PORT = process.env.PORT || 3000;
+    server.listen(PORT, () => {
+        console.log(`Node.js Edge Service & WebSocket Gateway running on port ${PORT}`);
     });
+    return server;
+}
 
-    socket.on('disconnect', () => {
-        console.log('Client disconnected:', socket.id);
-    });
-});
+if (require.main === module) {
+    startServer();
+}
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Node.js Edge Service & WebSocket Gateway running on port ${PORT}`);
-});
+module.exports = { createEdgeApp, startServer };
+
+function normalizeIdentity(user) {
+    if (!user) return null;
+    const userId = user.userId || user.id || user.sub;
+    const role = user.role;
+    if (!userId || !role) return null;
+    return { userId: String(userId), role };
+}
+
+function isValidCoordinate(longitude, latitude) {
+    return Number.isFinite(longitude)
+        && Number.isFinite(latitude)
+        && longitude >= -180
+        && longitude <= 180
+        && latitude >= -90
+        && latitude <= 90;
+}
