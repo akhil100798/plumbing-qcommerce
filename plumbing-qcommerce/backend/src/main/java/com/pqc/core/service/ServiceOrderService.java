@@ -7,9 +7,10 @@ import com.pqc.core.repository.UserRepository;
 import com.pqc.core.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.access.AccessDeniedException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -87,7 +88,9 @@ public class ServiceOrderService {
         ServiceOrder order = getOrderOrThrow(orderId);
 
         if (order.getStatus() != OrderStatus.PENDING) {
-            throw new IllegalArgumentException("Order #" + orderId + " cannot be accepted. Status: " + order.getStatus());
+            throw new OrderConflictException(
+                    "ORDER_ALREADY_ACCEPTED",
+                    "Order #" + orderId + " has already been accepted or is no longer pending.");
         }
 
         User plumber = userRepository.findById(plumberId)
@@ -97,10 +100,11 @@ public class ServiceOrderService {
         }
 
         order.setPlumber(plumber);
-        order.setStatus(OrderStatus.ACCEPTED);
+        transition(order, OrderStatus.PENDING, OrderStatus.ACCEPTED);
         order.setAcceptedAt(LocalDateTime.now());
 
-        ServiceOrder saved = orderRepository.save(order);
+        ServiceOrder saved = saveOrderTransition(order, "ORDER_ALREADY_ACCEPTED",
+                "Order #" + orderId + " was accepted by another plumber.");
 
         // Save to Outbox
         saveToOutbox(String.valueOf(orderId), "ORDER_ACCEPTED", "order-accepted",
@@ -119,15 +123,14 @@ public class ServiceOrderService {
         ServiceOrder order = getOrderOrThrow(orderId);
         requireAssignedPlumber(order);
 
-        if (order.getStatus() != OrderStatus.ACCEPTED) {
-            throw new IllegalArgumentException("Order cannot be started from status: " + order.getStatus());
-        }
-
-        order.setStatus(OrderStatus.IN_PROGRESS);
+        transition(order, OrderStatus.ACCEPTED, OrderStatus.IN_PROGRESS);
         order.setStartedAt(LocalDateTime.now());
         log.info("Order #{} is now IN_PROGRESS", orderId);
 
-        return orderRepository.save(order);
+        ServiceOrder saved = orderRepository.saveAndFlush(order);
+        saveToOutbox(String.valueOf(orderId), "ORDER_STARTED", "order-started",
+                "ORDER_STARTED:" + orderId);
+        return saved;
     }
 
     /**
@@ -138,13 +141,15 @@ public class ServiceOrderService {
         ServiceOrder order = getOrderOrThrow(orderId);
         requireAssignedPlumber(order);
 
-        if (order.getStatus() != OrderStatus.IN_PROGRESS) {
-            throw new IllegalArgumentException("Order cannot be completed from status: " + order.getStatus());
+        if (partsCharge != null && partsCharge.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalOrderTransitionException(
+                    "VALIDATION_FAILED",
+                    "Parts charge must be greater than or equal to 0.00");
         }
 
         LocalDateTime now = LocalDateTime.now();
         order.setCompletedAt(now);
-        order.setStatus(OrderStatus.COMPLETED);
+        transition(order, OrderStatus.IN_PROGRESS, OrderStatus.COMPLETED);
 
         // ---- BILLING ENGINE ----
         // Calculate hours worked
@@ -157,7 +162,7 @@ public class ServiceOrderService {
         order.setPlatformFee(PLATFORM_FEE);
         order.setTotalAmount(order.getLaborCharge().add(order.getPartsCharge()).add(PLATFORM_FEE));
 
-        ServiceOrder saved = orderRepository.save(order);
+        ServiceOrder saved = orderRepository.saveAndFlush(order);
 
         // Save to Outbox for inventory reconcile
         saveToOutbox(String.valueOf(orderId), "ORDER_COMPLETED", "order-completed",
@@ -168,6 +173,7 @@ public class ServiceOrderService {
         return saved;
     }
 
+    @Transactional
     public ServiceOrder cancelOrder(Long orderId) {
         ServiceOrder order = getOrderOrThrow(orderId);
         User actor = currentUser.require();
@@ -177,11 +183,17 @@ public class ServiceOrderService {
         if (!allowed) {
             throw new AccessDeniedException("Only the owning customer or an administrator may cancel this order");
         }
-        if (order.getStatus() == OrderStatus.COMPLETED) {
-            throw new IllegalArgumentException("Cannot cancel a completed order.");
+        if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.ACCEPTED) {
+            throw new IllegalOrderTransitionException(
+                    "ILLEGAL_ORDER_TRANSITION",
+                    "Order cannot be cancelled from status: " + order.getStatus());
         }
-        order.setStatus(OrderStatus.CANCELLED);
-        return orderRepository.save(order);
+        OrderStatus previous = order.getStatus();
+        transition(order, previous, OrderStatus.CANCELLED);
+        ServiceOrder saved = orderRepository.saveAndFlush(order);
+        saveToOutbox(String.valueOf(orderId), "ORDER_CANCELLED", "order-cancelled",
+                "ORDER_CANCELLED:" + orderId);
+        return saved;
     }
 
     public List<ServiceOrder> getOrdersByCustomer(Long customerId) {
@@ -220,6 +232,23 @@ public class ServiceOrderService {
         if (actor.getRole() != Role.PLUMBER || order.getPlumber() == null
                 || !order.getPlumber().getId().equals(actor.getId())) {
             throw new AccessDeniedException("Only the assigned plumber may update this order");
+        }
+    }
+
+    private void transition(ServiceOrder order, OrderStatus expected, OrderStatus next) {
+        if (order.getStatus() != expected) {
+            throw new IllegalOrderTransitionException(
+                    "ILLEGAL_ORDER_TRANSITION",
+                    "Order cannot transition from " + order.getStatus() + " to " + next);
+        }
+        order.setStatus(next);
+    }
+
+    private ServiceOrder saveOrderTransition(ServiceOrder order, String code, String message) {
+        try {
+            return orderRepository.saveAndFlush(order);
+        } catch (OptimisticLockingFailureException ex) {
+            throw new OrderConflictException(code, message);
         }
     }
 
