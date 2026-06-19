@@ -3,11 +3,15 @@ package com.pqc.core.service;
 import com.pqc.core.dto.PaymentRequest;
 import com.pqc.core.dto.PaymentResponse;
 import com.pqc.core.entity.OrderStatus;
+import com.pqc.core.entity.Role;
 import com.pqc.core.entity.ServiceOrder;
+import com.pqc.core.entity.User;
 import com.pqc.core.repository.OutboxEventRepository;
 import com.pqc.core.repository.ServiceOrderRepository;
+import com.pqc.core.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +24,7 @@ public class PaymentService {
 
     private final ServiceOrderRepository orderRepository;
     private final OutboxEventRepository outboxRepository;
+    private final CurrentUser currentUser;
 
     /**
      * MOCK Stripe Payment Processing
@@ -31,6 +36,10 @@ public class PaymentService {
 
         ServiceOrder order = orderRepository.findById(request.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Order not found: " + request.getOrderId()));
+        User actor = currentUser.require();
+        if (actor.getRole() != Role.CUSTOMER || !order.getCustomer().getId().equals(actor.getId())) {
+            throw new AccessDeniedException("Customers may pay only their own orders");
+        }
 
         if (order.getStatus() != OrderStatus.COMPLETED) {
             return PaymentResponse.builder()

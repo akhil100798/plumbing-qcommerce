@@ -1,6 +1,9 @@
 package com.pqc.core.security;
 
 import com.pqc.core.repository.UserRepository;
+import com.pqc.core.repository.ServiceOrderRepository;
+import com.pqc.core.repository.StoreRepository;
+import com.pqc.core.repository.OutboxEventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,8 +29,15 @@ class UserEndpointSecurityTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired private ServiceOrderRepository orderRepository;
+    @Autowired private StoreRepository storeRepository;
+    @Autowired private OutboxEventRepository outboxRepository;
+
     @BeforeEach
     void clearUsers() {
+        outboxRepository.deleteAll();
+        orderRepository.deleteAll();
+        storeRepository.deleteAll();
         userRepository.deleteAll();
     }
 

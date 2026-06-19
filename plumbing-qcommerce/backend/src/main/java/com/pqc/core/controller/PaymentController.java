@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/v1/payments")
@@ -21,6 +22,7 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @PostMapping("/process")
+    @PreAuthorize("hasRole('CUSTOMER')")
     @Operation(summary = "Process a service order payment", description = "Mocks interaction with external gateway (Stripe) and updates status to PAID.")
     public ResponseEntity<PaymentResponse> processPayment(@RequestBody PaymentRequest request) {
         PaymentResponse response = paymentService.processPayment(request);

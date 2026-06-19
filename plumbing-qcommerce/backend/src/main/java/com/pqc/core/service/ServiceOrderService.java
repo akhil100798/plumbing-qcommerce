@@ -4,10 +4,12 @@ import com.pqc.core.entity.*;
 import com.pqc.core.repository.OutboxEventRepository;
 import com.pqc.core.repository.ServiceOrderRepository;
 import com.pqc.core.repository.UserRepository;
+import com.pqc.core.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -25,6 +27,7 @@ public class ServiceOrderService {
     private final ServiceOrderRepository orderRepository;
     private final UserRepository userRepository;
     private final OutboxEventRepository outboxRepository;
+    private final CurrentUser currentUser;
 
     private void saveToOutbox(String aggregateId, String type, String topic, String payload) {
         OutboxEvent event = OutboxEvent.builder()
@@ -45,6 +48,10 @@ public class ServiceOrderService {
     public ServiceOrder createOrder(Long customerId, String description,
                                     Double latitude, Double longitude,
                                     RequestType requestType) {
+        User actor = currentUser.require();
+        if (actor.getRole() != Role.CUSTOMER || !actor.getId().equals(customerId)) {
+            throw new AccessDeniedException("Customers may create only their own orders");
+        }
         User customer = userRepository.findById(customerId)
                 .orElseThrow(() -> new RuntimeException("Customer not found: " + customerId));
 
@@ -73,6 +80,10 @@ public class ServiceOrderService {
      */
     @Transactional
     public ServiceOrder acceptOrder(Long orderId, Long plumberId) {
+        User actor = currentUser.require();
+        if (actor.getRole() != Role.PLUMBER || !actor.getId().equals(plumberId)) {
+            throw new AccessDeniedException("Plumbers may accept orders only as themselves");
+        }
         ServiceOrder order = getOrderOrThrow(orderId);
 
         if (order.getStatus() != OrderStatus.PENDING) {
@@ -81,6 +92,9 @@ public class ServiceOrderService {
 
         User plumber = userRepository.findById(plumberId)
                 .orElseThrow(() -> new RuntimeException("Plumber not found: " + plumberId));
+        if (plumber.getRole() != Role.PLUMBER) {
+            throw new IllegalArgumentException("Assigned user is not a plumber");
+        }
 
         order.setPlumber(plumber);
         order.setStatus(OrderStatus.ACCEPTED);
@@ -103,6 +117,7 @@ public class ServiceOrderService {
     @Transactional
     public ServiceOrder startOrder(Long orderId) {
         ServiceOrder order = getOrderOrThrow(orderId);
+        requireAssignedPlumber(order);
 
         if (order.getStatus() != OrderStatus.ACCEPTED) {
             throw new IllegalArgumentException("Order cannot be started from status: " + order.getStatus());
@@ -121,6 +136,7 @@ public class ServiceOrderService {
     @Transactional
     public ServiceOrder completeOrder(Long orderId, BigDecimal partsCharge) {
         ServiceOrder order = getOrderOrThrow(orderId);
+        requireAssignedPlumber(order);
 
         if (order.getStatus() != OrderStatus.IN_PROGRESS) {
             throw new IllegalArgumentException("Order cannot be completed from status: " + order.getStatus());
@@ -154,6 +170,13 @@ public class ServiceOrderService {
 
     public ServiceOrder cancelOrder(Long orderId) {
         ServiceOrder order = getOrderOrThrow(orderId);
+        User actor = currentUser.require();
+        boolean allowed = actor.getRole() == Role.ADMIN
+                || actor.getRole() == Role.CUSTOMER
+                && order.getCustomer().getId().equals(actor.getId());
+        if (!allowed) {
+            throw new AccessDeniedException("Only the owning customer or an administrator may cancel this order");
+        }
         if (order.getStatus() == OrderStatus.COMPLETED) {
             throw new IllegalArgumentException("Cannot cancel a completed order.");
         }
@@ -162,15 +185,42 @@ public class ServiceOrderService {
     }
 
     public List<ServiceOrder> getOrdersByCustomer(Long customerId) {
+        User actor = currentUser.require();
+        if (actor.getRole() != Role.ADMIN && !actor.getId().equals(customerId)) {
+            throw new AccessDeniedException("Customers may view only their own orders");
+        }
         return orderRepository.findByCustomer_Id(customerId);
     }
 
     public List<ServiceOrder> getOrdersByStatus(OrderStatus status) {
+        Role role = currentUser.require().getRole();
+        if (role != Role.ADMIN && role != Role.PLUMBER && role != Role.STORE_MANAGER) {
+            throw new AccessDeniedException("This role cannot browse orders by status");
+        }
         return orderRepository.findByStatus(status);
     }
 
     public ServiceOrder getOrderById(Long id) {
-        return getOrderOrThrow(id);
+        ServiceOrder order = getOrderOrThrow(id);
+        User actor = currentUser.require();
+        boolean allowed = actor.getRole() == Role.ADMIN
+                || actor.getRole() == Role.CUSTOMER && order.getCustomer().getId().equals(actor.getId())
+                || actor.getRole() == Role.PLUMBER && order.getPlumber() != null
+                    && order.getPlumber().getId().equals(actor.getId())
+                || actor.getRole() == Role.STORE_MANAGER && order.getStore() != null
+                    && order.getStore().getManager().getId().equals(actor.getId());
+        if (!allowed) {
+            throw new AccessDeniedException("This order is not accessible to the current user");
+        }
+        return order;
+    }
+
+    private void requireAssignedPlumber(ServiceOrder order) {
+        User actor = currentUser.require();
+        if (actor.getRole() != Role.PLUMBER || order.getPlumber() == null
+                || !order.getPlumber().getId().equals(actor.getId())) {
+            throw new AccessDeniedException("Only the assigned plumber may update this order");
+        }
     }
 
     private ServiceOrder getOrderOrThrow(Long id) {
