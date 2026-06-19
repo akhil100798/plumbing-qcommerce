@@ -46,6 +46,21 @@ function createEdgeApp(options = {}) {
         connectKafka(io);
     }
 
+    app.get('/health/live', (req, res) => {
+        res.json({ status: 'UP' });
+    });
+
+    app.get('/health/ready', async (req, res) => {
+        try {
+            if (edgeRedis?.ping) {
+                await edgeRedis.ping();
+            }
+            res.json({ status: 'UP' });
+        } catch (error) {
+            res.status(503).json({ status: 'DOWN' });
+        }
+    });
+
     app.post('/api/v1/edge/requests/nearby', edgeVerifyToken, nearbyLimiter, async (req, res) => {
         const { longitude, latitude } = req.body;
         const customerId = req.user?.userId || req.user?.id || req.user?.sub;

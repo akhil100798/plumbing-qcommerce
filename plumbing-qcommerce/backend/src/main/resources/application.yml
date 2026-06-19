@@ -7,9 +7,9 @@ spring:
   
   # PostgreSQL Configuration (Main Relational DB)
   datasource:
-    url: jdbc:postgresql://localhost:5433/plumbing_commerce
-    username: admin
-    password: rootpassword
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/plumbing_commerce}
+    username: ${SPRING_DATASOURCE_USERNAME:admin}
+    password: ${SPRING_DATASOURCE_PASSWORD:local-postgres-password}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -23,14 +23,14 @@ spring:
   # NoSQL & Cache Configuration
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
     mongodb:
-      uri: mongodb://admin:rootpassword@localhost:27017/plumbing_commerce?authSource=admin
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://admin:local-mongo-password@localhost:27017/plumbing_commerce?authSource=admin}
 
   # Kafka Event Bus
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: plumbing-core-group
       auto-offset-reset: earliest
