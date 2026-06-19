@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8081/api/v1";
+
 export default function AnalyticsDashboard() {
   const [metrics, setMetrics] = useState({
     totalRevenue: 0,
@@ -21,7 +23,7 @@ export default function AnalyticsDashboard() {
           return;
         }
 
-        const res = await fetch("http://localhost:8081/api/v1/admin/metrics", {
+        const res = await fetch(`${API_BASE_URL}/admin/metrics`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
 

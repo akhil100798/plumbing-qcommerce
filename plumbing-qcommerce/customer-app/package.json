@@ -7,20 +7,34 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "build": "expo export --platform web --output-dir dist",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
-    "expo": "~55.0.8",
-    "expo-status-bar": "~55.0.4",
+    "expo": "~55.0.26",
+    "expo-status-bar": "~55.0.6",
     "react": "19.2.0",
+    "react-dom": "19.2.0",
     "react-native": "0.83.2",
+    "react-native-web": "^0.21.0",
     "socket.io-client": "^4.8.3"
+  },
+  "overrides": {
+    "@babel/core": "^7.29.1",
+    "@xmldom/xmldom": "^0.8.13",
+    "brace-expansion": "^5.0.6",
+    "js-yaml": "^4.1.2",
+    "postcss": "^8.5.10",
+    "shell-quote": "^1.8.4",
+    "uuid": "^11.1.1",
+    "ws": "^8.21.0"
   },
   "devDependencies": {
     "@testing-library/react-native": "^14.0.0",
     "@types/react": "~19.2.2",
+    "@types/react-test-renderer": "^19.1.0",
     "react-test-renderer": "^19.2.0",
     "typescript": "~5.9.2",
     "vitest": "^4.1.9"

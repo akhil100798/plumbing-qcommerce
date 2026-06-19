@@ -3,6 +3,11 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
+const EDGE_URL = process.env.NEXT_PUBLIC_EDGE_URL || "http://localhost:3000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8081/api/v1";
+const LOCAL_MANAGER_EMAIL = process.env.NEXT_PUBLIC_MANAGER_EMAIL || "manager@plumb.local";
+const LOCAL_MANAGER_PASSWORD = process.env.NEXT_PUBLIC_MANAGER_PASSWORD || "LocalPass123!";
+
 interface JobOffer {
   jobId: string;
   customerId: string;
@@ -11,27 +16,65 @@ interface JobOffer {
 
 export default function StoreManagerDashboard() {
   const [isConnected, setIsConnected] = useState(false);
+  const [gatewayMessage, setGatewayMessage] = useState("Signing in to local gateway...");
   const [liveJobs, setLiveJobs] = useState<JobOffer[]>([]);
 
   useEffect(() => {
-    // Connect to Node.js Edge Server (Phase 3) running on Port 3000
-    const socketInstance = io("http://localhost:3000");
+    let socketInstance: ReturnType<typeof io> | null = null;
+    let isMounted = true;
 
-    socketInstance.on("connect", () => {
-      setIsConnected(true);
-    });
+    async function connectGateway() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: LOCAL_MANAGER_EMAIL,
+            password: LOCAL_MANAGER_PASSWORD,
+          }),
+        });
 
-    socketInstance.on("disconnect", () => {
-      setIsConnected(false);
-    });
+        if (!response.ok) {
+          throw new Error("Local manager login failed");
+        }
 
-    // Listen for New Job Offers broadcasting over WebSockets for "0 latency" updates
-    socketInstance.on("JOB_OFFER", (data: JobOffer) => {
-      setLiveJobs((prev) => [data, ...prev]);
-    });
+        const { token } = await response.json();
+        if (!isMounted) return;
+
+        socketInstance = io(EDGE_URL, {
+          auth: { token },
+        });
+
+        socketInstance.on("connect", () => {
+          setIsConnected(true);
+          setGatewayMessage("Authenticated edge connection");
+        });
+
+        socketInstance.on("connect_error", () => {
+          setIsConnected(false);
+          setGatewayMessage("Edge authentication failed");
+        });
+
+        socketInstance.on("disconnect", () => {
+          setIsConnected(false);
+          setGatewayMessage("Disconnected from edge");
+        });
+
+        socketInstance.on("JOB_OFFER", (data: JobOffer) => {
+          setLiveJobs((prev) => [data, ...prev]);
+        });
+      } catch (error) {
+        if (!isMounted) return;
+        setIsConnected(false);
+        setGatewayMessage("Local gateway login failed");
+      }
+    }
+
+    connectGateway();
 
     return () => {
-      socketInstance.disconnect();
+      isMounted = false;
+      socketInstance?.disconnect();
     };
   }, []);
 
@@ -57,6 +100,7 @@ export default function StoreManagerDashboard() {
               </span>
             )}
           </div>
+          <span className="hidden md:inline text-xs font-medium text-blue-100">{gatewayMessage}</span>
         </div>
       </header>
 
