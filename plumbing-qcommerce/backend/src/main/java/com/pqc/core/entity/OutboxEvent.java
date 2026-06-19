@@ -16,6 +16,9 @@ public class OutboxEvent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    private long version;
+
     @Column(nullable = false)
     private String aggregateId;
 
@@ -32,13 +35,45 @@ public class OutboxEvent {
     private String topic;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean processed = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private OutboxStatus status = OutboxStatus.PENDING;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private int attempts = 0;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private int maxAttempts = 5;
+
+    @Column(name = "next_attempt_at")
+    private LocalDateTime nextAttemptAt;
+
+    @Column(name = "published_at")
+    private LocalDateTime publishedAt;
+
+    @Column(columnDefinition = "TEXT")
+    private String lastError;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
+        if (this.createdAt == null) {
+            this.createdAt = now;
+        }
+        if (this.nextAttemptAt == null) {
+            this.nextAttemptAt = now;
+        }
+        if (this.status == null) {
+            this.status = processed ? OutboxStatus.PUBLISHED : OutboxStatus.PENDING;
+        }
     }
 }

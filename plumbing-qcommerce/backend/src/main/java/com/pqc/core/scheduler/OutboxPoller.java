@@ -1,14 +1,15 @@
 package com.pqc.core.scheduler;
 
 import com.pqc.core.entity.OutboxEvent;
+import com.pqc.core.entity.OutboxStatus;
 import com.pqc.core.repository.OutboxEventRepository;
+import com.pqc.core.service.OutboxPublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -17,39 +18,22 @@ import java.util.List;
 public class OutboxPoller {
 
     private final OutboxEventRepository outboxRepository;
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final OutboxPublisher outboxPublisher;
 
-    @Scheduled(fixedDelay = 5000) // Poll every 5 seconds
-    @Transactional
+    @Scheduled(fixedDelay = 5000)
     public void pollAndPublish() {
-        List<OutboxEvent> pendingEvents = outboxRepository.findByProcessedFalseOrderByCreatedAtAsc();
+        List<OutboxEvent> pendingEvents =
+                outboxRepository.findTop50ByStatusAndNextAttemptAtLessThanEqualOrderByCreatedAtAsc(
+                        OutboxStatus.PENDING,
+                        LocalDateTime.now());
 
         if (pendingEvents.isEmpty()) {
             return;
         }
 
-        log.info("Found {} pending events in outbox. Starting publication...", pendingEvents.size());
-
+        log.info("Publishing {} due outbox event(s)", pendingEvents.size());
         for (OutboxEvent event : pendingEvents) {
-            try {
-                // Publish to Kafka
-                kafkaTemplate.send(event.getTopic(), event.getAggregateId(), event.getPayload())
-                        .whenComplete((result, ex) -> {
-                            if (ex == null) {
-                                log.debug("Successfully published event #{} to topic {}", event.getId(), event.getTopic());
-                            } else {
-                                log.error("Failed to publish event #{} to topic {}", event.getId(), event.getTopic(), ex);
-                            }
-                        });
-
-                // Mark as processed in the same transaction
-                event.setProcessed(true);
-                outboxRepository.save(event);
-                
-            } catch (Exception e) {
-                log.error("Error processing outbox event #{}: {}", event.getId(), e.getMessage());
-                // Event remains unprocessed for next poll
-            }
+            outboxPublisher.publish(event.getId());
         }
     }
 }
