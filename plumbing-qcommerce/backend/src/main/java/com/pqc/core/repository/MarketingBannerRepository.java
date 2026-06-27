@@ -1,1 +1,7 @@
-package com.pqc.core.repository; import com.pqc.core.entity.MarketingBanner; import org.springframework.data.jpa.repository.JpaRepository; public interface MarketingBannerRepository extends JpaRepository<MarketingBanner,Long>{}
+package com.pqc.core.repository;
+
+import com.pqc.core.entity.MarketingBanner;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface MarketingBannerRepository extends JpaRepository<MarketingBanner, Long> {
+}

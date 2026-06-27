@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: plumbcommerce-backend
+    runtime: docker
+    rootDir: backend
+    plan: free
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: APP_SCHEDULING_ENABLED
+        value: false
+      - key: DATABASE_URL
+        value: jdbc:postgresql://dpg-d8vrj8po3t8c73bkqh3g-a:5432/plumbcommerce
+      - key: DATABASE_USERNAME
+        value: plumbcommerce_user
+      - key: DATABASE_PASSWORD
+        value: WerBOgD9oAItQ3yDNh1MQ6jI9MHFJIg1
+      - key: PORT
+        value: 10000
