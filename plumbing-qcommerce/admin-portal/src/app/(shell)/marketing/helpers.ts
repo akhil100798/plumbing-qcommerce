@@ -1,0 +1,1 @@
+export const money=(v:number|undefined)=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(v||0);export const tone=(s:string)=>s==="ACTIVE"||s==="SENT"?"success":s==="PAUSED"||s==="SCHEDULED"?"warning":s==="CANCELLED"||s==="FAILED"?"danger":s==="COMPLETED"?"info":"neutral";

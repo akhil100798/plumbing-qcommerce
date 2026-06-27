@@ -1,0 +1,27 @@
+export const colors = {
+  // Brand colors
+  primary: '#2563EB',      // Blue
+  primaryDark: '#1E40AF',
+  primaryLight: '#DBEAFE',
+
+  // Status indicators
+  success: '#10B981',      // Emerald Green
+  successLight: '#D1FAE5',
+  warning: '#F59E0B',      // Amber Yellow
+  warningLight: '#FEF3C7',
+  error: '#EF4444',        // Red
+  errorLight: '#FEE2E2',
+
+  // Neutrals
+  background: '#F8FAFC',   // Slate Background
+  surface: '#FFFFFF',
+  textPrimary: '#0F172A',  // Slate 900
+  textSecondary: '#475569',// Slate 600
+  textMuted: '#94A3B8',    // Slate 400
+  border: '#E2E8F0',       // Slate 200
+  borderDark: '#CBD5E1',   // Slate 300
+
+  // Decorative
+  accent: '#7DD3BC',       // Soft teal
+  darkOverlay: 'rgba(15, 23, 42, 0.4)',
+};
