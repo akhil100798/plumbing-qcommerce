@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: ${PORT:8081}
 
 spring:
   application:
@@ -7,9 +7,9 @@ spring:
   
   # PostgreSQL Configuration (Main Relational DB)
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/plumbing_commerce}
-    username: ${SPRING_DATASOURCE_USERNAME:admin}
-    password: ${SPRING_DATASOURCE_PASSWORD:local-postgres-password}
+    url: ${DATABASE_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/plumbing_commerce}}
+    username: ${DATABASE_USERNAME:${SPRING_DATASOURCE_USERNAME:admin}}
+    password: ${DATABASE_PASSWORD:${SPRING_DATASOURCE_PASSWORD:local-postgres-password}}
     driver-class-name: org.postgresql.Driver
   flyway:
     enabled: true
@@ -66,5 +66,3 @@ management:
   zipkin:
     tracing:
       endpoint: http://localhost:9411/api/v2/spans # Default Zipkin endpoint
-
-
