@@ -9,11 +9,5 @@ services:
         value: prod
       - key: APP_SCHEDULING_ENABLED
         value: false
-      - key: DATABASE_URL
-        value: jdbc:postgresql://dpg-d8vv0kgkii2s73f6nsc0-a:5432/plumbcommerce_ctyy
-      - key: DATABASE_USERNAME
-        value: plumbcommerce_user
-      - key: DATABASE_PASSWORD
-        value: dy05JtFvhtxyxIidRSSfH3JJI0xcKlAb
       - key: PORT
         value: 10000
