@@ -5,6 +5,7 @@ import com.pqc.core.service.ServiceLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ public class ServiceLogController {
     private final ServiceLogService serviceLogService;
 
     @PostMapping
+    @PreAuthorize("hasRole('PLUMBER')")
     public ResponseEntity<ServiceLog> createLog(@RequestBody Map<String, Object> body) {
         Long orderId = Long.valueOf(body.get("orderId").toString());
         Long plumberId = Long.valueOf(body.get("plumberId").toString());
@@ -40,11 +42,13 @@ public class ServiceLogController {
     }
 
     @GetMapping("/order/{orderId}")
+    @PreAuthorize("@orderAuthorization.canRead(#orderId, authentication)")
     public ResponseEntity<List<ServiceLog>> getByOrder(@PathVariable Long orderId) {
         return ResponseEntity.ok(serviceLogService.getLogsByOrder(orderId));
     }
 
     @GetMapping("/plumber/{plumberId}")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('PLUMBER') and @currentUser.require().id == #plumberId)")
     public ResponseEntity<List<ServiceLog>> getByPlumber(@PathVariable Long plumberId) {
         return ResponseEntity.ok(serviceLogService.getLogsByPlumber(plumberId));
     }

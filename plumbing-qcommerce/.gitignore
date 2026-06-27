@@ -89,3 +89,15 @@ docker-compose.override.yml
 venv/
 ENV/
 env/
+
+# Local scratch artifacts
+test_run/
+test.txt
+test_run.txt
+
+
+# Generated evidence artifacts
+evidence/admin-runtime-smoke/
+evidence/final-demo/admin-portal/*.png
+evidence/final-demo/admin-portal/screenshot-index__*.json
+

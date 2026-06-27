@@ -2,12 +2,15 @@ package com.pqc.core.service;
 
 import com.pqc.core.entity.*;
 import com.pqc.core.repository.OutboxEventRepository;
+import com.pqc.core.repository.ProductOrderRepository;
 import com.pqc.core.repository.ServiceOrderRepository;
 import com.pqc.core.repository.UserRepository;
+import com.pqc.core.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -25,6 +28,8 @@ public class ServiceOrderService {
     private final ServiceOrderRepository orderRepository;
     private final UserRepository userRepository;
     private final OutboxEventRepository outboxRepository;
+    private final CurrentUser currentUser;
+    private final ProductOrderRepository productOrderRepository;
 
     private void saveToOutbox(String aggregateId, String type, String topic, String payload) {
         OutboxEvent event = OutboxEvent.builder()
@@ -45,6 +50,10 @@ public class ServiceOrderService {
     public ServiceOrder createOrder(Long customerId, String description,
                                     Double latitude, Double longitude,
                                     RequestType requestType) {
+        User actor = currentUser.require();
+        if (actor.getRole() != Role.CUSTOMER || !actor.getId().equals(customerId)) {
+            throw new AccessDeniedException("Customers may create only their own orders");
+        }
         User customer = userRepository.findById(customerId)
                 .orElseThrow(() -> new RuntimeException("Customer not found: " + customerId));
 
@@ -73,6 +82,10 @@ public class ServiceOrderService {
      */
     @Transactional
     public ServiceOrder acceptOrder(Long orderId, Long plumberId) {
+        User actor = currentUser.require();
+        if (actor.getRole() != Role.PLUMBER || !actor.getId().equals(plumberId)) {
+            throw new AccessDeniedException("Plumbers may accept orders only as themselves");
+        }
         ServiceOrder order = getOrderOrThrow(orderId);
 
         if (order.getStatus() != OrderStatus.PENDING) {
@@ -81,6 +94,9 @@ public class ServiceOrderService {
 
         User plumber = userRepository.findById(plumberId)
                 .orElseThrow(() -> new RuntimeException("Plumber not found: " + plumberId));
+        if (plumber.getRole() != Role.PLUMBER) {
+            throw new IllegalArgumentException("Assigned user is not a plumber");
+        }
 
         order.setPlumber(plumber);
         order.setStatus(OrderStatus.ACCEPTED);
@@ -103,6 +119,7 @@ public class ServiceOrderService {
     @Transactional
     public ServiceOrder startOrder(Long orderId) {
         ServiceOrder order = getOrderOrThrow(orderId);
+        requireAssignedPlumber(order);
 
         if (order.getStatus() != OrderStatus.ACCEPTED) {
             throw new IllegalArgumentException("Order cannot be started from status: " + order.getStatus());
@@ -116,13 +133,22 @@ public class ServiceOrderService {
     }
 
     /**
-     * Plumber completes the job — triggers the Billing Engine
+     * Plumber completes the job — triggers the Billing Engine.
+     *
+     * Phase 3 enhancement: partsCharge is now computed automatically by summing
+     * the totalAmount of all DELIVERED ProductOrders linked to this ServiceOrder.
+     * A 10% referral commission on parts is also recorded for the plumber.
+     *
+     * @param orderId     The service job to complete.
+     * @param extraCharge Optional manual parts charge (e.g. cash purchases not in system).
      */
     @Transactional
-    public ServiceOrder completeOrder(Long orderId, BigDecimal partsCharge) {
+    public ServiceOrder completeOrder(Long orderId, BigDecimal extraCharge) {
         ServiceOrder order = getOrderOrThrow(orderId);
+        requireAssignedPlumber(order);
 
-        if (order.getStatus() != OrderStatus.IN_PROGRESS) {
+        if (order.getStatus() != OrderStatus.IN_PROGRESS
+                && order.getStatus() != OrderStatus.COMBINED_ORDER) {
             throw new IllegalArgumentException("Order cannot be completed from status: " + order.getStatus());
         }
 
@@ -131,29 +157,59 @@ public class ServiceOrderService {
         order.setStatus(OrderStatus.COMPLETED);
 
         // ---- BILLING ENGINE ----
-        // Calculate hours worked
+        // 1. Labour cost
         long minutesWorked = ChronoUnit.MINUTES.between(order.getStartedAt(), now);
-        double hoursWorked = Math.max(0.5, minutesWorked / 60.0); // Minimum 30 min billing
+        double hoursWorked = Math.max(0.5, minutesWorked / 60.0);
         BigDecimal labor = HOURLY_LABOR_RATE.multiply(BigDecimal.valueOf(hoursWorked));
 
+        // 2. Parts cost — auto-aggregate from all DELIVERED material product orders
+        BigDecimal deliveredPartsTotal = productOrderRepository
+                .findByServiceOrderIdAndStatus(orderId, ProductOrderStatus.DELIVERED)
+                .stream()
+                .map(po -> po.getTotalAmount() != null ? po.getTotalAmount() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Add any extra cash-based charges passed by the plumber
+        BigDecimal totalPartsCharge = deliveredPartsTotal
+                .add(extraCharge != null ? extraCharge : BigDecimal.ZERO);
+
+        // 3. Referral commission — 10% of parts ordered through the platform
+        BigDecimal referralCommission = deliveredPartsTotal
+                .multiply(new BigDecimal("0.10"))
+                .setScale(2, java.math.RoundingMode.HALF_UP);
+
         order.setLaborCharge(labor.setScale(2, java.math.RoundingMode.HALF_UP));
-        order.setPartsCharge(partsCharge != null ? partsCharge : BigDecimal.ZERO);
+        order.setPartsCharge(totalPartsCharge.setScale(2, java.math.RoundingMode.HALF_UP));
+        order.setReferralCommission(referralCommission);
         order.setPlatformFee(PLATFORM_FEE);
-        order.setTotalAmount(order.getLaborCharge().add(order.getPartsCharge()).add(PLATFORM_FEE));
+        order.setTotalAmount(
+                order.getLaborCharge()
+                        .add(order.getPartsCharge())
+                        .add(PLATFORM_FEE));
 
         ServiceOrder saved = orderRepository.save(order);
 
-        // Save to Outbox for inventory reconcile
+        // Publish completion event for inventory reconcile
         saveToOutbox(String.valueOf(orderId), "ORDER_COMPLETED", "order-completed",
-                "ORDER_COMPLETED:" + orderId + ":AMOUNT:" + saved.getTotalAmount());
-        
-        log.info("Order #{} completion billing persisted in outbox.", orderId);
+                "ORDER_COMPLETED:" + orderId + ":AMOUNT:" + saved.getTotalAmount()
+                + ":COMMISSION:" + referralCommission);
+
+        log.info("Order #{} completed. Labour=₹{}, Parts=₹{}, Commission=₹{}, Total=₹{}",
+                orderId, saved.getLaborCharge(), saved.getPartsCharge(),
+                referralCommission, saved.getTotalAmount());
 
         return saved;
     }
 
     public ServiceOrder cancelOrder(Long orderId) {
         ServiceOrder order = getOrderOrThrow(orderId);
+        User actor = currentUser.require();
+        boolean allowed = actor.getRole() == Role.ADMIN
+                || actor.getRole() == Role.CUSTOMER
+                && order.getCustomer().getId().equals(actor.getId());
+        if (!allowed) {
+            throw new AccessDeniedException("Only the owning customer or an administrator may cancel this order");
+        }
         if (order.getStatus() == OrderStatus.COMPLETED) {
             throw new IllegalArgumentException("Cannot cancel a completed order.");
         }
@@ -162,15 +218,42 @@ public class ServiceOrderService {
     }
 
     public List<ServiceOrder> getOrdersByCustomer(Long customerId) {
+        User actor = currentUser.require();
+        if (actor.getRole() != Role.ADMIN && !actor.getId().equals(customerId)) {
+            throw new AccessDeniedException("Customers may view only their own orders");
+        }
         return orderRepository.findByCustomer_Id(customerId);
     }
 
     public List<ServiceOrder> getOrdersByStatus(OrderStatus status) {
+        Role role = currentUser.require().getRole();
+        if (role != Role.ADMIN && role != Role.PLUMBER && role != Role.STORE_MANAGER) {
+            throw new AccessDeniedException("This role cannot browse orders by status");
+        }
         return orderRepository.findByStatus(status);
     }
 
     public ServiceOrder getOrderById(Long id) {
-        return getOrderOrThrow(id);
+        ServiceOrder order = getOrderOrThrow(id);
+        User actor = currentUser.require();
+        boolean allowed = actor.getRole() == Role.ADMIN
+                || actor.getRole() == Role.CUSTOMER && order.getCustomer().getId().equals(actor.getId())
+                || actor.getRole() == Role.PLUMBER && order.getPlumber() != null
+                    && order.getPlumber().getId().equals(actor.getId())
+                || actor.getRole() == Role.STORE_MANAGER && order.getStore() != null
+                    && order.getStore().getManager().getId().equals(actor.getId());
+        if (!allowed) {
+            throw new AccessDeniedException("This order is not accessible to the current user");
+        }
+        return order;
+    }
+
+    private void requireAssignedPlumber(ServiceOrder order) {
+        User actor = currentUser.require();
+        if (actor.getRole() != Role.PLUMBER || order.getPlumber() == null
+                || !order.getPlumber().getId().equals(actor.getId())) {
+            throw new AccessDeniedException("Only the assigned plumber may update this order");
+        }
     }
 
     private ServiceOrder getOrderOrThrow(Long id) {

@@ -1,0 +1,1 @@
+package com.pqc.core.dto; import com.pqc.core.entity.*; import java.time.LocalDateTime; public record CampaignSummaryResponse(Long campaignId,String name,CampaignType campaignType,String targetSegment,CampaignStatus status,LocalDateTime startsAt,LocalDateTime endsAt){}

@@ -1,0 +1,3 @@
+package com.pqc.core.entity;
+import jakarta.persistence.*; import lombok.*; import java.time.LocalDateTime;
+@Entity @Table(name="marketing_notifications") @Data @Builder @NoArgsConstructor @AllArgsConstructor public class MarketingNotification {@Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id; @Column(nullable=false) private String title; @Column(nullable=false,length=2000) private String message; @Column(nullable=false) private String targetSegment; @Column(nullable=false) private Long sentByAdminId; @Enumerated(EnumType.STRING) @Column(nullable=false) private MarketingNotificationStatus status; private LocalDateTime createdAt; private LocalDateTime sentAt; @PrePersist void create(){createdAt=LocalDateTime.now();}}

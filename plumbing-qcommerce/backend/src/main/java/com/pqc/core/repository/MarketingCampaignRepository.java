@@ -1,0 +1,1 @@
+package com.pqc.core.repository; import com.pqc.core.entity.MarketingCampaign; import org.springframework.data.jpa.repository.*; public interface MarketingCampaignRepository extends JpaRepository<MarketingCampaign,Long>,JpaSpecificationExecutor<MarketingCampaign>{}

@@ -1,0 +1,1 @@
+package com.pqc.core.dto; import com.pqc.core.entity.DiscountType; import java.math.BigDecimal; import java.time.LocalDateTime; public record OfferSummaryResponse(Long offerId,String code,String title,DiscountType discountType,BigDecimal discountValue,BigDecimal minOrderAmount,Integer usageLimit,int usedCount,boolean active,LocalDateTime startsAt,LocalDateTime endsAt){}

@@ -4,8 +4,8 @@ import com.pqc.core.document.ServiceLog;
 import com.pqc.core.document.ServiceLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,8 +17,9 @@ import java.util.List;
 public class ServiceLogService {
 
     private final ServiceLogRepository serviceLogRepository;
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final com.pqc.core.repository.OutboxEventRepository outboxRepository;
 
+    @Transactional
     public ServiceLog createLog(Long orderId, Long plumberId, String diagnosis,
                                 String workDone, List<ServiceLog.PartUsed> partsUsed,
                                 String notes, String photoUrl) {
@@ -28,7 +29,7 @@ public class ServiceLogService {
                 .map(p -> p.getUnitPrice().multiply(BigDecimal.valueOf(p.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add) : BigDecimal.ZERO;
 
-        ServiceLog log = ServiceLog.builder()
+        ServiceLog serviceLog = ServiceLog.builder()
                 .orderId(orderId)
                 .plumberId(plumberId)
                 .diagnosis(diagnosis)
@@ -39,11 +40,19 @@ public class ServiceLogService {
                 .loggedAt(LocalDateTime.now())
                 .build();
 
-        ServiceLog saved = serviceLogRepository.save(log);
+        ServiceLog saved = serviceLogRepository.save(serviceLog);
 
-        // Publish Kafka event for inventory deduction
-        kafkaTemplate.send("inventory-deducted", String.valueOf(orderId),
-                "INVENTORY_DEDUCTED:ORDER:" + orderId + ":VALUE:" + totalPartsValue);
+        // Save to PostgreSQL Outbox for transactional safety
+        outboxRepository.save(com.pqc.core.entity.OutboxEvent.builder()
+                .aggregateId(String.valueOf(orderId))
+                .aggregateType("SERVICE_LOG")
+                .eventType("INVENTORY_DEDUCTED")
+                .topic("inventory-deducted")
+                .payload("INVENTORY_DEDUCTED:ORDER:" + orderId + ":VALUE:" + totalPartsValue)
+                .processed(false)
+                .build());
+
+        log.info("Service log for order #{} saved. Event persisted in Outbox for inventory reconciliation.", orderId);
 
         return saved;
     }

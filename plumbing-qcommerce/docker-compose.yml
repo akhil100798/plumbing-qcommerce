@@ -1,15 +1,15 @@
-version: '3.8'
-
 services:
-  # 1. PostgreSQL - Core Relational Database (Users, Orders, Stores, Fin)
+  # ─── Infrastructure ───────────────────────────────────────────────────────
+
+  # 1. PostgreSQL - Core Relational Database
   postgres:
     image: postgres:15-alpine
     container_name: pqc_postgres
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: rootpassword
-      POSTGRES_DB: plumbing_commerce
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-postgres-password}
+      POSTGRES_DB: ${POSTGRES_DB:-plumbing_commerce}
     ports:
       - "5433:5432"
     volumes:
@@ -26,20 +26,20 @@ services:
     volumes:
       - redisdata:/data
 
-  # 3. MongoDB - Chat & Service Logs
+  # 3. MongoDB - Service Logs
   mongodb:
     image: mongo:6-jammy
     container_name: pqc_mongodb
     restart: always
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: rootpassword
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-local-mongo-password}
     ports:
       - "27017:27017"
     volumes:
       - mongodata:/data/db
 
-  # 4. Zookeeper (Required for Kafka Broker)
+  # 4. Zookeeper (Required for Kafka)
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
     container_name: pqc_zookeeper
@@ -49,7 +49,7 @@ services:
     ports:
       - "2181:2181"
 
-  # 5. Apache Kafka - Event Driven Architecture Broker
+  # 5. Apache Kafka - Event Broker
   kafka:
     image: confluentinc/cp-kafka:7.4.0
     container_name: pqc_kafka
@@ -63,7 +63,84 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
+  # ─── Application Services ─────────────────────────────────────────────────
+
+  # 6. Spring Boot Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: plumbing-qcommerce-backend
+    container_name: pqc_backend
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://pqc_postgres:5432/plumbing_commerce
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-admin}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-local-postgres-password}
+      SPRING_DATA_REDIS_HOST: pqc_redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: pqc_kafka:9092
+      SPRING_MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-admin}:${MONGO_INITDB_ROOT_PASSWORD:-local-mongo-password}@pqc_mongodb:27017/pqc_logs?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-your-very-strong-jwt-secret-key-here-at-least-256-bits-long-for-hs256}
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+      - mongodb
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # 7. Node.js Edge Service & WebSocket Gateway
+  edge-service:
+    build:
+      context: ./edge-service
+      dockerfile: Dockerfile
+    image: plumbing-qcommerce-edge
+    container_name: pqc_edge
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      REDIS_HOST: pqc_redis
+      REDIS_PORT: 6379
+      REDIS_URL: redis://pqc_redis:6379
+      KAFKA_BROKER: pqc_kafka:9092
+      JWT_SECRET: ${JWT_SECRET:-your-very-strong-jwt-secret-key-here-at-least-256-bits-long-for-hs256}
+      BACKEND_URL: http://pqc_backend:8081
+    depends_on:
+      - redis
+      - kafka
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # 8. Admin Portal (Next.js)
+  admin-portal:
+    build:
+      context: ./admin-portal
+      dockerfile: Dockerfile
+    image: plumbing-qcommerce-admin
+    container_name: pqc_admin
+    restart: always
+    ports:
+      - "3100:3100"
+    environment:
+      PORT: 3100
+      NEXT_PUBLIC_BACKEND_URL: http://localhost:8081
+      NEXT_PUBLIC_EDGE_URL: http://localhost:3000
+    depends_on:
+      - backend
+
 volumes:
   pgdata:
   redisdata:
   mongodata:
+

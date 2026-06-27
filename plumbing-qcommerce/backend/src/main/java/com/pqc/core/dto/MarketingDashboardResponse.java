@@ -1,0 +1,1 @@
+package com.pqc.core.dto; import java.math.BigDecimal; public record MarketingDashboardResponse(long activeOffers,long scheduledOffers,long expiredOffers,long activeCampaigns,long pausedCampaigns,long activeBanners,long notificationsSent,long totalCouponUsage,BigDecimal estimatedDiscountGiven,long newUsersThisMonth,long ordersUsingOffers){}

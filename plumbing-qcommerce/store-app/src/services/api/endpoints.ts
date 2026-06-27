@@ -1,0 +1,39 @@
+export const ENDPOINTS = {
+  auth: {
+    login: '/auth/login',
+    sendOtp: '/auth/send-otp',
+    verifyOtp: '/auth/verify-otp',
+    refresh: '/auth/refresh',
+  },
+  dashboard: {
+    metrics: '/ai/dashboard-metrics',
+    forecast: '/ai/demand-forecast',
+  },
+  store: {
+    list: '/stores',
+    details: (id: number) => `/stores/${id}`,
+    inventory: (id: number) => `/stores/${id}/inventory`,
+    updateStock: (storeId: number, productId: number) => `/stores/${storeId}/inventory/${productId}`,
+  },
+  catalog: {
+    categories: '/catalog/categories',
+    products: '/catalog/products',
+    productDetails: (id: number) => `/catalog/products/${id}`,
+  },
+  orders: {
+    byStatus: (status: string) => `/orders/status/${status}`,
+    details: (id: number) => `/checkout/orders/${id}`,
+    accept: (id: number) => `/checkout/orders/${id}/accept`,
+    pack: (id: number) => `/checkout/orders/${id}/pack`,
+    handover: (id: number) => `/checkout/orders/${id}/handover`,
+  },
+  wallet: {
+    balance: '/wallet',
+    transactions: '/wallet/transactions',
+  },
+  notifications: {
+    list: '/notifications',
+    markRead: (id: number) => `/notifications/${id}/read`,
+    markAllRead: '/notifications/read-all',
+  },
+};

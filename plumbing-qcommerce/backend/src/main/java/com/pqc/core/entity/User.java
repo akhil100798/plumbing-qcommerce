@@ -20,6 +20,7 @@ public class User {
     private String email;
 
     @Column(nullable = false)
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     @Column(nullable = false)
@@ -32,6 +33,11 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserStatus status = UserStatus.ACTIVE;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
@@ -42,6 +48,9 @@ public class User {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        if (this.status == null) {
+            this.status = UserStatus.ACTIVE;
+        }
     }
 
     @PreUpdate

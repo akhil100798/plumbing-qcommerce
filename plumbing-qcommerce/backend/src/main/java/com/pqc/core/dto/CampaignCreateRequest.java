@@ -1,0 +1,1 @@
+package com.pqc.core.dto; import com.pqc.core.entity.*; import java.time.LocalDateTime; public record CampaignCreateRequest(String name,String description,CampaignType campaignType,String targetSegment,CampaignStatus status,LocalDateTime startsAt,LocalDateTime endsAt){}

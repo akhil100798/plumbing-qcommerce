@@ -7,14 +7,17 @@ spring:
   
   # PostgreSQL Configuration (Main Relational DB)
   datasource:
-    url: jdbc:postgresql://localhost:5433/plumbing_commerce
-    username: admin
-    password: rootpassword
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/plumbing_commerce}
+    username: ${SPRING_DATASOURCE_USERNAME:admin}
+    password: ${SPRING_DATASOURCE_PASSWORD:local-postgres-password}
     driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: none
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
@@ -23,14 +26,14 @@ spring:
   # NoSQL & Cache Configuration
   data:
     redis:
-      host: localhost
-      port: 6379
-    mongodb:
-      uri: mongodb://admin:rootpassword@localhost:27017/plumbing_commerce?authSource=admin
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+  mongodb:
+    uri: ${SPRING_MONGODB_URI:mongodb://admin:local-mongo-password@localhost:27017/plumbing_commerce?authSource=admin}
 
   # Kafka Event Bus
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: plumbing-core-group
       auto-offset-reset: earliest
@@ -40,14 +43,14 @@ spring:
       
 logging:
   level:
-    org.springframework.security: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-    org.springframework.data: DEBUG
+    org.springframework.security: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: INFO
+    org.springframework.data: INFO
 
 security:
   jwt:
-    secret: ${JWT_SECRET:PlumbCommerceJwtSecretKey-2024-CHANGE_IN_PRODUCTION!}
+    secret: ${JWT_SECRET:PlumbCommerceLocalSecretKeyFallbackForDeveloperModeOnlyChangeThisInProduction}
     expiration: 86400000 # 24 hours
 
 springdoc:
@@ -63,3 +66,5 @@ management:
   zipkin:
     tracing:
       endpoint: http://localhost:9411/api/v2/spans # Default Zipkin endpoint
+
+

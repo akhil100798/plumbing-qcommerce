@@ -1,0 +1,1 @@
+package com.pqc.core.dto; import com.pqc.core.entity.MarketingNotificationStatus; import java.time.LocalDateTime; public record MarketingNotificationResponse(Long notificationId,String title,String message,String targetSegment,Long sentByAdminId,MarketingNotificationStatus status,LocalDateTime createdAt,LocalDateTime sentAt){}

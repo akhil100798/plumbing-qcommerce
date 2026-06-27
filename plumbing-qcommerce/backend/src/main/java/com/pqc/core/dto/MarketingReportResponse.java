@@ -1,0 +1,1 @@
+package com.pqc.core.dto; import java.math.BigDecimal; import java.time.LocalDateTime; public record MarketingReportResponse(long totalOffers,long activeOffers,long totalCampaigns,long activeCampaigns,long totalNotificationsSent,long couponUsage,BigDecimal discountGiven,LocalDateTime reportGeneratedAt){}

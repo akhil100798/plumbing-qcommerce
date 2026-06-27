@@ -49,6 +49,10 @@ public class ServiceOrder {
     private BigDecimal platformFee;
     private BigDecimal totalAmount;
 
+    // Plumber referral commission on parts ordered mid-job (10% of partsCharge)
+    @Column(name = "referral_commission")
+    private BigDecimal referralCommission;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

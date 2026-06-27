@@ -1,0 +1,1 @@
+package com.pqc.core.dto; import com.pqc.core.entity.BannerPlacement; import java.time.LocalDateTime; public record BannerUpdateRequest(String title,String subtitle,String imageUrl,String deeplink,BannerPlacement placement,LocalDateTime startsAt,LocalDateTime endsAt){}

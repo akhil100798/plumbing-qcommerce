@@ -1,8 +1,15 @@
 package com.pqc.core.entity;
 
 public enum Role {
+    SUPER_ADMIN,
     ADMIN,
+    OPERATIONS_ADMIN,
+    PLUMBER_MANAGER,
+    FINANCE_ADMIN,
+    SUPPORT_ADMIN,
+    MARKETING_ADMIN,
     STORE_MANAGER,
     CUSTOMER,
-    PLUMBER
+    PLUMBER,
+    DELIVERY_PARTNER
 }

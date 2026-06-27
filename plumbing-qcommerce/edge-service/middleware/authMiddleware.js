@@ -1,7 +1,7 @@
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || "PlumbCommerceLocalSecret-ChangeInProd";
+const JWT_SECRET = process.env.JWT_SECRET || "PlumbCommerceLocalSecretKeyFallbackForDeveloperModeOnlyChangeThisInProduction";
 
 /**
  * Middleware for Express REST Endpoints

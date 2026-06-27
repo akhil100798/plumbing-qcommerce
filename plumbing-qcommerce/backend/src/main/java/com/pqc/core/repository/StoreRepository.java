@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface StoreRepository extends JpaRepository<Store, Long> {
+    java.util.Optional<Store> findFirstByManager_Id(Long managerId);
 }

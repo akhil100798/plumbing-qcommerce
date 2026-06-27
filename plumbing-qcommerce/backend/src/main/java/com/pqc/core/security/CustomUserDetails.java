@@ -1,6 +1,7 @@
 package com.pqc.core.security;
 
 import com.pqc.core.entity.User;
+import com.pqc.core.entity.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -33,11 +34,11 @@ public class CustomUserDetails implements UserDetails {
     public boolean isAccountNonExpired() { return true; }
 
     @Override
-    public boolean isAccountNonLocked() { return true; }
+    public boolean isAccountNonLocked() { return user.getStatus() != UserStatus.BLOCKED; }
 
     @Override
     public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() { return true; }
+    public boolean isEnabled() { return user.getStatus() == UserStatus.ACTIVE; }
 }

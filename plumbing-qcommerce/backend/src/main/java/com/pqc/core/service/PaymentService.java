@@ -20,9 +20,10 @@ public class PaymentService {
 
     private final ServiceOrderRepository orderRepository;
     private final OutboxEventRepository outboxRepository;
+    private final PaymentGatewayAdapter paymentGatewayAdapter;
 
     /**
-     * MOCK Stripe Payment Processing
+     * Captures Payment via PaymentGatewayAdapter
      */
     @Transactional
     public PaymentResponse processPayment(PaymentRequest request) {
@@ -39,14 +40,13 @@ public class PaymentService {
                     .build();
         }
 
-        // --- MOCK STRIPE GATEWAY CALL ---
-        // In a real scenario, this is where we'd call Stripe's SDK:
-        // PaymentIntent intent = PaymentIntent.create(params);
-        boolean externalSuccess = true; 
-        String stripeTxId = "tok_mock_" + UUID.randomUUID().toString().substring(0, 8);
-        // ---------------------------------
+        try {
+            String stripeTxId = paymentGatewayAdapter.capturePayment(
+                    order.getId(), 
+                    order.getTotalAmount(), 
+                    request.getPaymentMethodId()
+            );
 
-        if (externalSuccess) {
             order.setStatus(OrderStatus.PAID);
             orderRepository.save(order);
 
@@ -61,17 +61,17 @@ public class PaymentService {
                     .build());
 
             log.info("Payment SUCCESS for Order #{}. Transaction ID: {} (Persisted in Outbox)", order.getId(), stripeTxId);
-            
+
             return PaymentResponse.builder()
                     .transactionId(stripeTxId)
                     .status("SUCCESS")
-                    .message("Payment captured successfully via Stripe.")
+                    .message("Payment captured successfully via Payment Gateway.")
                     .build();
-        } else {
-            log.error("Payment FAILED for Order #{}", order.getId());
+        } catch (Exception e) {
+            log.error("Payment FAILED for Order #{}: {}", order.getId(), e.getMessage());
             return PaymentResponse.builder()
                     .status("FAILED")
-                    .message("Stripe gateway rejected the transaction.")
+                    .message("Gateway rejected transaction: " + e.getMessage())
                     .build();
         }
     }

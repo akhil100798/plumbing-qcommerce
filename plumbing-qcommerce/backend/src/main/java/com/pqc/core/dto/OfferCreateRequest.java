@@ -1,0 +1,1 @@
+package com.pqc.core.dto; import com.pqc.core.entity.*; import java.math.BigDecimal; import java.time.LocalDateTime; public record OfferCreateRequest(String code,String title,String description,DiscountType discountType,BigDecimal discountValue,BigDecimal minOrderAmount,BigDecimal maxDiscountAmount,Integer usageLimit,Role targetRole,LocalDateTime startsAt,LocalDateTime endsAt){}

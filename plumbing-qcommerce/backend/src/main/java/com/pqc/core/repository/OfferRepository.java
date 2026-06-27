@@ -1,0 +1,1 @@
+package com.pqc.core.repository; import com.pqc.core.entity.Offer; import org.springframework.data.jpa.repository.*; public interface OfferRepository extends JpaRepository<Offer,Long>,JpaSpecificationExecutor<Offer>{boolean existsByCodeIgnoreCase(String code);}
