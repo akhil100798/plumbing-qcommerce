@@ -6,6 +6,7 @@ import com.pqc.core.repository.ProductRepository;
 import com.pqc.core.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -16,13 +17,15 @@ import java.util.stream.Collectors;
  *
  * Aggregates MongoDB audit log events to identify high-demand products
  * and surfaces low-stock alerts based on rolling order frequency.
+ * When MongoDB is not configured (e.g. prod without Atlas), the service
+ * degrades gracefully using SKU-hash heuristics alone.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class DemandForecastService {
 
-    private final AuditLogEventRepository auditLogEventRepository;
+    private final ObjectProvider<AuditLogEventRepository> auditLogEventRepositoryProvider;
     private final StockRepository stockRepository;
     private final ProductRepository productRepository;
 
@@ -40,12 +43,14 @@ public class DemandForecastService {
     public List<Map<String, Object>> getTopDemandedProducts(int topN) {
         log.info("Computing demand forecast for top {} products", topN);
 
-        // Aggregate ORDER_PAID events from MongoDB audit log
+        // Aggregate ORDER_PAID events from MongoDB audit log (optional — degrades gracefully if MongoDB absent)
+        AuditLogEventRepository auditRepo = auditLogEventRepositoryProvider.getIfAvailable();
         List<com.pqc.core.document.AuditLogEvent> paidEvents =
-                auditLogEventRepository.findByEventType("ORDER_PAID");
+                auditRepo != null
+                        ? auditRepo.findByEventType("ORDER_PAID")
+                        : Collections.emptyList();
 
-        // Build a frequency map: aggregateId (order id) → count
-        // We use aggregateType=SERVICE_ORDER entries from audit log
+        // Build a frequency map: aggregateType → count
         Map<String, Long> orderFrequency = paidEvents.stream()
                 .collect(Collectors.groupingBy(
                         e -> e.getAggregateType() != null ? e.getAggregateType() : "UNKNOWN",
