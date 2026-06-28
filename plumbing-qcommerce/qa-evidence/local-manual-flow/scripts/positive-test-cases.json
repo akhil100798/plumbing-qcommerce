@@ -1,0 +1,87 @@
+[
+  {
+    "id": "POS-AUTH-001",
+    "area": "Authentication",
+    "role": "Customer",
+    "title": "Customer can login with seeded local credentials",
+    "expected": "HTTP 200 with JWT token"
+  },
+  {
+    "id": "POS-STORE-001",
+    "area": "Store",
+    "role": "Store Manager",
+    "title": "Store manager can create a store",
+    "expected": "HTTP 200 with store id and manager"
+  },
+  {
+    "id": "POS-STORE-002",
+    "area": "Store",
+    "role": "Authenticated User",
+    "title": "Authenticated user can read store list",
+    "expected": "HTTP 200 with stores array"
+  },
+  {
+    "id": "POS-ORDER-001",
+    "area": "Customer Flow",
+    "role": "Customer",
+    "title": "Customer can create a plumbing service order",
+    "expected": "HTTP 200 with PENDING order"
+  },
+  {
+    "id": "POS-ORDER-002",
+    "area": "Plumber Flow",
+    "role": "Plumber",
+    "title": "Plumber can accept a pending order",
+    "expected": "HTTP 200 with ACCEPTED order"
+  },
+  {
+    "id": "POS-ORDER-003",
+    "area": "Plumber Flow",
+    "role": "Plumber",
+    "title": "Assigned plumber can start accepted order",
+    "expected": "HTTP 200 with IN_PROGRESS order"
+  },
+  {
+    "id": "POS-ORDER-004",
+    "area": "Plumber Flow",
+    "role": "Plumber",
+    "title": "Assigned plumber can complete in-progress order with parts charge",
+    "expected": "HTTP 200 with COMPLETED order and total amount"
+  },
+  {
+    "id": "POS-LOG-001",
+    "area": "Service Log",
+    "role": "Plumber",
+    "title": "Assigned plumber can create service log with parts used",
+    "expected": "HTTP 200 with saved log"
+  },
+  {
+    "id": "POS-LOG-002",
+    "area": "Service Log",
+    "role": "Admin",
+    "title": "Admin can read service logs by order",
+    "expected": "HTTP 200 with log list"
+  },
+  {
+    "id": "POS-ADMIN-001",
+    "area": "Admin",
+    "role": "Admin",
+    "title": "Admin can read platform metrics",
+    "expected": "HTTP 200 with metrics payload"
+  },
+  {
+    "id": "POS-EDGE-001",
+    "area": "Edge Gateway",
+    "role": "Plumber",
+    "title": "Authenticated plumber socket can publish valid location",
+    "expected": "Socket ack ok=true"
+  },
+  {
+    "id": "POS-EDGE-002",
+    "area": "Edge Gateway",
+    "role": "Customer",
+    "title": "Authenticated customer can request nearby plumbers",
+    "expected": "HTTP 200 with notified plumber list"
+  }
+]
+

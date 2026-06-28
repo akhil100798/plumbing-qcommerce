@@ -25,8 +25,8 @@ spring:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:localhost}
       port: ${SPRING_DATA_REDIS_PORT:6379}
-    mongodb:
-      uri: ${SPRING_DATA_MONGODB_URI:mongodb://admin:local-mongo-password@localhost:27017/plumbing_commerce?authSource=admin}
+  mongodb:
+    uri: ${SPRING_MONGODB_URI:mongodb://admin:local-mongo-password@localhost:27017/plumbing_commerce?authSource=admin}
 
   # Kafka Event Bus
   kafka:

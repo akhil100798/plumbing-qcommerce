@@ -1,0 +1,73 @@
+[
+  {
+    "id": "NEG-AUTH-001",
+    "area": "Authentication",
+    "role": "Guest",
+    "title": "Login fails with wrong password",
+    "expected": "HTTP 401"
+  },
+  {
+    "id": "NEG-SEC-001",
+    "area": "Security",
+    "role": "Guest",
+    "title": "Unauthenticated user cannot read stores",
+    "expected": "HTTP 401"
+  },
+  {
+    "id": "NEG-SEC-002",
+    "area": "Security",
+    "role": "Customer",
+    "title": "Customer cannot create store",
+    "expected": "HTTP 403"
+  },
+  {
+    "id": "NEG-ORDER-001",
+    "area": "Customer Flow",
+    "role": "Customer",
+    "title": "Customer cannot create order with invalid latitude",
+    "expected": "HTTP 400"
+  },
+  {
+    "id": "NEG-ORDER-002",
+    "area": "Plumber Flow",
+    "role": "Customer",
+    "title": "Customer cannot accept an order",
+    "expected": "HTTP 403"
+  },
+  {
+    "id": "NEG-ORDER-003",
+    "area": "Plumber Flow",
+    "role": "Plumber",
+    "title": "Plumber cannot complete before accepting and starting",
+    "expected": "HTTP 403 or 409"
+  },
+  {
+    "id": "NEG-ADMIN-001",
+    "area": "Admin",
+    "role": "Store Manager",
+    "title": "Store manager cannot read admin metrics",
+    "expected": "HTTP 403"
+  },
+  {
+    "id": "NEG-EDGE-001",
+    "area": "Edge Gateway",
+    "role": "Guest",
+    "title": "Unauthenticated nearby dispatch is rejected",
+    "expected": "HTTP 401"
+  },
+  {
+    "id": "NEG-EDGE-002",
+    "area": "Edge Gateway",
+    "role": "Customer",
+    "title": "Customer cannot emit plumber location ping",
+    "expected": "Socket ack error"
+  },
+  {
+    "id": "NEG-EDGE-003",
+    "area": "Edge Gateway",
+    "role": "Customer",
+    "title": "Nearby dispatch rejects invalid coordinates",
+    "expected": "HTTP 400"
+  }
+]
+

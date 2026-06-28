@@ -1,0 +1,658 @@
+[
+  {
+    "id": "ENV-HEALTH-001",
+    "polarity": "positive",
+    "area": "Environment",
+    "role": "System",
+    "title": "Backend readiness endpoint is UP",
+    "expected": "HTTP 200 with UP status",
+    "actual": "HTTP 200",
+    "passed": true,
+    "payload": {
+      "status": "UP",
+      "timestamp": "2026-06-19T10:39:24.897861420Z"
+    },
+    "screenshot": "screenshots/ENV-HEALTH-001.png"
+  },
+  {
+    "id": "ENV-HEALTH-002",
+    "polarity": "positive",
+    "area": "Environment",
+    "role": "System",
+    "title": "Edge readiness endpoint is UP",
+    "expected": "HTTP 200 with UP status",
+    "actual": "HTTP 200",
+    "passed": true,
+    "payload": {
+      "status": "UP"
+    },
+    "screenshot": "screenshots/ENV-HEALTH-002.png"
+  },
+  {
+    "id": "UI-ADMIN-001",
+    "area": "Admin UI",
+    "role": "Store Manager",
+    "title": "Admin store manager dashboard shows authenticated live gateway",
+    "url": "http://localhost:3100",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "expectedText": [
+      "Gateway Status:",
+      "LIVE",
+      "Live Active Jobs",
+      "Hardware Inventory"
+    ],
+    "polarity": "positive",
+    "expected": "Visible text includes: Gateway Status:, LIVE, Live Active Jobs, Hardware Inventory",
+    "actual": "HTTP 200",
+    "passed": true,
+    "screenshot": "screenshots/UI-ADMIN-001.png",
+    "payload": {
+      "text": "PlumbCommerce | Store Manager\nGateway Status:\nLIVE\nAuthenticated edge connection\nLive Active Jobs\n0 Alerts\n\nAwaiting incoming real-time requests...\n\nHardware Inventory\n1.5 inch PVC Pipes\n142\nTeflon Tape (Rolls)\n3 (Low)\nAngle Valves\n18\nOrder Restock\nTOTAL DAILY REVENUE\nRs. 42,850\n+14.2% from yesterday",
+      "messages": []
+    }
+  },
+  {
+    "id": "UI-ADMIN-002",
+    "area": "Admin UI",
+    "role": "Admin",
+    "title": "Admin analytics page renders KPI and inventory panels",
+    "url": "http://localhost:3100/analytics",
+    "viewport": {
+      "width": 1366,
+      "height": 900
+    },
+    "expectedText": [
+      "Platform Analytics",
+      "Total Revenue",
+      "Active Plumbers",
+      "Store Inventory Alerts"
+    ],
+    "polarity": "positive",
+    "expected": "Visible text includes: Platform Analytics, Total Revenue, Active Plumbers, Store Inventory Alerts",
+    "actual": "HTTP 200",
+    "passed": false,
+    "screenshot": "screenshots/UI-ADMIN-002.png",
+    "payload": {
+      "text": "PlumbCommerce | Global Admin\nDashboard\nAnalytics\nPlumbers\nStores\nPlatform Analytics\nExport Report\nTotal Revenue (LIVE)\nRs. 0\n\nReal-time\n\nActive Plumbers\n0\n\nVerified & Online\n\nTotal Job Volume\n0\n\nCummulative Volume\n\nPending Actions\n0\n\nAwaiting Assignments\n\nJob Volume by City\nMumbai\nBangalore\nDelhi\nPune\nStore Inventory Alerts\n\nStore #142 (Andheri East)\n\nTeflon Tape (Rolls) stock critical\n\n3 remaining\n\nRestock Priority\n\nStore #088 (Indiranagar)\n\n1 inch CPVC Pipes out of stock\n\n0 remaining\n\nRestocked Delayed\n\nStore #211 (Koramangala)\n\nWhite Cement 1kg low\n\n12 remaining\n\nWatch",
+      "messages": [
+        "warning: No admin token found in localStorage. Dashboard showing stale/mock data."
+      ]
+    }
+  },
+  {
+    "id": "UI-CUSTOMER-001",
+    "area": "Customer UI",
+    "role": "Customer",
+    "title": "Customer simulator renders authenticated service workflow",
+    "url": "http://127.0.0.1:19401",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "expectedText": [
+      "Connected to dispatch edge",
+      "Quick Assign",
+      "Pick a Store",
+      "Direct Plumber"
+    ],
+    "polarity": "positive",
+    "expected": "Visible text includes: Connected to dispatch edge, Quick Assign, Pick a Store, Direct Plumber",
+    "actual": "HTTP 200",
+    "passed": true,
+    "screenshot": "screenshots/UI-CUSTOMER-001.png",
+    "payload": {
+      "text": "PlumbCommerce\nNeed a fix fast?\nConnected to dispatch edge\nSigned in as customer@plumb.local\nSelect Service Workflow\nQuick Assign\nInstant dispatch of the nearest available plumber using secure edge routing.\nPick a Store\nBrowse hardware stores and dispatch specific plumbers assigned to them.\nDirect Plumber\nReview ratings and book a specific expert plumber directly.",
+      "messages": []
+    }
+  },
+  {
+    "id": "UI-PLUMBER-001",
+    "area": "Plumber UI",
+    "role": "Plumber",
+    "title": "Plumber simulator renders authenticated availability screen",
+    "url": "http://127.0.0.1:19402",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "expectedText": [
+      "Connected to dispatch edge",
+      "AVAILABILITY STATUS",
+      "OFFLINE"
+    ],
+    "polarity": "positive",
+    "expected": "Visible text includes: Connected to dispatch edge, AVAILABILITY STATUS, OFFLINE",
+    "actual": "HTTP 200",
+    "passed": true,
+    "screenshot": "screenshots/UI-PLUMBER-001.png",
+    "payload": {
+      "text": "PlumbCommerce | Partner\nConnected to dispatch edge\nSigned in as plumber1@plumb.local\nAVAILABILITY STATUS\nOFFLINE\nGo online to receive routing jobs.",
+      "messages": []
+    }
+  },
+  {
+    "id": "POS-AUTH-ADMIN",
+    "polarity": "positive",
+    "area": "Authentication",
+    "role": "admin",
+    "title": "admin seeded user can login",
+    "expected": "HTTP 200 with JWT token",
+    "actual": "HTTP 200",
+    "passed": true,
+    "payload": {
+      "role": "ADMIN",
+      "token": "eyJhbGciOiJIUzI1NiJ9.eyJ...redacted",
+      "email": "admin@plumb.local",
+      "userId": 1
+    },
+    "screenshot": "screenshots/POS-AUTH-ADMIN.png"
+  },
+  {
+    "id": "POS-AUTH-MANAGER",
+    "polarity": "positive",
+    "area": "Authentication",
+    "role": "manager",
+    "title": "manager seeded user can login",
+    "expected": "HTTP 200 with JWT token",
+    "actual": "HTTP 200",
+    "passed": true,
+    "payload": {
+      "role": "STORE_MANAGER",
+      "token": "eyJhbGciOiJIUzI1NiJ9.eyJ...redacted",
+      "email": "manager@plumb.local",
+      "userId": 2
+    },
+    "screenshot": "screenshots/POS-AUTH-MANAGER.png"
+  },
+  {
+    "id": "POS-AUTH-CUSTOMER",
+    "polarity": "positive",
+    "area": "Authentication",
+    "role": "customer",
+    "title": "customer seeded user can login",
+    "expected": "HTTP 200 with JWT token",
+    "actual": "HTTP 200",
+    "passed": true,
+    "payload": {
+      "role": "CUSTOMER",
+      "token": "eyJhbGciOiJIUzI1NiJ9.eyJ...redacted",
+      "email": "customer@plumb.local",
+      "userId": 3
+    },
+    "screenshot": "screenshots/POS-AUTH-CUSTOMER.png"
+  },
+  {
+    "id": "POS-AUTH-PLUMBER1",
+    "polarity": "positive",
+    "area": "Authentication",
+    "role": "plumber1",
+    "title": "plumber1 seeded user can login",
+    "expected": "HTTP 200 with JWT token",
+    "actual": "HTTP 200",
+    "passed": true,
+    "payload": {
+      "role": "PLUMBER",
+      "token": "eyJhbGciOiJIUzI1NiJ9.eyJ...redacted",
+      "email": "plumber1@plumb.local",
+      "userId": 4
+    },
+    "screenshot": "screenshots/POS-AUTH-PLUMBER1.png"
+  },
+  {
+    "id": "POS-AUTH-PLUMBER2",
+    "polarity": "positive",
+    "area": "Authentication",
+    "role": "plumber2",
+    "title": "plumber2 seeded user can login",
+    "expected": "HTTP 200 with JWT token",
+    "actual": "HTTP 200",
+    "passed": true,
+    "payload": {
+      "role": "PLUMBER",
+      "token": "eyJhbGciOiJIUzI1NiJ9.eyJ...redacted",
+      "email": "plumber2@plumb.local",
+      "userId": 5
+    },
+    "screenshot": "screenshots/POS-AUTH-PLUMBER2.png"
+  },
+  {
+    "id": "NEG-AUTH-001",
+    "polarity": "negative",
+    "area": "Authentication",
+    "role": "Guest",
+    "title": "Login fails with wrong password",
+    "expected": "HTTP 401",
+    "actual": "HTTP 401",
+    "passed": true,
+    "payload": {
+      "error": "Invalid credentials"
+    },
+    "screenshot": "screenshots/NEG-AUTH-001.png"
+  },
+  {
+    "id": "NEG-SEC-001",
+    "polarity": "negative",
+    "area": "Security",
+    "role": "Guest",
+    "title": "Unauthenticated user cannot read stores",
+    "expected": "HTTP 401",
+    "actual": "HTTP 401",
+    "passed": true,
+    "payload": {
+      "timestamp": "2026-06-19T10:39:43.166Z",
+      "status": 401,
+      "error": "Unauthorized",
+      "path": "/api/v1/stores"
+    },
+    "screenshot": "screenshots/NEG-SEC-001.png"
+  },
+  {
+    "id": "NEG-SEC-002",
+    "polarity": "negative",
+    "area": "Store",
+    "role": "Customer",
+    "title": "Customer cannot create store",
+    "expected": "HTTP 403",
+    "actual": "HTTP 403",
+    "passed": true,
+    "payload": {
+      "timestamp": "2026-06-19T10:39:55.825565094",
+      "status": 403,
+      "code": "ACCESS_DENIED",
+      "message": "You do not have permission to perform this operation.",
+      "path": "/api/v1/stores",
+      "correlationId": "519d25c4-3dea-448f-962a-4fa1dbaa1c7d",
+      "fieldErrors": {}
+    },
+    "screenshot": "screenshots/NEG-SEC-002.png"
+  },
+  {
+    "id": "NEG-ORDER-001",
+    "polarity": "negative",
+    "area": "Customer Flow",
+    "role": "Customer",
+    "title": "Customer cannot create order with invalid latitude",
+    "expected": "HTTP 400",
+    "actual": "HTTP 400",
+    "passed": true,
+    "payload": {
+      "timestamp": "2026-06-19T10:39:59.451098261",
+      "status": 400,
+      "code": "VALIDATION_FAILED",
+      "message": "Request validation failed.",
+      "path": "/api/v1/orders",
+      "correlationId": "d3287e44-30cf-4ae0-a6f4-2314891cf5f3",
+      "fieldErrors": {
+        "latitude": "must be less than or equal to 90.0"
+      }
+    },
+    "screenshot": "screenshots/NEG-ORDER-001.png"
+  },
+  {
+    "id": "NEG-ORDER-002",
+    "polarity": "negative",
+    "area": "Plumber Flow",
+    "role": "Customer",
+    "title": "Customer cannot accept an order",
+    "expected": "HTTP 403",
+    "actual": "HTTP 403",
+    "passed": true,
+    "payload": {
+      "timestamp": "2026-06-19T10:40:01.340509448",
+      "status": 403,
+      "code": "ACCESS_DENIED",
+      "message": "You do not have permission to perform this operation.",
+      "path": "/api/v1/orders/1/accept",
+      "correlationId": "44c6d1db-f66a-4187-8fd9-c8af6e16e044",
+      "fieldErrors": {}
+    },
+    "screenshot": "screenshots/NEG-ORDER-002.png"
+  },
+  {
+    "id": "NEG-ORDER-003",
+    "polarity": "negative",
+    "area": "Plumber Flow",
+    "role": "Plumber",
+    "title": "Plumber cannot complete before accepting and starting",
+    "expected": "HTTP 403 or 409",
+    "actual": "HTTP 403",
+    "passed": true,
+    "payload": {
+      "timestamp": "2026-06-19T10:40:02.511817805",
+      "status": 403,
+      "code": "ACCESS_DENIED",
+      "message": "You do not have permission to perform this operation.",
+      "path": "/api/v1/orders/1/complete",
+      "correlationId": "14028265-c574-4a34-a227-544f2b8e6e30",
+      "fieldErrors": {}
+    },
+    "screenshot": "screenshots/NEG-ORDER-003.png"
+  },
+  {
+    "id": "NEG-ADMIN-001",
+    "polarity": "negative",
+    "area": "Admin",
+    "role": "Store Manager",
+    "title": "Store manager cannot read admin metrics",
+    "expected": "HTTP 403",
+    "actual": "HTTP 403",
+    "passed": true,
+    "payload": {
+      "timestamp": "2026-06-19T10:40:03.392022874",
+      "status": 403,
+      "code": "ACCESS_DENIED",
+      "message": "You do not have permission to perform this operation.",
+      "path": "/api/v1/admin/metrics",
+      "correlationId": "b602451e-aca2-4e18-b676-3a7db2621da5",
+      "fieldErrors": {}
+    },
+    "screenshot": "screenshots/NEG-ADMIN-001.png"
+  },
+  {
+    "id": "NEG-EDGE-001",
+    "polarity": "negative",
+    "area": "Edge Gateway",
+    "role": "Guest",
+    "title": "Unauthenticated nearby dispatch is rejected",
+    "expected": "HTTP 401",
+    "actual": "HTTP 401",
+    "passed": true,
+    "payload": {
+      "error": "Access Denied: No Token Provided"
+    },
+    "screenshot": "screenshots/NEG-EDGE-001.png"
+  },
+  {
+    "id": "NEG-EDGE-002",
+    "polarity": "negative",
+    "area": "Edge Gateway",
+    "role": "Customer",
+    "title": "Customer cannot emit plumber location ping",
+    "expected": "Socket ack error",
+    "actual": "{\"error\":\"OPERATION_ERROR\"}",
+    "passed": true,
+    "payload": {
+      "error": "OPERATION_ERROR"
+    },
+    "screenshot": "screenshots/NEG-EDGE-002.png"
+  },
+  {
+    "id": "NEG-EDGE-003",
+    "polarity": "negative",
+    "area": "Edge Gateway",
+    "role": "Customer",
+    "title": "Nearby dispatch rejects invalid coordinates",
+    "expected": "HTTP 400",
+    "actual": "HTTP 400",
+    "passed": true,
+    "payload": {
+      "error": "VALIDATION_ERROR"
+    },
+    "screenshot": "screenshots/NEG-EDGE-003.png"
+  },
+  {
+    "id": "POS-STORE-001",
+    "polarity": "positive",
+    "area": "Store",
+    "role": "Store Manager",
+    "title": "Store manager can create a store",
+    "expected": "HTTP 200 with store id",
+    "actual": "HTTP 200",
+    "passed": true,
+    "payload": {
+      "id": 2,
+      "name": "QA Evidence Hardware 1781865608509",
+      "address": "QA Evidence Street",
+      "latitude": 12.9716,
+      "longitude": 77.5946,
+      "manager": {
+        "id": 2,
+        "email": "manager@plumb.local",
+        "password": "$2a$10$1hCl1AkhEa18Jjw..4y8guu9JQZiVIL0T75U.4pkQ6nvEVq/12wri",
+        "fullName": "Local Manager",
+        "phone": "9000000002",
+        "role": "STORE_MANAGER",
+        "createdAt": "2026-06-19T08:51:08.197757",
+        "updatedAt": "2026-06-19T08:51:08.19779"
+      }
+    },
+    "screenshot": "screenshots/POS-STORE-001.png"
+  },
+  {
+    "id": "POS-STORE-002",
+    "polarity": "positive",
+    "area": "Store",
+    "role": "Customer",
+    "title": "Authenticated customer can read store list",
+    "expected": "HTTP 200 with stores array",
+    "actual": "HTTP 200",
+    "passed": true,
+    "payload": {
+      "count": 2,
+      "first": {
+        "id": 1,
+        "name": "Plumb Local Store",
+        "address": "Local Simulator Hub, Bengaluru",
+        "latitude": 12.9716,
+        "longitude": 77.5946,
+        "manager": {
+          "id": 2,
+          "email": "manager@plumb.local",
+          "password": "$2a$10$1hCl1AkhEa18Jjw..4y8guu9JQZiVIL0T75U.4pkQ6nvEVq/12wri",
+          "fullName": "Local Manager",
+          "phone": "9000000002",
+          "role": "STORE_MANAGER",
+          "createdAt": "2026-06-19T08:51:08.197757",
+          "updatedAt": "2026-06-19T08:51:08.19779",
+          "hibernateLazyInitializer": {}
+        }
+      }
+    },
+    "screenshot": "screenshots/POS-STORE-002.png"
+  },
+  {
+    "id": "POS-ORDER-001",
+    "polarity": "positive",
+    "area": "Customer Flow",
+    "role": "Customer",
+    "title": "Customer can create a plumbing service order",
+    "expected": "HTTP 200 with PENDING order",
+    "actual": "HTTP 200",
+    "passed": true,
+    "payload": {
+      "id": 2,
+      "customerId": 3,
+      "plumberId": null,
+      "storeId": null,
+      "status": "PENDING",
+      "requestType": "NEARBY_AUTO",
+      "description": "Kitchen sink leak from QA evidence suite",
+      "latitude": 37.7749,
+      "longitude": -122.4194,
+      "laborCharge": null,
+      "partsCharge": null,
+      "platformFee": null,
+      "totalAmount": null,
+      "createdAt": "2026-06-19T10:40:10.913264086",
+      "acceptedAt": null,
+      "startedAt": null,
+      "completedAt": null
+    },
+    "screenshot": "screenshots/POS-ORDER-001.png"
+  },
+  {
+    "id": "POS-ORDER-002",
+    "polarity": "positive",
+    "area": "Plumber Flow",
+    "role": "Plumber",
+    "title": "Plumber can accept a pending order",
+    "expected": "HTTP 200 with ACCEPTED order",
+    "actual": "HTTP 200",
+    "passed": true,
+    "payload": {
+      "id": 2,
+      "customerId": 3,
+      "plumberId": 4,
+      "storeId": null,
+      "status": "ACCEPTED",
+      "requestType": "NEARBY_AUTO",
+      "description": "Kitchen sink leak from QA evidence suite",
+      "latitude": 37.7749,
+      "longitude": -122.4194,
+      "laborCharge": null,
+      "partsCharge": null,
+      "platformFee": null,
+      "totalAmount": null,
+      "createdAt": "2026-06-19T10:40:10.913264",
+      "acceptedAt": "2026-06-19T10:40:11.903385955",
+      "startedAt": null,
+      "completedAt": null
+    },
+    "screenshot": "screenshots/POS-ORDER-002.png"
+  },
+  {
+    "id": "POS-ORDER-003",
+    "polarity": "positive",
+    "area": "Plumber Flow",
+    "role": "Plumber",
+    "title": "Assigned plumber can start accepted order",
+    "expected": "HTTP 200 with IN_PROGRESS order",
+    "actual": "HTTP 200",
+    "passed": true,
+    "payload": {
+      "id": 2,
+      "customerId": 3,
+      "plumberId": 4,
+      "storeId": null,
+      "status": "IN_PROGRESS",
+      "requestType": "NEARBY_AUTO",
+      "description": "Kitchen sink leak from QA evidence suite",
+      "latitude": 37.7749,
+      "longitude": -122.4194,
+      "laborCharge": null,
+      "partsCharge": null,
+      "platformFee": null,
+      "totalAmount": null,
+      "createdAt": "2026-06-19T10:40:10.913264",
+      "acceptedAt": "2026-06-19T10:40:11.903386",
+      "startedAt": "2026-06-19T10:40:13.061600874",
+      "completedAt": null
+    },
+    "screenshot": "screenshots/POS-ORDER-003.png"
+  },
+  {
+    "id": "POS-ORDER-004",
+    "polarity": "positive",
+    "area": "Plumber Flow",
+    "role": "Plumber",
+    "title": "Assigned plumber can complete in-progress order with parts charge",
+    "expected": "HTTP 200 with COMPLETED order and total amount",
+    "actual": "HTTP 200",
+    "passed": true,
+    "payload": {
+      "id": 2,
+      "customerId": 3,
+      "plumberId": 4,
+      "storeId": null,
+      "status": "COMPLETED",
+      "requestType": "NEARBY_AUTO",
+      "description": "Kitchen sink leak from QA evidence suite",
+      "latitude": 37.7749,
+      "longitude": -122.4194,
+      "laborCharge": 150,
+      "partsCharge": 125.5,
+      "platformFee": 50,
+      "totalAmount": 325.5,
+      "createdAt": "2026-06-19T10:40:10.913264",
+      "acceptedAt": "2026-06-19T10:40:11.903386",
+      "startedAt": "2026-06-19T10:40:13.061601",
+      "completedAt": "2026-06-19T10:40:13.946948398"
+    },
+    "screenshot": "screenshots/POS-ORDER-004.png"
+  },
+  {
+    "id": "POS-LOG-001",
+    "polarity": "positive",
+    "area": "Service Log",
+    "role": "Plumber",
+    "title": "Assigned plumber can create service log with parts used",
+    "expected": "HTTP 200 with saved service log",
+    "actual": "HTTP 404",
+    "passed": false,
+    "payload": {
+      "message": "Timed out while waiting for a server that matches WritableServerSelector. Client view of cluster state is {type=UNKNOWN, servers=[{address=localhost:27017, type=UNKNOWN, state=CONNECTING, exception={com.mongodb.MongoSocketOpenException: Exception opening socket}, caused by {java.net.ConnectException: Connection refused}}]",
+      "error": "Not Found",
+      "status": 404,
+      "timestamp": "2026-06-19T10:40:45.283217916"
+    },
+    "screenshot": "screenshots/POS-LOG-001.png"
+  },
+  {
+    "id": "POS-LOG-002",
+    "polarity": "positive",
+    "area": "Service Log",
+    "role": "Admin",
+    "title": "Admin can read service logs by order",
+    "expected": "HTTP 200 with service logs",
+    "actual": "HTTP 404",
+    "passed": false,
+    "payload": {
+      "count": 0
+    },
+    "screenshot": "screenshots/POS-LOG-002.png"
+  },
+  {
+    "id": "POS-ADMIN-001",
+    "polarity": "positive",
+    "area": "Admin",
+    "role": "Admin",
+    "title": "Admin can read platform metrics",
+    "expected": "HTTP 200 with metrics payload",
+    "actual": "HTTP 200",
+    "passed": true,
+    "payload": {
+      "activePlumbers": 2,
+      "totalRevenue": 325.5,
+      "totalOrders": 2,
+      "pendingOrders": 1
+    },
+    "screenshot": "screenshots/POS-ADMIN-001.png"
+  },
+  {
+    "id": "POS-EDGE-001",
+    "polarity": "positive",
+    "area": "Edge Gateway",
+    "role": "Plumber",
+    "title": "Authenticated plumber socket can publish valid location",
+    "expected": "Socket ack ok=true",
+    "actual": "{\"ok\":true}",
+    "passed": true,
+    "payload": {
+      "ok": true
+    },
+    "screenshot": "screenshots/POS-EDGE-001.png"
+  },
+  {
+    "id": "POS-EDGE-002",
+    "polarity": "positive",
+    "area": "Edge Gateway",
+    "role": "Customer",
+    "title": "Authenticated customer can request nearby plumbers",
+    "expected": "HTTP 200 with notified plumber list",
+    "actual": "HTTP 200",
+    "passed": true,
+    "payload": {
+      "message": "Job broadcasted to nearby plumbers",
+      "notified": [
+        {
+          "plumberId": "plumber1@plumb.local",
+          "distance": 0.0001
+        }
+      ]
+    },
+    "screenshot": "screenshots/POS-EDGE-002.png"
+  }
+]
