@@ -4,11 +4,13 @@ import com.pqc.core.document.ServiceLog;
 import com.pqc.core.document.ServiceLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -16,7 +18,7 @@ import java.util.List;
 @Slf4j
 public class ServiceLogService {
 
-    private final ServiceLogRepository serviceLogRepository;
+    private final ObjectProvider<ServiceLogRepository> serviceLogRepositoryProvider;
     private final com.pqc.core.repository.OutboxEventRepository outboxRepository;
 
     @Transactional
@@ -40,7 +42,14 @@ public class ServiceLogService {
                 .loggedAt(LocalDateTime.now())
                 .build();
 
-        ServiceLog saved = serviceLogRepository.save(serviceLog);
+        ServiceLog saved = null;
+        ServiceLogRepository serviceLogRepository = serviceLogRepositoryProvider.getIfAvailable();
+        if (serviceLogRepository != null) {
+            saved = serviceLogRepository.save(serviceLog);
+        } else {
+            log.warn("MongoDB is disabled; skipping ServiceLog persistence.");
+            saved = serviceLog;
+        }
 
         // Save to PostgreSQL Outbox for transactional safety
         outboxRepository.save(com.pqc.core.entity.OutboxEvent.builder()
@@ -58,10 +67,21 @@ public class ServiceLogService {
     }
 
     public List<ServiceLog> getLogsByOrder(Long orderId) {
-        return serviceLogRepository.findByOrderId(orderId);
+        ServiceLogRepository serviceLogRepository = serviceLogRepositoryProvider.getIfAvailable();
+        if (serviceLogRepository != null) {
+            return serviceLogRepository.findByOrderId(orderId);
+        }
+        log.warn("MongoDB is disabled; returning empty ServiceLog list.");
+        return new ArrayList<>();
     }
 
     public List<ServiceLog> getLogsByPlumber(Long plumberId) {
-        return serviceLogRepository.findByPlumberId(plumberId);
+        ServiceLogRepository serviceLogRepository = serviceLogRepositoryProvider.getIfAvailable();
+        if (serviceLogRepository != null) {
+            return serviceLogRepository.findByPlumberId(plumberId);
+        }
+        log.warn("MongoDB is disabled; returning empty ServiceLog list.");
+        return new ArrayList<>();
     }
 }
+
