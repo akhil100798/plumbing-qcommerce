@@ -15,6 +15,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 export function MainTabNavigator() {
   return (
     <Tab.Navigator
+      id="main"
       initialRouteName="HomeTab"
       screenOptions={({ route }) => ({
         headerShown: false,

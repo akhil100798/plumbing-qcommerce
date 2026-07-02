@@ -48,12 +48,12 @@ export function MainTabNavigator() {
     >
       <Tab.Screen
         name="Home"
-        component={DashboardScreen}
+        component={DashboardScreen as any}
         options={{ tabBarLabel: 'Home' }}
       />
       <Tab.Screen
         name="Jobs"
-        component={ActiveJobScreen}
+        component={ActiveJobScreen as any}
         options={{ tabBarLabel: 'Jobs' }}
       />
       <Tab.Screen
@@ -63,7 +63,7 @@ export function MainTabNavigator() {
       />
       <Tab.Screen
         name="Materials"
-        component={MaterialRequestScreen}
+        component={MaterialRequestScreen as any}
         initialParams={{ jobId: 'PC123456' }}
         options={{ tabBarLabel: 'Materials' }}
       />
