@@ -66,3 +66,14 @@ management:
   zipkin:
     tracing:
       endpoint: http://localhost:9411/api/v2/spans # Default Zipkin endpoint
+
+app:
+  otp:
+    length: ${OTP_LENGTH:6}
+    expiry-seconds: ${OTP_EXPIRY_SECONDS:300}
+    resend-cooldown-seconds: ${OTP_RESEND_COOLDOWN_SECONDS:60}
+    max-verify-attempts: ${OTP_MAX_VERIFY_ATTEMPTS:5}
+    demo-bypass-enabled: ${OTP_DEMO_BYPASS_ENABLED:false}
+    demo-code: ${OTP_DEMO_CODE:}
+    hash-secret: ${OTP_HASH_SECRET:local-development-only-change-me}
+

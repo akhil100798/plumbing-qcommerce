@@ -5,20 +5,17 @@ import com.pqc.core.entity.Role;
 import com.pqc.core.entity.User;
 import com.pqc.core.repository.UserRepository;
 import com.pqc.core.security.JwtService;
+import com.pqc.core.service.OtpService;
 import com.pqc.core.service.RefreshTokenService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -27,33 +24,15 @@ import java.util.concurrent.TimeUnit;
 public class OtpController {
 
     private final UserRepository userRepository;
-    private final StringRedisTemplate redisTemplate;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final PasswordEncoder passwordEncoder;
-
-    private static final String REDIS_OTP_KEY_PREFIX = "otp:";
-    private final Random random = new Random();
+    private final OtpService otpService;
 
     @PostMapping("/send-otp")
     public ResponseEntity<?> sendOtp(@Valid @RequestBody OtpRequest request) {
         String phone = request.getPhone();
-        
-        // Generate a 6-digit OTP
-        String otp;
-        if (phone.equals("+91 9999999999") || phone.equals("+91 9876543210")) {
-            otp = "123456"; // Static code for testing
-        } else {
-            otp = String.format("%06d", random.nextInt(1000000));
-        }
-
-        // Save to Redis with 5-minute TTL
-        String redisKey = REDIS_OTP_KEY_PREFIX + phone;
-        redisTemplate.opsForValue().set(redisKey, otp, 5, TimeUnit.MINUTES);
-
-        log.info("[OTP SERVICE] Generated OTP for phone {}: {}", phone, otp);
-        System.out.println("[OTP SERVICE] Generated OTP for phone " + phone + ": " + otp);
-
+        otpService.sendOtp(phone);
         return ResponseEntity.ok(Map.of("message", "OTP sent successfully"));
     }
 
@@ -62,20 +41,8 @@ public class OtpController {
         String phone = request.getPhone();
         String code = request.getCode();
 
-        if (code == null || code.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "OTP code is required"));
-        }
-
-        String redisKey = REDIS_OTP_KEY_PREFIX + phone;
-        String cachedOtp = redisTemplate.opsForValue().get(redisKey);
-
-        if (cachedOtp == null || !cachedOtp.equals(code)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Invalid or expired OTP"));
-        }
-
-        // OTP is correct, consume it
-        redisTemplate.delete(redisKey);
+        // Performs secure validation, lockout check, demo bypass and consumption logic inside the service
+        otpService.verifyOtp(phone, code);
 
         // Find or register user
         User user = userRepository.findByPhone(phone).orElse(null);
@@ -113,3 +80,4 @@ public class OtpController {
         ));
     }
 }
+
