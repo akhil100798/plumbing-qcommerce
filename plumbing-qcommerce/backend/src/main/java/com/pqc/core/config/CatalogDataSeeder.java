@@ -8,11 +8,20 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 @Component
+@Profile("!prod & (local | dev | demo | test)")
+@ConditionalOnProperty(
+    prefix = "app.seed",
+    name = "catalog-enabled",
+    havingValue = "true",
+    matchIfMissing = false
+)
 @Order(10)
 @RequiredArgsConstructor
 @Slf4j
@@ -24,6 +33,7 @@ public class CatalogDataSeeder implements CommandLineRunner {
     private final UserRepository userRepository;
     private final StockRepository stockRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SeedProperties seedProperties;
 
     @Override
     public void run(String... args) throws Exception {
@@ -159,7 +169,7 @@ public class CatalogDataSeeder implements CommandLineRunner {
                     return userRepository.save(User.builder()
                             .email(email)
                             .fullName(fullName)
-                            .password(passwordEncoder.encode("password"))
+                            .password(passwordEncoder.encode(seedProperties.getDemoPassword()))
                             .phone(phone)
                             .role(role)
                             .build());
