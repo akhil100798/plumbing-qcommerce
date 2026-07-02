@@ -7,7 +7,7 @@ const DELIVERY_PARTNER_GEO_KEY = 'delivery_partners_location';
  */
 async function updateDeliveryPartnerLocation(partnerId, longitude, latitude) {
     await redis.geoadd(DELIVERY_PARTNER_GEO_KEY, longitude, latitude, String(partnerId));
-    console.log(`Updated live location for Delivery Partner ${partnerId} at [${longitude}, ${latitude}]`);
+    console.log(`Updated live location for Delivery Partner ${partnerId}`);
 }
 
 /**
@@ -36,7 +36,7 @@ async function findNearbyDeliveryPartners(longitude, latitude, radiusKm = 10) {
 async function generateOtp(orderId) {
     const otp = String(Math.floor(1000 + Math.random() * 9000));
     await redis.set(`otp:${orderId}`, otp, 'EX', 900);
-    console.log(`Generated OTP ${otp} for Order ${orderId} in Redis`);
+    console.log(`Generated OTP for Order ${orderId} in Redis`);
     return otp;
 }
 

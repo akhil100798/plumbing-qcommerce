@@ -18,7 +18,7 @@ async function dispatchDeliveryPartners(io, data) {
     const top3 = nearbyPartners.slice(0, 3);
 
     if (top3.length === 0) {
-        console.log(`No active delivery partners found near store coords: [${data.storeLongitude}, ${data.storeLatitude}]`);
+        console.log(`No active delivery partners found near store.`);
         return;
     }
 
