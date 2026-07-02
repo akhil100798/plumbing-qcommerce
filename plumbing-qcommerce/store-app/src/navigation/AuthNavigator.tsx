@@ -10,6 +10,7 @@ const Stack = createStackNavigator<AuthStackParamList>();
 export function AuthNavigator() {
   return (
     <Stack.Navigator
+      id="auth"
       initialRouteName="Splash"
       screenOptions={{
         headerShown: false,
