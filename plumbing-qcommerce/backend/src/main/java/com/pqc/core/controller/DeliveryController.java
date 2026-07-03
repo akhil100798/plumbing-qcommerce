@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.core.env.Environment;
+import com.pqc.core.service.DeliveryOtpService;
 import java.util.List;
 
 @RestController
@@ -23,6 +25,8 @@ public class DeliveryController {
     private final DeliveryService deliveryService;
     private final ProductOrderRepository orderRepository;
     private final CurrentUser currentUser;
+    private final DeliveryOtpService deliveryOtpService;
+    private final Environment env;
 
     @GetMapping("/available")
     @PreAuthorize("hasRole('DELIVERY_PARTNER')")
@@ -61,6 +65,51 @@ public class DeliveryController {
         }
         ProductOrder confirmedOrder = checkoutService.confirmDelivery(orderId, code);
         return ResponseEntity.ok(confirmedOrder);
+    }
+
+    @PostMapping("/{orderId}/otp/generate")
+    @PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
+    public ResponseEntity<java.util.Map<String, Object>> generateOtp(@PathVariable Long orderId) {
+        ProductOrder order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+        
+        // Correct handover/delivery status check
+        if (order.getStatus() != ProductOrderStatus.PACKING &&
+            order.getStatus() != ProductOrderStatus.READY_FOR_PICKUP &&
+            order.getStatus() != ProductOrderStatus.CONFIRMED) {
+            throw new IllegalStateException("Cannot generate OTP for order in status: " + order.getStatus());
+        }
+
+        if (order.getDeliveryPartner() == null) {
+            throw new IllegalStateException("No delivery partner assigned to order #" + orderId);
+        }
+        String otp = deliveryOtpService.generateOtp(order.getId(), order.getDeliveryPartner().getId());
+        order.setDeliveryOtp(otp);
+        orderRepository.save(order);
+        
+        boolean isProd = env.getActiveProfiles() != null && java.util.Arrays.asList(env.getActiveProfiles()).contains("prod");
+        if (isProd) {
+            return ResponseEntity.ok(java.util.Map.of("orderId", orderId, "status", "OTP_SENT"));
+        } else {
+            return ResponseEntity.ok(java.util.Map.of("orderId", orderId, "otp", otp, "status", "OTP_SENT"));
+        }
+    }
+
+    @PostMapping("/{orderId}/verify-otp")
+    @PreAuthorize("hasAnyRole('DELIVERY_PARTNER', 'ADMIN')")
+    public ResponseEntity<Boolean> verifyOtp(
+            @PathVariable Long orderId,
+            @RequestBody OtpRequest body) {
+        if (body == null || body.getOtp() == null) {
+            throw new IllegalArgumentException("OTP code must be provided.");
+        }
+        ProductOrder order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+        if (order.getDeliveryPartner() == null) {
+            throw new IllegalStateException("No delivery partner assigned to order #" + orderId);
+        }
+        boolean isValid = deliveryOtpService.verifyOtp(order.getId(), order.getDeliveryPartner().getId(), body.getOtp());
+        return ResponseEntity.ok(isValid);
     }
 
     @GetMapping("/{orderId}/status")

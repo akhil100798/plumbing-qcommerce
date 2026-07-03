@@ -49,9 +49,17 @@ yarn-error.log*
 
 # Environment & Secrets
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.render.example
+!.env.cloudrun.example
 *.pem
+*.key
+*.p12
+*.jks
+service-account*.json
+google-credentials*.json
+firebase-service-account*.json
 .DS_Store
 
 # Testing & Coverage
@@ -65,6 +73,7 @@ desktop.ini
 
 # Temporary & Build Files
 *.log
+hs_err_pid*.log
 *.tmp
 *.temp
 *.bak

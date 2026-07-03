@@ -22,6 +22,7 @@ public class DeliveryService {
     private final UserRepository userRepository;
     private final OutboxEventRepository outboxRepository;
     private final CurrentUser currentUser;
+    private final DeliveryOtpService deliveryOtpService;
 
     /**
      * Assigns a delivery partner to an order and updates status to OUT_FOR_DELIVERY.
@@ -47,24 +48,26 @@ public class DeliveryService {
             throw new IllegalArgumentException("User " + partnerId + " is not a delivery partner.");
         }
 
-        if (otp == null || otp.trim().isEmpty()) {
-            // Generate random 4-digit OTP if not provided
-            otp = String.format("%04d", new java.util.Random().nextInt(10000));
-        }
-
         order.setDeliveryPartner(partner);
+        
+        if (otp == null || otp.trim().isEmpty()) {
+            otp = deliveryOtpService.generateOtp(order.getId(), partner.getId());
+        } else {
+            deliveryOtpService.saveExplicitOtp(order.getId(), partner.getId(), otp);
+        }
+        
         order.setDeliveryOtp(otp);
         order.setEstimatedDeliveryAt(LocalDateTime.now().plusMinutes(30));
         order.setStatus(ProductOrderStatus.OUT_FOR_DELIVERY);
 
         ProductOrder savedOrder = orderRepository.save(order);
 
-        // Save to Outbox for Live WebSocket tracking in Edge Service
+        // Save to Outbox for Live WebSocket tracking in Edge Service (OTP redacted for security)
         String payload = "{" +
                 "\"orderId\":" + savedOrder.getId() + "," +
                 "\"deliveryPartnerId\":" + partnerId + "," +
                 "\"deliveryPartnerName\":\"" + partner.getFullName() + "\"," +
-                "\"deliveryOtp\":\"" + otp + "\"," +
+                "\"deliveryOtp\":\"[REDACTED]\"," +
                 "\"customerId\":" + savedOrder.getCustomer().getId() +
                 "}";
 
@@ -78,7 +81,7 @@ public class DeliveryService {
                 .build();
         outboxRepository.save(outboxEvent);
 
-        log.info("Order #{} assigned to delivery partner #{}. OTP generated: {}", orderId, partnerId, otp);
+        log.info("Order #{} assigned to delivery partner #{}.", orderId, partnerId);
         return savedOrder;
     }
 }

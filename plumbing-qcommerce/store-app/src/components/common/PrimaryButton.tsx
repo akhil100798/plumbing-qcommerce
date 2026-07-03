@@ -1,11 +1,11 @@
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, ViewStyle, StyleProp } from 'react-native';
 import { colors, borderRadius, spacing, typography } from '../../theme';
 
 interface PrimaryButtonProps {
   title: string;
   onPress: () => void;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   loading?: boolean;
   disabled?: boolean;
 }

@@ -1,0 +1,129 @@
+name: PlumbCommerce CI/CD Release Gates
+
+on:
+  push:
+    branches: [ main, master, phase12e-mobile-release-gates ]
+  pull_request:
+    branches: [ main, master, phase12e-mobile-release-gates ]
+
+jobs:
+  backend-gate:
+    name: Backend CI (Spring Boot)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+          cache-dependency-path: plumbing-qcommerce/backend/pom.xml
+
+      - name: Build and run tests
+        run: |
+          cd plumbing-qcommerce/backend
+          chmod +x mvnw
+          ./mvnw clean test
+
+  edge-gate:
+    name: Edge Service CI (Node.js)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: plumbing-qcommerce/edge-service/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd plumbing-qcommerce/edge-service
+          npm ci
+
+      - name: Run tests
+        run: |
+          cd plumbing-qcommerce/edge-service
+          npm test
+
+      - name: Check build correctness
+        run: |
+          cd plumbing-qcommerce/edge-service
+          npm run build
+
+  admin-gate:
+    name: Admin Portal CI (Next.js)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: plumbing-qcommerce/admin-portal/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd plumbing-qcommerce/admin-portal
+          npm ci
+
+      - name: Run typecheck
+        run: |
+          cd plumbing-qcommerce/admin-portal
+          npm run typecheck
+
+      - name: Run tests
+        run: |
+          cd plumbing-qcommerce/admin-portal
+          npm test
+
+      - name: Build production bundle
+        run: |
+          cd plumbing-qcommerce/admin-portal
+          npm run build
+
+  mobile-gates:
+    name: Mobile Apps CI
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app-directory: [ customer-app, plumber-app, store-app ]
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: plumbing-qcommerce/${{ matrix.app-directory }}/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd plumbing-qcommerce/${{ matrix.app-directory }}
+          npm ci
+
+      - name: Run typecheck
+        run: |
+          cd plumbing-qcommerce/${{ matrix.app-directory }}
+          npm run typecheck
+
+      - name: Run tests
+        run: |
+          cd plumbing-qcommerce/${{ matrix.app-directory }}
+          npm test
+
+      - name: Export web bundle (Expo)
+        run: |
+          cd plumbing-qcommerce/${{ matrix.app-directory }}
+          npm run build

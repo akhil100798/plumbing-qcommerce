@@ -30,6 +30,7 @@ public class CheckoutService {
     private final CurrentUser currentUser;
     private final OutboxEventRepository outboxRepository;
     private final ServiceOrderRepository serviceOrderRepository;
+    private final DeliveryOtpService deliveryOtpService;
 
     /**
      * Reserve Stock - Phase 1 Inventory reservation logic
@@ -241,7 +242,12 @@ public class CheckoutService {
             throw new IllegalStateException("Order #" + orderId + " is not out for delivery.");
         }
 
-        if (order.getDeliveryOtp() == null || !order.getDeliveryOtp().equals(otp)) {
+        if (order.getDeliveryPartner() == null) {
+            throw new IllegalStateException("No delivery partner assigned to order #" + orderId);
+        }
+
+        boolean isValid = deliveryOtpService.verifyOtp(order.getId(), order.getDeliveryPartner().getId(), otp);
+        if (!isValid) {
             throw new IllegalArgumentException("Invalid OTP provided for order #" + orderId);
         }
 
@@ -301,7 +307,7 @@ public class CheckoutService {
                 .status(order.getStatus().name())
                 .deliveryPartnerName(order.getDeliveryPartner() != null ? order.getDeliveryPartner().getFullName() : null)
                 .deliveryPartnerPhone(order.getDeliveryPartner() != null ? order.getDeliveryPartner().getPhone() : null)
-                .deliveryOtp(order.getDeliveryOtp())
+                .deliveryOtp(null)
                 .estimatedDeliveryAt(order.getEstimatedDeliveryAt())
                 .createdAt(order.getCreatedAt())
                 .items(items);
@@ -371,14 +377,22 @@ public class CheckoutService {
             order.setDeliveryPartner(partner);
         }
 
+        if (order.getDeliveryPartner() == null) {
+            throw new IllegalStateException("No delivery partner assigned to order #" + id);
+        }
+
         String otp = request.getOtp();
         if (otp == null || otp.trim().isEmpty()) {
             if (order.getDeliveryOtp() == null) {
-                otp = String.format("%04d", new java.util.Random().nextInt(10000));
+                otp = deliveryOtpService.generateOtp(order.getId(), order.getDeliveryPartner().getId());
                 order.setDeliveryOtp(otp);
+            } else {
+                otp = order.getDeliveryOtp();
+                deliveryOtpService.saveExplicitOtp(order.getId(), order.getDeliveryPartner().getId(), otp);
             }
         } else {
             order.setDeliveryOtp(otp);
+            deliveryOtpService.saveExplicitOtp(order.getId(), order.getDeliveryPartner().getId(), otp);
         }
 
         if (order.getEstimatedDeliveryAt() == null) {

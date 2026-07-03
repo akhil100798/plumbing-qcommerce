@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, Text, View, FlatList, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { AppHeader } from '../../components/common/AppHeader';

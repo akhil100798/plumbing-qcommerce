@@ -22,6 +22,7 @@ vi.mock('react-native', () => ({
   View: 'View',
   Platform: { OS: 'web' },
   StatusBar: 'StatusBar',
+  KeyboardAvoidingView: 'KeyboardAvoidingView',
 }));
 
 vi.mock('socket.io-client', () => ({

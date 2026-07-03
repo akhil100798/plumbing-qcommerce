@@ -8,7 +8,7 @@ export type MainTabParamList = {
   Home: undefined;
   Jobs: undefined;
   Earnings: undefined;
-  Materials: undefined;
+  Materials: { jobId: string } | undefined;
   Profile: undefined;
 };
 

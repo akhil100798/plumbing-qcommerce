@@ -183,7 +183,7 @@ class DeliveryFlowIntegrationTest {
                 .anyMatch(event -> "delivery-assigned".equals(event.getTopic()) &&
                         "DELIVERY_ASSIGNED".equals(event.getEventType()) &&
                         event.getPayload().contains(String.valueOf(order.getId())) &&
-                        event.getPayload().contains("9876"));
+                        event.getPayload().contains("[REDACTED]"));
         assertTrue(foundAssignedEvent, "Outbox event for delivery-assigned was not created.");
 
         // 3. Confirm delivery as customer with correct OTP

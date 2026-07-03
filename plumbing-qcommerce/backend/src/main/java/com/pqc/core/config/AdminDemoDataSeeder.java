@@ -58,12 +58,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
-@Profile("!test")
+@Profile("!prod & (local | dev | demo | test)")
+@ConditionalOnProperty(
+    prefix = "app.seed",
+    name = "admin-demo-enabled",
+    havingValue = "true",
+    matchIfMissing = false
+)
 @Order(20)
 @RequiredArgsConstructor
 @Slf4j
@@ -85,6 +93,7 @@ public class AdminDemoDataSeeder implements CommandLineRunner {
     private final MarketingBannerRepository marketingBannerRepository;
     private final MarketingNotificationRepository marketingNotificationRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SeedProperties seedProperties;
 
     @Override
     @Transactional
@@ -96,7 +105,7 @@ public class AdminDemoDataSeeder implements CommandLineRunner {
             return;
         }
 
-        log.info("Ensuring admin demo data for Phase 10...");
+        log.info("Admin demo seeding enabled for non-production profile.");
 
         User supportAdmin = ensureUser("support@plumbcommerce.com", "Demo Support Admin", "5555555505", Role.SUPPORT_ADMIN);
         User marketingAdmin = ensureUser("marketing@plumbcommerce.com", "Demo Marketing Admin", "5555555506", Role.MARKETING_ADMIN);
@@ -206,7 +215,7 @@ public class AdminDemoDataSeeder implements CommandLineRunner {
                         .email(email)
                         .fullName(fullName)
                         .phone(phone)
-                        .password(passwordEncoder.encode("password"))
+                        .password(passwordEncoder.encode(seedProperties.getDemoPassword()))
                         .role(role)
                         .status(UserStatus.ACTIVE)
                         .build()));

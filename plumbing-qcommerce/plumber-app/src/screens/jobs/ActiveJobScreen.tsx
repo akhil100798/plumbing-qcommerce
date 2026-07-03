@@ -4,6 +4,7 @@ import {
   Text,
   View,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
@@ -13,7 +14,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { CustomerCard } from '../../components/cards/CustomerCard';
 import { ActiveJobCard } from '../../components/cards/ActiveJobCard';
-import { colors, spacing, typography } from '../../theme';
+import { colors, spacing, typography, borderRadius } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
 import { updateJobStatus } from '../../redux/slices/jobSlice';
