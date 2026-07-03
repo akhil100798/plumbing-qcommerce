@@ -1,7 +1,39 @@
+process.env.MOCK_EDGE = 'true';
 const http = require('http');
 const { io: Client } = require('socket.io-client');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
+
+const EventEmitter = require('events');
+
+vi.mock('ioredis', () => {
+  class MockRedis extends EventEmitter {
+    constructor() {
+      super();
+      this.status = 'ready';
+    }
+    duplicate() {
+      return new MockRedis();
+    }
+    disconnect() {
+      this.status = 'end';
+    }
+    call() {
+      return Promise.resolve([]);
+    }
+    psubscribe() { return Promise.resolve(); }
+    punsubscribe() { return Promise.resolve(); }
+    subscribe() { return Promise.resolve(); }
+    unsubscribe() { return Promise.resolve(); }
+    publish() { return Promise.resolve(); }
+  }
+  return MockRedis;
+});
+
+vi.mock('@socket.io/redis-adapter', () => ({
+  createAdapter: vi.fn().mockReturnValue(vi.fn()),
+}));
+
 const { createEdgeApp } = require('./server');
 const { EFFECTIVE_SECRET } = require('./middleware/authMiddleware');
 

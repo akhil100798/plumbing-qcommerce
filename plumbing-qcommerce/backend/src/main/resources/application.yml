@@ -76,6 +76,12 @@ app:
     demo-bypass-enabled: ${OTP_DEMO_BYPASS_ENABLED:false}
     demo-code: ${OTP_DEMO_CODE:}
     hash-secret: ${OTP_HASH_SECRET:local-development-only-change-me}
+  delivery-otp:
+    length: ${DELIVERY_OTP_LENGTH:6}
+    expiry-seconds: ${DELIVERY_OTP_EXPIRY_SECONDS:900}
+    cooldown-seconds: ${DELIVERY_OTP_COOLDOWN_SECONDS:60}
+    max-attempts: ${DELIVERY_OTP_MAX_ATTEMPTS:5}
+    hash-secret: ${DELIVERY_OTP_HASH_SECRET:${OTP_HASH_SECRET:local-development-only-change-me}}
   seed:
     demo-enabled: ${APP_SEED_DEMO_ENABLED:false}
     catalog-enabled: ${APP_SEED_CATALOG_ENABLED:false}

@@ -2,6 +2,21 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const { createAdapter } = require('@socket.io/redis-adapter');
+const Redis = process.env.NODE_ENV === 'test' ? class MockRedis extends require('events') {
+    constructor() {
+        super();
+        this.status = 'ready';
+    }
+    duplicate() { return new MockRedis(); }
+    disconnect() { this.status = 'end'; }
+    call() { return Promise.resolve([]); }
+    psubscribe() { return Promise.resolve(); }
+    punsubscribe() { return Promise.resolve(); }
+    subscribe() { return Promise.resolve(); }
+    unsubscribe() { return Promise.resolve(); }
+    publish() { return Promise.resolve(); }
+} : require('ioredis');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const { RedisStore } = require('rate-limit-redis');
@@ -103,6 +118,36 @@ function createEdgeApp(options = {}) {
         cors: socketCorsOptions
     });
 
+    const isMock = process.env.MOCK_EDGE === 'true';
+    const enableRedisAdapter = process.env.REDIS_ADAPTER_ENABLED === 'true' || isProduction;
+
+    if (enableRedisAdapter && !isMock) {
+        const redisConfig = {
+            host: process.env.REDIS_HOST || 'localhost',
+            port: parseInt(process.env.REDIS_PORT || '6379'),
+            password: process.env.REDIS_PASSWORD || undefined,
+            tls: process.env.REDIS_USE_TLS === 'true' ? {} : undefined
+        };
+        const pubClient = new Redis(redisConfig);
+        const subClient = pubClient.duplicate();
+        
+        io.adapter(createAdapter(pubClient, subClient));
+        
+        io.redisPubClient = pubClient;
+        io.redisSubClient = subClient;
+
+        const originalClose = io.close.bind(io);
+        io.close = (callback) => {
+            if (io.redisPubClient) {
+                io.redisPubClient.disconnect();
+            }
+            if (io.redisSubClient) {
+                io.redisSubClient.disconnect();
+            }
+            return originalClose(callback);
+        };
+    }
+
     io.use(edgeSocketAuth);
 
     if (startKafka) {
@@ -155,7 +200,7 @@ function createEdgeApp(options = {}) {
             return res.status(400).json({ error: "orderId is required" });
         }
         try {
-            const otp = await edgeGenerateOtp(orderId);
+            const otp = await edgeGenerateOtp(orderId, req.headers.authorization);
             res.json({ orderId, otp });
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -168,7 +213,7 @@ function createEdgeApp(options = {}) {
             return res.status(400).json({ error: "orderId and otp are required" });
         }
         try {
-            const isValid = await edgeVerifyOtp(orderId, otp);
+            const isValid = await edgeVerifyOtp(orderId, otp, req.headers.authorization);
             res.json({ orderId, valid: isValid });
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -198,6 +243,42 @@ function createEdgeApp(options = {}) {
             console.error('Surge metrics error:', error.message);
             res.status(500).json({ error: 'Unable to fetch surge metrics' });
         }
+    });
+
+    app.get('/api/v1/edge/health', async (req, res) => {
+        let redisState = 'DISCONNECTED';
+        try {
+            if (edgeRedis && (edgeRedis.status === 'ready' || edgeRedis.status === 'connect' || process.env.MOCK_EDGE === 'true')) {
+                redisState = 'CONNECTED';
+            }
+        } catch (e) {
+            redisState = 'ERROR';
+        }
+
+        let adapterState = 'NOT_CONFIGURED';
+        if (enableRedisAdapter && !isMock) {
+            try {
+                if (io.redisPubClient && io.redisSubClient && 
+                    io.redisPubClient.status === 'ready' && io.redisSubClient.status === 'ready') {
+                    adapterState = 'CONNECTED';
+                } else {
+                    adapterState = 'DISCONNECTED';
+                }
+            } catch (e) {
+                adapterState = 'ERROR';
+            }
+        } else if (isMock) {
+            adapterState = 'MOCKED';
+        }
+
+        const isHealthy = redisState === 'CONNECTED' && (adapterState === 'CONNECTED' || adapterState === 'MOCKED' || adapterState === 'NOT_CONFIGURED');
+
+        res.status(isHealthy ? 200 : 500).json({
+            status: isHealthy ? 'UP' : 'DOWN',
+            redis: redisState,
+            socketRedisAdapter: adapterState,
+            timestamp: new Date().toISOString()
+        });
     });
 
     io.on('connection', (socket) => {

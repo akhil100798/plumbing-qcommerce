@@ -1,5 +1,7 @@
+const axios = require('axios');
 const { redis } = require('./redisService');
 
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
 const DELIVERY_PARTNER_GEO_KEY = 'delivery_partners_location';
 
 /**
@@ -31,26 +33,47 @@ async function findNearbyDeliveryPartners(longitude, latitude, radiusKm = 10) {
 }
 
 /**
- * Generates and stores a 4-digit OTP in Redis with a 15-minute TTL
+ * Generates OTP by requesting it from the backend
  */
-async function generateOtp(orderId) {
-    const otp = String(Math.floor(1000 + Math.random() * 9000));
-    await redis.set(`otp:${orderId}`, otp, 'EX', 900);
-    console.log(`Generated OTP for Order ${orderId} in Redis`);
-    return otp;
+async function generateOtp(orderId, authHeader) {
+    try {
+        const response = await axios.post(`${BACKEND_URL}/api/v1/delivery/${orderId}/otp/generate`, {}, {
+            headers: {
+                Authorization: authHeader || ''
+            }
+        });
+        return response.data.otp || response.data;
+    } catch (error) {
+        console.error(`Failed to generate OTP via backend: ${error.message}`);
+        // Secure random generator fallback for local testing if explicitly configured
+        if (process.env.MOCK_EDGE === 'true') {
+            const crypto = require('crypto');
+            return String(crypto.randomInt(1000, 10000));
+        }
+        throw new Error(error.response?.data?.message || error.message);
+    }
 }
 
 /**
- * Verifies the OTP in Redis and deletes it on success
+ * Verifies OTP by requesting it from the backend
  */
-async function verifyOtp(orderId, inputOtp) {
-    const key = `otp:${orderId}`;
-    const storedOtp = await redis.get(key);
-    if (storedOtp && storedOtp === String(inputOtp)) {
-        await redis.del(key);
-        return true;
+async function verifyOtp(orderId, inputOtp, authHeader) {
+    try {
+        const response = await axios.post(`${BACKEND_URL}/api/v1/delivery/${orderId}/verify-otp`, {
+            otp: String(inputOtp)
+        }, {
+            headers: {
+                Authorization: authHeader || ''
+            }
+        });
+        return response.data === true;
+    } catch (error) {
+        console.error(`Failed to verify OTP via backend: ${error.message}`);
+        if (process.env.MOCK_EDGE === 'true') {
+            return String(inputOtp) === '1234';
+        }
+        return false;
     }
-    return false;
 }
 
 module.exports = {

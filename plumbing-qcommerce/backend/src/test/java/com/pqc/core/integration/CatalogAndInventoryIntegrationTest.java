@@ -199,7 +199,7 @@ class CatalogAndInventoryIntegrationTest {
 
     @Test
     void updateInventory_storeManagerOfStore_succeeds() throws Exception {
-        Map<String, Integer> updateRequest = Map.of("availableQuantity", 50);
+        Map<String, Integer> updateRequest = Map.of("quantity", 50);
 
         mvc.perform(put("/api/v1/stores/" + store.getId() + "/inventory/" + product.getId())
                         .header("Authorization", managerToken)
@@ -216,7 +216,7 @@ class CatalogAndInventoryIntegrationTest {
 
     @Test
     void updateInventory_customer_forbidden() throws Exception {
-        Map<String, Integer> updateRequest = Map.of("availableQuantity", 99);
+        Map<String, Integer> updateRequest = Map.of("quantity", 99);
 
         mvc.perform(put("/api/v1/stores/" + store.getId() + "/inventory/" + product.getId())
                         .header("Authorization", customerToken)
@@ -227,7 +227,7 @@ class CatalogAndInventoryIntegrationTest {
 
     @Test
     void updateInventory_unauthenticated_returns401() throws Exception {
-        Map<String, Integer> updateRequest = Map.of("availableQuantity", 99);
+        Map<String, Integer> updateRequest = Map.of("quantity", 99);
 
         mvc.perform(put("/api/v1/stores/" + store.getId() + "/inventory/" + product.getId())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -237,7 +237,7 @@ class CatalogAndInventoryIntegrationTest {
 
     @Test
     void updateInventory_negativeQuantity_returns400() throws Exception {
-        Map<String, Integer> updateRequest = Map.of("availableQuantity", -10);
+        Map<String, Integer> updateRequest = Map.of("quantity", -10);
 
         mvc.perform(put("/api/v1/stores/" + store.getId() + "/inventory/" + product.getId())
                         .header("Authorization", managerToken)

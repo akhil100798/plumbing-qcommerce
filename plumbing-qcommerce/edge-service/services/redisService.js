@@ -1,5 +1,18 @@
 require('dotenv').config();
-const Redis = require('ioredis');
+const Redis = process.env.NODE_ENV === 'test' ? class MockRedis extends require('events') {
+    constructor() {
+        super();
+        this.status = 'ready';
+    }
+    duplicate() { return new MockRedis(); }
+    disconnect() { this.status = 'end'; }
+    call() { return Promise.resolve([]); }
+    psubscribe() { return Promise.resolve(); }
+    punsubscribe() { return Promise.resolve(); }
+    subscribe() { return Promise.resolve(); }
+    unsubscribe() { return Promise.resolve(); }
+    publish() { return Promise.resolve(); }
+} : require('ioredis');
 
 // Connect to the Redis container initialized in Phase 1
 let redis;

@@ -75,7 +75,7 @@ public class CheckoutController {
                 .status(order.getStatus().name())
                 .deliveryPartnerName(order.getDeliveryPartner() != null ? order.getDeliveryPartner().getFullName() : null)
                 .deliveryPartnerPhone(order.getDeliveryPartner() != null ? order.getDeliveryPartner().getPhone() : null)
-                .deliveryOtp(order.getDeliveryOtp())
+                .deliveryOtp(null)
                 .estimatedDeliveryAt(order.getEstimatedDeliveryAt())
                 .createdAt(order.getCreatedAt())
                 .items(items);

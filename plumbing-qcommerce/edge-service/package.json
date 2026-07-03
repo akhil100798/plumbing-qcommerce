@@ -25,7 +25,8 @@
     "kafkajs": "^2.2.4",
     "nodemon": "^3.1.14",
     "rate-limit-redis": "^4.3.1",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "@socket.io/redis-adapter": "^8.3.0"
   },
   "overrides": {
     "brace-expansion": "^5.0.6",
