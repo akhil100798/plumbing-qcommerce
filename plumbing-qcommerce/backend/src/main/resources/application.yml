@@ -1,0 +1,91 @@
+server:
+  port: ${PORT:8081}
+
+spring:
+  application:
+    name: plumbing-core
+  
+  # PostgreSQL Configuration (Main Relational DB)
+  datasource:
+    url: ${DATABASE_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/plumbing_commerce}}
+    username: ${DATABASE_USERNAME:${SPRING_DATASOURCE_USERNAME:admin}}
+    password: ${DATABASE_PASSWORD:${SPRING_DATASOURCE_PASSWORD:local-postgres-password}}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # NoSQL & Cache Configuration
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+  mongodb:
+    uri: ${SPRING_MONGODB_URI:mongodb://admin:local-mongo-password@localhost:27017/plumbing_commerce?authSource=admin}
+
+  # Kafka Event Bus
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: plumbing-core-group
+      auto-offset-reset: earliest
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      
+logging:
+  level:
+    org.springframework.security: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: INFO
+    org.springframework.data: INFO
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:PlumbCommerceLocalSecretKeyFallbackForDeveloperModeOnlyChangeThisInProduction}
+    expiration: 86400000 # 24 hours
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0 # Trace 100% of requests in dev
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans # Default Zipkin endpoint
+
+app:
+  otp:
+    length: ${OTP_LENGTH:6}
+    expiry-seconds: ${OTP_EXPIRY_SECONDS:300}
+    resend-cooldown-seconds: ${OTP_RESEND_COOLDOWN_SECONDS:60}
+    max-verify-attempts: ${OTP_MAX_VERIFY_ATTEMPTS:5}
+    demo-bypass-enabled: ${OTP_DEMO_BYPASS_ENABLED:false}
+    demo-code: ${OTP_DEMO_CODE:}
+    hash-secret: ${OTP_HASH_SECRET:local-development-only-change-me}
+  delivery-otp:
+    length: ${DELIVERY_OTP_LENGTH:6}
+    expiry-seconds: ${DELIVERY_OTP_EXPIRY_SECONDS:900}
+    cooldown-seconds: ${DELIVERY_OTP_COOLDOWN_SECONDS:60}
+    max-attempts: ${DELIVERY_OTP_MAX_ATTEMPTS:5}
+    hash-secret: ${DELIVERY_OTP_HASH_SECRET:${OTP_HASH_SECRET:local-development-only-change-me}}
+  seed:
+    demo-enabled: ${APP_SEED_DEMO_ENABLED:false}
+    catalog-enabled: ${APP_SEED_CATALOG_ENABLED:false}
+    admin-demo-enabled: ${APP_SEED_ADMIN_DEMO_ENABLED:false}
+    fail-if-prod-demo-enabled: ${APP_SEED_FAIL_IF_PROD_DEMO_ENABLED:true}
+    demo-password: ${APP_SEED_DEMO_PASSWORD:password}
+

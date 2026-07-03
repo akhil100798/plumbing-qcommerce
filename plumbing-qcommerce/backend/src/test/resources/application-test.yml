@@ -1,0 +1,49 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:plumbing_core_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  # Disable external service auto-configurations in the test context
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+  # Use embedded Kafka broker address placeholder (overridden per test if needed)
+  kafka:
+    bootstrap-servers: localhost:9092
+
+# Disable Zipkin/tracing in tests to avoid connection errors
+management:
+  health:
+    mongo:
+      enabled: false
+    mongodb:
+      enabled: false
+    redis:
+      enabled: false
+    kafka:
+      enabled: false
+    mail:
+      enabled: false
+  tracing:
+    enabled: false
+  zipkin:
+    tracing:
+      endpoint: ""
+
+logging:
+  level:
+    org.springframework: WARN
+    org.hibernate: WARN
