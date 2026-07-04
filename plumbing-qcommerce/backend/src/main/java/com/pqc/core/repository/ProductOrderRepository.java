@@ -14,6 +14,7 @@ import java.util.Collection;
 public interface ProductOrderRepository extends JpaRepository<ProductOrder, Long>, JpaSpecificationExecutor<ProductOrder> {
     List<ProductOrder> findByCustomerId(Long customerId);
     List<ProductOrder> findByStoreId(Long storeId);
+    List<ProductOrder> findByStoreIdAndStatus(Long storeId, ProductOrderStatus status);
     List<ProductOrder> findByDeliveryPartnerId(Long deliveryPartnerId);
     List<ProductOrder> findByStatus(ProductOrderStatus status);
     long countByStatus(ProductOrderStatus status);

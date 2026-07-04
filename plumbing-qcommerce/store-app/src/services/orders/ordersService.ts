@@ -34,25 +34,8 @@ const mapApiOrderToOrder = (o: any): Order => {
 export const ordersService = {
   getOrders: async (): Promise<Order[]> => {
     try {
-      // Store managers fetch orders. Since the API gets by status, we gather PENDING orders
-      const response = await apiClient.get(ENDPOINTS.orders.byStatus('PENDING'));
-      // Combine with local orders to make sure packing/ready statuses are available
-      const apiOrders: Order[] = (response.data || []).map((o: any) => ({
-        id: o.id,
-        customerId: o.customer?.id || 0,
-        customerName: o.customer?.fullName || 'Customer',
-        storeId: o.store?.id || 0,
-        storeName: o.store?.name || 'Store',
-        totalAmount: o.totalAmount,
-        status: o.status,
-        createdAt: o.createdAt,
-        items: (o.items || []).map((i: any) => ({
-          productId: i.product?.id || 0,
-          productName: i.product?.name || 'Item',
-          quantity: i.quantity,
-          price: i.price,
-        }))
-      }));
+      const response = await apiClient.get(ENDPOINTS.orders.byStatus('CONFIRMED'));
+      const apiOrders: Order[] = (response.data || []).map(mapApiOrderToOrder);
 
       // Merge API and local orders
       const orderIds = new Set(apiOrders.map(o => o.id));

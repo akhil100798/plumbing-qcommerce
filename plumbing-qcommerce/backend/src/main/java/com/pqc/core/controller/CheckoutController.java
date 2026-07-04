@@ -3,6 +3,7 @@ package com.pqc.core.controller;
 import com.pqc.core.dto.CheckoutRequest;
 import com.pqc.core.dto.OrderDetailDTO;
 import com.pqc.core.entity.ProductOrder;
+import com.pqc.core.entity.ProductOrderStatus;
 import com.pqc.core.entity.Role;
 import com.pqc.core.entity.ServiceOrder;
 import com.pqc.core.entity.User;
@@ -42,6 +43,29 @@ public class CheckoutController {
     public ResponseEntity<String> releaseReservation(@PathVariable Long orderId) {
         checkoutService.releaseReservation(orderId);
         return ResponseEntity.ok("Stock reservation released back to inventory.");
+    }
+    @GetMapping("/orders/status/{status}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
+    public ResponseEntity<List<com.pqc.core.dto.OrderDetailResponse>> getOrdersByStatus(@PathVariable ProductOrderStatus status) {
+        User user = currentUser.require();
+        List<ProductOrder> orders;
+
+        if (user.getRole() == Role.ADMIN) {
+            orders = productOrderRepository.findByStatus(status);
+        } else if (user.getRole() == Role.STORE_MANAGER) {
+            orders = productOrderRepository.findAll().stream()
+                    .filter(order -> order.getStore() != null)
+                    .filter(order -> order.getStore().getManager() != null)
+                    .filter(order -> order.getStore().getManager().getId().equals(user.getId()))
+                    .filter(order -> order.getStatus() == status)
+                    .toList();
+        } else {
+            throw new AccessDeniedException("Only store managers and admins can list product orders by status");
+        }
+
+        return ResponseEntity.ok(orders.stream()
+                .map(checkoutService::mapToResponse)
+                .toList());
     }
 
     @GetMapping("/orders/{id}")

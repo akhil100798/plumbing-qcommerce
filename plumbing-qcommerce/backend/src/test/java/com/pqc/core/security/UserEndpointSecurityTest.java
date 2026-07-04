@@ -8,6 +8,7 @@ import com.pqc.core.repository.InventoryReservationRepository;
 import com.pqc.core.repository.ProductOrderRepository;
 import com.pqc.core.repository.ProductRepository;
 import com.pqc.core.repository.StockRepository;
+import com.pqc.core.repository.UserAddressRepository;
 import com.pqc.core.repository.UserRepository;
 import com.pqc.core.repository.ServiceOrderRepository;
 import com.pqc.core.repository.StoreRepository;
@@ -23,6 +24,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -45,6 +47,7 @@ class UserEndpointSecurityTest {
     @Autowired private StockRepository stockRepository;
     @Autowired private ProductRepository productRepository;
     @Autowired private CategoryRepository categoryRepository;
+    @Autowired private UserAddressRepository userAddressRepository;
 
     @BeforeEach
     void clearUsers() {
@@ -64,8 +67,19 @@ class UserEndpointSecurityTest {
         categoryRepository.flush();
         storeRepository.deleteAll();
         storeRepository.flush();
+        userAddressRepository.deleteAll();
+        userAddressRepository.flush();
         userRepository.deleteAll();
         userRepository.flush();
+    }
+    @Test
+    void adminPortalLocalOriginCanPreflightLogin() throws Exception {
+        mvc.perform(options("/api/v1/auth/login")
+                .header("Origin", "http://localhost:3101")
+                .header("Access-Control-Request-Method", "POST")
+                .header("Access-Control-Request-Headers", "content-type"))
+            .andExpect(status().isOk())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Access-Control-Allow-Origin", "http://localhost:3101"));
     }
 
     @Test
@@ -107,6 +121,36 @@ class UserEndpointSecurityTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.email").value(customer.getEmail()))
             .andExpect(jsonPath("$.role").value("CUSTOMER"));
+
+        mvc.perform(get("/api/v1/users")
+                .header("Authorization", bearer(customer)))
+            .andExpect(status().isForbidden());
+    }
+    @Test
+    void customerCanCreateOwnAddressButAnonymousCannot() throws Exception {
+        User customer = saveUser("address-customer@example.com", Role.CUSTOMER);
+        String payload = """
+            {
+              "label": "Home",
+              "name": "Test Customer",
+              "addressLine": "123 Test Street, Bengaluru",
+              "phone": "9000000101"
+            }
+            """;
+
+        mvc.perform(post("/api/v1/users/me/addresses")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+            .andExpect(status().isUnauthorized());
+
+        mvc.perform(post("/api/v1/users/me/addresses")
+                .header("Authorization", bearer(customer))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.label").value("Home"))
+            .andExpect(jsonPath("$.addressLine").value("123 Test Street, Bengaluru"))
+            .andExpect(jsonPath("$.user").doesNotExist());
 
         mvc.perform(get("/api/v1/users")
                 .header("Authorization", bearer(customer)))

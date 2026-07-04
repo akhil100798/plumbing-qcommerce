@@ -225,6 +225,39 @@ public class StorePartnerIntegrationTest {
         ProductOrder updated = productOrderRepository.findById(order.getId()).orElseThrow();
         assertThat(updated.getStatus()).isEqualTo(ProductOrderStatus.READY_FOR_PICKUP);
     }
+    @Test
+    public void testStoreManagerListsOwnProductOrdersByStatus() throws Exception {
+        ProductOrder store1Order = productOrderRepository.save(ProductOrder.builder()
+                .customer(customer)
+                .store(store1)
+                .status(ProductOrderStatus.CONFIRMED)
+                .totalAmount(new BigDecimal("150.00"))
+                .build());
+        productOrderRepository.save(ProductOrder.builder()
+                .customer(customer)
+                .store(store2)
+                .status(ProductOrderStatus.CONFIRMED)
+                .totalAmount(new BigDecimal("200.00"))
+                .build());
+
+        mockMvc.perform(get("/api/v1/checkout/orders/status/CONFIRMED")
+                .header("Authorization", manager1Token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(store1Order.getId()))
+                .andExpect(jsonPath("$[0].storeId").value(store1.getId()))
+                .andExpect(jsonPath("$[0].status").value("CONFIRMED"))
+                .andExpect(jsonPath("$[1]").doesNotExist());
+
+        mockMvc.perform(get("/api/v1/checkout/orders/status/CONFIRMED")
+                .header("Authorization", adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].status").value("CONFIRMED"))
+                .andExpect(jsonPath("$[1].status").value("CONFIRMED"));
+
+        mockMvc.perform(get("/api/v1/checkout/orders/status/CONFIRMED")
+                .header("Authorization", customerToken))
+                .andExpect(status().isForbidden());
+    }
 
     @Test
     public void testHandoverSuccess() throws Exception {

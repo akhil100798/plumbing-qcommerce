@@ -21,7 +21,7 @@ export const ENDPOINTS = {
     productDetails: (id: number) => `/catalog/products/${id}`,
   },
   orders: {
-    byStatus: (status: string) => `/orders/status/${status}`,
+    byStatus: (status: string) => `/checkout/orders/status/${status}`,
     details: (id: number) => `/checkout/orders/${id}`,
     accept: (id: number) => `/checkout/orders/${id}/accept`,
     pack: (id: number) => `/checkout/orders/${id}/pack`,

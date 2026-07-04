@@ -31,7 +31,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
 
-    @Value("${app.cors.allowed-origins:http://localhost:3100,http://localhost:3000,http://localhost:19006,http://localhost:8081,http://127.0.0.1:*}")
+    @Value("${app.cors.allowed-origins:http://localhost:3100,http://localhost:3101,http://localhost:3000,http://localhost:19006,http://localhost:19007,http://localhost:19008,http://localhost:19009,http://localhost:8081,http://127.0.0.1:*}")
     private String allowedOrigins;
 
     @Bean
@@ -91,6 +91,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/delivery/*/confirm-otp").hasRole("CUSTOMER")
                 .requestMatchers(HttpMethod.POST, "/api/v1/delivery/material-request").hasRole("PLUMBER")
                 .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
+                .requestMatchers("/api/v1/users/me/addresses", "/api/v1/users/me/addresses/**").authenticated()
                 .requestMatchers("/api/v1/users/**", "/api/v1/users").hasAnyRole("SUPER_ADMIN", "ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/v1/ai/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "OPERATIONS_ADMIN", "FINANCE_ADMIN", "MARKETING_ADMIN", "STORE_MANAGER")
                 .requestMatchers(HttpMethod.GET, "/api/v1/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
