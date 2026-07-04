@@ -68,6 +68,10 @@ management:
       endpoint: http://localhost:9411/api/v2/spans # Default Zipkin endpoint
 
 app:
+  sms:
+    provider: ${SMS_PROVIDER:none}
+    local-capture-enabled: ${SMS_LOCAL_CAPTURE_ENABLED:false}
+    fail-if-missing-provider: ${SMS_FAIL_IF_MISSING_PROVIDER:true}
   otp:
     length: ${OTP_LENGTH:6}
     expiry-seconds: ${OTP_EXPIRY_SECONDS:300}
@@ -88,4 +92,3 @@ app:
     admin-demo-enabled: ${APP_SEED_ADMIN_DEMO_ENABLED:false}
     fail-if-prod-demo-enabled: ${APP_SEED_FAIL_IF_PROD_DEMO_ENABLED:true}
     demo-password: ${APP_SEED_DEMO_PASSWORD:password}
-
