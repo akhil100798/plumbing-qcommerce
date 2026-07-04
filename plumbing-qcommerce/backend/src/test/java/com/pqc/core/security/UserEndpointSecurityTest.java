@@ -1,5 +1,8 @@
 package com.pqc.core.security;
 
+import com.pqc.core.entity.Role;
+import com.pqc.core.entity.User;
+import com.pqc.core.entity.UserStatus;
 import com.pqc.core.repository.CategoryRepository;
 import com.pqc.core.repository.InventoryReservationRepository;
 import com.pqc.core.repository.ProductOrderRepository;
@@ -15,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -31,6 +35,8 @@ class UserEndpointSecurityTest {
     @Autowired private MockMvc mvc;
 
     @Autowired private UserRepository userRepository;
+    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private JwtService jwtService;
     @Autowired private ServiceOrderRepository serviceOrderRepository;
     @Autowired private StoreRepository storeRepository;
     @Autowired private OutboxEventRepository outboxRepository;
@@ -42,7 +48,6 @@ class UserEndpointSecurityTest {
 
     @BeforeEach
     void clearUsers() {
-        // Delete in FK dependency order: children first, parents last
         reservationRepository.deleteAll();
         reservationRepository.flush();
         productOrderRepository.deleteAll();
@@ -88,6 +93,72 @@ class UserEndpointSecurityTest {
     }
 
     @Test
+    void unauthenticatedUserCannotAccessOwnProfile() throws Exception {
+        mvc.perform(get("/api/v1/users/me"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void customerCanAccessOwnProfileButNotAdminOnlyUserRoutes() throws Exception {
+        User customer = saveUser("customer@example.com", Role.CUSTOMER);
+
+        mvc.perform(get("/api/v1/users/me")
+                .header("Authorization", bearer(customer)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email").value(customer.getEmail()))
+            .andExpect(jsonPath("$.role").value("CUSTOMER"));
+
+        mvc.perform(get("/api/v1/users")
+                .header("Authorization", bearer(customer)))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void plumberCanAccessOwnProfileButNotAdminOnlyUserRoutes() throws Exception {
+        User plumber = saveUser("plumber@example.com", Role.PLUMBER);
+
+        mvc.perform(get("/api/v1/users/me")
+                .header("Authorization", bearer(plumber)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email").value(plumber.getEmail()))
+            .andExpect(jsonPath("$.role").value("PLUMBER"));
+
+        mvc.perform(get("/api/v1/users")
+                .header("Authorization", bearer(plumber)))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminCanAccessOwnProfileAndAdminOnlyUserRoutes() throws Exception {
+        User admin = saveUser("admin@example.com", Role.ADMIN);
+
+        mvc.perform(get("/api/v1/users/me")
+                .header("Authorization", bearer(admin)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email").value(admin.getEmail()))
+            .andExpect(jsonPath("$.role").value("ADMIN"));
+
+        mvc.perform(get("/api/v1/users")
+                .header("Authorization", bearer(admin)))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void superAdminCanAccessOwnProfileAndAdminOnlyUserRoutes() throws Exception {
+        User superAdmin = saveUser("superadmin@example.com", Role.SUPER_ADMIN);
+
+        mvc.perform(get("/api/v1/users/me")
+                .header("Authorization", bearer(superAdmin)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email").value(superAdmin.getEmail()))
+            .andExpect(jsonPath("$.role").value("SUPER_ADMIN"));
+
+        mvc.perform(get("/api/v1/users")
+                .header("Authorization", bearer(superAdmin)))
+            .andExpect(status().isOk());
+    }
+
+    @Test
     void loginDoesNotRevealWhetherAccountExists() throws Exception {
         mvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -114,5 +185,20 @@ class UserEndpointSecurityTest {
                 .content(credentials.formatted("missing@example.com")))
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.error").value("Invalid credentials"));
+    }
+
+    private User saveUser(String email, Role role) {
+        return userRepository.save(User.builder()
+                .email(email)
+                .password(passwordEncoder.encode("Password123!"))
+                .fullName(role.name())
+                .phone("9999999999")
+                .role(role)
+                .status(UserStatus.ACTIVE)
+                .build());
+    }
+
+    private String bearer(User user) {
+        return "Bearer " + jwtService.generateToken(user.getEmail(), user.getRole().name());
     }
 }

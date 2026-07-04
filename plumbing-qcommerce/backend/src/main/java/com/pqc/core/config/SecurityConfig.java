@@ -90,6 +90,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PATCH, "/api/v1/delivery/*/accept").hasRole("DELIVERY_PARTNER")
                 .requestMatchers(HttpMethod.POST, "/api/v1/delivery/*/confirm-otp").hasRole("CUSTOMER")
                 .requestMatchers(HttpMethod.POST, "/api/v1/delivery/material-request").hasRole("PLUMBER")
+                .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
                 .requestMatchers("/api/v1/users/**", "/api/v1/users").hasAnyRole("SUPER_ADMIN", "ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/v1/ai/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "OPERATIONS_ADMIN", "FINANCE_ADMIN", "MARKETING_ADMIN", "STORE_MANAGER")
                 .requestMatchers(HttpMethod.GET, "/api/v1/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
@@ -111,4 +112,3 @@ public class SecurityConfig {
                 .toList();
     }
 }
-
