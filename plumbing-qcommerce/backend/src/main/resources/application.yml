@@ -47,6 +47,8 @@ logging:
     org.hibernate.SQL: INFO
     org.hibernate.type.descriptor.sql.BasicBinder: INFO
     org.springframework.data: INFO
+    org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor: WARN
+    org.springframework.web.servlet.mvc.method.annotation.HttpEntityMethodProcessor: WARN
 
 security:
   jwt:
