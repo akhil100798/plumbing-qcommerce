@@ -1,0 +1,39 @@
+name: Admin CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  admin:
+    name: Admin Tests and Build
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8081
+      NEXT_PUBLIC_EDGE_URL: http://localhost:3000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: admin-portal/package-lock.json
+
+      - name: Install dependencies
+        working-directory: admin-portal
+        run: npm ci
+
+      - name: Run admin tests
+        working-directory: admin-portal
+        run: npm test
+
+      - name: Build admin portal
+        working-directory: admin-portal
+        run: npm run build
