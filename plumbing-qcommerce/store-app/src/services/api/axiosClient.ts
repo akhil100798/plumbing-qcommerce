@@ -1,5 +1,5 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import * as SecureStore from 'expo-secure-store';
+import { tokenStorage } from './tokenStorage';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8081';
 
@@ -28,31 +28,31 @@ const processQueue = (error: any, token: string | null = null) => {
 export const setAuthToken = (token: string | null) => {
   authToken = token;
   if (token) {
-    SecureStore.setItemAsync('storeAuthToken', token).catch((err) =>
-      console.error('Failed to save store auth token to SecureStore:', err)
+    tokenStorage.setItem('storeAuthToken', token).catch((err) =>
+      console.error('Failed to save store auth token:', err)
     );
   } else {
-    SecureStore.deleteItemAsync('storeAuthToken').catch((err) =>
-      console.error('Failed to delete store auth token from SecureStore:', err)
+    tokenStorage.deleteItem('storeAuthToken').catch((err) =>
+      console.error('Failed to delete store auth token:', err)
     );
   }
 };
 
 export const setRefreshToken = (token: string | null) => {
   if (token) {
-    SecureStore.setItemAsync('storeRefreshToken', token).catch((err) =>
-      console.error('Failed to save store refresh token to SecureStore:', err)
+    tokenStorage.setItem('storeRefreshToken', token).catch((err) =>
+      console.error('Failed to save store refresh token:', err)
     );
   } else {
-    SecureStore.deleteItemAsync('storeRefreshToken').catch((err) =>
-      console.error('Failed to delete store refresh token from SecureStore:', err)
+    tokenStorage.deleteItem('storeRefreshToken').catch((err) =>
+      console.error('Failed to delete store refresh token:', err)
     );
   }
 };
 
 export const getAuthToken = async () => {
   if (!authToken) {
-    authToken = await SecureStore.getItemAsync('storeAuthToken');
+    authToken = await tokenStorage.getItem('storeAuthToken');
   }
   return authToken;
 };
@@ -96,7 +96,7 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const storedRefreshToken = await SecureStore.getItemAsync('storeRefreshToken');
+        const storedRefreshToken = await tokenStorage.getItem('storeRefreshToken');
         if (!storedRefreshToken) {
           throw new Error('No refresh token found');
         }

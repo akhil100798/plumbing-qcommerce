@@ -54,33 +54,26 @@ if (isProduction) {
     }
 }
 
+function isOriginAllowed(origin) {
+    if (!origin) {
+        return true;
+    }
+    if (allowedOrigins.includes(origin)) {
+        return true;
+    }
+    return !isProduction && (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:'));
+}
 // Express CORS Configuration
 const corsOptions = {
-    origin: (origin, callback) => {
-        if (!origin) {
-            // Allow requests with no origin (like mobile clients, tools)
-            return callback(null, true);
-        }
-        if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-        if (!isProduction && (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:'))) {
-            return callback(null, true);
-        }
-        callback(new Error('Not allowed by CORS'));
-    },
+    origin: (origin, callback) => callback(null, isOriginAllowed(origin)),
+
     credentials: true
 };
 
 // Socket.io CORS Configuration
 const socketCorsOptions = {
-    origin: isProduction ? allowedOrigins : (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin) || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: (origin, callback) => callback(null, isOriginAllowed(origin)),
+
     credentials: true
 };
 
@@ -97,6 +90,13 @@ function createEdgeApp(options = {}) {
     const edgeVerifyOtp = dependencies.verifyOtp || verifyOtp;
 
     const app = express();
+    app.use((req, res, next) => {
+        const origin = req.headers.origin;
+        if (origin && !isOriginAllowed(origin)) {
+            return res.status(403).json({ error: 'CORS origin not allowed' });
+        }
+        return next();
+    });
     app.use(cors(corsOptions));
     app.use(express.json());
 

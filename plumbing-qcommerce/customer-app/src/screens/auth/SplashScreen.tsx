@@ -1,6 +1,5 @@
 import { CommonActions } from '@react-navigation/native';
 import { StackScreenProps } from '@react-navigation/stack';
-import * as SecureStore from 'expo-secure-store';
 import React, { useEffect } from 'react';
 import {
   SafeAreaView,
@@ -13,6 +12,7 @@ import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../../redux/slices/authSlice';
 import { colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
+import { tokenStorage } from '../../services/tokenStorage';
 
 type Props = StackScreenProps<AuthStackParamList, 'Splash'>;
 
@@ -22,8 +22,8 @@ export function SplashScreen({ navigation }: Props) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = await SecureStore.getItemAsync('authToken');
-        const refreshToken = await SecureStore.getItemAsync('refreshToken');
+        const token = await tokenStorage.getItem('authToken');
+        const refreshToken = await tokenStorage.getItem('refreshToken');
         if (token && refreshToken) {
           dispatch(
             loginSuccess({
@@ -65,7 +65,7 @@ export function SplashScreen({ navigation }: Props) {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.logoPlaceholder}>
-          <Text style={styles.logoIcon}>🔧</Text>
+          <Text style={styles.logoIcon}>ðŸ”§</Text>
         </View>
         <Text style={styles.brandTitle}>PlumbCommerce</Text>
         <Text style={styles.brandSub}>Instant Plumbing. Instant Solutions.</Text>

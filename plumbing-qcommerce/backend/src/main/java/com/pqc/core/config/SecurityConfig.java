@@ -31,7 +31,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
 
-    @Value("${app.cors.allowed-origins:http://localhost:3100,http://localhost:3101,http://localhost:3000,http://localhost:19006,http://localhost:19007,http://localhost:19008,http://localhost:19009,http://localhost:8081,http://127.0.0.1:*}")
+    @Value("${app.cors.allowed-origins:http://localhost:3101,http://localhost:19007,http://localhost:19008,http://localhost:19009,http://localhost:3000}")
     private String allowedOrigins;
 
     @Bean
@@ -52,7 +52,7 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(request -> {
                 org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
-                config.setAllowedOriginPatterns(resolveAllowedOrigins());
+                config.setAllowedOrigins(resolveAllowedOrigins());
                 config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
                 config.setAllowedHeaders(java.util.List.of("*"));
                 config.setAllowCredentials(true);
@@ -110,6 +110,11 @@ public class SecurityConfig {
         return Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(origin -> !origin.isBlank())
+                .peek(origin -> {
+                    if (origin.contains("*")) {
+                        throw new IllegalStateException("Wildcard CORS origins are not allowed: " + origin);
+                    }
+                })
                 .toList();
     }
 }
