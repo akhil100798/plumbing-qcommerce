@@ -14,10 +14,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app:
-          - customer-app
-          - plumber-app
-          - store-app
+        include:
+          - app: customer-app
+            path: plumbing-qcommerce/customer-app
+          - app: plumber-app
+            path: plumbing-qcommerce/plumber-app
+          - app: store-app
+            path: plumbing-qcommerce/store-app
     env:
       EXPO_PUBLIC_BACKEND_URL: http://localhost:8081
       EXPO_PUBLIC_EDGE_URL: http://localhost:3000
@@ -30,22 +33,22 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: "22"
           cache: npm
-          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+          cache-dependency-path: ${{ matrix.path }}/package-lock.json
 
       - name: Install dependencies
-        working-directory: ${{ matrix.app }}
+        working-directory: ${{ matrix.path }}
         run: npm ci
 
       - name: Typecheck
-        working-directory: ${{ matrix.app }}
+        working-directory: ${{ matrix.path }}
         run: npm run typecheck
 
       - name: Run tests
-        working-directory: ${{ matrix.app }}
+        working-directory: ${{ matrix.path }}
         run: npm test
 
       - name: Export web build
-        working-directory: ${{ matrix.app }}
+        working-directory: ${{ matrix.path }}
         run: npx expo export --platform web

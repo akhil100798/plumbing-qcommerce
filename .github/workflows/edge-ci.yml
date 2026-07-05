@@ -19,18 +19,18 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: "22"
           cache: npm
-          cache-dependency-path: edge-service/package-lock.json
+          cache-dependency-path: plumbing-qcommerce/edge-service/package-lock.json
 
       - name: Install dependencies
-        working-directory: edge-service
+        working-directory: plumbing-qcommerce/edge-service
         run: npm ci
 
       - name: Run edge tests
-        working-directory: edge-service
+        working-directory: plumbing-qcommerce/edge-service
         run: npm test
 
       - name: Build edge service
-        working-directory: edge-service
+        working-directory: plumbing-qcommerce/edge-service
         run: npm run build

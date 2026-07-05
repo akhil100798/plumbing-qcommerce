@@ -22,18 +22,18 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: "22"
           cache: npm
-          cache-dependency-path: admin-portal/package-lock.json
+          cache-dependency-path: plumbing-qcommerce/admin-portal/package-lock.json
 
       - name: Install dependencies
-        working-directory: admin-portal
+        working-directory: plumbing-qcommerce/admin-portal
         run: npm ci
 
       - name: Run admin tests
-        working-directory: admin-portal
+        working-directory: plumbing-qcommerce/admin-portal
         run: npm test
 
       - name: Build admin portal
-        working-directory: admin-portal
+        working-directory: plumbing-qcommerce/admin-portal
         run: npm run build
