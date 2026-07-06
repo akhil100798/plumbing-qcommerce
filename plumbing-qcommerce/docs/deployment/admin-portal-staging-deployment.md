@@ -5,6 +5,8 @@
 - Deployment platform: `Vercel`
 - Admin staging URL: `https://admin-portal-ten-weld.vercel.app`
 - Backend staging URL: `https://plumbing-qcommerce.onrender.com`
+- CORS update: `PASS`
+- Admin UAT: `PASS`
 - Production readiness: `NO`
 
 ## Vercel Project Settings
@@ -35,9 +37,9 @@ https://admin-portal-ten-weld.vercel.app
 
 Vercel preview deployments may require Vercel authentication depending on the team/project settings. Use the public alias above for shared staging validation.
 
-## Backend CORS Requirement
+## Backend CORS
 
-Render backend must allow the deployed admin portal origin. Update the backend Render environment variable:
+Render backend `CORS_ALLOWED_ORIGINS` now includes the deployed admin portal origin:
 
 ```text
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3100,http://localhost:3101,http://localhost:19006,http://localhost:19007,http://localhost:19008,http://localhost:19009,https://admin-portal-ten-weld.vercel.app
@@ -49,8 +51,9 @@ Do not use wildcard origins.
 
 - The admin portal build succeeds on Vercel after switching the build script back to `next build`.
 - The public staging app loads successfully.
-- Login requests currently fail before authentication completes because Render CORS does not yet include the Vercel staging origin.
-- Until the CORS environment variable is updated and Render is redeployed, full admin UAT remains blocked.
+- Render backend CORS was updated to allow the Vercel admin staging URL.
+- Admin login and dashboard flows now work against the Render backend.
+- Production readiness remains `NO`.
 
 ## Local Validation
 
@@ -70,9 +73,9 @@ Validated result for Phase 14D:
 - `npm test`: PASS
 - `npm run build`: PASS
 
-## Next Step
+## Final Outcome
 
-1. Update `CORS_ALLOWED_ORIGINS` on Render to include `https://admin-portal-ten-weld.vercel.app`.
-2. Redeploy the backend service.
-3. Re-run admin login and RBAC UAT from the public staging URL.
-4. Keep production status at `NO` until staging UAT completes.
+1. Admin portal staging deployed: `YES`
+2. Admin UAT: `PASS`
+3. Mobile staging prepared: `YES`
+4. Production readiness: `NO`

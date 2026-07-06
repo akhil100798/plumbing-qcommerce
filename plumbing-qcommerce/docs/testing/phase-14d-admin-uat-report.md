@@ -21,43 +21,34 @@
 
 ## Browser UAT Result
 
-Overall admin UAT result: `FAIL`
-
-### Root Cause
-
-Backend Render CORS is blocking the deployed admin portal origin.
-
-Observed browser error:
-
-```text
-Access to fetch at 'https://plumbing-qcommerce.onrender.com/api/v1/auth/login' from origin 'https://admin-portal-ten-weld.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
-```
+Overall admin UAT result: `PASS`
 
 ## Functional Results
 
 - Login page loads: PASS
-- Invalid login shows clean application error: FAIL
-  - Current behavior: `Failed to fetch` because the request is blocked at preflight time.
-- Superadmin login succeeds: FAIL
-- Token stored in session storage: BLOCKED
-- Redirect to dashboard works: BLOCKED
-- Protected routes survive refresh: BLOCKED
-- Logout works: BLOCKED
+- Superadmin login succeeds: PASS
+- Token is stored correctly: PASS
+- Redirect to dashboard works: PASS
+- Protected routes work after refresh: PASS
+- Dashboard loads from Render backend: PASS
+- Invalid login shows clean error: PASS
+- Logout works: PASS
 - No localhost or `127.0.0.1` requests: PASS
 - Requests target Render backend: PASS
 - No mixed-content errors: PASS
-- No CORS errors: FAIL
+- No CORS errors: PASS
+- Backend `/health/live` works: PASS
 
 ## Role-wise Result
 
-All role logins are blocked by the same backend CORS policy issue:
+Verified successful admin login coverage:
 
-- `superadmin@plumbcommerce.com`: FAIL
-- `operations@plumbcommerce.com`: FAIL
-- `finance@plumbcommerce.com`: FAIL
-- `support@plumbcommerce.com`: FAIL
-- `plumbermanager@plumbcommerce.com`: FAIL
-- `marketing@plumbcommerce.com`: FAIL
+- `superadmin@plumbcommerce.com`: PASS
+- `operations@plumbcommerce.com`: PASS
+- `finance@plumbcommerce.com`: PASS
+- `support@plumbcommerce.com`: PASS
+- `plumbermanager@plumbcommerce.com`: PASS
+- `marketing@plumbcommerce.com`: PASS
 
 Password tested for each role:
 
@@ -69,21 +60,20 @@ password
 
 - Frontend requests go to `https://plumbing-qcommerce.onrender.com`
 - No calls were made to `localhost` or `127.0.0.1`
-- Browser automation captured the CORS preflight failure before auth could complete
+- CORS issue was resolved after Render `CORS_ALLOWED_ORIGINS` was updated to include `https://admin-portal-ten-weld.vercel.app`
+- Dashboard and authenticated admin flows load successfully from the Render backend
 
-## Required Backend Fix
+## Backend CORS Setting
 
-Update Render backend environment variable:
+Current required Render backend value:
 
 ```text
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3100,http://localhost:3101,http://localhost:19006,http://localhost:19007,http://localhost:19008,http://localhost:19009,https://admin-portal-ten-weld.vercel.app
 ```
 
-Redeploy the Render backend after saving the environment variable.
-
 ## Final Status
 
 - Admin portal staging deployed: `YES`
-- Admin UAT: `FAIL`
+- Admin UAT: `PASS`
 - Mobile staging prepared: `YES`
 - Production ready: `NO`

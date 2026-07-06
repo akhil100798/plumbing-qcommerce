@@ -66,7 +66,7 @@ EXPO_PUBLIC_EDGE_URL=
 
 For local staging smoke tests and deployed admin UAT, set Render `CORS_ALLOWED_ORIGINS` to include the local admin/mobile web origins you actually use and the public Vercel admin staging URL. Do not use wildcard origins with credentials.
 
-Required current staging value:
+Current staging value:
 
 ```text
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3100,http://localhost:3101,http://localhost:19006,http://localhost:19007,http://localhost:19008,http://localhost:19009,https://admin-portal-ten-weld.vercel.app
@@ -112,7 +112,6 @@ Verify app screens show API errors cleanly and do not silently fall back to mock
 
 ## Known Limitations
 
-- Admin portal staging is deployed, but full browser UAT is currently blocked until Render CORS includes `https://admin-portal-ten-weld.vercel.app`.
 - Edge service staging URL is not configured in Phase 14C.
 - OTP/SMS delivery is disabled in Render staging.
 - Production deployment remains `NO`.
