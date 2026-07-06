@@ -21,7 +21,8 @@ Add these values in the backend web service environment:
 - `SPRING_PROFILES_ACTIVE=prod,staging`
 - `PORT=10000`
 - `APP_SCHEDULING_ENABLED=false`
-- `APP_DEMO_SEED_ENABLED=true`
+- `APP_DEMO_SEED_ENABLED=true` 
+- `APP_MOBILE_DEMO_SEED_ENABLED=true`
 - `DATABASE_URL=jdbc:postgresql://<INTERNAL_HOST>:5432/<DB_NAME>`
 - `DATABASE_USERNAME=<USER>`
 - `DATABASE_PASSWORD=<PASSWORD>`
@@ -40,6 +41,7 @@ Leave these empty for the first deploy unless those services are already provisi
 
 ## Important Notes
 - Staging demo admin users are created only when `SPRING_PROFILES_ACTIVE=prod,staging` and `APP_DEMO_SEED_ENABLED=true` are both set.
+- Staging mobile demo users are created only when `SPRING_PROFILES_ACTIVE=prod,staging` and `APP_MOBILE_DEMO_SEED_ENABLED=true` are both set.
 - Render staging uses `SMS_PROVIDER=disabled` with the `staging` profile so OTP/SMS messages are not sent externally.
 - Real production must not use `staging` or `SMS_PROVIDER=disabled`; startup must fail unless a real SMS provider is configured.
 - `DATABASE_URL` must use JDBC format: `jdbc:postgresql://host:5432/dbname`
@@ -52,3 +54,4 @@ Leave these empty for the first deploy unless those services are already provisi
 2. Use `Manual Deploy` -> `Clear build cache & deploy`.
 3. Wait for `/health/live` to return `UP`; `/actuator/health` may report optional infra health differently.
 4. Test the login endpoint after health is up.
+

@@ -1,0 +1,216 @@
+# Phase 14E Mobile Staging UAT Report
+
+## Reason For Phase 14E
+
+Phase 14E validates whether the customer, plumber, and store mobile apps can run against the live Render staging backend without silently falling back to localhost or mock-only behavior.
+
+## Apps Tested
+
+- `customer-app`
+- `plumber-app`
+- `store-app`
+
+## Backend URL Used
+
+```text
+https://plumbing-qcommerce.onrender.com
+```
+
+## Environment Variables Used
+
+```text
+EXPO_PUBLIC_API_BASE_URL=https://plumbing-qcommerce.onrender.com
+EXPO_PUBLIC_BACKEND_URL=https://plumbing-qcommerce.onrender.com
+EXPO_PUBLIC_EDGE_URL=
+```
+
+## Commands Run
+
+Customer app:
+
+```text
+npm install
+npm run typecheck
+npm test
+npm run build
+```
+
+Plumber app:
+
+```text
+npm install
+npm run typecheck
+npm test
+npm run build
+```
+
+Store app:
+
+```text
+npm install
+npm run typecheck
+npm test
+npm run build
+```
+
+Backend API smoke:
+
+```text
+GET /health/live
+GET /api/v1/catalog/categories
+GET /api/v1/catalog/products
+POST /api/v1/auth/login
+GET /api/v1/users/me
+```
+
+## Build And Test Result
+
+- `customer-app`: PASS — typecheck, tests, and Expo web export succeed
+- `plumber-app`: PASS — typecheck, tests, and Expo web export succeed
+- `store-app`: PASS — typecheck, tests, and Expo web export succeed
+- Backend Maven validation: BLOCKED locally because `JAVA_HOME` is not configured in this shell
+
+## API Smoke Result
+
+- `GET /health/live`: PASS
+- `GET /api/v1/catalog/categories`: PASS — returns empty list `[]`
+- `GET /api/v1/catalog/products`: PASS — returns empty list `[]`
+- `POST /api/v1/auth/login` with `superadmin@plumbcommerce.com / password`: PASS
+- `GET /api/v1/users/me` with admin token: PASS
+- `POST /api/v1/auth/login` with `customer@plumbcommerce.com / password`: FAIL — `401 Unauthorized`
+- `POST /api/v1/auth/login` with plumber staging user: FAIL — `401 Unauthorized`
+- `POST /api/v1/auth/login` with store staging user: FAIL — `401 Unauthorized`
+
+## Test Users Created Or Verified
+
+Verified on live staging now:
+
+- `superadmin@plumbcommerce.com / password`
+
+Missing or not yet usable on live staging at test time:
+
+- `customer@plumbcommerce.com / password`
+- `plumber@plumbcommerce.com / password`
+- `store@plumbcommerce.com / password`
+
+Repo fix added in this phase:
+
+- staging-only `StagingDemoMobileUserSeeder`
+- gated by `APP_MOBILE_DEMO_SEED_ENABLED=true`
+- creates customer, plumber, and store manager demo users only for `prod,staging`
+
+## Customer App UAT Result
+
+Result: `PARTIAL`
+
+What is verified:
+
+- Build passes
+- Tests pass
+- API base URL supports Render staging
+- Public catalog endpoints are reachable from staging
+- No localhost hardcoding in the primary API client
+
+Known blockers:
+
+- Staging customer login is not yet available on live Render because the customer demo user is missing
+- `customer-app` still has mock-only or local-only behavior in:
+  - `customer-app/src/services/profile/profileRepository.ts`
+  - `customer-app/src/screens/MaterialApprovalScreen.tsx`
+  - `customer-app/src/screens/ProductListingScreen.tsx`
+  - `customer-app/src/screens/ProductDetailsScreen.tsx`
+
+## Plumber App UAT Result
+
+Result: `FAIL`
+
+What is verified:
+
+- Build passes
+- Tests pass
+- API client points to staging backend
+
+Blocking issues:
+
+- Live staging plumber login is not yet available on Render
+- `plumber-app` contains silent mock fallback in auth and core workflow services, including:
+  - `plumber-app/src/services/auth/authService.ts`
+  - `plumber-app/src/services/jobs/jobService.ts`
+  - `plumber-app/src/services/materials/materialService.ts`
+  - `plumber-app/src/services/profile/profileService.ts`
+  - `plumber-app/src/services/wallet/walletService.ts`
+  - `plumber-app/src/services/earnings/earningsService.ts`
+
+## Store App UAT Result
+
+Result: `FAIL`
+
+What is verified:
+
+- Build passes
+- Tests pass
+- API client points to staging backend
+
+Blocking issues:
+
+- Live staging store manager login is not yet available on Render
+- `store-app` still uses broad mock fallback or mock-only flows in:
+  - `store-app/src/services/inventory/inventoryService.ts`
+  - `store-app/src/services/orders/ordersService.ts`
+  - `store-app/src/services/store/storeService.ts`
+  - `store-app/src/services/wallet/walletService.ts`
+  - `store-app/src/services/notifications/notificationService.ts`
+  - `store-app/src/services/analytics/analyticsService.ts`
+  - `store-app/src/screens/auth/LoginScreen.tsx`
+
+## Expo Web Or Device Testing
+
+Method exercised in this phase:
+
+- Expo web export build
+
+Command used:
+
+```text
+npm run build
+```
+
+Browser or device used:
+
+- No interactive browser/device E2E was completed in this run because live staging mobile login users were missing and several flows still contain mock fallback logic.
+
+## Known Blockers
+
+- Live Render staging does not yet expose working customer, plumber, and store demo credentials
+- Backend mobile demo seeder must be deployed with `APP_MOBILE_DEMO_SEED_ENABLED=true`
+- Plumber and store apps still contain silent mock fallback in core authenticated flows
+- Customer app still contains some mock-only UI flows even though the primary API client is staging-ready
+- Local backend Maven validation is blocked until `JAVA_HOME` is configured
+
+## Files Inspected
+
+- `customer-app/src/services/apiClient.ts`
+- `customer-app/src/services/auth/authRepository.ts`
+- `customer-app/src/services/profile/profileRepository.ts`
+- `customer-app/src/screens/MaterialApprovalScreen.tsx`
+- `customer-app/src/screens/ProductListingScreen.tsx`
+- `plumber-app/src/services/api/axiosClient.ts`
+- `plumber-app/src/services/auth/authService.ts`
+- `plumber-app/src/services/jobs/jobService.ts`
+- `plumber-app/src/services/materials/materialService.ts`
+- `plumber-app/src/services/profile/profileService.ts`
+- `store-app/src/services/api/axiosClient.ts`
+- `store-app/src/services/auth/authService.ts`
+- `store-app/src/services/inventory/inventoryService.ts`
+- `store-app/src/services/orders/ordersService.ts`
+- `store-app/src/services/store/storeService.ts`
+- `backend/src/main/java/com/pqc/core/controller/AuthController.java`
+- `backend/src/main/java/com/pqc/core/config/StagingDemoAdminUserSeeder.java`
+
+## Final Verdict
+
+- CUSTOMER APP STAGING UAT: `PARTIAL`
+- PLUMBER APP STAGING UAT: `FAIL`
+- STORE APP STAGING UAT: `FAIL`
+- MOBILE STAGING READY: `PARTIAL`
+- PRODUCTION READY: `NO`
