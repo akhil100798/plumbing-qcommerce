@@ -1,6 +1,11 @@
 import { apiClient, setAuthToken, setRefreshToken } from '../api/axiosClient';
 import { ENDPOINTS } from '../api/endpoints';
 import { MOCK_PLUMBER } from '../mocks/mockData';
+import {
+  canUseDevMockFallbacks,
+  createBackendUnavailableError,
+  warnUsingDevMockFallback,
+} from '../mockPolicy';
 import { PlumberProfile } from '../../types';
 
 export interface LoginResponse {
@@ -14,14 +19,12 @@ export interface LoginResponse {
 export const authService = {
   login: async (phone: string, code: string): Promise<{ plumber: PlumberProfile; token: string; refreshToken: string }> => {
     try {
-      // In the real system we call verify-otp
       const response = await apiClient.post<LoginResponse>(ENDPOINTS.AUTH.VERIFY_OTP, { phone, code });
       const { token, refreshToken, email, userId } = response.data;
       
       setAuthToken(token);
       setRefreshToken(refreshToken);
 
-      // Fetch profile
       const plumberProfile: PlumberProfile = {
         id: userId,
         fullName: email.split('@')[0],
@@ -35,9 +38,8 @@ export const authService = {
 
       return { plumber: plumberProfile, token, refreshToken };
     } catch (error) {
-      console.warn('API verification failed, using mock auth session', error);
-      // Fallback for simulation / testing when backend is not fully reachable
-      if (phone === '+91 98765 43210' && code === '123456') {
+      if (canUseDevMockFallbacks() && phone === '+91 98765 43210' && code === '123456') {
+        warnUsingDevMockFallback('Plumber login', error);
         const token = 'mock_jwt_token';
         const refreshToken = 'mock_refresh_token';
         setAuthToken(token);
@@ -48,7 +50,7 @@ export const authService = {
           refreshToken,
         };
       }
-      throw error;
+      throw createBackendUnavailableError('Plumber login', error);
     }
   },
 
@@ -57,17 +59,16 @@ export const authService = {
       const response = await apiClient.post<{ message: string }>(ENDPOINTS.AUTH.SEND_OTP, { phone });
       return response.data;
     } catch (error) {
-      console.warn('API send-otp failed, fallback to mock success', error);
-      if (phone === '+91 98765 43210') {
+      if (canUseDevMockFallbacks() && phone === '+91 98765 43210') {
+        warnUsingDevMockFallback('Plumber OTP send', error);
         return { message: 'OTP sent successfully (Mock)' };
       }
-      throw error;
+      throw createBackendUnavailableError('Plumber OTP send', error);
     }
   },
 
   logout: async (): Promise<void> => {
     try {
-      // TODO: Add backend logout route in endpoints if available
       setAuthToken(null);
       setRefreshToken(null);
     } catch (error) {

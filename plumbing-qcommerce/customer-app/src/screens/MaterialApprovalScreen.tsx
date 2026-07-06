@@ -1,6 +1,7 @@
 import { StackScreenProps } from '@react-navigation/stack';
 import React, { useState } from 'react';
 import {
+  Alert,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -12,6 +13,7 @@ import {
 import { MaterialCard } from '../components/cards/MaterialCard';
 import { PrimaryButton } from '../components/common/PrimaryButton';
 import { SecondaryButton } from '../components/common/SecondaryButton';
+import { canUseDevMockFallbacks, warnUsingDevMockFallback } from '../services/mockPolicy';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
 
@@ -26,18 +28,37 @@ const mockMaterials = [
 export function MaterialApprovalScreen({ route, navigation }: Props) {
   const { serviceOrderId, plumberName } = route.params;
   const [loading, setLoading] = useState(false);
+  const mockFallbackEnabled = canUseDevMockFallbacks();
 
-  const totalAmount = mockMaterials.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const totalAmount = mockFallbackEnabled
+    ? mockMaterials.reduce((sum, item) => sum + item.price * item.qty, 0)
+    : 0;
 
   const handleDecline = () => {
-    // Navigate back to tracking as fallback or alert
-    alert('Material request declined. Plumber will be notified.');
+    if (!mockFallbackEnabled) {
+      Alert.alert(
+        'Feature unavailable',
+        'Material approval is not connected to the staging backend yet.'
+      );
+      return;
+    }
+
+    warnUsingDevMockFallback('Material approval decline', new Error(serviceOrderId));
+    Alert.alert('Material request declined', 'Plumber will be notified.');
     navigation.goBack();
   };
 
   const handleApproveAndPay = () => {
+    if (!mockFallbackEnabled) {
+      Alert.alert(
+        'Feature unavailable',
+        'Material approval and payment are not connected to the staging backend yet.'
+      );
+      return;
+    }
+
     setLoading(true);
-    // Simulate transaction delay
+    warnUsingDevMockFallback('Material approval payment', new Error(serviceOrderId));
     setTimeout(() => {
       setLoading(false);
       navigation.replace('ServiceCompletion', {
@@ -50,14 +71,14 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
+          <Text style={styles.backButtonText}>?</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Material Approval</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.requestBanner}>
-          <Text style={styles.bannerEmoji}>🛠️</Text>
+          <Text style={styles.bannerEmoji}>???</Text>
           <View style={styles.bannerTextContainer}>
             <Text style={styles.bannerTitle}>Materials Requested</Text>
             <Text style={styles.bannerSub}>
@@ -67,12 +88,24 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
         </View>
 
         <Text style={styles.sectionTitle}>Required Items</Text>
-        <MaterialCard items={mockMaterials} totalAmount={totalAmount} />
+        {mockFallbackEnabled ? (
+          <MaterialCard items={mockMaterials} totalAmount={totalAmount} />
+        ) : (
+          <View style={styles.unavailableCard}>
+            <Text style={styles.unavailableTitle}>Material approval is blocked in staging</Text>
+            <Text style={styles.unavailableText}>
+              This screen no longer injects fake material items. Please use local dev with
+              ` EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=true ` to exercise the demo-only flow.
+            </Text>
+          </View>
+        )}
 
         <View style={styles.noticeCard}>
-          <Text style={styles.noticeEmoji}>⚡</Text>
+          <Text style={styles.noticeEmoji}>?</Text>
           <Text style={styles.noticeText}>
-            These materials will be delivered to your house via our instant 15-minute delivery partner.
+            {mockFallbackEnabled
+              ? 'These materials will be delivered to your house via our instant 15-minute delivery partner.'
+              : 'Staging now surfaces a blocked backend dependency here instead of silently simulating delivery.'}
           </Text>
         </View>
       </ScrollView>
@@ -86,7 +119,7 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
           style={styles.actionBtn}
         />
         <PrimaryButton
-          title={`Approve & Pay ₹${totalAmount}`}
+          title={mockFallbackEnabled ? `Approve & Pay ?${totalAmount}` : 'Backend Integration Required'}
           onPress={handleApproveAndPay}
           loading={loading}
           style={styles.actionBtnPrimary}
@@ -167,6 +200,24 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
     marginBottom: spacing.sm,
+  },
+  unavailableCard: {
+    borderWidth: 1,
+    borderColor: colors.error,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+  },
+  unavailableTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.error,
+    marginBottom: spacing.xs,
+  },
+  unavailableText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    lineHeight: 18,
   },
   noticeCard: {
     flexDirection: 'row',

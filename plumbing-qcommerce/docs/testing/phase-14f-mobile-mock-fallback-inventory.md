@@ -112,6 +112,43 @@ This step makes no functional code changes. It documents where staging can still
 - Remove store wallet, notifications, analytics, dispatch, splash dummy user, dashboard mock name, and static profile fallbacks
 - Replace test OTP messaging in store login with real backend-driven confirmation only
 
+## P0 Implementation Result
+
+- Inventory commit used: `e6841f5`
+- P0 findings fixed: `9/9`
+- P0 files changed:
+  - `customer-app/src/services/mockPolicy.ts`
+  - `customer-app/src/screens/ProductListingScreen.tsx`
+  - `customer-app/src/screens/ProductDetailsScreen.tsx`
+  - `customer-app/src/screens/MaterialApprovalScreen.tsx`
+  - `plumber-app/src/services/mockPolicy.ts`
+  - `plumber-app/src/services/auth/authService.ts`
+  - `plumber-app/src/services/jobs/jobService.ts`
+  - `plumber-app/src/services/materials/materialService.ts`
+  - `store-app/src/services/mockPolicy.ts`
+  - `store-app/src/services/inventory/inventoryService.ts`
+  - `store-app/src/services/orders/ordersService.ts`
+  - `store-app/src/services/store/storeService.ts`
+- Mocks removed from staging runtime:
+  - Customer catalog/product detail fake fallback data
+  - Plumber fake OTP verification success and local job/material success paths
+  - Store inventory/order/profile fake persistence and local success paths
+- Mocks dev-gated:
+  - All former P0 mock paths now require `EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=true` plus a local/dev backend URL
+- Endpoints still missing or explicitly blocked in staging:
+  - Customer material approval/payment backend flow
+  - Plumber navigation/arrival state update backend flow
+  - Store order rejection, delivery partner resolution, delivery OTP resolution, and profile/catalog mutation backend flow
+- Remaining counts after P0 implementation:
+  - `P0`: `0`
+  - `P1`: `17`
+  - `P2`: `10`
+  - `P3`: `8`
+- Mobile staging verdict after P0:
+  - `customer-app`: `PARTIAL`
+  - `plumber-app`: `PARTIAL`
+  - `store-app`: `PARTIAL`
+  - `mobile staging`: `PARTIAL`
 ## Dev-Only Mock Policy Recommendation
 
 1. Introduce a single explicit env flag such as `EXPO_PUBLIC_ENABLE_DEV_MOCKS=false`
@@ -130,7 +167,10 @@ This step makes no functional code changes. It documents where staging can still
 
 - MOCK FALLBACK INVENTORY: `COMPLETE`
 - CUSTOMER APP REAL API READINESS: `PARTIAL`
-- PLUMBER APP REAL API READINESS: `BLOCKED`
-- STORE APP REAL API READINESS: `BLOCKED`
+- PLUMBER APP REAL API READINESS: `PARTIAL`
+- STORE APP REAL API READINESS: `PARTIAL`
 - MOBILE STAGING READY: `PARTIAL`
 - PRODUCTION READY: `NO`
+
+
+

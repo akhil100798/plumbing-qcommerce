@@ -2,6 +2,12 @@ import { apiClient } from '../api/axiosClient';
 import { ENDPOINTS } from '../api/endpoints';
 import { Store } from '../../types';
 import { mockStore } from '../../mocks';
+import {
+  canUseDevMockFallbacks,
+  createBackendUnavailableError,
+  createUnsupportedBackendError,
+  warnUsingDevMockFallback,
+} from '../mockPolicy';
 
 export const storeService = {
   getStoreProfile: async (id: number): Promise<Store> => {
@@ -9,14 +15,20 @@ export const storeService = {
       const response = await apiClient.get(ENDPOINTS.store.details(id));
       return response.data;
     } catch (e) {
-      console.warn('API getStoreProfile failed, using mock data:', e);
-      return mockStore;
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Store profile', e);
+        return mockStore;
+      }
+      throw createBackendUnavailableError('store profile', e);
     }
   },
 
-  // TODO: Implement backend endpoint PUT /api/v1/stores/{id}
   updateStoreProfile: async (store: Store): Promise<Store> => {
-    console.warn('updateStoreProfile API missing. Fallback to mock.');
+    if (!canUseDevMockFallbacks()) {
+      throw createUnsupportedBackendError('Store profile updates');
+    }
+
+    warnUsingDevMockFallback('Store profile update', new Error('Store profile updates'));
     return { ...mockStore, ...store };
   }
 };

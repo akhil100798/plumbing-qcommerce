@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -14,6 +13,11 @@ import {
 
 import { PrimaryButton } from '../components/common/PrimaryButton';
 import { SecondaryButton } from '../components/common/SecondaryButton';
+import {
+  createBackendUnavailableError,
+  canUseDevMockFallbacks,
+  warnUsingDevMockFallback,
+} from '../services/mockPolicy';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
 
@@ -26,34 +30,45 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
   const { productId } = route.params;
   const [product, setProduct] = useState<ProductDTO | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
 
-  useEffect(() => {
+  const loadProduct = () => {
     setLoading(true);
+    setError(null);
+
     ProductRepository.getProductById(productId)
       .then((data) => {
         setProduct(data);
         setLoading(false);
       })
       .catch((err) => {
-        console.log('Failed to fetch product details:', err);
-        // Fallback mockup
-        setProduct({
-          id: productId,
-          sku: 'ASH-PVC-20',
-          name: 'Ashirvad PVC Pipe',
-          description: 'Premium quality PVC pipe for standard water distribution and plumbing work. Durable design with high flow rates.',
-          price: 220,
-          imageUrl: '',
-          categoryId: 1,
-          categoryName: 'Pipes',
-        });
+        if (canUseDevMockFallbacks()) {
+          warnUsingDevMockFallback('Product details', err);
+          setProduct({
+            id: productId,
+            sku: 'ASH-PVC-20',
+            name: 'Ashirvad PVC Pipe',
+            description:
+              'Premium quality PVC pipe for standard water distribution and plumbing work. Durable design with high flow rates.',
+            price: 220,
+            imageUrl: '',
+            categoryId: 1,
+            categoryName: 'Pipes',
+          });
+        } else {
+          setProduct(null);
+          setError(createBackendUnavailableError('product details', err).message);
+        }
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    loadProduct();
   }, [productId]);
 
   const handleBuyNow = () => {
-    // Navigate straight to cart screen
     navigation.navigate('Cart');
   };
 
@@ -75,7 +90,12 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loader}>
-          <Text style={styles.errorText}>Product not found.</Text>
+          <Text style={styles.errorText}>{error || 'Product not found.'}</Text>
+          {!!error && (
+            <TouchableOpacity style={styles.retryButton} onPress={loadProduct}>
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </SafeAreaView>
     );
@@ -85,21 +105,21 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
+          <Text style={styles.backButtonText}>?</Text>
         </TouchableOpacity>
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.iconBtn}>
-            <Text style={styles.iconEmoji}>📤</Text>
+            <Text style={styles.iconEmoji}>??</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconBtn}>
-            <Text style={styles.iconEmoji}>❤️</Text>
+            <Text style={styles.iconEmoji}>??</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.imageGallery}>
-          <Text style={styles.largeEmoji}>🪵</Text>
+          <Text style={styles.largeEmoji}>??</Text>
         </View>
 
         <View style={styles.detailsBlock}>
@@ -108,7 +128,7 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
           <Text style={styles.subtitle}>(20mm) 3 Meter</Text>
 
           <View style={styles.ratingRow}>
-            <Text style={styles.star}>⭐</Text>
+            <Text style={styles.star}>?</Text>
             <Text style={styles.ratingValue}>4.5</Text>
             <Text style={styles.reviewsCount}>(120 Reviews)</Text>
             <View style={styles.dividerDot} />
@@ -116,15 +136,15 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
           </View>
 
           <View style={styles.priceRow}>
-            <Text style={styles.price}>₹{product.price}</Text>
-            <Text style={styles.originalPrice}>₹{product.price + 30}</Text>
+            <Text style={styles.price}>?{product.price}</Text>
+            <Text style={styles.originalPrice}>?{product.price + 30}</Text>
             <View style={styles.discountBadge}>
               <Text style={styles.discountText}>12% OFF</Text>
             </View>
           </View>
 
           <View style={styles.deliveryWidget}>
-            <Text style={styles.deliveryIcon}>🚚</Text>
+            <Text style={styles.deliveryIcon}>??</Text>
             <Text style={styles.deliveryText}>
               Delivery in <Text style={styles.deliveryBold}>20 mins</Text> from Sai Pipes (0.8 km)
             </Text>
@@ -132,11 +152,11 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
 
           <View style={styles.badgesRow}>
             <View style={styles.badge}>
-              <Text style={styles.badgeIcon}>🛡️</Text>
+              <Text style={styles.badgeIcon}>???</Text>
               <Text style={styles.badgeText}>Genuine Product</Text>
             </View>
             <View style={styles.badge}>
-              <Text style={styles.badgeIcon}>📄</Text>
+              <Text style={styles.badgeIcon}>??</Text>
               <Text style={styles.badgeText}>GST Bill</Text>
             </View>
           </View>
@@ -415,10 +435,23 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: spacing.layout,
   },
   errorText: {
     fontSize: typography.fontSize.md,
     color: colors.error,
+    fontWeight: typography.fontWeight.bold,
+    textAlign: 'center',
+  },
+  retryButton: {
+    marginTop: spacing.md,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: 9999,
+  },
+  retryButtonText: {
+    color: colors.surface,
     fontWeight: typography.fontWeight.bold,
   },
   footer: {

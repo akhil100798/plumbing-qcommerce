@@ -4,8 +4,13 @@ import { Order } from '../../types';
 import { mockOrders } from '../../mocks';
 import { store } from '../../redux/store';
 import { dispatchService } from '../dispatch/dispatchService';
+import {
+  canUseDevMockFallbacks,
+  createBackendUnavailableError,
+  createUnsupportedBackendError,
+  warnUsingDevMockFallback,
+} from '../mockPolicy';
 
-// In-memory state helper for mocks
 let localOrders: Order[] = [...mockOrders];
 
 const mapApiOrderToOrder = (o: any): Order => {
@@ -35,18 +40,13 @@ export const ordersService = {
   getOrders: async (): Promise<Order[]> => {
     try {
       const response = await apiClient.get(ENDPOINTS.orders.byStatus('CONFIRMED'));
-      const apiOrders: Order[] = (response.data || []).map(mapApiOrderToOrder);
-
-      // Merge API and local orders
-      const orderIds = new Set(apiOrders.map(o => o.id));
-      const combined = [
-        ...apiOrders,
-        ...localOrders.filter(o => !orderIds.has(o.id))
-      ];
-      return combined;
+      return (response.data || []).map(mapApiOrderToOrder);
     } catch (e) {
-      console.warn('API getOrders failed, using local mock data:', e);
-      return localOrders;
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Store order list', e);
+        return localOrders;
+      }
+      throw createBackendUnavailableError('store orders', e);
     }
   },
 
@@ -55,10 +55,13 @@ export const ordersService = {
       const response = await apiClient.get(ENDPOINTS.orders.details(orderId));
       return mapApiOrderToOrder(response.data);
     } catch (e) {
-      console.warn(`API getOrderDetails ${orderId} failed, using local mock:`, e);
-      const found = localOrders.find(o => o.id === orderId);
-      if (!found) throw new Error('Order not found');
-      return found;
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback(`Store order details ${orderId}`, e);
+        const found = localOrders.find((o) => o.id === orderId);
+        if (!found) throw new Error('Order not found');
+        return found;
+      }
+      throw createBackendUnavailableError(`order details for ${orderId}`, e);
     }
   },
 
@@ -68,19 +71,26 @@ export const ordersService = {
       const response = await apiClient.patch(ENDPOINTS.orders.accept(orderId), { storeId: sId });
       return mapApiOrderToOrder(response.data);
     } catch (e) {
-      console.warn(`API acceptOrder ${orderId} failed, Fallback to mock:`, e);
-      const idx = localOrders.findIndex(o => o.id === orderId);
-      if (idx !== -1) {
-        localOrders[idx] = { ...localOrders[idx], status: 'CONFIRMED' };
-        return localOrders[idx];
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback(`Store accept order ${orderId}`, e);
+        const idx = localOrders.findIndex((o) => o.id === orderId);
+        if (idx !== -1) {
+          localOrders[idx] = { ...localOrders[idx], status: 'CONFIRMED' };
+          return localOrders[idx];
+        }
+        throw new Error('Order not found');
       }
-      throw new Error('Order not found');
+      throw createBackendUnavailableError(`accept order ${orderId}`, e);
     }
   },
 
   rejectOrder: async (orderId: number): Promise<Order> => {
-    console.warn(`rejectOrder ${orderId} API missing. Fallback to mock.`);
-    const idx = localOrders.findIndex(o => o.id === orderId);
+    if (!canUseDevMockFallbacks()) {
+      throw createUnsupportedBackendError('Store order rejection');
+    }
+
+    warnUsingDevMockFallback(`Store reject order ${orderId}`, new Error('Store order rejection'));
+    const idx = localOrders.findIndex((o) => o.id === orderId);
     if (idx !== -1) {
       localOrders[idx] = { ...localOrders[idx], status: 'CANCELLED' };
       return localOrders[idx];
@@ -94,13 +104,16 @@ export const ordersService = {
       const response = await apiClient.patch(ENDPOINTS.orders.accept(orderId), { storeId: sId });
       return mapApiOrderToOrder(response.data);
     } catch (e) {
-      console.warn(`API markPacking ${orderId} failed, Fallback to mock:`, e);
-      const idx = localOrders.findIndex(o => o.id === orderId);
-      if (idx !== -1) {
-        localOrders[idx] = { ...localOrders[idx], status: 'PACKING' };
-        return localOrders[idx];
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback(`Store mark packing ${orderId}`, e);
+        const idx = localOrders.findIndex((o) => o.id === orderId);
+        if (idx !== -1) {
+          localOrders[idx] = { ...localOrders[idx], status: 'PACKING' };
+          return localOrders[idx];
+        }
+        throw new Error('Order not found');
       }
-      throw new Error('Order not found');
+      throw createBackendUnavailableError(`mark packing for order ${orderId}`, e);
     }
   },
 
@@ -110,13 +123,16 @@ export const ordersService = {
       const response = await apiClient.patch(ENDPOINTS.orders.pack(orderId), { storeId: sId, packingNote });
       return mapApiOrderToOrder(response.data);
     } catch (e) {
-      console.warn(`API markPacked ${orderId} failed, Fallback to mock:`, e);
-      const idx = localOrders.findIndex(o => o.id === orderId);
-      if (idx !== -1) {
-        localOrders[idx] = { ...localOrders[idx], status: 'READY_FOR_PICKUP', packingNote };
-        return localOrders[idx];
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback(`Store mark packed ${orderId}`, e);
+        const idx = localOrders.findIndex((o) => o.id === orderId);
+        if (idx !== -1) {
+          localOrders[idx] = { ...localOrders[idx], status: 'READY_FOR_PICKUP', packingNote };
+          return localOrders[idx];
+        }
+        throw new Error('Order not found');
       }
-      throw new Error('Order not found');
+      throw createBackendUnavailableError(`mark packed for order ${orderId}`, e);
     }
   },
 
@@ -128,12 +144,12 @@ export const ordersService = {
       
       if (!dpId || !deliveryOtp) {
         const details = await ordersService.getOrderDetails(orderId);
-        deliveryOtp = deliveryOtp || details.deliveryOtp || '1234';
+        deliveryOtp = deliveryOtp || details.deliveryOtp;
         
         if (!dpId && details.deliveryPartnerName) {
           try {
             const riders = await dispatchService.getAvailableRiders();
-            const found = riders.find(r => r.fullName === details.deliveryPartnerName);
+            const found = riders.find((r) => r.fullName === details.deliveryPartnerName);
             if (found) dpId = found.id;
           } catch (err) {
             console.warn('Failed to resolve rider name to ID:', err);
@@ -141,16 +157,11 @@ export const ordersService = {
         }
         
         if (!dpId) {
-          try {
-            const riders = await dispatchService.getAvailableRiders();
-            if (riders.length > 0) {
-              dpId = riders[0].id;
-            } else {
-              dpId = 1;
-            }
-          } catch (err) {
-            dpId = 1;
-          }
+          throw createUnsupportedBackendError('Store delivery partner resolution');
+        }
+
+        if (!deliveryOtp) {
+          throw createUnsupportedBackendError('Store delivery OTP resolution');
         }
       }
 
@@ -161,13 +172,16 @@ export const ordersService = {
       });
       return mapApiOrderToOrder(response.data);
     } catch (e) {
-      console.warn(`API handOverPackage ${orderId} failed, Fallback to mock:`, e);
-      const idx = localOrders.findIndex(o => o.id === orderId);
-      if (idx !== -1) {
-        localOrders[idx] = { ...localOrders[idx], status: 'OUT_FOR_DELIVERY' };
-        return localOrders[idx];
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback(`Store handover package ${orderId}`, e);
+        const idx = localOrders.findIndex((o) => o.id === orderId);
+        if (idx !== -1) {
+          localOrders[idx] = { ...localOrders[idx], status: 'OUT_FOR_DELIVERY' };
+          return localOrders[idx];
+        }
+        throw new Error('Order not found');
       }
-      throw new Error('Order not found');
+      throw createBackendUnavailableError(`handover package for order ${orderId}`, e);
     }
   }
 };

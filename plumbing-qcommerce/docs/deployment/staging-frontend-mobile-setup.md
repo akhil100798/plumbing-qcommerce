@@ -48,6 +48,7 @@ Local development:
 EXPO_PUBLIC_API_BASE_URL=http://localhost:8081
 EXPO_PUBLIC_BACKEND_URL=http://localhost:8081
 EXPO_PUBLIC_EDGE_URL=http://localhost:3000
+EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=true
 ```
 
 Render staging backend:
@@ -56,9 +57,11 @@ Render staging backend:
 EXPO_PUBLIC_API_BASE_URL=https://plumbing-qcommerce.onrender.com
 EXPO_PUBLIC_BACKEND_URL=https://plumbing-qcommerce.onrender.com
 EXPO_PUBLIC_EDGE_URL=
+EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false
 ```
 
 `EXPO_PUBLIC_API_BASE_URL` is preferred. `EXPO_PUBLIC_BACKEND_URL` remains supported for backward compatibility.
+Mock fallback is now disabled by default for staging. Local demo data may be used only when both the app is running locally and `EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=true`.
 
 ## Backend Staging Seed Requirement
 
@@ -100,6 +103,7 @@ cd customer-app
 EXPO_PUBLIC_API_BASE_URL=https://plumbing-qcommerce.onrender.com
 EXPO_PUBLIC_BACKEND_URL=https://plumbing-qcommerce.onrender.com
 EXPO_PUBLIC_EDGE_URL=
+EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false
 "@ | Set-Content .env
 npm install
 npm run typecheck
@@ -115,6 +119,7 @@ cd plumber-app
 EXPO_PUBLIC_API_BASE_URL=https://plumbing-qcommerce.onrender.com
 EXPO_PUBLIC_BACKEND_URL=https://plumbing-qcommerce.onrender.com
 EXPO_PUBLIC_EDGE_URL=
+EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false
 "@ | Set-Content .env
 npm install
 npm run typecheck
@@ -130,6 +135,7 @@ cd store-app
 EXPO_PUBLIC_API_BASE_URL=https://plumbing-qcommerce.onrender.com
 EXPO_PUBLIC_BACKEND_URL=https://plumbing-qcommerce.onrender.com
 EXPO_PUBLIC_EDGE_URL=
+EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false
 "@ | Set-Content .env
 npm install
 npm run typecheck
@@ -148,5 +154,5 @@ npx expo start -c
 - `customer-app` now authenticates successfully against live Render staging, but still contains local mock-only UI for profile stats, saved cards, material approval, and product fallback states.
 - `plumber-app` now authenticates successfully against live Render staging, but still contains mock fallback logic in auth, jobs, materials, profile, wallet, and earnings services.
 - `store-app` now authenticates successfully against live Render staging, but still contains broad mock fallback logic in inventory, orders, wallet, notifications, analytics, store profile, and some review/offers screens.
+- Phase 14F P0 removed silent staging fallback for customer catalog, plumber auth/jobs/materials, and store inventory/orders/profile flows. Remaining P1/P2/P3 items still keep mobile staging at `PARTIAL`.
 - Production deployment remains `NO`.
-

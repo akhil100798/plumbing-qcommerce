@@ -1,13 +1,17 @@
 import { apiClient } from '../api/axiosClient';
 import { ENDPOINTS } from '../api/endpoints';
 import { MOCK_ACTIVE_JOB, MOCK_JOB_OFFER } from '../mocks/mockData';
+import {
+  canUseDevMockFallbacks,
+  createBackendUnavailableError,
+  createUnsupportedBackendError,
+  warnUsingDevMockFallback,
+} from '../mockPolicy';
 import { ActiveJob, JobOffer } from '../../types';
 
 export const jobService = {
   fetchIncomingJobs: async (): Promise<JobOffer[]> => {
     try {
-      // In q-commerce, jobs are broadcasted via websockets, but we can poll too.
-      // Fetch available pending orders
       const response = await apiClient.get<any[]>(ENDPOINTS.ORDERS.BY_STATUS('PENDING'));
       return response.data.map((order) => ({
         jobId: String(order.id),
@@ -22,8 +26,11 @@ export const jobService = {
         issueDescription: order.description,
       }));
     } catch (error) {
-      console.warn('Failed to fetch pending orders, using mock', error);
-      return [MOCK_JOB_OFFER];
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Fetch incoming jobs', error);
+        return [MOCK_JOB_OFFER];
+      }
+      throw createBackendUnavailableError('Incoming jobs', error);
     }
   },
 
@@ -55,26 +62,39 @@ export const jobService = {
         },
       };
     } catch (error) {
-      console.warn('Failed to accept order via API, fallback to mock active job', error);
-      return {
-        ...MOCK_ACTIVE_JOB,
-        jobId,
-        timeline: {
-          assigned: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          accepted: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      };
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Accept plumber job', error);
+        return {
+          ...MOCK_ACTIVE_JOB,
+          jobId,
+          timeline: {
+            assigned: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            accepted: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        };
+      }
+      throw createBackendUnavailableError('Accept plumber job', error);
     }
   },
 
   startNavigation: async (jobId: string): Promise<void> => {
-    // Local flow update - updates status to 'on_the_way'
-    console.log(`Started navigation for job ${jobId}`);
+    if (canUseDevMockFallbacks()) {
+      warnUsingDevMockFallback('Start navigation', new Error(jobId));
+      console.log(`Started navigation for job ${jobId}`);
+      return;
+    }
+
+    throw createUnsupportedBackendError('Navigation state updates');
   },
 
   markArrived: async (jobId: string): Promise<void> => {
-    // Local flow update - updates status to 'reached'
-    console.log(`Plumber reached destination for job ${jobId}`);
+    if (canUseDevMockFallbacks()) {
+      warnUsingDevMockFallback('Mark arrived', new Error(jobId));
+      console.log(`Plumber reached destination for job ${jobId}`);
+      return;
+    }
+
+    throw createUnsupportedBackendError('Arrival state updates');
   },
 
   startWork: async (jobId: string): Promise<ActiveJob> => {
@@ -107,17 +127,20 @@ export const jobService = {
         },
       };
     } catch (error) {
-      console.warn('Failed to start order via API, fallback to local transition', error);
-      return {
-        ...MOCK_ACTIVE_JOB,
-        jobId,
-        status: 'started',
-        timeline: {
-          ...MOCK_ACTIVE_JOB.timeline,
-          reached: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          started: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      };
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Start plumber job', error);
+        return {
+          ...MOCK_ACTIVE_JOB,
+          jobId,
+          status: 'started',
+          timeline: {
+            ...MOCK_ACTIVE_JOB.timeline,
+            reached: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            started: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        };
+      }
+      throw createBackendUnavailableError('Start plumber job', error);
     }
   },
 
@@ -154,19 +177,22 @@ export const jobService = {
         },
       };
     } catch (error) {
-      console.warn('Failed to complete order via API, fallback to local state', error);
-      return {
-        ...MOCK_ACTIVE_JOB,
-        jobId,
-        status: 'completed',
-        partsCharge: partsCharge || 0,
-        timeline: {
-          ...MOCK_ACTIVE_JOB.timeline,
-          reached: '10:30 AM',
-          started: '10:35 AM',
-          completed: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      };
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Complete plumber job', error);
+        return {
+          ...MOCK_ACTIVE_JOB,
+          jobId,
+          status: 'completed',
+          partsCharge: partsCharge || 0,
+          timeline: {
+            ...MOCK_ACTIVE_JOB.timeline,
+            reached: '10:30 AM',
+            started: '10:35 AM',
+            completed: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        };
+      }
+      throw createBackendUnavailableError('Complete plumber job', error);
     }
   },
 };
