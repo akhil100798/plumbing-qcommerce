@@ -145,7 +145,8 @@ npx expo start -c
 
 ## Current Phase 14E Findings
 
-- `customer-app` is largely API-connected but still contains local mock-only UI for profile stats, saved cards, material approval, and product fallback states.
-- `plumber-app` still contains mock auth and mock fallback logic in auth, jobs, materials, profile, wallet, and earnings services.
-- `store-app` still contains broad mock fallback logic in inventory, orders, wallet, notifications, analytics, store profile, and some review/offers screens.
+- `customer-app` now authenticates successfully against live Render staging, but still contains local mock-only UI for profile stats, saved cards, material approval, and product fallback states.
+- `plumber-app` now authenticates successfully against live Render staging, but still contains mock fallback logic in auth, jobs, materials, profile, wallet, and earnings services.
+- `store-app` now authenticates successfully against live Render staging, but still contains broad mock fallback logic in inventory, orders, wallet, notifications, analytics, store profile, and some review/offers screens.
 - Production deployment remains `NO`.
+
