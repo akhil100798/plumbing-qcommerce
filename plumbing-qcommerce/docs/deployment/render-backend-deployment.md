@@ -26,7 +26,7 @@ Add these values in the backend web service environment:
 - `DATABASE_USERNAME=<USER>`
 - `DATABASE_PASSWORD=<PASSWORD>`
 - `JWT_SECRET=<LONG_RANDOM_SECRET>`
-- `CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3100,http://localhost:3101,http://localhost:19006,http://localhost:19007,http://localhost:19008,http://localhost:19009,https://your-admin-portal.vercel.app`
+- `CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3100,http://localhost:3101,http://localhost:19006,http://localhost:19007,http://localhost:19008,http://localhost:19009,https://admin-portal-ten-weld.vercel.app`
 - `SMS_PROVIDER=disabled`
 
 Leave these empty for the first deploy unless those services are already provisioned:
@@ -44,7 +44,8 @@ Leave these empty for the first deploy unless those services are already provisi
 - Real production must not use `staging` or `SMS_PROVIDER=disabled`; startup must fail unless a real SMS provider is configured.
 - `DATABASE_URL` must use JDBC format: `jdbc:postgresql://host:5432/dbname`
 - Do not paste `postgres://...` directly unless the application explicitly supports it.
-- If an earlier bad database state exists, create a fresh empty Render PostgreSQL instance before redeploying.
+- If the Vercel admin staging URL changes, update `CORS_ALLOWED_ORIGINS` before attempting browser UAT.
+- Do not use wildcard CORS origins.
 
 ## Deploy
 1. Save the environment variables.

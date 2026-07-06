@@ -6,7 +6,7 @@
     "dev": "next dev",
     "dev:local-staging": "next dev --port 3101",
     "prebuild": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
-    "build": "next build --webpack",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "pretypecheck": "next typegen",

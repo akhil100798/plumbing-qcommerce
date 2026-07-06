@@ -34,6 +34,12 @@ NEXT_PUBLIC_EDGE_URL=
 
 `NEXT_PUBLIC_API_BASE_URL` is preferred. `NEXT_PUBLIC_BACKEND_URL` remains supported for backward compatibility.
 
+## Admin Portal Staging URL
+
+```text
+https://admin-portal-ten-weld.vercel.app
+```
+
 ## Mobile App Environment
 
 Applies to `customer-app`, `plumber-app`, and `store-app`.
@@ -58,12 +64,12 @@ EXPO_PUBLIC_EDGE_URL=
 
 ## Render Backend CORS
 
-For local staging smoke tests, set Render `CORS_ALLOWED_ORIGINS` to include the local admin/mobile web origins you actually use. Do not use wildcard origins with credentials.
+For local staging smoke tests and deployed admin UAT, set Render `CORS_ALLOWED_ORIGINS` to include the local admin/mobile web origins you actually use and the public Vercel admin staging URL. Do not use wildcard origins with credentials.
 
-Recommended staging value:
+Required current staging value:
 
 ```text
-CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3100,http://localhost:3101,http://localhost:19006,http://localhost:19007,http://localhost:19008,http://localhost:19009,https://your-admin-portal.vercel.app
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3100,http://localhost:3101,http://localhost:19006,http://localhost:19007,http://localhost:19008,http://localhost:19009,https://admin-portal-ten-weld.vercel.app
 ```
 
 ## Admin Portal Smoke
@@ -106,6 +112,7 @@ Verify app screens show API errors cleanly and do not silently fall back to mock
 
 ## Known Limitations
 
+- Admin portal staging is deployed, but full browser UAT is currently blocked until Render CORS includes `https://admin-portal-ten-weld.vercel.app`.
 - Edge service staging URL is not configured in Phase 14C.
 - OTP/SMS delivery is disabled in Render staging.
 - Production deployment remains `NO`.
