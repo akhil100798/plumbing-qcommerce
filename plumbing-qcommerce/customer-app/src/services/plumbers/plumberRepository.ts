@@ -2,7 +2,7 @@ import axios from 'axios';
 import { apiClient } from '../apiClient';
 import { CreateOrderRequest, PlumberServiceOrderDTO } from './plumberTypes';
 
-const EDGE_SERVER_URL = process.env.EXPO_PUBLIC_EDGE_SERVER_URL || 'http://localhost:3000';
+const EDGE_SERVER_URL = process.env.EXPO_PUBLIC_EDGE_URL || process.env.EXPO_PUBLIC_EDGE_SERVER_URL || 'http://localhost:3000';
 
 export const PlumberRepository = {
   createServiceOrder: async (data: CreateOrderRequest): Promise<PlumberServiceOrderDTO> => {

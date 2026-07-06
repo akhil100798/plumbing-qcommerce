@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { tokenStorage } from './tokenStorage';
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8081';
+const BACKEND_URL = process.env.EXPO_PUBLIC_API_BASE_URL || process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8081';
 
 export const apiClient = axios.create({
   baseURL: `${BACKEND_URL}/api/v1`,

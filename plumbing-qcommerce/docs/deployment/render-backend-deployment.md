@@ -26,7 +26,7 @@ Add these values in the backend web service environment:
 - `DATABASE_USERNAME=<USER>`
 - `DATABASE_PASSWORD=<PASSWORD>`
 - `JWT_SECRET=<LONG_RANDOM_SECRET>`
-- `CORS_ALLOWED_ORIGINS=https://your-admin-portal.vercel.app,http://localhost:3100`
+- `CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3100,http://localhost:3101,http://localhost:19006,http://localhost:19007,http://localhost:19008,http://localhost:19009,https://your-admin-portal.vercel.app`
 - `SMS_PROVIDER=disabled`
 
 Leave these empty for the first deploy unless those services are already provisioned:
@@ -49,5 +49,5 @@ Leave these empty for the first deploy unless those services are already provisi
 ## Deploy
 1. Save the environment variables.
 2. Use `Manual Deploy` -> `Clear build cache & deploy`.
-3. Wait for `/actuator/health` to return healthy JSON.
+3. Wait for `/health/live` to return `UP`; `/actuator/health` may report optional infra health differently.
 4. Test the login endpoint after health is up.
