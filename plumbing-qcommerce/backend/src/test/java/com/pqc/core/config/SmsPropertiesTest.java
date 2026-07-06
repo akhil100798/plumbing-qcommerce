@@ -52,6 +52,28 @@ class SmsPropertiesTest {
     }
 
     @Test
+    void prodRejectsDisabledProviderWithoutStagingProfile() {
+        prod();
+        properties.setProvider("disabled");
+        assertThatThrownBy(properties::validate).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void prodStagingAllowsDisabledProvider() {
+        when(env.getActiveProfiles()).thenReturn(new String[]{"prod", "staging"});
+        properties.setProvider("disabled");
+        assertThatCode(properties::validate).doesNotThrowAnyException();
+    }
+
+    @Test
+    void prodStagingRejectsDisabledProviderWithLocalCaptureEnabled() {
+        when(env.getActiveProfiles()).thenReturn(new String[]{"prod", "staging"});
+        properties.setProvider("disabled");
+        properties.setLocalCaptureEnabled(true);
+        assertThatThrownBy(properties::validate).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
     void localStagingAllowsExplicitLocalCapture() {
         when(env.getActiveProfiles()).thenReturn(new String[]{"local-staging"});
         properties.setProvider("local-capture");

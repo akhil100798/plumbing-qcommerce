@@ -18,7 +18,7 @@
 ## Environment Variables
 Add these values in the backend web service environment:
 
-- `SPRING_PROFILES_ACTIVE=prod`
+- `SPRING_PROFILES_ACTIVE=prod,staging`
 - `PORT=10000`
 - `APP_SCHEDULING_ENABLED=false`
 - `DATABASE_URL=jdbc:postgresql://<INTERNAL_HOST>:5432/<DB_NAME>`
@@ -26,6 +26,7 @@ Add these values in the backend web service environment:
 - `DATABASE_PASSWORD=<PASSWORD>`
 - `JWT_SECRET=<LONG_RANDOM_SECRET>`
 - `CORS_ALLOWED_ORIGINS=https://your-admin-portal.vercel.app,http://localhost:3100`
+- `SMS_PROVIDER=disabled`
 
 Leave these empty for the first deploy unless those services are already provisioned:
 
@@ -37,6 +38,8 @@ Leave these empty for the first deploy unless those services are already provisi
 - `KAFKA_PASSWORD=`
 
 ## Important Notes
+- Render staging uses `SMS_PROVIDER=disabled` with the `staging` profile so OTP/SMS messages are not sent externally.
+- Real production must not use `staging` or `SMS_PROVIDER=disabled`; startup must fail unless a real SMS provider is configured.
 - `DATABASE_URL` must use JDBC format: `jdbc:postgresql://host:5432/dbname`
 - Do not paste `postgres://...` directly unless the application explicitly supports it.
 - If an earlier bad database state exists, create a fresh empty Render PostgreSQL instance before redeploying.
