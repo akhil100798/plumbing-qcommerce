@@ -1,7 +1,8 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { tokenStorage } from './tokenStorage';
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_API_BASE_URL || process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8081';
+const EXPLICIT_BACKEND_URL = process.env.EXPO_PUBLIC_API_BASE_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
+const BACKEND_URL = EXPLICIT_BACKEND_URL || (process.env.EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS === 'true' ? 'http://localhost:8081' : 'https://plumbing-qcommerce.onrender.com');
 
 export const apiClient = axios.create({
   baseURL: `${BACKEND_URL}/api/v1`,
@@ -147,3 +148,4 @@ apiClient.interceptors.response.use(
     return Promise.reject(new Error(message));
   }
 );
+

@@ -14,24 +14,6 @@ Use `/health/live` for Render health checks. `/actuator/health` can report degra
 - Customer, plumber, and store mobile apps call the Spring Boot backend directly for REST APIs.
 - Edge service remains optional for WebSocket and nearby plumber flows. Keep `EXPO_PUBLIC_EDGE_URL` empty for backend-only staging smoke tests.
 
-## Admin Portal Environment
-
-Local development:
-
-```text
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8081
-NEXT_PUBLIC_BACKEND_URL=http://localhost:8081
-NEXT_PUBLIC_EDGE_URL=http://localhost:3000
-```
-
-Render staging backend:
-
-```text
-NEXT_PUBLIC_API_BASE_URL=https://plumbing-qcommerce.onrender.com
-NEXT_PUBLIC_BACKEND_URL=https://plumbing-qcommerce.onrender.com
-NEXT_PUBLIC_EDGE_URL=
-```
-
 ## Admin Portal Staging URL
 
 ```text
@@ -61,18 +43,16 @@ EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false
 ```
 
 `EXPO_PUBLIC_API_BASE_URL` is preferred. `EXPO_PUBLIC_BACKEND_URL` remains supported for backward compatibility.
-Mock fallback is now disabled by default for staging. Local demo data may be used only when both the app is running locally and `EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=true`.
+Mock fallback is disabled by default for staging. Local demo data may be used only when both the app is running locally and `EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=true`.
 
 ## Backend Staging Seed Requirement
-
-Render staging should enable both admin and mobile demo users:
 
 ```text
 APP_DEMO_SEED_ENABLED=true
 APP_MOBILE_DEMO_SEED_ENABLED=true
 ```
 
-This creates verified staging accounts for:
+Default staging accounts:
 
 - `superadmin@plumbcommerce.com`
 - `customer@plumbcommerce.com`
@@ -87,75 +67,17 @@ password
 
 ## Render Backend CORS
 
-For deployed admin UAT and Expo web smoke tests, keep `CORS_ALLOWED_ORIGINS` explicit and never use wildcards.
-
 ```text
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3100,http://localhost:3101,http://localhost:19006,http://localhost:19007,http://localhost:19008,http://localhost:19009,https://admin-portal-ten-weld.vercel.app
 ```
 
-## Windows PowerShell Commands
-
-Customer app:
-
-```powershell
-cd customer-app
-@"
-EXPO_PUBLIC_API_BASE_URL=https://plumbing-qcommerce.onrender.com
-EXPO_PUBLIC_BACKEND_URL=https://plumbing-qcommerce.onrender.com
-EXPO_PUBLIC_EDGE_URL=
-EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false
-"@ | Set-Content .env
-npm install
-npm run typecheck
-npm test
-npm run build
-```
-
-Plumber app:
-
-```powershell
-cd plumber-app
-@"
-EXPO_PUBLIC_API_BASE_URL=https://plumbing-qcommerce.onrender.com
-EXPO_PUBLIC_BACKEND_URL=https://plumbing-qcommerce.onrender.com
-EXPO_PUBLIC_EDGE_URL=
-EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false
-"@ | Set-Content .env
-npm install
-npm run typecheck
-npm test
-npm run build
-```
-
-Store app:
-
-```powershell
-cd store-app
-@"
-EXPO_PUBLIC_API_BASE_URL=https://plumbing-qcommerce.onrender.com
-EXPO_PUBLIC_BACKEND_URL=https://plumbing-qcommerce.onrender.com
-EXPO_PUBLIC_EDGE_URL=
-EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false
-"@ | Set-Content .env
-npm install
-npm run typecheck
-npm test
-npm run build
-```
-
-If Expo does not pick up the env change, clear cache:
-
-```powershell
-npx expo start -c
-```
-
 ## Current Phase 14F Findings
 
-- `customer-app` now authenticates successfully against live Render staging and fails closed when edge or profile-adjacent APIs are unavailable. No fake identity or fake plumber assignment remains in staging.
-- `plumber-app` now authenticates successfully against live Render staging and surfaces explicit unavailable or pending states for websocket, wallet, earnings, and material-tracking gaps instead of silent mock success.
-- `store-app` now authenticates successfully against live Render staging and uses real backend identity plus explicit unavailable states for wallet, notifications, analytics, dispatch, material requests, and profile details.
-- Phase 14F P0 and P1 controls are complete. Remaining mobile blockers are `P2` and `P3` items plus full real API UAT across non-core flows.
-- Latest local validation PASS:
+- Customer staging no longer simulates payment-method mutation, payment confirmation, delivery OTP confirmation, or service completion success.
+- Plumber staging no longer simulates navigation arrival or photo-upload success; those flows now fail closed with clear unavailable states.
+- Store staging no longer exposes mock reviews or promotions as live staging data.
+- Remaining fixture-only P3 items are limited to tests, dev examples, and web QA fallback components.
+- Local validation PASS:
   - `customer-app`: typecheck, tests, build
   - `plumber-app`: typecheck, tests, build
   - `store-app`: typecheck, tests, build
@@ -164,5 +86,5 @@ npx expo start -c
   - `customer@plumbcommerce.com`: login PASS
   - `plumber@plumbcommerce.com`: login PASS
   - `store@plumbcommerce.com`: login PASS
-- Mobile staging remains `PARTIAL` until Phase 14F Step 4 completes the remaining real API UAT and P2/P3 cleanup.
+- Mobile staging remains `PARTIAL` because several real backend endpoints are still unavailable, but staging no longer reports fake success for those flows.
 - Production deployment remains `NO`.
