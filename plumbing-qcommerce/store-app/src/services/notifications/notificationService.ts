@@ -2,6 +2,11 @@ import { apiClient } from '../api/axiosClient';
 import { ENDPOINTS } from '../api/endpoints';
 import { AppNotification } from '../../types';
 import { mockNotifications } from '../../mocks';
+import {
+  canUseDevMockFallbacks,
+  createBackendUnavailableError,
+  warnUsingDevMockFallback,
+} from '../mockPolicy';
 
 let localNotifications = [...mockNotifications];
 
@@ -11,8 +16,11 @@ export const notificationService = {
       const response = await apiClient.get(ENDPOINTS.notifications.list);
       return response.data || [];
     } catch (e) {
-      console.warn('API getNotifications failed, fallback to mock:', e);
-      return localNotifications;
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Store notifications list', e);
+        return localNotifications;
+      }
+      throw createBackendUnavailableError('Notifications', e);
     }
   },
 
@@ -20,9 +28,13 @@ export const notificationService = {
     try {
       await apiClient.patch(ENDPOINTS.notifications.markRead(id));
     } catch (e) {
-      console.warn(`API markAsRead ${id} failed, fallback to mock:`, e);
-      const notif = localNotifications.find(n => n.id === id);
-      if (notif) notif.read = true;
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback(`Store notification markAsRead ${id}`, e);
+        const notif = localNotifications.find(n => n.id === id);
+        if (notif) notif.read = true;
+        return;
+      }
+      throw createBackendUnavailableError('Notification updates', e);
     }
   },
 
@@ -30,10 +42,14 @@ export const notificationService = {
     try {
       await apiClient.patch(ENDPOINTS.notifications.markAllRead);
     } catch (e) {
-      console.warn('API markAllRead failed, fallback to mock:', e);
-      localNotifications.forEach(n => {
-        n.read = true;
-      });
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Store notifications markAllRead', e);
+        localNotifications.forEach(n => {
+          n.read = true;
+        });
+        return;
+      }
+      throw createBackendUnavailableError('Notification updates', e);
     }
   }
 };

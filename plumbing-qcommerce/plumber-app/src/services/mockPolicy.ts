@@ -2,6 +2,8 @@ const BACKEND_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ||
   process.env.EXPO_PUBLIC_BACKEND_URL ||
   'http://localhost:8081';
+const EDGE_URL = process.env.EXPO_PUBLIC_EDGE_URL || '';
+const DEFAULT_LOCAL_EDGE_URL = 'http://localhost:3000';
 
 const isLocalHost = (hostname: string) =>
   hostname === 'localhost' ||
@@ -13,13 +15,15 @@ const isLocalHost = (hostname: string) =>
   /^10\./.test(hostname) ||
   /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname);
 
-const isLocalDevelopmentApi = () => {
+const isLocalUrl = (urlString: string) => {
   try {
-    return isLocalHost(new URL(BACKEND_URL).hostname);
+    return isLocalHost(new URL(urlString).hostname);
   } catch {
     return false;
   }
 };
+
+const isLocalDevelopmentApi = () => isLocalUrl(BACKEND_URL);
 
 export const canUseDevMockFallbacks = () =>
   process.env.NODE_ENV !== 'production' &&
@@ -43,3 +47,15 @@ export const createBackendUnavailableError = (feature: string, error?: unknown) 
 
 export const createUnsupportedBackendError = (feature: string) =>
   new Error(`${feature} is not available from the staging backend yet.`);
+
+export const getConfiguredEdgeUrl = () => {
+  if (EDGE_URL && (!isLocalUrl(EDGE_URL) || canUseDevMockFallbacks())) {
+    return EDGE_URL;
+  }
+
+  if (canUseDevMockFallbacks()) {
+    return DEFAULT_LOCAL_EDGE_URL;
+  }
+
+  return null;
+};

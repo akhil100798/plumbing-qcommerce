@@ -5,43 +5,60 @@ import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { AppHeader } from '../../components/common/AppHeader';
 import { ProfileMenuItem } from '../../components/cards/WalletReviewsPromoCards';
 import { storeService } from '../../services/store/storeService';
-import { mockStore } from '../../mocks';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
 import { Store } from '../../types';
+import { useAppSelector } from '../../redux/store';
 
 export const StoreProfileScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  
+  const user = useAppSelector(state => state.auth.storeUser);
+
   const [profile, setProfile] = useState<Store | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const data = await storeService.getStoreProfile(123);
-      setProfile(data);
+      if (!user) {
+        setNotice('Store session is not available. Please sign in again.');
+        return;
+      }
+
+      try {
+        const data = await storeService.getStoreProfile(user.id);
+        setProfile(data);
+        setNotice(null);
+      } catch (error) {
+        setProfile(null);
+        setNotice(error instanceof Error ? error.message : 'Store profile is not available in staging.');
+      }
     };
+
     fetchProfile();
-  }, []);
+  }, [user]);
 
   const handleMenuPress = (section: string) => {
     switch (section) {
       case 'details':
-        Alert.alert('Store Details', `Name: ${mockStore.name}\nPhone: ${mockStore.phone}\nAddress: ${mockStore.address}`);
+        Alert.alert(
+          'Store Details',
+          `Name: ${profile?.name || user?.fullName || 'Store account'}\nPhone: ${user?.phone || profile?.phone || 'Not available in staging'}\nAddress: ${profile?.address || 'Not available in staging'}`
+        );
         break;
       case 'business':
-        Alert.alert('Business Info', 'Category: Hardware & Plumbing Supplies\nOwner: Sai Praneeth\nReg No: APC120491823');
+        Alert.alert('Business Info', 'Business information is not available from the staging backend yet.');
         break;
       case 'bank':
-        Alert.alert('Bank Details', 'Bank: HDFC Bank Ltd\nAccount: •••• 9820\nIFSC: HDFC0000214\nType: Current Account');
+        Alert.alert('Bank Details', 'Bank details are not available from the staging backend yet.');
         break;
       case 'gst':
-        Alert.alert('GST Details', 'GSTIN: 36AAPCS8912C1ZS\nStatus: Active Verified');
+        Alert.alert('GST Details', 'GST details are not available from the staging backend yet.');
         break;
       case 'docs':
-        Alert.alert('Verification Documents', 'Trade License: Uploaded ✓\nPAN Card: Uploaded ✓\nCancelled Cheque: Uploaded ✓');
+        Alert.alert('Verification Documents', 'Verification documents are not available from the staging backend yet.');
         break;
       case 'timings':
-        Alert.alert('Store Timings', 'Monday - Saturday: 09:00 AM - 08:30 PM\nSunday: Closed');
+        Alert.alert('Store Timings', 'Store timings are not available from the staging backend yet.');
         break;
     }
   };
@@ -51,53 +68,30 @@ export const StoreProfileScreen = () => {
       <AppHeader title="Store Profile" onBack={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.scroll}>
+        {notice && <Text style={styles.noticeText}>{notice}</Text>}
         {profile && (
           <View style={styles.profileHeader}>
             <View style={styles.storeAvatar}>
-              <Text style={styles.storeAvatarText}>🏪</Text>
+              <Text style={styles.storeAvatarText}>??</Text>
             </View>
             <Text style={styles.storeName}>{profile.name}</Text>
-            <Text style={styles.storeId}>Store ID: SP12345</Text>
-            
+            <Text style={styles.storeId}>Store ID: {profile.id}</Text>
+
             <View style={styles.ratingRow}>
-              <Text style={styles.star}>★</Text>
-              <Text style={styles.ratingVal}>{profile.rating} </Text>
-              <Text style={styles.ratingCount}>(320 reviews)</Text>
+              <Text style={styles.star}>?</Text>
+              <Text style={styles.ratingVal}>{profile.rating ?? 0} </Text>
+              <Text style={styles.ratingCount}>{profile.rating ? '(rating available)' : '(not available in staging)'}</Text>
             </View>
           </View>
         )}
 
         <View style={styles.menuContainer}>
-          <ProfileMenuItem
-            emoji="👤"
-            label="Store Details"
-            onPress={() => handleMenuPress('details')}
-          />
-          <ProfileMenuItem
-            emoji="💼"
-            label="Business Information"
-            onPress={() => handleMenuPress('business')}
-          />
-          <ProfileMenuItem
-            emoji="🏦"
-            label="Bank Details"
-            onPress={() => handleMenuPress('bank')}
-          />
-          <ProfileMenuItem
-            emoji="📄"
-            label="GST Details"
-            onPress={() => handleMenuPress('gst')}
-          />
-          <ProfileMenuItem
-            emoji="📁"
-            label="Documents"
-            onPress={() => handleMenuPress('docs')}
-          />
-          <ProfileMenuItem
-            emoji="⏰"
-            label="Store Timings"
-            onPress={() => handleMenuPress('timings')}
-          />
+          <ProfileMenuItem emoji="??" label="Store Details" onPress={() => handleMenuPress('details')} />
+          <ProfileMenuItem emoji="??" label="Business Information" onPress={() => handleMenuPress('business')} />
+          <ProfileMenuItem emoji="??" label="Bank Details" onPress={() => handleMenuPress('bank')} />
+          <ProfileMenuItem emoji="??" label="GST Details" onPress={() => handleMenuPress('gst')} />
+          <ProfileMenuItem emoji="??" label="Documents" onPress={() => handleMenuPress('docs')} />
+          <ProfileMenuItem emoji="?" label="Store Timings" onPress={() => handleMenuPress('timings')} />
         </View>
       </ScrollView>
     </ScreenWrapper>
@@ -110,6 +104,12 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: spacing.layout,
+  },
+  noticeText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.danger,
+    fontWeight: typography.fontWeight.bold,
+    marginBottom: spacing.md,
   },
   profileHeader: {
     alignItems: 'center',
@@ -173,3 +173,4 @@ const styles = StyleSheet.create({
   },
 });
 export default StoreProfileScreen;
+

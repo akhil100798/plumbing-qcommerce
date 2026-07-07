@@ -2,6 +2,7 @@ import { StackScreenProps } from '@react-navigation/stack';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -14,6 +15,7 @@ import MapView, { Marker, Polyline } from 'react-native-maps';
 
 import { PlumberCard } from '../components/cards/PlumberCard';
 import { PrimaryButton } from '../components/common/PrimaryButton';
+import { canUseDevMockFallbacks } from '../services/mockPolicy';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
 
@@ -38,16 +40,22 @@ export function PlumberConfirmationScreen({ route, navigation }: Props) {
       navigation.replace('PlumberTracking', {
         orderId: response.id,
         plumberId: response.plumber?.id ? String(response.plumber.id) : 'plumber_999',
-        plumberName: response.plumber?.fullName || 'Ravi Kumar',
+        plumberName: response.plumber?.fullName || 'Assigned plumber',
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to confirm plumber booking', err);
-      // Fallback for demo/dev purposes
-      navigation.replace('PlumberTracking', {
-        orderId: 999,
-        plumberId: 'plumber_999',
-        plumberName: 'Ravi Kumar',
-      });
+      if (canUseDevMockFallbacks()) {
+        navigation.replace('PlumberTracking', {
+          orderId: 999,
+          plumberId: 'plumber_999',
+          plumberName: 'Ravi Kumar',
+        });
+      } else {
+        Alert.alert(
+          'Booking pending',
+          err?.message || 'Plumber assignment is not available from the staging backend right now.'
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -57,13 +65,12 @@ export function PlumberConfirmationScreen({ route, navigation }: Props) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
+          <Text style={styles.backButtonText}>?</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Confirm Booking</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Map route preview */}
         <View style={styles.mapPanel}>
           <MapView
             style={styles.map}
@@ -96,7 +103,6 @@ export function PlumberConfirmationScreen({ route, navigation }: Props) {
           </MapView>
         </View>
 
-
         <Text style={styles.sectionTitle}>Assigned Plumber</Text>
         <PlumberCard
           name="Ravi Kumar"
@@ -115,11 +121,11 @@ export function PlumberConfirmationScreen({ route, navigation }: Props) {
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Base Inspection Fee</Text>
-              <Text style={styles.value}>₹199</Text>
+              <Text style={styles.value}>?199</Text>
             </View>
             <View style={[styles.row, styles.totalRow]}>
               <Text style={styles.totalLabel}>Total Payable</Text>
-              <Text style={styles.totalValue}>₹199</Text>
+              <Text style={styles.totalValue}>?199</Text>
             </View>
           </View>
         </View>
@@ -184,40 +190,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     justifyContent: 'center',
     position: 'relative',
-
     overflow: 'hidden',
-  },
-  routeLine: {
-    position: 'absolute',
-    left: 80,
-    right: 80,
-    height: 4,
-    backgroundColor: colors.primary,
-    borderRadius: 2,
-    opacity: 0.5,
-  },
-  mapPin: {
-    position: 'absolute',
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 3,
-    borderColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  customerPin: {
-    left: 40,
-    backgroundColor: colors.textPrimary,
-  },
-  plumberPin: {
-    right: 40,
-    backgroundColor: colors.warning,
-  },
-  pinText: {
-    color: colors.surface,
-    fontSize: 11,
-    fontWeight: 'bold',
   },
   sectionTitle: {
     fontSize: typography.fontSize.md,

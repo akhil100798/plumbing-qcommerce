@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import { colors, spacing, typography, borderRadius } from '../../theme';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { RevenueCard, OrderSummaryCard, QuickActionCard } from '../../components/cards/DashboardCards';
@@ -10,31 +10,25 @@ import { ordersService } from '../../services/orders/ordersService';
 import { inventoryService } from '../../services/inventory/inventoryService';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
-import { mockStore } from '../../mocks';
 
 export const DashboardScreen = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  
-  const { todayRevenue, orderSummary, lowStockCount, loading } = useAppSelector(state => state.dashboard);
+
+  const { todayRevenue, orderSummary, lowStockCount, error } = useAppSelector(state => state.dashboard);
   const user = useAppSelector(state => state.auth.storeUser);
 
   const loadDashboardData = async () => {
     dispatch(fetchDashboardStart());
     try {
-      // 1. Fetch analytics
       const sales = await analyticsService.getSalesAnalytics();
-      
-      // 2. Fetch orders
       const orders = await ordersService.getOrders();
       const newCount = orders.filter(o => o.status === 'PENDING' || o.status === 'CONFIRMED').length;
       const packingCount = orders.filter(o => o.status === 'PACKING').length;
       const readyCount = orders.filter(o => o.status === 'READY_FOR_PICKUP' || o.status === 'PACKED').length;
       const deliveredCount = orders.filter(o => o.status === 'DELIVERED').length;
-      
-      // 3. Fetch low stock count
       const lowStock = await inventoryService.getLowStock();
-      
+
       dispatch(fetchDashboardSuccess({
         todayRevenue: sales.revenue,
         orderSummary: {
@@ -56,28 +50,27 @@ export const DashboardScreen = () => {
 
   return (
     <ScreenWrapper style={styles.container}>
-      {/* Custom Title Bar */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.storeEmoji}>🏪</Text>
+          <Text style={styles.storeEmoji}>??</Text>
           <View>
-            <Text style={styles.storeName}>{mockStore.name}</Text>
-            <Text style={styles.storeStatus}>🟢 Open</Text>
+            <Text style={styles.storeName}>{user?.fullName || user?.email || 'Store account'}</Text>
+            <Text style={styles.storeStatus}>{error ? 'Staging data limited' : '?? Connected'}</Text>
           </View>
         </View>
         <TouchableOpacity
           style={styles.notifBtn}
           onPress={() => navigation.navigate('Notifications')}
         >
-          <Text style={styles.notifEmoji}>🔔</Text>
+          <Text style={styles.notifEmoji}>??</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Today's Revenue */}
+        {error && <Text style={styles.noticeText}>{error}</Text>}
+
         <RevenueCard amount={todayRevenue} percentageChange={12} />
 
-        {/* Orders Summary section */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Orders Summary</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}>
@@ -91,14 +84,14 @@ export const DashboardScreen = () => {
               label="New"
               count={orderSummary.newCount}
               color={colors.warning}
-              emoji="📥"
+              emoji="??"
               onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}
             />
             <OrderSummaryCard
               label="Packing"
               count={orderSummary.packingCount}
               color={colors.primary}
-              emoji="📦"
+              emoji="??"
               onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}
             />
           </View>
@@ -107,62 +100,58 @@ export const DashboardScreen = () => {
               label="Ready"
               count={orderSummary.readyCount}
               color={colors.success}
-              emoji="🚚"
+              emoji="??"
               onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}
             />
             <OrderSummaryCard
               label="Delivered"
               count={orderSummary.deliveredCount}
               color={colors.textSecondary}
-              emoji="✓"
+              emoji="?"
               onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}
             />
           </View>
         </View>
 
-        {/* Quick Actions grid */}
-        <Text style={[styles.sectionTitle, { marginTop: spacing.lg, marginBottom: spacing.md }]}>
-          Quick Actions
-        </Text>
+        <Text style={[styles.sectionTitle, { marginTop: spacing.lg, marginBottom: spacing.md }]}>Quick Actions</Text>
         <View style={styles.actionsGrid}>
           <View style={styles.gridRow}>
             <QuickActionCard
               label="Add Product"
-              emoji="➕"
+              emoji="?"
               onPress={() => navigation.navigate('AddProduct')}
             />
             <QuickActionCard
               label="Update Stock"
-              emoji="🔄"
+              emoji="??"
               onPress={() => navigation.navigate('Main', { screen: 'InventoryTab' })}
             />
           </View>
           <View style={[styles.gridRow, { marginTop: spacing.sm }]}>
             <QuickActionCard
               label="Dispatch Orders"
-              emoji="🏍️"
+              emoji="???"
               onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}
             />
             <QuickActionCard
               label="Offers"
-              emoji="🎁"
+              emoji="??"
               onPress={() => navigation.navigate('OffersPromotions')}
             />
           </View>
         </View>
 
-        {/* Low Stock count banner */}
         {lowStockCount > 0 && (
           <TouchableOpacity
             style={styles.alertBanner}
             onPress={() => navigation.navigate('LowStockAlert')}
           >
-            <Text style={styles.alertEmoji}>⚠️</Text>
+            <Text style={styles.alertEmoji}>??</Text>
             <View style={styles.alertTextWrapper}>
               <Text style={styles.alertTitle}>{lowStockCount} Products are low in stock</Text>
               <Text style={styles.alertSub}>Tap to review and restock immediately</Text>
             </View>
-            <Text style={styles.alertArrow}>▶</Text>
+            <Text style={styles.alertArrow}>?</Text>
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -218,6 +207,12 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: spacing.layout,
+  },
+  noticeText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.danger,
+    fontWeight: typography.fontWeight.bold,
+    marginBottom: spacing.md,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -281,3 +276,4 @@ const styles = StyleSheet.create({
   },
 });
 export default DashboardScreen;
+

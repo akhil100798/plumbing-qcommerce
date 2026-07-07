@@ -23,13 +23,14 @@ import { StoreRepository } from '../services/stores/storeRepository';
 import { CartRepository } from '../services/cart/cartRepository';
 import { OrderRepository } from '../services/orders/orderRepository';
 import { PlumberRepository } from '../services/plumbers/plumberRepository';
+import { getConfiguredEdgeUrl } from '../services/mockPolicy';
 import { RootState } from '../redux/store';
 import { addToCart as addToCartAction, clearCart as clearCartAction } from '../redux/slices/cartSlice';
 import { loginStart, loginSuccess, loginFailure, logout } from '../redux/slices/authSlice';
 import { startSearching, stopSearching, setActiveJob, setBookingConfig } from '../redux/slices/plumbersSlice';
 import { setActiveProductOrder, updateProductOrderStatus } from '../redux/slices/ordersSlice';
 
-const EDGE_SERVER_URL = process.env.EXPO_PUBLIC_EDGE_URL || 'http://localhost:3000';
+const EDGE_UNAVAILABLE_MESSAGE = 'Nearby plumber live tracking is not configured in staging.';
 const CUSTOMER_ID = 'cust_999';
 
 type BookingMode = 'quick' | 'store' | 'expert';
@@ -117,12 +118,15 @@ interface Product {
 export function HomeScreen({ navigation }: any) {
   const dispatch = useDispatch();
   const [socket, setSocket] = useState<Socket | null>(null);
+  const edgeServerUrl = getConfiguredEdgeUrl();
+  const edgeUnavailable = !edgeServerUrl;
   
   // Plumber Booking State from Redux
   const isSearching = useSelector((state: RootState) => state.plumbers.isSearching);
   const activeJob = useSelector((state: RootState) => state.plumbers.activeJob);
   const selectedMode = useSelector((state: RootState) => state.plumbers.selectedMode);
   const selectedCategory = useSelector((state: RootState) => state.plumbers.selectedCategory || categories[0]);
+  const currentUser = useSelector((state: RootState) => state.auth.user);
 
   // Product Catalog State
   const [products, setProducts] = useState<Product[]>([]);
@@ -154,7 +158,12 @@ export function HomeScreen({ navigation }: any) {
 
   // WebSockets Setup
   useEffect(() => {
-    const newSocket = io(EDGE_SERVER_URL);
+    if (!edgeServerUrl) {
+      setSocket(null);
+      return;
+    }
+
+    const newSocket = io(edgeServerUrl);
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
@@ -187,7 +196,7 @@ export function HomeScreen({ navigation }: any) {
     return () => {
       newSocket.close();
     };
-  }, [activeProductOrder]);
+  }, [activeProductOrder, edgeServerUrl]);
 
   // Polling for Product Order Status updates
   useEffect(() => {
@@ -208,7 +217,7 @@ export function HomeScreen({ navigation }: any) {
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [activeProductOrder]);
+  }, [activeProductOrder, edgeServerUrl]);
 
   const addToCart = (productId: number) => {
     dispatch(addToCartAction(productId));
@@ -310,17 +319,21 @@ export function HomeScreen({ navigation }: any) {
   };
 
   const requestNearbyPlumber = async () => {
+    if (!edgeServerUrl) {
+      Alert.alert('Feature unavailable', EDGE_UNAVAILABLE_MESSAGE);
+      return;
+    }
+
     dispatch(startSearching());
     try {
       const result = await PlumberRepository.requestNearbyPlumber({
-        customerId: 999, // use numeric ID to match backend
+        customerId: currentUser?.id ?? 0,
         longitude: -122.4194,
         latitude: 37.7749,
         requestType: selectedMode,
         category: selectedCategory,
       });
 
-      // Handle response
       dispatch(stopSearching());
       Alert.alert('Broadcast Completed', result.message || 'Job broadcasted to nearby plumbers.');
     } catch (error: any) {
@@ -549,7 +562,7 @@ export function HomeScreen({ navigation }: any) {
             <TouchableOpacity 
               style={styles.heroButton} 
               onPress={requestNearbyPlumber}
-              disabled={isSearching}
+              disabled={isSearching || edgeUnavailable}
             >
               {isSearching ? (
                 <ActivityIndicator color={colors.primary} />
@@ -558,6 +571,9 @@ export function HomeScreen({ navigation }: any) {
               )}
             </TouchableOpacity>
             <Text style={styles.etaText}>ETA 10-15 mins</Text>
+            {edgeUnavailable && (
+              <Text style={styles.edgeNoticeText}>{EDGE_UNAVAILABLE_MESSAGE}</Text>
+            )}
           </View>
           <Text style={styles.heroPlumberIllustration}>👨‍🔧</Text>
         </View>
@@ -823,8 +839,15 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
   },
+
   etaText: {
     color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: typography.fontSize.xs,
+    marginTop: spacing.sm,
+    fontWeight: typography.fontWeight.bold,
+  },
+  edgeNoticeText: {
+    color: '#FDE68A',
     fontSize: typography.fontSize.xs,
     marginTop: spacing.sm,
     fontWeight: typography.fontWeight.bold,
@@ -965,3 +988,11 @@ const styles = StyleSheet.create({
   materialApproveBtn: { flex: 2, height: 52, borderRadius: 14, backgroundColor: '#F59E0B', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
   materialApproveBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '900', textAlign: 'center' },
 });
+
+
+
+
+
+
+
+

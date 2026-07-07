@@ -149,10 +149,20 @@ If Expo does not pick up the env change, clear cache:
 npx expo start -c
 ```
 
-## Current Phase 14E Findings
+## Current Phase 14F Findings
 
-- `customer-app` now authenticates successfully against live Render staging, but still contains local mock-only UI for profile stats, saved cards, material approval, and product fallback states.
-- `plumber-app` now authenticates successfully against live Render staging, but still contains mock fallback logic in auth, jobs, materials, profile, wallet, and earnings services.
-- `store-app` now authenticates successfully against live Render staging, but still contains broad mock fallback logic in inventory, orders, wallet, notifications, analytics, store profile, and some review/offers screens.
-- Phase 14F P0 removed silent staging fallback for customer catalog, plumber auth/jobs/materials, and store inventory/orders/profile flows. Remaining P1/P2/P3 items still keep mobile staging at `PARTIAL`.
+- `customer-app` now authenticates successfully against live Render staging and fails closed when edge or profile-adjacent APIs are unavailable. No fake identity or fake plumber assignment remains in staging.
+- `plumber-app` now authenticates successfully against live Render staging and surfaces explicit unavailable or pending states for websocket, wallet, earnings, and material-tracking gaps instead of silent mock success.
+- `store-app` now authenticates successfully against live Render staging and uses real backend identity plus explicit unavailable states for wallet, notifications, analytics, dispatch, material requests, and profile details.
+- Phase 14F P0 and P1 controls are complete. Remaining mobile blockers are `P2` and `P3` items plus full real API UAT across non-core flows.
+- Latest local validation PASS:
+  - `customer-app`: typecheck, tests, build
+  - `plumber-app`: typecheck, tests, build
+  - `store-app`: typecheck, tests, build
+- Latest live staging smoke PASS:
+  - `/health/live`: `UP`
+  - `customer@plumbcommerce.com`: login PASS
+  - `plumber@plumbcommerce.com`: login PASS
+  - `store@plumbcommerce.com`: login PASS
+- Mobile staging remains `PARTIAL` until Phase 14F Step 4 completes the remaining real API UAT and P2/P3 cleanup.
 - Production deployment remains `NO`.

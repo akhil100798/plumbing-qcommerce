@@ -9,10 +9,11 @@ import {
 } from 'react-native';
 import { useDispatch } from 'react-redux';
 
-import { loginSuccess } from '../../redux/slices/authSlice';
+import { loginSuccess, logout } from '../../redux/slices/authSlice';
 import { colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
 import { tokenStorage } from '../../services/tokenStorage';
+import { ProfileRepository } from '../../services/profile/profileRepository';
 
 type Props = StackScreenProps<AuthStackParamList, 'Splash'>;
 
@@ -25,15 +26,10 @@ export function SplashScreen({ navigation }: Props) {
         const token = await tokenStorage.getItem('authToken');
         const refreshToken = await tokenStorage.getItem('refreshToken');
         if (token && refreshToken) {
+          const user = await ProfileRepository.getUserProfile();
           dispatch(
             loginSuccess({
-              user: {
-                id: 999, // default customer ID placeholder to be resolved by /users/me
-                email: 'customer@plumbcommerce.com',
-                fullName: 'Customer',
-                role: 'CUSTOMER',
-                phone: '',
-              },
+              user,
               token,
               refreshToken,
             })
@@ -49,6 +45,7 @@ export function SplashScreen({ navigation }: Props) {
         }
       } catch (err) {
         console.error('Session restoration failed:', err);
+        dispatch(logout());
       }
 
       navigation.replace('Onboarding');
@@ -65,7 +62,7 @@ export function SplashScreen({ navigation }: Props) {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.logoPlaceholder}>
-          <Text style={styles.logoIcon}>ðŸ”§</Text>
+          <Text style={styles.logoIcon}>??</Text>
         </View>
         <Text style={styles.brandTitle}>PlumbCommerce</Text>
         <Text style={styles.brandSub}>Instant Plumbing. Instant Solutions.</Text>

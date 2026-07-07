@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
@@ -26,29 +27,27 @@ export function MaterialApprovalStatusScreen({ route, navigation }: Props) {
   const { requestedMaterials, totalAmount, approvalStatus } = useSelector(
     (state: RootState) => state.material
   );
+  const [statusNotice, setStatusNotice] = useState<string | null>(null);
 
   const cleanOrderId = productOrderId || 1;
 
-  // Poll status from backend
   useEffect(() => {
     let active = true;
-    
+
     const checkStatus = async () => {
       if (!active) return;
       try {
         const status = await materialService.fetchMaterialStatus(cleanOrderId);
-        // If status changed to DELIVERING / APPROVED
-        if (status === 'DELIVERING' || status === 'DELIVERED') {
-          dispatch(updateApprovalStatus(status));
-        } else if (approvalStatus === null) {
-          dispatch(updateApprovalStatus('PENDING_APPROVAL'));
-        }
-      } catch (err) {
+        setStatusNotice(null);
+        dispatch(updateApprovalStatus(status));
+      } catch (err: any) {
         console.warn('Error fetching material approval status:', err);
+        if (active) {
+          setStatusNotice(err?.message || 'Material approval status is not available in staging.');
+        }
       }
     };
 
-    // Check status immediately and every 5 seconds
     checkStatus();
     const interval = setInterval(checkStatus, 5000);
 
@@ -56,63 +55,62 @@ export function MaterialApprovalStatusScreen({ route, navigation }: Props) {
       active = false;
       clearInterval(interval);
     };
-  }, [cleanOrderId, approvalStatus, dispatch]);
+  }, [cleanOrderId, dispatch]);
 
   const handleTrackMaterial = () => {
-    // If not approved, show a prompt or mock approval first for testing
-    if (approvalStatus === 'PENDING_APPROVAL') {
-      // Simulate quick approval for demo/testing convenience
-      dispatch(updateApprovalStatus('DELIVERING'));
+    if (approvalStatus === 'APPROVED' || approvalStatus === 'DELIVERING' || approvalStatus === 'DELIVERED') {
       navigation.navigate('MaterialTracking', { jobId, productOrderId: cleanOrderId });
-    } else {
-      navigation.navigate('MaterialTracking', { jobId, productOrderId: cleanOrderId });
+      return;
     }
+
+    Alert.alert(
+      'Waiting on backend status',
+      statusNotice || 'Customer approval has not been confirmed by the staging backend yet.'
+    );
   };
 
-  const isApproved = approvalStatus !== 'PENDING_APPROVAL';
+  const isApproved = approvalStatus === 'APPROVED' || approvalStatus === 'DELIVERING' || approvalStatus === 'DELIVERED';
 
   return (
     <ScreenWrapper>
       <AppHeader title="Material Status" onBackPress={() => navigation.goBack()} />
       
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Top Status Banner */}
         <View style={[styles.statusBanner, isApproved ? styles.approvedBanner : styles.pendingBanner]}>
           <Text style={[styles.statusBannerIcon, isApproved && { color: colors.success }]}>
-            {isApproved ? '✅' : '⏳'}
+            {isApproved ? '?' : '?'}
           </Text>
-          <Text style={[styles.statusBannerText, isApproved && { color: colors.success }]}>
+          <Text style={[styles.statusBannerText, isApproved && { color: colors.success }]}> 
             {isApproved ? 'Customer Approved' : 'Waiting for Customer Approval'}
           </Text>
         </View>
 
+        {!!statusNotice && (
+          <View style={styles.noticeCard}>
+            <Text style={styles.noticeTitle}>Feature unavailable in staging</Text>
+            <Text style={styles.noticeText}>{statusNotice}</Text>
+          </View>
+        )}
+
         <View style={styles.card}>
           <Text style={styles.sectionLabel}>Request Summary</Text>
-          
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Material Request</Text>
-            <Text style={styles.summaryValue}>₹{totalAmount}</Text>
+            <Text style={styles.summaryValue}>?{totalAmount}</Text>
           </View>
-          
-          <Text style={styles.subText}>
-            {requestedMaterials.length} items requested on site.
-          </Text>
-
+          <Text style={styles.subText}>{requestedMaterials.length} items requested on site.</Text>
           <View style={styles.divider} />
-
           <View style={styles.itemContainer}>
             {requestedMaterials.map((item) => (
               <View key={item.productId} style={styles.itemRow}>
                 <Text style={styles.itemName}>
                   {item.name} <Text style={styles.itemQty}>x{item.quantity}</Text>
                 </Text>
-                <Text style={styles.itemPrice}>₹{item.price * item.quantity}</Text>
+                <Text style={styles.itemPrice}>?{item.price * item.quantity}</Text>
               </View>
             ))}
           </View>
-
           <View style={styles.divider} />
-
           <View style={styles.summaryRow}>
             <Text style={styles.paymentLabel}>Payment Status</Text>
             <StatusChip
@@ -125,11 +123,11 @@ export function MaterialApprovalStatusScreen({ route, navigation }: Props) {
         {isApproved && (
           <View style={styles.storeCard}>
             <Text style={styles.sectionLabel}>Store & Dispatch</Text>
-            <Text style={styles.storeName}>Sai Pipes & Fittings</Text>
-            <Text style={styles.storeDist}>1.2 km away</Text>
+            <Text style={styles.storeName}>Live delivery tracking is pending backend support</Text>
+            <Text style={styles.storeDist}>Continue only when the backend reports delivery progress.</Text>
             <View style={styles.etaBox}>
-              <Text style={styles.etaLabel}>Delivery ETA:</Text>
-              <Text style={styles.etaValue}>15 - 20 mins</Text>
+              <Text style={styles.etaLabel}>Status:</Text>
+              <Text style={styles.etaValue}>{approvalStatus}</Text>
             </View>
           </View>
         )}
@@ -137,8 +135,9 @@ export function MaterialApprovalStatusScreen({ route, navigation }: Props) {
         <View style={styles.spacer} />
 
         <PrimaryButton
-          title={isApproved ? 'Track Material' : 'Simulate Approval & Track'}
+          title={isApproved ? 'Track Material' : 'Waiting for Approval'}
           onPress={handleTrackMaterial}
+          disabled={!isApproved}
           style={styles.actionBtn}
         />
       </ScrollView>
@@ -178,6 +177,25 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.black,
     color: colors.warning,
+  },
+  noticeCard: {
+    backgroundColor: colors.surface,
+    borderColor: colors.error,
+    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  noticeTitle: {
+    color: colors.error,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    marginBottom: spacing.xs,
+  },
+  noticeText: {
+    color: colors.textSecondary,
+    fontSize: typography.fontSize.xs,
+    lineHeight: 18,
   },
   card: {
     backgroundColor: colors.surface,

@@ -20,6 +20,7 @@ import { RootState } from '../../redux/store';
 import { setAvailability } from '../../redux/slices/authSlice';
 import { addIncomingJob, removeIncomingJob } from '../../redux/slices/jobSlice';
 import { websocketService } from '../../services/websocket/websocketService';
+import { getConfiguredEdgeUrl } from '../../services/mockPolicy';
 import { earningsService } from '../../services/earnings/earningsService';
 import { setEarningsData } from '../../redux/slices/earningsSlice';
 import { profileService } from '../../services/profile/profileService';
@@ -36,6 +37,8 @@ export function DashboardScreen({ navigation }: Props) {
 
   // Local state
   const [gpsCoords, setGpsCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const edgeUnavailable = !getConfiguredEdgeUrl();
+  const [dashboardNotice, setDashboardNotice] = useState<string | null>(null);
 
   // Availability switch mapping
   const isOnline = plumber?.availability ?? false;
@@ -572,3 +575,6 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.black,
   },
 });
+
+
+

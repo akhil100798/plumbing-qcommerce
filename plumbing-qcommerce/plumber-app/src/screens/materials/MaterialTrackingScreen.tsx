@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -14,7 +14,8 @@ import { AppHeader } from '../../components/common/AppHeader';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { MapPreview } from '../../components/maps/MapPreview';
-import { updateApprovalStatus, setDeliveryTracking } from '../../redux/slices/materialSlice';
+import { setDeliveryTracking } from '../../redux/slices/materialSlice';
+import { canUseDevMockFallbacks } from '../../services/mockPolicy';
 import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
@@ -23,45 +24,43 @@ type Props = StackScreenProps<AppStackParamList, 'MaterialTracking'>;
 
 export function MaterialTrackingScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
-  const { jobId, productOrderId } = route.params;
+  const { jobId } = route.params;
   const { deliveryTracking, approvalStatus } = useSelector((state: RootState) => state.material);
-
-  const [stepIndex, setStepIndex] = useState(3); // Mocking step index (0-4)
+  const isDelivered = approvalStatus === 'DELIVERED';
+  const isDevFallback = canUseDevMockFallbacks();
 
   const steps = [
-    { id: 'confirmed', label: 'Order Confirmed', time: '10:30 AM' },
-    { id: 'accepted', label: 'Store Accepted', time: '10:32 AM' },
-    { id: 'packing', label: 'Packing Materials', time: '10:35 AM' },
-    { id: 'shipping', label: 'Out for Delivery', time: '10:45 AM', subtitle: 'Rider: Suresh' },
-    { id: 'arriving', label: 'Arriving Soon', time: '11:00 AM', subtitle: '2 mins away' },
+    { id: 'approved', label: 'Customer Approved', active: approvalStatus === 'APPROVED' || approvalStatus === 'DELIVERING' || approvalStatus === 'DELIVERED' },
+    { id: 'dispatch', label: 'Dispatch Update', active: approvalStatus === 'DELIVERING' || approvalStatus === 'DELIVERED' },
+    { id: 'delivered', label: 'Delivered', active: approvalStatus === 'DELIVERED' },
   ];
 
   useEffect(() => {
-    // Fill tracking data in Redux
-    dispatch(
-      setDeliveryTracking({
-        riderName: 'Suresh Kumar',
-        riderPhone: '+91 8888888888',
-        riderRating: 4.7,
-        eta: '11:00 AM',
-      })
-    );
-
-    // Auto advance simulation step
-    const interval = setTimeout(() => {
-      setStepIndex(4);
-      dispatch(updateApprovalStatus('DELIVERED'));
-    }, 4000);
-
-    return () => clearTimeout(interval);
-  }, [dispatch]);
+    if (isDevFallback && !deliveryTracking) {
+      dispatch(
+        setDeliveryTracking({
+          riderName: 'Suresh Kumar',
+          riderPhone: '+91 8888888888',
+          riderRating: 4.7,
+          eta: '11:00 AM',
+        })
+      );
+    }
+  }, [dispatch, deliveryTracking, isDevFallback]);
 
   const handleCallRider = () => {
-    Alert.alert('Calling Rider', `Calling rider Suresh Kumar at ${deliveryTracking?.riderPhone}`);
+    if (!deliveryTracking?.riderPhone) {
+      Alert.alert('Unavailable', 'Live rider contact is not available in staging.');
+      return;
+    }
+    Alert.alert('Calling Rider', `Calling rider ${deliveryTracking.riderName} at ${deliveryTracking.riderPhone}`);
   };
 
   const handleContinueWork = () => {
-    // Redux transition back to active job screen with parts arrived
+    if (!isDelivered) {
+      Alert.alert('Waiting for delivery', 'Material delivery has not been confirmed by the staging backend yet.');
+      return;
+    }
     navigation.replace('ActiveJob', { jobId });
   };
 
@@ -74,54 +73,45 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
           <MapPreview
             latitude={17.4944}
             longitude={78.3499}
-            title="Rider (Suresh)"
+            title={deliveryTracking?.riderName ? `Rider (${deliveryTracking.riderName})` : 'Dispatch unavailable'}
             height={220}
           />
         </View>
 
+        <View style={styles.noticeCard}>
+          <Text style={styles.noticeTitle}>Staging delivery status</Text>
+          <Text style={styles.noticeText}>
+            {deliveryTracking?.riderName
+              ? 'Delivery progress is only shown when the backend reports it.'
+              : 'Live material delivery tracking is not available in staging until the backend sends dispatch details.'}
+          </Text>
+        </View>
+
         <View style={styles.card}>
           <Text style={styles.sectionLabel}>Material Tracking</Text>
-          
           <View style={styles.timeline}>
             {steps.map((step, index) => {
-              const isDone = index <= stepIndex;
-              const isCurrent = index === stepIndex;
+              const isDone = step.active;
+              const isCurrent = isDone && (index === steps.findIndex((entry) => !entry.active) - 1 || (isDelivered && index === steps.length - 1));
 
               return (
                 <View key={step.id} style={styles.timelineRow}>
                   <View style={styles.indicatorCol}>
-                    <View
-                      style={[
-                        styles.dot,
-                        isDone && styles.dotDone,
-                        isCurrent && styles.dotCurrent,
-                      ]}
-                    />
+                    <View style={[styles.dot, isDone && styles.dotDone, isCurrent && styles.dotCurrent]} />
                     {index < steps.length - 1 && (
-                      <View
-                        style={[
-                          styles.line,
-                          index < stepIndex && styles.lineDone,
-                        ]}
-                      />
+                      <View style={[styles.line, steps[index + 1].active && styles.lineDone]} />
                     )}
                   </View>
 
                   <View style={styles.contentCol}>
                     <View style={styles.textRow}>
-                      <Text
-                        style={[
-                          styles.label,
-                          isDone && styles.labelDone,
-                          isCurrent && styles.labelCurrent,
-                        ]}
-                      >
+                      <Text style={[styles.label, isDone && styles.labelDone, isCurrent && styles.labelCurrent]}>
                         {step.label}
                       </Text>
-                      <Text style={styles.time}>{step.time}</Text>
+                      <Text style={styles.time}>{step.active ? 'Live' : 'Pending'}</Text>
                     </View>
-                    {step.subtitle && (
-                      <Text style={styles.subtitle}>{step.subtitle}</Text>
+                    {index === 1 && !deliveryTracking?.riderName && (
+                      <Text style={styles.subtitle}>Waiting for backend dispatch data.</Text>
                     )}
                   </View>
                 </View>
@@ -130,26 +120,26 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
           </View>
         </View>
 
-        {/* Rider Info Card */}
         <View style={styles.riderCard}>
           <View style={styles.riderAvatar}>
-            <Text style={styles.avatarText}>S</Text>
+            <Text style={styles.avatarText}>{deliveryTracking?.riderName ? 'R' : '!'}</Text>
           </View>
           <View style={styles.riderDetails}>
-            <Text style={styles.riderName}>{deliveryTracking?.riderName || 'Suresh'}</Text>
+            <Text style={styles.riderName}>{deliveryTracking?.riderName || 'Dispatch unavailable'}</Text>
             <View style={styles.ratingRow}>
-              <Text style={styles.star}>⭐</Text>
-              <Text style={styles.rating}>{deliveryTracking?.riderRating ?? 4.7}</Text>
+              <Text style={styles.star}>?</Text>
+              <Text style={styles.rating}>{deliveryTracking?.riderRating ?? 0}</Text>
             </View>
           </View>
           <TouchableOpacity style={styles.callButton} onPress={handleCallRider}>
-            <Text style={styles.callIcon}>📞</Text>
+            <Text style={styles.callIcon}>??</Text>
           </TouchableOpacity>
         </View>
 
         <PrimaryButton
-          title={stepIndex === 4 ? 'Continue Job' : 'Simulate Delivery Arrived'}
+          title={isDelivered ? 'Continue Job' : 'Waiting for Delivery'}
           onPress={handleContinueWork}
+          disabled={!isDelivered}
           style={styles.actionBtn}
         />
       </ScrollView>
@@ -164,6 +154,25 @@ const styles = StyleSheet.create({
   },
   mapContainer: {
     marginBottom: spacing.lg,
+  },
+  noticeCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.warning,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  noticeTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  noticeText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    lineHeight: 18,
   },
   card: {
     backgroundColor: colors.surface,
