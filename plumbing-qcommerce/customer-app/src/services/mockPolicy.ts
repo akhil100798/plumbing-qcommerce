@@ -50,6 +50,8 @@ export const createBackendUnavailableError = (feature: string, error?: unknown) 
 
 export const createUnavailableFeatureError = (message: string) => new Error(message);
 
+export const isRenderStagingBackend = () => BACKEND_URL.includes('plumbing-qcommerce.onrender.com');
+
 export const getConfiguredEdgeUrl = () => {
   if (EDGE_URL && (!isLocalUrl(EDGE_URL) || canUseDevMockFallbacks())) {
     return EDGE_URL;
@@ -63,3 +65,4 @@ export const getConfiguredEdgeUrl = () => {
 };
 
 export const isEdgeFeatureAvailable = () => getConfiguredEdgeUrl() !== null;
+

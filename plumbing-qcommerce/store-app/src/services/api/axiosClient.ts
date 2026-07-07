@@ -2,7 +2,8 @@ import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'ax
 import { tokenStorage } from './tokenStorage';
 
 const EXPLICIT_BACKEND_URL = process.env.EXPO_PUBLIC_API_BASE_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
-const BACKEND_URL = EXPLICIT_BACKEND_URL || (process.env.EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS === 'true' ? 'http://localhost:8081' : 'https://plumbing-qcommerce.onrender.com');
+const RAW_BACKEND_URL = EXPLICIT_BACKEND_URL || (process.env.EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS === 'true' ? 'http://localhost:8081' : 'https://plumbing-qcommerce.onrender.com');
+const BACKEND_URL = RAW_BACKEND_URL.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 export const apiClient = axios.create({
   baseURL: `${BACKEND_URL}/api/v1`,
@@ -58,7 +59,6 @@ export const getAuthToken = async () => {
   return authToken;
 };
 
-// Request Interceptor: Inject JWT Token
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const token = await getAuthToken();
@@ -67,18 +67,14 @@ apiClient.interceptors.request.use(
     }
     return config;
   },
-  (error: unknown) => {
-    return Promise.reject(error);
-  }
+  (error: unknown) => Promise.reject(error)
 );
 
-// Response Interceptor: Centralized Error Handling and Token Refresh
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    // If 401 and not already retried
     if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/auth/refresh') {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -140,4 +136,3 @@ apiClient.interceptors.response.use(
     return Promise.reject(new Error(message));
   }
 );
-

@@ -47,6 +47,26 @@ EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false
 - `npm run build` - PASS
 - Build warning: missing `./assets/favicon.png`
 
+## Auth Fixes Applied
+
+### App-side fixes
+
+- `store-app` primary login button now uses the same `Pressable` interaction model already used by the working button implementations.
+- `customer-app` now exposes a staging-safe email/password login option when pointed at the Render staging backend.
+- `plumber-app` now exposes a staging-safe email/password login option when pointed at the Render staging backend.
+- `plumber-app` password login no longer incorrectly routes through OTP send.
+- All three mobile API clients now normalize backend URLs so either of these env shapes work safely:
+  - `https://plumbing-qcommerce.onrender.com`
+  - `https://plumbing-qcommerce.onrender.com/api/v1`
+
+### Verified result
+
+- Customer web login now issues `POST https://plumbing-qcommerce.onrender.com/api/v1/auth/login`
+- Plumber web login now issues `POST https://plumbing-qcommerce.onrender.com/api/v1/auth/login`
+- Store web login now issues `POST https://plumbing-qcommerce.onrender.com/api/v1/auth/login`
+
+This confirms the previous app-side request-path bug is fixed.
+
 ## Evidence Captured
 
 ### Customer app
@@ -54,11 +74,15 @@ EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false
 - `docs/evidence/phase-14h-ui-uat/customer-app/00-smoke.png`
 - `docs/evidence/phase-14h-ui-uat/customer-app/01-post-splash.png`
 - `docs/evidence/phase-14h-ui-uat/customer-app/02-login.png`
+- `docs/evidence/phase-14h-ui-uat/customer-app/03-login-filled-fixed.png`
+- `docs/evidence/phase-14h-ui-uat/customer-app/04-post-login-fixed.png`
 
 ### Plumber app
 
 - `docs/evidence/phase-14h-ui-uat/plumber-app/01-login.png`
 - `docs/evidence/phase-14h-ui-uat/plumber-app/02-login-after-splash.png`
+- `docs/evidence/phase-14h-ui-uat/plumber-app/03-login-filled-fixed.png`
+- `docs/evidence/phase-14h-ui-uat/plumber-app/04-post-login-fixed.png`
 
 ### Store app
 
@@ -66,6 +90,8 @@ EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false
 - `docs/evidence/phase-14h-ui-uat/store-app/02-login-email-mode.png`
 - `docs/evidence/phase-14h-ui-uat/store-app/03-login-filled.png`
 - `docs/evidence/phase-14h-ui-uat/store-app/04-post-login.png`
+- `docs/evidence/phase-14h-ui-uat/store-app/05-login-filled-fixed.png`
+- `docs/evidence/phase-14h-ui-uat/store-app/06-post-login-fixed.png`
 
 ## Customer App UI UAT
 
@@ -74,25 +100,22 @@ EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false
 - Splash screen - PASS
 - Onboarding screen - PASS
 - Login screen - PASS
+- Staging credential login mode - PASS
+- Credential submit attempt - PASS
 
 ### Live observations
 
 - Splash auto-advanced into onboarding.
 - `Skip` navigation worked and reached the login screen.
-- Login screen rendered the real mobile-number auth flow.
-- No backend request was observed during initial onboarding/login rendering.
-- No localhost backend request was observed during the captured login path.
-
-### Blockers
-
-- The customer app login UI is phone-and-OTP based, not email/password based.
-- In this session, the shared primary action button did not trigger the expected web automation submit path, so a real OTP send/verify cycle could not be completed from automated web UI.
-- Because staging SMS is disabled and there is no visible staging OTP capture screen in the customer UI flow, authenticated customer UAT remains blocked.
+- A staging-safe credential login option is now visible on web against the Render backend.
+- `customer@plumbcommerce.com` / `password` can be entered through the UI.
+- The app now issues the correct real backend login request path.
+- The request is currently blocked by browser CORS from local Expo web origin.
 
 ### Customer verdict
 
-- Splash/onboarding/login shell: PASS
-- Authenticated live UAT: BLOCKED
+- UI shell and credential submit path: PASS
+- Authenticated live UAT from localhost web: BLOCKED by CORS
 - Overall: PARTIAL
 
 ## Plumber App UI UAT
@@ -101,24 +124,22 @@ EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false
 
 - Splash screen - PASS
 - Login screen - PASS
+- Staging credential login mode - PASS
+- Credential submit attempt - PASS
 
 ### Live observations
 
 - Splash rendered correctly and advanced to login.
-- Login screen rendered mobile number, password, remember-me, forgot-password, and social options.
-- No backend request was observed during initial login-screen rendering.
-- No localhost backend request was observed during the captured login path.
-
-### Blockers
-
-- The live plumber UI could be opened and inspected, but authenticated UAT was not completed in this session.
-- The plumber login path remains blocked for full live UAT because the app still depends on a phone/OTP-driven auth flow for actual session progression.
-- As with customer/store, the shared primary button path did not provide a successful automated submission result in this web run.
+- A staging-safe credential login option is now visible on web against the Render backend.
+- `plumber@plumbcommerce.com` / `password` can be entered through the UI.
+- The previous app-side bug where the password screen still triggered OTP flow is fixed.
+- The app now issues the correct real backend login request path.
+- The request is currently blocked by browser CORS from local Expo web origin.
 
 ### Plumber verdict
 
-- Splash/login shell: PASS
-- Authenticated live UAT: BLOCKED
+- UI shell and credential submit path: PASS
+- Authenticated live UAT from localhost web: BLOCKED by CORS
 - Overall: PARTIAL
 
 ## Store App UI UAT
@@ -128,25 +149,21 @@ EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false
 - Login screen in OTP mode - PASS
 - Login screen in email/password mode - PASS
 - Credential entry screen - PASS
+- Credential submit attempt - PASS
 
 ### Live observations
 
 - Store app loaded the real login screen against the staging env.
 - The `Login with Email / Password` toggle worked through UI.
 - `store@plumbcommerce.com` and `password` were entered through the UI fields successfully.
-- After credential entry, the web UI remained on the login screen.
-- No `/api/v1/auth/login` request was observed during the attempted submit.
-- No localhost backend request was observed during initial UI rendering or mode toggle.
-
-### Blockers
-
-- Store credential submission could not be completed through this automated web UI path because the primary login action did not produce a network request.
-- Deeper store flows such as dashboard, inventory, incoming orders, and material requests remain unverified through UI in this session.
+- The previous app-side bug that prevented submit from issuing a real login request is fixed.
+- The app now issues the correct real backend login request path.
+- The request is currently blocked by browser CORS from local Expo web origin.
 
 ### Store verdict
 
-- Login shell and credential mode toggle: PASS
-- Live credential submit: BLOCKED
+- UI shell and credential submit path: PASS
+- Authenticated live UAT from localhost web: BLOCKED by CORS
 - Overall: PARTIAL
 
 ## Cross-App Findings
@@ -155,24 +172,29 @@ EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false
 
 - All three apps build successfully with staging env values pointing to Render.
 - Real UI shells render for customer, plumber, and store on Expo web.
-- No localhost backend API request was observed in the captured pre-auth UI paths.
-- Mock fallback was disabled in env for this run.
+- All three apps now issue the correct real backend login request path.
+- The earlier duplicate `/api/v1/api/v1/...` request bug is fixed.
+- Mock fallback remains disabled.
+- No localhost backend requests were used.
 
-### Current blockers
+### Current blocker
 
-1. Customer app live login is OTP-based and not currently completable from available staging UI evidence.
-2. Plumber app live login is not yet completable through the current automated web path.
-3. Store app email/password mode renders, but submit does not issue the login request under this web automation run.
-4. Because auth could not be completed through UI, downstream dashboards and role-specific business flows remain unverified in Phase 14H.
+The remaining blocker is now environment-level rather than app-level:
 
-## Recommendations
+1. Render backend CORS does not currently allow the active local Expo web origins used during this pass.
+2. Browser failure observed:
+   - `Access to XMLHttpRequest ... has been blocked by CORS policy`
+3. Because the browser blocks the login response, authenticated dashboards cannot yet be reached from local Expo web.
 
-1. Verify the primary button interaction manually in a normal browser, Android emulator, or physical device.
-2. Provide a staging-safe OTP capture path for customer and plumber live UAT, or enable a dedicated staging test auth path.
-3. Confirm whether the store app login submit issue is:
-   - a web-only React Native interaction bug, or
-   - a broader store login regression.
-4. Resume full authenticated UI UAT only after one of the above auth blockers is cleared.
+## Recommended next step
+
+Update Render `CORS_ALLOWED_ORIGINS` to include the active local web origins used for UI UAT, for example:
+
+- `http://localhost:19106`
+- `http://localhost:19107`
+- `http://localhost:19108`
+
+After that, rerun the Phase 14H web login flow and recapture post-login dashboard screenshots.
 
 ## Final Verdict
 
@@ -180,7 +202,7 @@ EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false
 CUSTOMER APP UI UAT: PARTIAL
 PLUMBER APP UI UAT: PARTIAL
 STORE APP UI UAT: PARTIAL
-FULL LIVE MOBILE UI UAT: BLOCKED ON AUTH / WEB INTERACTION
+FULL LIVE MOBILE UI UAT: BLOCKED ON RENDER CORS FOR LOCAL EXPO WEB ORIGINS
 MOBILE STAGING READY: PARTIAL
 PRODUCTION READY: NO
 ```

@@ -1,5 +1,12 @@
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, ViewStyle, StyleProp } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleProp,
+  StyleSheet,
+  Text,
+  ViewStyle,
+} from 'react-native';
 import { colors, borderRadius, spacing, typography } from '../../theme';
 
 interface PrimaryButtonProps {
@@ -20,22 +27,22 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   const isButtonDisabled = disabled || loading;
   
   return (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      style={[
+    <Pressable
+      onPress={onPress}
+      disabled={isButtonDisabled}
+      style={({ pressed }) => [
         styles.button,
         style,
         isButtonDisabled && styles.disabledButton,
+        pressed && !isButtonDisabled && styles.pressedButton,
       ]}
-      onPress={onPress}
-      disabled={isButtonDisabled}
     >
       {loading ? (
         <ActivityIndicator size="small" color={colors.card} />
       ) : (
         <Text style={styles.text}>{title}</Text>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 
@@ -50,6 +57,9 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     backgroundColor: colors.textMuted,
+  },
+  pressedButton: {
+    opacity: 0.9,
   },
   text: {
     color: colors.card,
