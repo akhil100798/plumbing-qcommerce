@@ -13,6 +13,7 @@ export const ENDPOINTS = {
     CANCEL: (id: string | number) => `/orders/${id}/cancel`,
     BY_STATUS: (status: string) => `/orders/status/${status}`,
     GET_BY_ID: (id: string | number) => `/orders/${id}`,
+    PLUMBER_ASSIGNED: '/orders/plumber',
   },
   DELIVERY: {
     MATERIAL_REQUEST: '/delivery/material-request',

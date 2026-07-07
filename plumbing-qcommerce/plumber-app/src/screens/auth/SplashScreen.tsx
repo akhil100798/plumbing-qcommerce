@@ -9,10 +9,10 @@ import { StackScreenProps } from '@react-navigation/stack';
 
 import { colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
-import * as SecureStore from 'expo-secure-store';
 import { useDispatch } from 'react-redux';
 import { authSuccess, logout } from '../../redux/slices/authSlice';
 import { profileService } from '../../services/profile/profileService';
+import { tokenStorage } from '../../services/api/tokenStorage';
 
 type Props = StackScreenProps<AuthStackParamList, 'Splash'>;
 
@@ -22,8 +22,8 @@ export function SplashScreen({ navigation }: Props) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = await SecureStore.getItemAsync('authToken');
-        const refreshToken = await SecureStore.getItemAsync('refreshToken');
+        const token = await tokenStorage.getItem('authToken');
+        const refreshToken = await tokenStorage.getItem('refreshToken');
 
         if (token && refreshToken) {
           // Fetch real user info
@@ -55,7 +55,7 @@ export function SplashScreen({ navigation }: Props) {
     <View style={styles.container}>
       <View style={styles.logoContainer}>
         <View style={styles.logoCircle}>
-          <Text style={styles.logoIcon}>🔧</Text>
+          <Text style={styles.logoIcon}>ðŸ”§</Text>
         </View>
         <Text style={styles.appName}>PlumbCommerce</Text>
         <Text style={styles.appSubtitle}>Plumber App</Text>

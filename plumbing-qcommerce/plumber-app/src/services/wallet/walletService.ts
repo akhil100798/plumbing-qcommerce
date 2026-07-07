@@ -1,6 +1,11 @@
 import { apiClient } from '../api/axiosClient';
 import { ENDPOINTS } from '../api/endpoints';
 import { MOCK_TRANSACTIONS } from '../mocks/mockData';
+import {
+  canUseDevMockFallbacks,
+  createBackendUnavailableError,
+  warnUsingDevMockFallback,
+} from '../mockPolicy';
 import { Transaction } from '../../types';
 
 export const walletService = {
@@ -11,8 +16,11 @@ export const walletService = {
         balance: response.data.balance || 0,
       };
     } catch (error) {
-      console.warn('Failed to fetch wallet, using mock balance', error);
-      return { balance: 12500 };
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Plumber wallet balance', error);
+        return { balance: 12500 };
+      }
+      throw createBackendUnavailableError('Wallet', error);
     }
   },
 
@@ -27,8 +35,11 @@ export const walletService = {
         createdAt: txn.createdAt,
       }));
     } catch (error) {
-      console.warn('Failed to fetch wallet transactions, using mock', error);
-      return MOCK_TRANSACTIONS;
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Plumber wallet transactions', error);
+        return MOCK_TRANSACTIONS;
+      }
+      throw createBackendUnavailableError('Wallet transactions', error);
     }
   },
 };

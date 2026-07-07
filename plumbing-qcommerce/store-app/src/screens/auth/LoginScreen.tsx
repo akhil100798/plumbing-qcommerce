@@ -4,6 +4,7 @@ import { colors, borderRadius, spacing, typography, shadows } from '../../theme'
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { authService } from '../../services/auth/authService';
+import { canUseDevMockFallbacks } from '../../services/mockPolicy';
 import { useAppDispatch } from '../../redux/store';
 import { authStart, authSuccess, authFailure } from '../../redux/slices/authSlice';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
@@ -12,11 +13,11 @@ import { AppStackParamList } from '../../types/navigation';
 export const LoginScreen = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  
+
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('manager@plumbcommerce.com');
   const [password, setPassword] = useState('SecurePass@1');
-  
+
   const [useOtp, setUseOtp] = useState(true);
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState('');
@@ -26,13 +27,18 @@ export const LoginScreen = () => {
     if (!phone || phone.length < 10) {
       return Alert.alert('Invalid Input', 'Please enter a valid 10-digit phone number');
     }
-    
+
     setLoading(true);
     try {
       const formattedPhone = `+91 ${phone}`;
       await authService.sendOtp(formattedPhone);
       setOtpSent(true);
-      Alert.alert('OTP Sent', `Test OTP code is 123456 for phone: ${formattedPhone}`);
+      Alert.alert(
+        'OTP Sent',
+        canUseDevMockFallbacks()
+          ? `Test OTP code is 123456 for phone: ${formattedPhone}`
+          : `OTP sent to ${formattedPhone}.`
+      );
     } catch (e: any) {
       Alert.alert('Error', e.message || 'Failed to send OTP');
     } finally {
@@ -84,7 +90,7 @@ export const LoginScreen = () => {
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <View style={styles.brandBadge}>
-            <Text style={styles.brandEmoji}>üè™</Text>
+            <Text style={styles.brandEmoji}>??</Text>
           </View>
           <Text style={styles.brandTitle}>PlumbCommerce</Text>
           <Text style={styles.brandSubtitle}>Store Partner</Text>
@@ -113,12 +119,7 @@ export const LoginScreen = () => {
                     maxLength={10}
                   />
                 </View>
-                <PrimaryButton
-                  title="Send OTP"
-                  onPress={handlePhoneSubmit}
-                  loading={loading}
-                  style={styles.submitBtn}
-                />
+                <PrimaryButton title="Send OTP" onPress={handlePhoneSubmit} loading={loading} style={styles.submitBtn} />
               </View>
             ) : (
               <View style={styles.form}>
@@ -133,12 +134,7 @@ export const LoginScreen = () => {
                   placeholderTextColor={colors.textMuted}
                   textAlign="center"
                 />
-                <PrimaryButton
-                  title="Verify & Login"
-                  onPress={handleOtpVerify}
-                  loading={loading}
-                  style={styles.submitBtn}
-                />
+                <PrimaryButton title="Verify & Login" onPress={handleOtpVerify} loading={loading} style={styles.submitBtn} />
                 <TouchableOpacity style={styles.backLink} onPress={() => setOtpSent(false)}>
                   <Text style={styles.backLinkText}>Change Phone Number</Text>
                 </TouchableOpacity>
@@ -165,16 +161,11 @@ export const LoginScreen = () => {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
-                  placeholder="‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢"
+                  placeholder="ïïïïïïïï"
                   placeholderTextColor={colors.textMuted}
                 />
               </View>
-              <PrimaryButton
-                title="Login"
-                onPress={handleCredentialsSubmit}
-                loading={loading}
-                style={styles.submitBtn}
-              />
+              <PrimaryButton title="Login" onPress={handleCredentialsSubmit} loading={loading} style={styles.submitBtn} />
             </View>
           )}
 

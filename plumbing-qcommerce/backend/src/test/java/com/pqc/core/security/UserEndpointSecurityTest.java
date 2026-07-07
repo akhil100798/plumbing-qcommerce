@@ -1,10 +1,14 @@
 package com.pqc.core.security;
 
+import com.pqc.core.entity.Role;
+import com.pqc.core.entity.User;
+import com.pqc.core.entity.UserStatus;
 import com.pqc.core.repository.CategoryRepository;
 import com.pqc.core.repository.InventoryReservationRepository;
 import com.pqc.core.repository.ProductOrderRepository;
 import com.pqc.core.repository.ProductRepository;
 import com.pqc.core.repository.StockRepository;
+import com.pqc.core.repository.UserAddressRepository;
 import com.pqc.core.repository.UserRepository;
 import com.pqc.core.repository.ServiceOrderRepository;
 import com.pqc.core.repository.StoreRepository;
@@ -15,10 +19,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -31,6 +37,8 @@ class UserEndpointSecurityTest {
     @Autowired private MockMvc mvc;
 
     @Autowired private UserRepository userRepository;
+    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private JwtService jwtService;
     @Autowired private ServiceOrderRepository serviceOrderRepository;
     @Autowired private StoreRepository storeRepository;
     @Autowired private OutboxEventRepository outboxRepository;
@@ -39,10 +47,10 @@ class UserEndpointSecurityTest {
     @Autowired private StockRepository stockRepository;
     @Autowired private ProductRepository productRepository;
     @Autowired private CategoryRepository categoryRepository;
+    @Autowired private UserAddressRepository userAddressRepository;
 
     @BeforeEach
     void clearUsers() {
-        // Delete in FK dependency order: children first, parents last
         reservationRepository.deleteAll();
         reservationRepository.flush();
         productOrderRepository.deleteAll();
@@ -59,8 +67,19 @@ class UserEndpointSecurityTest {
         categoryRepository.flush();
         storeRepository.deleteAll();
         storeRepository.flush();
+        userAddressRepository.deleteAll();
+        userAddressRepository.flush();
         userRepository.deleteAll();
         userRepository.flush();
+    }
+    @Test
+    void adminPortalLocalOriginCanPreflightLogin() throws Exception {
+        mvc.perform(options("/api/v1/auth/login")
+                .header("Origin", "http://localhost:3101")
+                .header("Access-Control-Request-Method", "POST")
+                .header("Access-Control-Request-Headers", "content-type"))
+            .andExpect(status().isOk())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().string("Access-Control-Allow-Origin", "http://localhost:3101"));
     }
 
     @Test
@@ -85,6 +104,102 @@ class UserEndpointSecurityTest {
     void anonymousUserEnumerationIsRejected() throws Exception {
         mvc.perform(get("/api/v1/users"))
             .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void unauthenticatedUserCannotAccessOwnProfile() throws Exception {
+        mvc.perform(get("/api/v1/users/me"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void customerCanAccessOwnProfileButNotAdminOnlyUserRoutes() throws Exception {
+        User customer = saveUser("customer@example.com", Role.CUSTOMER);
+
+        mvc.perform(get("/api/v1/users/me")
+                .header("Authorization", bearer(customer)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email").value(customer.getEmail()))
+            .andExpect(jsonPath("$.role").value("CUSTOMER"));
+
+        mvc.perform(get("/api/v1/users")
+                .header("Authorization", bearer(customer)))
+            .andExpect(status().isForbidden());
+    }
+    @Test
+    void customerCanCreateOwnAddressButAnonymousCannot() throws Exception {
+        User customer = saveUser("address-customer@example.com", Role.CUSTOMER);
+        String payload = """
+            {
+              "label": "Home",
+              "name": "Test Customer",
+              "addressLine": "123 Test Street, Bengaluru",
+              "phone": "9000000101"
+            }
+            """;
+
+        mvc.perform(post("/api/v1/users/me/addresses")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+            .andExpect(status().isUnauthorized());
+
+        mvc.perform(post("/api/v1/users/me/addresses")
+                .header("Authorization", bearer(customer))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(payload))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.label").value("Home"))
+            .andExpect(jsonPath("$.addressLine").value("123 Test Street, Bengaluru"))
+            .andExpect(jsonPath("$.user").doesNotExist());
+
+        mvc.perform(get("/api/v1/users")
+                .header("Authorization", bearer(customer)))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void plumberCanAccessOwnProfileButNotAdminOnlyUserRoutes() throws Exception {
+        User plumber = saveUser("plumber@example.com", Role.PLUMBER);
+
+        mvc.perform(get("/api/v1/users/me")
+                .header("Authorization", bearer(plumber)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email").value(plumber.getEmail()))
+            .andExpect(jsonPath("$.role").value("PLUMBER"));
+
+        mvc.perform(get("/api/v1/users")
+                .header("Authorization", bearer(plumber)))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void adminCanAccessOwnProfileAndAdminOnlyUserRoutes() throws Exception {
+        User admin = saveUser("admin@example.com", Role.ADMIN);
+
+        mvc.perform(get("/api/v1/users/me")
+                .header("Authorization", bearer(admin)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email").value(admin.getEmail()))
+            .andExpect(jsonPath("$.role").value("ADMIN"));
+
+        mvc.perform(get("/api/v1/users")
+                .header("Authorization", bearer(admin)))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void superAdminCanAccessOwnProfileAndAdminOnlyUserRoutes() throws Exception {
+        User superAdmin = saveUser("superadmin@example.com", Role.SUPER_ADMIN);
+
+        mvc.perform(get("/api/v1/users/me")
+                .header("Authorization", bearer(superAdmin)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email").value(superAdmin.getEmail()))
+            .andExpect(jsonPath("$.role").value("SUPER_ADMIN"));
+
+        mvc.perform(get("/api/v1/users")
+                .header("Authorization", bearer(superAdmin)))
+            .andExpect(status().isOk());
     }
 
     @Test
@@ -114,5 +229,20 @@ class UserEndpointSecurityTest {
                 .content(credentials.formatted("missing@example.com")))
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.error").value("Invalid credentials"));
+    }
+
+    private User saveUser(String email, Role role) {
+        return userRepository.save(User.builder()
+                .email(email)
+                .password(passwordEncoder.encode("Password123!"))
+                .fullName(role.name())
+                .phone("9999999999")
+                .role(role)
+                .status(UserStatus.ACTIVE)
+                .build());
+    }
+
+    private String bearer(User user) {
+        return "Bearer " + jwtService.generateToken(user.getEmail(), user.getRole().name());
     }
 }

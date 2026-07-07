@@ -36,7 +36,7 @@ class UserRoleConstraintMigrationTest {
                 String.class
         );
         assertNotNull(currentVersion);
-        assertEquals("10", currentVersion);
+        assertTrue(Integer.parseInt(currentVersion) >= 10, "Expected migrations to include at least V10");
 
         String migrationSql = new String(
                 getClass().getClassLoader()

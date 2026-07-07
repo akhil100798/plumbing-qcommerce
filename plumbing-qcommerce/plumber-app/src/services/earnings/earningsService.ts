@@ -1,6 +1,11 @@
 import { apiClient } from '../api/axiosClient';
 import { ENDPOINTS } from '../api/endpoints';
 import { MOCK_TRANSACTIONS } from '../mocks/mockData';
+import {
+  canUseDevMockFallbacks,
+  createBackendUnavailableError,
+  warnUsingDevMockFallback,
+} from '../mockPolicy';
 import { Transaction } from '../../types';
 
 export const earningsService = {
@@ -15,25 +20,27 @@ export const earningsService = {
     try {
       const response = await apiClient.get<any>(ENDPOINTS.WALLET.GET_WALLET);
       const wallet = response.data;
-      // Map balance and compute estimations
       return {
-        todayEarnings: wallet.todayEarnings || 1450,
-        weeklyEarnings: wallet.weeklyEarnings || 8450,
-        serviceCommission: wallet.serviceEarnings || 1120,
-        materialCommission: wallet.materialCommission || 230,
-        tips: wallet.tips || 100,
-        jobsCompleted: wallet.jobsCompleted || 8,
+        todayEarnings: wallet.todayEarnings || 0,
+        weeklyEarnings: wallet.weeklyEarnings || 0,
+        serviceCommission: wallet.serviceEarnings || 0,
+        materialCommission: wallet.materialCommission || 0,
+        tips: wallet.tips || 0,
+        jobsCompleted: wallet.jobsCompleted || 0,
       };
     } catch (error) {
-      console.warn('Failed to fetch wallet for earnings, using mock stats', error);
-      return {
-        todayEarnings: 1450,
-        weeklyEarnings: 8450,
-        serviceCommission: 1120,
-        materialCommission: 230,
-        tips: 100,
-        jobsCompleted: 8,
-      };
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Plumber earnings summary', error);
+        return {
+          todayEarnings: 1450,
+          weeklyEarnings: 8450,
+          serviceCommission: 1120,
+          materialCommission: 230,
+          tips: 100,
+          jobsCompleted: 8,
+        };
+      }
+      throw createBackendUnavailableError('Wallet and earnings', error);
     }
   },
 
@@ -53,8 +60,11 @@ export const earningsService = {
         }),
       }));
     } catch (error) {
-      console.warn('Failed to fetch transactions from API, using mock', error);
-      return MOCK_TRANSACTIONS;
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Plumber earnings transactions', error);
+        return MOCK_TRANSACTIONS;
+      }
+      throw createBackendUnavailableError('Wallet transactions', error);
     }
   },
 };

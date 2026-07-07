@@ -11,6 +11,8 @@ export const ENDPOINTS = {
   },
   store: {
     list: '/stores',
+    me: '/stores/me',
+    meInventory: '/stores/me/inventory',
     details: (id: number) => `/stores/${id}`,
     inventory: (id: number) => `/stores/${id}/inventory`,
     updateStock: (storeId: number, productId: number) => `/stores/${storeId}/inventory/${productId}`,
@@ -21,11 +23,17 @@ export const ENDPOINTS = {
     productDetails: (id: number) => `/catalog/products/${id}`,
   },
   orders: {
-    byStatus: (status: string) => `/orders/status/${status}`,
+    byStatus: (status: string) => `/checkout/orders/status/${status}`,
     details: (id: number) => `/checkout/orders/${id}`,
     accept: (id: number) => `/checkout/orders/${id}/accept`,
     pack: (id: number) => `/checkout/orders/${id}/pack`,
     handover: (id: number) => `/checkout/orders/${id}/handover`,
+  },
+  delivery: {
+    partners: '/delivery/partners',
+  },
+  materialRequests: {
+    store: '/checkout/material-requests/store',
   },
   wallet: {
     balance: '/wallet',

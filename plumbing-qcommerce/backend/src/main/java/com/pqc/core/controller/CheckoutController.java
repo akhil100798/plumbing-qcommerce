@@ -2,7 +2,9 @@ package com.pqc.core.controller;
 
 import com.pqc.core.dto.CheckoutRequest;
 import com.pqc.core.dto.OrderDetailDTO;
+import com.pqc.core.dto.OrderDetailResponse;
 import com.pqc.core.entity.ProductOrder;
+import com.pqc.core.entity.ProductOrderStatus;
 import com.pqc.core.entity.Role;
 import com.pqc.core.entity.ServiceOrder;
 import com.pqc.core.entity.User;
@@ -12,7 +14,14 @@ import com.pqc.core.service.CheckoutService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -44,16 +53,40 @@ public class CheckoutController {
         return ResponseEntity.ok("Stock reservation released back to inventory.");
     }
 
+    @GetMapping("/orders/status/{status}")
+    @PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
+    public ResponseEntity<List<OrderDetailResponse>> getOrdersByStatus(@PathVariable ProductOrderStatus status) {
+        User user = currentUser.require();
+        List<ProductOrder> orders;
+
+        if (user.getRole() == Role.ADMIN) {
+            orders = productOrderRepository.findByStatus(status);
+        } else if (user.getRole() == Role.STORE_MANAGER) {
+            orders = productOrderRepository.findAll().stream()
+                    .filter(order -> order.getStore() != null)
+                    .filter(order -> order.getStore().getManager() != null)
+                    .filter(order -> order.getStore().getManager().getId().equals(user.getId()))
+                    .filter(order -> order.getStatus() == status)
+                    .toList();
+        } else {
+            throw new AccessDeniedException("Only store managers and admins can list product orders by status");
+        }
+
+        return ResponseEntity.ok(orders.stream()
+                .map(checkoutService::mapToResponse)
+                .toList());
+    }
+
     @GetMapping("/orders/{id}")
     public ResponseEntity<OrderDetailDTO> getOrderById(@PathVariable Long id) {
         User user = currentUser.require();
         ProductOrder order = productOrderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + id));
 
-        if (!order.getCustomer().getId().equals(user.getId()) 
-            && (order.getDeliveryPartner() == null || !order.getDeliveryPartner().getId().equals(user.getId()))
-            && user.getRole() != Role.ADMIN
-            && user.getRole() != Role.STORE_MANAGER) {
+        if (!order.getCustomer().getId().equals(user.getId())
+                && (order.getDeliveryPartner() == null || !order.getDeliveryPartner().getId().equals(user.getId()))
+                && user.getRole() != Role.ADMIN
+                && user.getRole() != Role.STORE_MANAGER) {
             throw new AccessDeniedException("Access denied to this order");
         }
 
@@ -97,28 +130,62 @@ public class CheckoutController {
         return ResponseEntity.ok(productOrderRepository.findByCustomerId(user.getId()));
     }
 
+    @GetMapping("/material-requests/customer")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<List<OrderDetailResponse>> getCustomerMaterialRequests() {
+        User user = currentUser.require();
+        return ResponseEntity.ok(productOrderRepository.findByCustomerIdAndServiceOrderIsNotNull(user.getId()).stream()
+                .map(checkoutService::mapToResponse)
+                .toList());
+    }
+
+    @GetMapping("/material-requests/plumber")
+    @PreAuthorize("hasRole('PLUMBER')")
+    public ResponseEntity<List<OrderDetailResponse>> getPlumberMaterialRequests() {
+        User user = currentUser.require();
+        return ResponseEntity.ok(productOrderRepository.findByServiceOrder_Plumber_Id(user.getId()).stream()
+                .map(checkoutService::mapToResponse)
+                .toList());
+    }
+
+    @GetMapping("/material-requests/store")
+    @PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
+    public ResponseEntity<List<OrderDetailResponse>> getStoreMaterialRequests() {
+        User user = currentUser.require();
+        List<ProductOrder> orders = user.getRole() == Role.ADMIN
+                ? productOrderRepository.findAll().stream()
+                .filter(order -> order.getServiceOrder() != null)
+                .toList()
+                : productOrderRepository.findByStore_Manager_IdAndServiceOrderIsNotNull(user.getId());
+
+        return ResponseEntity.ok(orders.stream()
+                .filter(order -> order.getStatus() != ProductOrderStatus.PENDING)
+                .filter(order -> order.getStatus() != ProductOrderStatus.CANCELLED)
+                .map(checkoutService::mapToResponse)
+                .toList());
+    }
+
     @PatchMapping("/orders/{id}/accept")
-    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
-    public ResponseEntity<com.pqc.core.dto.OrderDetailResponse> acceptOrder(
+    @PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
+    public ResponseEntity<OrderDetailResponse> acceptOrder(
             @PathVariable Long id,
             @jakarta.validation.Valid @RequestBody com.pqc.core.dto.OrderActionRequest request) {
         return ResponseEntity.ok(checkoutService.acceptOrder(id, request));
     }
 
     @PatchMapping("/orders/{id}/pack")
-    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
-    public ResponseEntity<com.pqc.core.dto.OrderDetailResponse> packOrder(
+    @PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
+    public ResponseEntity<OrderDetailResponse> packOrder(
             @PathVariable Long id,
             @jakarta.validation.Valid @RequestBody com.pqc.core.dto.PackOrderRequest request) {
         return ResponseEntity.ok(checkoutService.packOrder(id, request));
     }
 
     @PostMapping("/orders/{id}/handover")
-    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
-    public ResponseEntity<com.pqc.core.dto.OrderDetailResponse> handoverOrder(
+    @PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
+    public ResponseEntity<OrderDetailResponse> handoverOrder(
             @PathVariable Long id,
             @jakarta.validation.Valid @RequestBody com.pqc.core.dto.HandoverRequest request) {
         return ResponseEntity.ok(checkoutService.handoverOrder(id, request));
     }
 }
-

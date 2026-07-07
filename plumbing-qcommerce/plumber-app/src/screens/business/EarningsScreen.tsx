@@ -24,20 +24,22 @@ export function EarningsScreen({ navigation }: Props) {
   const dispatch = useDispatch();
   const earnings = useSelector((state: RootState) => state.earnings);
   const [filter, setFilter] = useState<'Day' | 'Week' | 'Month'>('Day');
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchEarningsStats = async () => {
       try {
         const data = await earningsService.fetchEarnings();
         dispatch(setEarningsData(data));
+        setNotice(null);
       } catch (err) {
         console.error('Error fetching earnings details:', err);
+        setNotice(err instanceof Error ? err.message : 'Earnings are not available in staging.');
       }
     };
     fetchEarningsStats();
   }, [dispatch]);
 
-  // Adjust numbers based on period filter for visual variation
   const getPeriodEarnings = () => {
     switch (filter) {
       case 'Week':
@@ -73,9 +75,8 @@ export function EarningsScreen({ navigation }: Props) {
   return (
     <ScreenWrapper>
       <AppHeader title="My Earnings" onBackPress={() => navigation.goBack()} />
-      
+
       <View style={styles.container}>
-        {/* Toggle Filter Header */}
         <View style={styles.filterRow}>
           {(['Day', 'Week', 'Month'] as const).map((period) => (
             <TouchableOpacity
@@ -90,6 +91,7 @@ export function EarningsScreen({ navigation }: Props) {
           ))}
         </View>
 
+        {!!notice && <Text style={styles.noticeText}>{notice}</Text>}
         <View style={styles.cardContainer}>
           <EarningsCard
             todayEarnings={periodStats.total}
@@ -117,6 +119,12 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: spacing.layout,
     backgroundColor: colors.background,
+  },
+  noticeText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.error,
+    fontWeight: typography.fontWeight.bold,
+    marginBottom: spacing.md,
   },
   filterRow: {
     flexDirection: 'row',

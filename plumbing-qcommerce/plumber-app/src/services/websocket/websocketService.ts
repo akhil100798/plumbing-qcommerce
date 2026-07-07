@@ -1,17 +1,29 @@
 import io, { Socket } from 'socket.io-client';
 import { JobOffer } from '../../types';
-
-const EDGE_URL = process.env.EXPO_PUBLIC_EDGE_URL || 'http://localhost:3000';
+import { getConfiguredEdgeUrl } from '../mockPolicy';
 
 let socket: Socket | null = null;
 
 export const websocketService = {
-  connect: (plumberId: string, onJobOffer: (offer: JobOffer) => void, onPartsEnRoute: (data: any) => void): Socket => {
+  connect: (
+    plumberId: string,
+    onJobOffer: (offer: JobOffer) => void,
+    onPartsEnRoute: (data: any) => void
+  ): Socket | null => {
+    const edgeUrl = getConfiguredEdgeUrl();
+    if (!edgeUrl) {
+      if (socket) {
+        socket.disconnect();
+        socket = null;
+      }
+      return null;
+    }
+
     if (socket) {
       socket.disconnect();
     }
 
-    socket = io(EDGE_URL, {
+    socket = io(edgeUrl, {
       transports: ['websocket'],
     });
 

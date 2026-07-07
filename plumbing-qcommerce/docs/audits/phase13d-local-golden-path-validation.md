@@ -1,0 +1,148 @@
+# Phase 13D Local Golden Path Validation
+
+## Executive summary
+- Phase: `13D`
+- Branch: `phase13a-local-staging-sms`
+- Starting commit: `294c8bb`
+- Final assessment: local golden path is **partial**.
+- Backend, edge, delivery OTP, and plumber service-order flows are materially working with real local data.
+- Customer address flow, store fulfillment state progression, and local admin-portal login flow still block a clean end-to-end UI story.
+- Production remains `NO`.
+
+## Environment status
+- Backend health: `UP`
+- Backend API docs: HTTP `200`
+- Edge health: `UP`
+- Edge Redis adapter: `CONNECTED`
+- Docker services observed running:
+  - PostgreSQL
+  - Redis
+  - MongoDB
+  - Kafka
+  - Zookeeper
+- Local app URLs responded with HTTP `200`:
+  - `http://localhost:3101`
+  - `http://localhost:19007`
+  - `http://localhost:19008`
+  - `http://localhost:19009`
+
+## Test accounts used
+- Customer (OTP-created during validation): `+91 9000000101`, `+91 9000000102`, `+91 9000000103`, `+91 9000000104`
+- Customer (existing seeded local user for delivery check attempt): `+91 7000000002`
+- Plumber: `vikram.plumber@plumbcommerce.com` (`PLUMBER`)
+- Store manager: `manager@plumbcommerce.com` (`STORE_MANAGER`)
+- Delivery partner: `asha.delivery@plumbcommerce.com` (`DELIVERY_PARTNER`)
+- Admin: `admin@plumbcommerce.com` / `superadmin@plumbcommerce.com`
+- OTP capture method: Redis key `local-staging:otp:<sha256(normalized-phone)>`
+
+## Customer auth result
+- `PASS` — `POST /api/v1/auth/send-otp` succeeded for new local-staging customer phones.
+- `PASS` — OTP was retrieved from local Redis capture and verified through `POST /api/v1/auth/verify-otp`.
+- `PASS` — `GET /api/v1/users/me` returned `200` with `CUSTOMER` role for OTP-created users.
+- `PASS` — temporary Redis OTP keys were deleted after verification.
+
+## Catalog / cart result
+- `PASS` — catalog categories API returned `4` categories.
+- `PASS` — catalog products API returned `6` products.
+- `PASS` — product detail for `Kitchen Brass Tap` was returned by the backend.
+- `PARTIAL` — search was not verified as a real browser/UI interaction; repository-level product retrieval was verified instead.
+- `PARTIAL` — customer home/catalog/cart UI was not fully browser-driven because the in-app browser runtime was blocked by sandbox helper failure.
+
+## Order creation result
+- `PASS` — a real product order was created for customer `71` (`orderId=15`) and confirmed from `PENDING` to `CONFIRMED`.
+- `PASS` — a second real product order was created for customer `73` (`orderId=16`) and later delivered through the delivery flow.
+- `FAIL` — customer address creation via `POST /api/v1/users/me/addresses` returned `403` for an authenticated customer session.
+- `PARTIAL` — payment confirmation is a local/mock-style backend confirmation endpoint, not evidence of real payment gateway readiness.
+
+## Store fulfillment result
+- `PASS` — store-manager login via `/api/v1/auth/login` succeeded with the seeded local account.
+- `PASS` — store-manager and admin both retrieved product-order detail for `orderId=16` via `/api/v1/checkout/orders/16`.
+- `PASS` — `PATCH /api/v1/checkout/orders/15/accept` updated the order from `CONFIRMED` to `PACKING`.
+- `FAIL` — `PATCH /api/v1/checkout/orders/15/pack` returned `409 Conflict` with `Duplicate constraint violation`.
+- `FAIL` — `POST /api/v1/checkout/orders/15/handover` could not proceed because the order never advanced to `READY_FOR_PICKUP`.
+- `PARTIAL` — store orders list wiring is inconsistent: store detail uses `/checkout/orders/{id}`, but the store list endpoint in the client points to `/orders/status/PENDING`, which lists service orders instead of product orders.
+
+## Delivery / order OTP result
+- `PASS` — fresh order `16` was accepted by a real delivery-partner account through `PATCH /api/v1/delivery/16/accept?otp=Q16`, moving it to `OUT_FOR_DELIVERY`.
+- `PASS` — wrong OTP submission was rejected.
+- `PASS` — correct OTP submission through `POST /api/v1/delivery/16/confirm-otp` updated the order to `DELIVERED`.
+- `PASS` — replay attempt after delivery confirmation was rejected.
+- `PARTIAL` — an attempted check against existing order `2` was blocked because the authenticated customer session did not match the stored order owner exactly in the local data path used.
+
+## Plumber booking result
+- `PASS` — customer-created service order `96` was created through `POST /api/v1/orders` with real backend persistence.
+- `PASS` — plumber login via `/api/v1/auth/login` succeeded with the seeded local plumber account.
+- `PASS` — plumber `58` accepted, started, and completed service order `96` through the real backend endpoints.
+- `PASS` — customer visibility and admin visibility for service order `96` were both confirmed through authenticated API reads.
+
+## Plumber realtime result
+- `PASS` — authenticated customer and plumber socket connections succeeded against edge-service.
+- `PASS` — nearby request broadcast produced a real `JOB_OFFER` event once the plumber location existed in Redis.
+- `PASS` — spoofed plumber location update was rejected.
+- `PASS` — authorized plumber location update persisted to Redis geo storage.
+- `PARTIAL` — customer/admin realtime UI receipt of location/status updates was not directly observed in a running browser UI.
+
+## Job completion result
+- `PASS` — service order `96` reached `COMPLETED` through the plumber API flow.
+- `PASS` — service order `96` persisted as `COMPLETED` in PostgreSQL.
+- `PARTIAL` — customer and admin completion were verified through backend/API visibility rather than end-user UI screens.
+
+## Admin portal result
+- `PASS` — local admin portal server on `http://localhost:3101` served pages successfully (`/`, `/dashboard`, `/users`, `/system-health`).
+- `FAIL` — credentialed browser login on the local dev portal stayed on `/` and displayed `Failed to fetch` after sign-in attempt.
+- `PARTIAL` — because login did not complete in the local portal UI, dashboard/users/RBAC/logout were not verified through a successful authenticated browser session on `3101`.
+- `PASS` — backend admin token flow itself works through `/api/v1/auth/login` with seeded local admin credentials.
+
+## Data consistency result
+- `PASS` — customer records `70` through `74` were persisted with `CUSTOMER` role.
+- `PASS` — product order `15` persisted in `PACKING` with its order item record.
+- `PASS` — product order `16` persisted in `DELIVERED` with delivery partner `62` and order item record.
+- `PASS` — service order `96` persisted in `COMPLETED` with plumber `58`.
+- `PARTIAL` — no separate real payment record/gateway artifact was validated; only order-state transitions were confirmed.
+
+## Log safety result
+- `PASS` — focused log scan found no obvious JWT token, bearer token, plaintext password, or full test-phone leakage in the scanned runtime log files.
+- `PASS` — customer OTP retrieval used Redis capture directly rather than log output.
+- `PASS` — edge CORS configuration does not use wildcard `*`; local mode allows localhost/127.0.0.1 origins explicitly, production mode rejects wildcard origins.
+
+## PASS / PARTIAL / FAIL / NOT RUN summary
+- `PASS`
+  - Local services health
+  - Customer OTP auth
+  - Catalog/category/product detail APIs
+  - Product order creation and confirmation
+  - Fresh delivery assignment + OTP confirmation + replay rejection
+  - Plumber service-order create/accept/start/complete
+  - Edge authenticated sockets, `JOB_OFFER`, spoof rejection, geo update
+  - Core persistence checks
+- `PARTIAL`
+  - Customer search/home/cart UI validation
+  - Payment readiness
+  - Store product-order list wiring
+  - Customer/admin realtime UI observation
+  - Job completion UI observation
+  - Admin portal backend auth without successful local UI login
+- `FAIL`
+  - Customer address creation (`403`)
+  - Store `pack` transition (`409 Duplicate constraint violation`)
+  - Store `handover` after failed pack
+  - Local admin portal sign-in on `3101` (`Failed to fetch`)
+- `NOT RUN`
+  - Full browser-driven Expo golden path across customer/plumber/store apps (blocked by in-app browser runtime failure and limited fallback coverage)
+  - Cloud/staging checks (out of scope and disallowed)
+
+## Remaining blockers
+- Fix authenticated customer address creation (`POST /api/v1/users/me/addresses` returning `403`).
+- Fix store fulfillment state progression so `PACKING -> READY_FOR_PICKUP -> OUT_FOR_DELIVERY` works cleanly.
+- Investigate why the local admin portal login fetch fails on `3101` even though backend `/auth/login` succeeds directly.
+- Align store app order-list source with product-order APIs if the store UI is meant to manage product orders.
+- Add stable browser-driven/mobile-driven golden-path automation for customer, plumber, and store UIs.
+- Production remains `NO`.
+
+## Recommendation for cloud staging
+- Do **not** move to staging deployment yet.
+- Resolve the failed customer address, store fulfillment, and admin portal local-login issues first.
+- After those fixes, rerun Phase 13D and require a successful credentialed browser/UI pass before cloud staging setup.
+
+## Production status
+- Production remains `NO`.

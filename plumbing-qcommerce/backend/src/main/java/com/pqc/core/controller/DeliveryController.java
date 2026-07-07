@@ -27,6 +27,7 @@ public class DeliveryController {
     private final CurrentUser currentUser;
     private final DeliveryOtpService deliveryOtpService;
     private final Environment env;
+    private final com.pqc.core.repository.UserRepository userRepository;
 
     @GetMapping("/available")
     @PreAuthorize("hasRole('DELIVERY_PARTNER')")
@@ -116,6 +117,21 @@ public class DeliveryController {
     public ResponseEntity<ProductOrder> getOrderStatus(@PathVariable Long orderId) {
         ProductOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+        return ResponseEntity.ok(order);
+    }
+
+    @GetMapping("/partners")
+    @PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
+    public ResponseEntity<List<com.pqc.core.entity.User>> getDeliveryPartners() {
+        return ResponseEntity.ok(userRepository.findByRole(com.pqc.core.entity.Role.DELIVERY_PARTNER));
+    }
+
+    @PostMapping("/{orderId}/assign")
+    @PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
+    public ResponseEntity<ProductOrder> assignDelivery(
+            @PathVariable Long orderId,
+            @RequestParam Long partnerId) {
+        ProductOrder order = deliveryService.forceAssignDeliveryPartner(orderId, partnerId);
         return ResponseEntity.ok(order);
     }
 

@@ -1,0 +1,36 @@
+name: Edge CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  edge:
+    name: Edge Tests and Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: plumbing-qcommerce/edge-service/package-lock.json
+
+      - name: Install dependencies
+        working-directory: plumbing-qcommerce/edge-service
+        run: npm ci
+
+      - name: Run edge tests
+        working-directory: plumbing-qcommerce/edge-service
+        run: npm test
+
+      - name: Build edge service
+        working-directory: plumbing-qcommerce/edge-service
+        run: npm run build

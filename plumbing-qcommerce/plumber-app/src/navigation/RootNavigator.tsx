@@ -50,7 +50,7 @@ export function RootNavigator() {
         <Stack.Screen name="Earnings" component={EarningsScreen} />
         <Stack.Screen name="Wallet" component={WalletScreen} />
         <Stack.Screen name="JobHistory" component={JobHistoryScreen} />
-        <Stack.Screen name="Profile" component={DrawerMenuScreen} /> {/* Standard Drawer list screen mapping */}
+        <Stack.Screen name="Profile" component={DrawerMenuScreen} />
         <Stack.Screen name="Chat" component={ChatScreen} />
       </Stack.Navigator>
     </NavigationContainer>

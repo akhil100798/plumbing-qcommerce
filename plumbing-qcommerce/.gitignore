@@ -109,4 +109,5 @@ test_run.txt
 evidence/admin-runtime-smoke/
 evidence/final-demo/admin-portal/*.png
 evidence/final-demo/admin-portal/screenshot-index__*.json
+store-app/.expo/
 

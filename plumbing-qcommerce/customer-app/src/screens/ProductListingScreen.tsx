@@ -11,6 +11,11 @@ import {
 } from 'react-native';
 
 import { ProductCard } from '../components/cards/ProductCard';
+import {
+  createBackendUnavailableError,
+  canUseDevMockFallbacks,
+  warnUsingDevMockFallback,
+} from '../services/mockPolicy';
 import { colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
 
@@ -23,52 +28,63 @@ export function ProductListingScreen({ route, navigation }: Props) {
   const { categoryId, categoryName } = route.params;
   const [products, setProducts] = useState<ProductDTO[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [cartCounts, setCartCounts] = useState<{ [key: number]: number }>({});
 
-  useEffect(() => {
+  const loadProducts = () => {
     setLoading(true);
+    setError(null);
+
     ProductRepository.getProducts(categoryId)
       .then((data) => {
         setProducts(data);
         setLoading(false);
       })
       .catch((err) => {
-        console.log('Failed to fetch category products:', err);
-        // Fallback mockup
-        setProducts([
-          {
-            id: 101,
-            sku: 'ASH-PVC-20',
-            name: 'Ashirvad PVC Pipe (20mm) 3 Meter',
-            description: 'Premium quality PVC pipe for standard water distribution.',
-            price: 220,
-            imageUrl: '',
-            categoryId: categoryId,
-            categoryName: 'Pipes',
-          },
-          {
-            id: 102,
-            sku: 'PRN-CPVC-25',
-            name: 'Prince CPVC Pipe (25mm) 3 Meter',
-            description: 'High-temperature resistant CPVC pipe.',
-            price: 240,
-            imageUrl: '',
-            categoryId: categoryId,
-            categoryName: 'Pipes',
-          },
-          {
-            id: 103,
-            sku: 'SUP-PVC-25',
-            name: 'Supreme PVC Pipe (25mm) 3 Meter',
-            description: 'Heavy duty supreme PVC pipe.',
-            price: 350,
-            imageUrl: '',
-            categoryId: categoryId,
-            categoryName: 'Pipes',
-          },
-        ]);
+        if (canUseDevMockFallbacks()) {
+          warnUsingDevMockFallback('Product listing', err);
+          setProducts([
+            {
+              id: 101,
+              sku: 'ASH-PVC-20',
+              name: 'Ashirvad PVC Pipe (20mm) 3 Meter',
+              description: 'Premium quality PVC pipe for standard water distribution.',
+              price: 220,
+              imageUrl: '',
+              categoryId: categoryId,
+              categoryName: 'Pipes',
+            },
+            {
+              id: 102,
+              sku: 'PRN-CPVC-25',
+              name: 'Prince CPVC Pipe (25mm) 3 Meter',
+              description: 'High-temperature resistant CPVC pipe.',
+              price: 240,
+              imageUrl: '',
+              categoryId: categoryId,
+              categoryName: 'Pipes',
+            },
+            {
+              id: 103,
+              sku: 'SUP-PVC-25',
+              name: 'Supreme PVC Pipe (25mm) 3 Meter',
+              description: 'Heavy duty supreme PVC pipe.',
+              price: 350,
+              imageUrl: '',
+              categoryId: categoryId,
+              categoryName: 'Pipes',
+            },
+          ]);
+        } else {
+          setProducts([]);
+          setError(createBackendUnavailableError('products for this category', err).message);
+        }
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    loadProducts();
   }, [categoryId]);
 
   const handleAdd = (productId: number) => {
@@ -99,23 +115,30 @@ export function ProductListingScreen({ route, navigation }: Props) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
+          <Text style={styles.backButtonText}>?</Text>
         </TouchableOpacity>
         <Text style={styles.title}>{categoryName}</Text>
       </View>
 
       <View style={styles.filterRow}>
         <TouchableOpacity style={styles.filterBtn}>
-          <Text style={styles.filterBtnText}>🔍 Filter</Text>
+          <Text style={styles.filterBtnText}>?? Filter</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.filterBtn}>
-          <Text style={styles.filterBtnText}>Sort 🔽</Text>
+          <Text style={styles.filterBtnText}>Sort ??</Text>
         </TouchableOpacity>
       </View>
 
       {loading ? (
         <View style={styles.loader}>
           <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : error ? (
+        <View style={styles.loader}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadProducts}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -148,7 +171,7 @@ export function ProductListingScreen({ route, navigation }: Props) {
             <Text style={styles.checkoutBarTitle}>Ready to purchase</Text>
           </View>
           <View style={styles.checkoutBarAction}>
-            <Text style={styles.checkoutBarBtnText}>Go to Cart →</Text>
+            <Text style={styles.checkoutBarBtnText}>Go to Cart ?</Text>
           </View>
         </TouchableOpacity>
       )}
@@ -218,6 +241,24 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: spacing.layout,
+    gap: spacing.md,
+  },
+  errorText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.error,
+    fontWeight: typography.fontWeight.bold,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: 9999,
+  },
+  retryButtonText: {
+    color: colors.surface,
+    fontWeight: typography.fontWeight.bold,
   },
   checkoutBar: {
     position: 'absolute',

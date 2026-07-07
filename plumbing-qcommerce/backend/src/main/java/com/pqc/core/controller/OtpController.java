@@ -7,6 +7,7 @@ import com.pqc.core.repository.UserRepository;
 import com.pqc.core.security.JwtService;
 import com.pqc.core.service.OtpService;
 import com.pqc.core.service.RefreshTokenService;
+import com.pqc.core.util.PhoneMaskingUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +48,7 @@ public class OtpController {
         // Find or register user
         User user = userRepository.findByPhone(phone).orElse(null);
         if (user == null) {
-            log.info("Registering new customer for phone number: {}", phone);
+            log.info("Registering new customer for phone number: {}", PhoneMaskingUtil.mask(phone));
             // Sanitize phone digits for fallback email
             String phoneDigits = phone.replaceAll("[^0-9]", "");
             String email = phoneDigits + "@plumbcommerce.com";
@@ -80,4 +81,3 @@ public class OtpController {
         ));
     }
 }
-

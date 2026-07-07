@@ -2,12 +2,13 @@ import React, { useEffect } from 'react';
 import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { colors, spacing, typography } from '../../theme';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { getAuthToken } from '../../services/api/axiosClient';
+import { getAuthToken, setAuthToken, setRefreshToken, apiClient } from '../../services/api/axiosClient';
+import { tokenStorage } from '../../services/api/tokenStorage';
 import { useAppDispatch } from '../../redux/store';
-import { authSuccess } from '../../redux/slices/authSlice';
+import { authSuccess, logout } from '../../redux/slices/authSlice';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
-import { mockStore } from '../../mocks';
+import { User } from '../../types';
 
 export const SplashScreen = () => {
   const dispatch = useAppDispatch();
@@ -15,29 +16,24 @@ export const SplashScreen = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Simulate splash screen showing for 1.5s
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       try {
         const token = await getAuthToken();
-        if (token) {
-          // Dispatch dummy user for session recovery
-          dispatch(authSuccess({
-            user: {
-              id: 999,
-              email: 'sai.pipes@plumbcommerce.com',
-              fullName: 'Sai Manager',
-              phone: '9876543210',
-              role: 'STORE_MANAGER'
-            },
-            token,
-            refreshToken: token
-          }));
+        const refreshToken = await tokenStorage.getItem('storeRefreshToken');
+        if (token && refreshToken) {
+          const response = await apiClient.get<User>('/users/me');
+          const user = response.data;
+          dispatch(authSuccess({ user, token, refreshToken }));
           navigation.navigate('Main', { screen: 'HomeTab' });
         } else {
+          dispatch(logout());
           navigation.navigate('Auth', { screen: 'Login' });
         }
       } catch (e) {
+        await setAuthToken(null);
+        await setRefreshToken(null);
+        dispatch(logout());
         navigation.navigate('Auth', { screen: 'Login' });
       }
     };
@@ -48,7 +44,7 @@ export const SplashScreen = () => {
     <ScreenWrapper backgroundColor={colors.primary} barStyle="light-content" style={styles.container}>
       <View style={styles.logoContainer}>
         <View style={styles.iconBox}>
-          <Text style={styles.iconEmoji}>🏪</Text>
+          <Text style={styles.iconEmoji}>??</Text>
         </View>
         <Text style={styles.brandTitle}>PlumbCommerce</Text>
         <Text style={styles.brandSubtitle}>Store Partner</Text>
@@ -102,3 +98,4 @@ const styles = StyleSheet.create({
   },
 });
 export default SplashScreen;
+

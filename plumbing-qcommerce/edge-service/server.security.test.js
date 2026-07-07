@@ -276,6 +276,14 @@ describe('Edge WebSocket Security', () => {
       });
     });
   });
+  it('13. Bad HTTP origin is rejected without server error', async () => {
+    const response = await fetch(`http://localhost:${port}/api/v1/edge/health`, {
+      headers: { Origin: 'http://evil.example' },
+    });
+
+    expect(response.status).not.toBe(500);
+    expect(response.headers.get('access-control-allow-origin')).toBeNull();
+  });
 });
 
 describe('CORS and Startup configuration guards', () => {

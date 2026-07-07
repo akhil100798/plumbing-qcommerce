@@ -1,8 +1,12 @@
 import axios from 'axios';
 import { apiClient } from '../apiClient';
+import {
+  createUnavailableFeatureError,
+  getConfiguredEdgeUrl,
+} from '../mockPolicy';
 import { CreateOrderRequest, PlumberServiceOrderDTO } from './plumberTypes';
 
-const EDGE_SERVER_URL = process.env.EXPO_PUBLIC_EDGE_SERVER_URL || 'http://localhost:3000';
+const EDGE_UNAVAILABLE_MESSAGE = 'Nearby plumber live tracking is not configured in staging.';
 
 export const PlumberRepository = {
   createServiceOrder: async (data: CreateOrderRequest): Promise<PlumberServiceOrderDTO> => {
@@ -17,7 +21,12 @@ export const PlumberRepository = {
     requestType: string;
     category: string;
   }): Promise<{ message: string; notified: any[] }> => {
-    const response = await axios.post(`${EDGE_SERVER_URL}/api/v1/edge/requests/nearby`, data);
+    const edgeServerUrl = getConfiguredEdgeUrl();
+    if (!edgeServerUrl) {
+      throw createUnavailableFeatureError(EDGE_UNAVAILABLE_MESSAGE);
+    }
+
+    const response = await axios.post(`${edgeServerUrl}/api/v1/edge/requests/nearby`, data);
     return response.data;
   },
 };

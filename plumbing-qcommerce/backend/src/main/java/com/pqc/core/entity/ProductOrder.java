@@ -51,7 +51,7 @@ public class ProductOrder {
     @EqualsAndHashCode.Exclude
     private ServiceOrder serviceOrder;
 
-    @Column(name = "delivery_otp", length = 4)
+    @Column(name = "delivery_otp", length = 16)
     private String deliveryOtp;
 
     @Column(name = "estimated_delivery_at")

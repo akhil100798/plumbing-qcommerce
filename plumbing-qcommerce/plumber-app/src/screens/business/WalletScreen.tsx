@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -24,6 +24,7 @@ type Props = StackScreenProps<AppStackParamList, 'Wallet' | any>;
 export function WalletScreen({ navigation }: Props) {
   const dispatch = useDispatch();
   const { balance, transactions } = useSelector((state: RootState) => state.wallet);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchWalletDetails = async () => {
@@ -36,8 +37,10 @@ export function WalletScreen({ navigation }: Props) {
             transactions: txns,
           })
         );
+        setNotice(null);
       } catch (err) {
         console.error('Error fetching wallet details:', err);
+        setNotice(err instanceof Error ? err.message : 'Wallet is not available in staging.');
       }
     };
     fetchWalletDetails();
@@ -51,14 +54,13 @@ export function WalletScreen({ navigation }: Props) {
 
     Alert.alert(
       'Request Payout',
-      `Would you like to withdraw ₹${balance.toLocaleString()} to your registered bank account?`,
+      `Would you like to withdraw ?${balance.toLocaleString()} to your registered bank account?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Confirm Withdrawal',
           onPress: () => {
             const amount = balance;
-            // Record Debit Transaction
             dispatch(
               addTransaction({
                 id: `TXN${Math.floor(Math.random() * 100000)}`,
@@ -78,12 +80,13 @@ export function WalletScreen({ navigation }: Props) {
   return (
     <ScreenWrapper>
       <AppHeader title="My Wallet" onBackPress={() => navigation.goBack()} />
-      
+
       <View style={styles.container}>
         <View style={styles.walletCardContainer}>
           <WalletCard balance={balance} onWithdrawPress={handleWithdraw} />
         </View>
 
+        {!!notice && <Text style={styles.noticeText}>{notice}</Text>}
         <Text style={styles.sectionLabel}>Recent Transactions</Text>
 
         <FlatList
@@ -112,6 +115,12 @@ const styles = StyleSheet.create({
   },
   walletCardContainer: {
     marginBottom: spacing.lg,
+  },
+  noticeText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.error,
+    fontWeight: typography.fontWeight.bold,
+    marginBottom: spacing.sm,
   },
   sectionLabel: {
     fontSize: typography.fontSize.xs,

@@ -31,7 +31,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
 
-    @Value("${app.cors.allowed-origins:http://localhost:3100,http://localhost:3000,http://localhost:19006,http://localhost:8081,http://127.0.0.1:*}")
+    @Value("${app.cors.allowed-origins:http://localhost:3101,http://localhost:19007,http://localhost:19008,http://localhost:19009,http://localhost:3000}")
     private String allowedOrigins;
 
     @Bean
@@ -52,7 +52,7 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(request -> {
                 org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
-                config.setAllowedOriginPatterns(resolveAllowedOrigins());
+                config.setAllowedOrigins(resolveAllowedOrigins());
                 config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
                 config.setAllowedHeaders(java.util.List.of("*"));
                 config.setAllowCredentials(true);
@@ -86,10 +86,15 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/admin/rbac/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/v1/admin/seed-user").hasAnyRole("SUPER_ADMIN", "ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/v1/delivery/*/status").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/delivery/partners").hasAnyRole("STORE_MANAGER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/v1/delivery/*/assign").hasAnyRole("STORE_MANAGER", "ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/v1/delivery/available").hasRole("DELIVERY_PARTNER")
                 .requestMatchers(HttpMethod.PATCH, "/api/v1/delivery/*/accept").hasRole("DELIVERY_PARTNER")
                 .requestMatchers(HttpMethod.POST, "/api/v1/delivery/*/confirm-otp").hasRole("CUSTOMER")
                 .requestMatchers(HttpMethod.POST, "/api/v1/delivery/material-request").hasRole("PLUMBER")
+                .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/users/me/availability").hasRole("PLUMBER")
+                .requestMatchers("/api/v1/users/me/addresses", "/api/v1/users/me/addresses/**").authenticated()
                 .requestMatchers("/api/v1/users/**", "/api/v1/users").hasAnyRole("SUPER_ADMIN", "ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/v1/ai/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "OPERATIONS_ADMIN", "FINANCE_ADMIN", "MARKETING_ADMIN", "STORE_MANAGER")
                 .requestMatchers(HttpMethod.GET, "/api/v1/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
@@ -108,7 +113,11 @@ public class SecurityConfig {
         return Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(origin -> !origin.isBlank())
+                .peek(origin -> {
+                    if (origin.contains("*")) {
+                        throw new IllegalStateException("Wildcard CORS origins are not allowed: " + origin);
+                    }
+                })
                 .toList();
     }
 }
-

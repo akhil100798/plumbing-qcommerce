@@ -2,68 +2,61 @@ import { apiClient } from '../api/axiosClient';
 import { ENDPOINTS } from '../api/endpoints';
 import { Order } from '../../types';
 import { mockOrders } from '../../mocks';
-import { store } from '../../redux/store';
+import { storeService } from '../store/storeService';
 import { dispatchService } from '../dispatch/dispatchService';
+import {
+  canUseDevMockFallbacks,
+  createBackendUnavailableError,
+  createUnsupportedBackendError,
+  warnUsingDevMockFallback,
+} from '../mockPolicy';
 
-// In-memory state helper for mocks
 let localOrders: Order[] = [...mockOrders];
+const ORDER_STATUSES = ['CONFIRMED', 'PACKING', 'READY_FOR_PICKUP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];
 
-const mapApiOrderToOrder = (o: any): Order => {
-  return {
-    id: o.id,
-    customerId: o.customerId || 0,
-    customerName: o.customerName || 'Customer',
-    storeId: o.storeId || 0,
-    storeName: o.storeName || 'Store',
-    totalAmount: o.totalAmount,
-    status: o.status as any,
-    createdAt: o.createdAt || new Date().toISOString(),
-    deliveryPartnerName: o.deliveryPartnerName,
-    deliveryPartnerPhone: o.deliveryPartnerPhone,
-    deliveryOtp: o.deliveryOtp,
-    estimatedDeliveryAt: o.estimatedDeliveryAt,
-    items: (o.items || []).map((i: any) => ({
-      productId: i.productId,
-      productName: i.productName || 'Item',
-      quantity: i.quantity,
-      price: i.price,
-    }))
-  };
+const mapApiOrderToOrder = (order: any): Order => ({
+  id: order.id,
+  customerId: order.customerId || order.customer?.id || 0,
+  customerName: order.customerName || order.customer?.fullName || 'Customer',
+  customerPhone: order.customerPhone || order.customer?.phone,
+  storeId: order.storeId || order.store?.id || 0,
+  storeName: order.storeName || order.store?.name || 'Store',
+  totalAmount: Number(order.totalAmount || 0),
+  status: order.status,
+  createdAt: order.createdAt || new Date().toISOString(),
+  deliveryPartnerName: order.deliveryPartnerName,
+  deliveryPartnerPhone: order.deliveryPartnerPhone,
+  deliveryOtp: order.deliveryOtp,
+  estimatedDeliveryAt: order.estimatedDeliveryAt,
+  address: order.address || order.description || 'Staging backend service location',
+  items: (order.items || []).map((item: any) => ({
+    productId: item.productId,
+    productName: item.productName || 'Item',
+    quantity: item.quantity,
+    price: Number(item.price || 0),
+  })),
+});
+
+const loadOrdersByStatus = async (statuses: string[]): Promise<Order[]> => {
+  const responses = await Promise.all(statuses.map((status) => apiClient.get(ENDPOINTS.orders.byStatus(status))));
+  const merged = responses.flatMap((response) => response.data || []).map(mapApiOrderToOrder);
+  const deduped = new Map<number, Order>();
+  merged.forEach((order) => deduped.set(order.id, order));
+  return Array.from(deduped.values()).sort((left, right) => right.id - left.id);
 };
 
 export const ordersService = {
   getOrders: async (): Promise<Order[]> => {
     try {
-      // Store managers fetch orders. Since the API gets by status, we gather PENDING orders
-      const response = await apiClient.get(ENDPOINTS.orders.byStatus('PENDING'));
-      // Combine with local orders to make sure packing/ready statuses are available
-      const apiOrders: Order[] = (response.data || []).map((o: any) => ({
-        id: o.id,
-        customerId: o.customer?.id || 0,
-        customerName: o.customer?.fullName || 'Customer',
-        storeId: o.store?.id || 0,
-        storeName: o.store?.name || 'Store',
-        totalAmount: o.totalAmount,
-        status: o.status,
-        createdAt: o.createdAt,
-        items: (o.items || []).map((i: any) => ({
-          productId: i.product?.id || 0,
-          productName: i.product?.name || 'Item',
-          quantity: i.quantity,
-          price: i.price,
-        }))
-      }));
-
-      // Merge API and local orders
-      const orderIds = new Set(apiOrders.map(o => o.id));
-      const combined = [
-        ...apiOrders,
-        ...localOrders.filter(o => !orderIds.has(o.id))
-      ];
-      return combined;
+      const orders = await loadOrdersByStatus(ORDER_STATUSES);
+      localOrders = orders;
+      return orders;
     } catch (e) {
-      console.warn('API getOrders failed, using local mock data:', e);
-      return localOrders;
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Store order list', e);
+        return localOrders;
+      }
+      throw createBackendUnavailableError('store orders', e);
     }
   },
 
@@ -72,32 +65,42 @@ export const ordersService = {
       const response = await apiClient.get(ENDPOINTS.orders.details(orderId));
       return mapApiOrderToOrder(response.data);
     } catch (e) {
-      console.warn(`API getOrderDetails ${orderId} failed, using local mock:`, e);
-      const found = localOrders.find(o => o.id === orderId);
-      if (!found) throw new Error('Order not found');
-      return found;
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback(`Store order details ${orderId}`, e);
+        const found = localOrders.find((order) => order.id === orderId);
+        if (!found) throw new Error('Order not found');
+        return found;
+      }
+      throw createBackendUnavailableError(`order details for ${orderId}`, e);
     }
   },
 
   acceptOrder: async (orderId: number, storeId?: number): Promise<Order> => {
     try {
-      const sId = storeId || store.getState().profile.storeProfile?.id || 123;
-      const response = await apiClient.patch(ENDPOINTS.orders.accept(orderId), { storeId: sId });
+      const storeProfile = storeId ? { id: storeId } : await storeService.getCurrentStoreProfile();
+      const response = await apiClient.patch(ENDPOINTS.orders.accept(orderId), { storeId: storeProfile.id });
       return mapApiOrderToOrder(response.data);
     } catch (e) {
-      console.warn(`API acceptOrder ${orderId} failed, Fallback to mock:`, e);
-      const idx = localOrders.findIndex(o => o.id === orderId);
-      if (idx !== -1) {
-        localOrders[idx] = { ...localOrders[idx], status: 'CONFIRMED' };
-        return localOrders[idx];
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback(`Store accept order ${orderId}`, e);
+        const idx = localOrders.findIndex((order) => order.id === orderId);
+        if (idx !== -1) {
+          localOrders[idx] = { ...localOrders[idx], status: 'PACKING' };
+          return localOrders[idx];
+        }
+        throw new Error('Order not found');
       }
-      throw new Error('Order not found');
+      throw createBackendUnavailableError(`accept order ${orderId}`, e);
     }
   },
 
   rejectOrder: async (orderId: number): Promise<Order> => {
-    console.warn(`rejectOrder ${orderId} API missing. Fallback to mock.`);
-    const idx = localOrders.findIndex(o => o.id === orderId);
+    if (!canUseDevMockFallbacks()) {
+      throw createUnsupportedBackendError('Store order rejection');
+    }
+
+    warnUsingDevMockFallback(`Store reject order ${orderId}`, new Error('Store order rejection'));
+    const idx = localOrders.findIndex((order) => order.id === orderId);
     if (idx !== -1) {
       localOrders[idx] = { ...localOrders[idx], status: 'CANCELLED' };
       return localOrders[idx];
@@ -106,85 +109,72 @@ export const ordersService = {
   },
 
   markPacking: async (orderId: number, storeId?: number): Promise<Order> => {
-    try {
-      const sId = storeId || store.getState().profile.storeProfile?.id || 123;
-      const response = await apiClient.patch(ENDPOINTS.orders.accept(orderId), { storeId: sId });
-      return mapApiOrderToOrder(response.data);
-    } catch (e) {
-      console.warn(`API markPacking ${orderId} failed, Fallback to mock:`, e);
-      const idx = localOrders.findIndex(o => o.id === orderId);
-      if (idx !== -1) {
-        localOrders[idx] = { ...localOrders[idx], status: 'PACKING' };
-        return localOrders[idx];
-      }
-      throw new Error('Order not found');
-    }
+    return ordersService.acceptOrder(orderId, storeId);
   },
 
   markPacked: async (orderId: number, packingNote?: string, storeId?: number): Promise<Order> => {
     try {
-      const sId = storeId || store.getState().profile.storeProfile?.id || 123;
-      const response = await apiClient.patch(ENDPOINTS.orders.pack(orderId), { storeId: sId, packingNote });
+      const storeProfile = storeId ? { id: storeId } : await storeService.getCurrentStoreProfile();
+      const response = await apiClient.patch(ENDPOINTS.orders.pack(orderId), { storeId: storeProfile.id, packingNote });
       return mapApiOrderToOrder(response.data);
     } catch (e) {
-      console.warn(`API markPacked ${orderId} failed, Fallback to mock:`, e);
-      const idx = localOrders.findIndex(o => o.id === orderId);
-      if (idx !== -1) {
-        localOrders[idx] = { ...localOrders[idx], status: 'READY_FOR_PICKUP', packingNote };
-        return localOrders[idx];
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback(`Store mark packed ${orderId}`, e);
+        const idx = localOrders.findIndex((order) => order.id === orderId);
+        if (idx !== -1) {
+          localOrders[idx] = { ...localOrders[idx], status: 'READY_FOR_PICKUP', packingNote };
+          return localOrders[idx];
+        }
+        throw new Error('Order not found');
       }
-      throw new Error('Order not found');
+      throw createBackendUnavailableError(`mark packed for order ${orderId}`, e);
     }
   },
 
   handOverPackage: async (orderId: number, deliveryPartnerId?: number, otp?: string, storeId?: number): Promise<Order> => {
     try {
-      const sId = storeId || store.getState().profile.storeProfile?.id || 123;
-      let dpId = deliveryPartnerId;
+      const storeProfile = storeId ? { id: storeId } : await storeService.getCurrentStoreProfile();
+      let partnerId = deliveryPartnerId;
       let deliveryOtp = otp;
-      
-      if (!dpId || !deliveryOtp) {
+
+      if (!partnerId || !deliveryOtp) {
         const details = await ordersService.getOrderDetails(orderId);
-        deliveryOtp = deliveryOtp || details.deliveryOtp || '1234';
-        
-        if (!dpId && details.deliveryPartnerName) {
+        deliveryOtp = deliveryOtp || details.deliveryOtp || undefined;
+
+        if (!partnerId && details.deliveryPartnerName) {
           try {
             const riders = await dispatchService.getAvailableRiders();
-            const found = riders.find(r => r.fullName === details.deliveryPartnerName);
-            if (found) dpId = found.id;
-          } catch (err) {
-            console.warn('Failed to resolve rider name to ID:', err);
-          }
-        }
-        
-        if (!dpId) {
-          try {
-            const riders = await dispatchService.getAvailableRiders();
-            if (riders.length > 0) {
-              dpId = riders[0].id;
-            } else {
-              dpId = 1;
+            const match = riders.find((rider) => rider.fullName === details.deliveryPartnerName);
+            if (match) {
+              partnerId = match.id;
             }
-          } catch (err) {
-            dpId = 1;
+          } catch (error) {
+            console.warn('Failed to resolve delivery partner ID:', error);
           }
         }
       }
 
+      if (!partnerId && !canUseDevMockFallbacks()) {
+        throw createUnsupportedBackendError('Store delivery partner resolution');
+      }
+
       const response = await apiClient.post(ENDPOINTS.orders.handover(orderId), {
-        storeId: sId,
-        deliveryPartnerId: dpId,
-        otp: deliveryOtp
+        storeId: storeProfile.id,
+        deliveryPartnerId: partnerId,
+        otp: deliveryOtp,
       });
       return mapApiOrderToOrder(response.data);
     } catch (e) {
-      console.warn(`API handOverPackage ${orderId} failed, Fallback to mock:`, e);
-      const idx = localOrders.findIndex(o => o.id === orderId);
-      if (idx !== -1) {
-        localOrders[idx] = { ...localOrders[idx], status: 'OUT_FOR_DELIVERY' };
-        return localOrders[idx];
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback(`Store handover package ${orderId}`, e);
+        const idx = localOrders.findIndex((order) => order.id === orderId);
+        if (idx !== -1) {
+          localOrders[idx] = { ...localOrders[idx], status: 'OUT_FOR_DELIVERY' };
+          return localOrders[idx];
+        }
+        throw new Error('Order not found');
       }
-      throw new Error('Order not found');
+      throw createBackendUnavailableError(`handover package for order ${orderId}`, e);
     }
   }
 };

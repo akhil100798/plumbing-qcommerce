@@ -29,7 +29,12 @@ export function ProfileScreen({ navigation }: Props) {
 
   const handleToggleOnline = async (value: boolean) => {
     dispatch(setAvailability(value));
-    await profileService.updateAvailability(value);
+    try {
+      await profileService.updateAvailability(value);
+    } catch (error: any) {
+      dispatch(setAvailability(!value));
+      Alert.alert('Feature unavailable', error?.message || 'Availability updates are not available in staging.');
+    }
   };
 
   const handleLogout = () => {
@@ -50,7 +55,7 @@ export function ProfileScreen({ navigation }: Props) {
     if (menuName === 'Support') {
       navigation.navigate('Chat', { name: 'Operations Support', role: 'Support' });
     } else {
-      Alert.alert('Menu Option', `Viewing ${menuName} details (Demo Mode)`);
+      Alert.alert('Feature unavailable', `${menuName} is not available in staging.`);
     }
   };
 
@@ -59,26 +64,22 @@ export function ProfileScreen({ navigation }: Props) {
       <AppHeader title="My Profile" onBackPress={() => navigation.navigate('Main')} />
       
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Profile Card Header */}
         <View style={styles.profileHeader}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {plumber?.fullName.split(' ').map((n) => n[0]).join('') || 'RK'}
+              {plumber?.fullName.split(' ').map((n) => n[0]).join('') || 'PP'}
             </Text>
           </View>
-          <Text style={styles.name}>{plumber?.fullName || 'Ravi Kumar'}</Text>
-          <Text style={styles.plumberId}>Plumber ID: {plumber?.plumberId || 'PLB12345'}</Text>
-          <RatingBadge rating={plumber?.rating ?? 4.9} count={plumber?.ratingsCount ?? 324} style={styles.badge} />
+          <Text style={styles.name}>{plumber?.fullName || 'Plumber Partner'}</Text>
+          <Text style={styles.plumberId}>Plumber ID: {plumber?.plumberId || 'Unavailable in staging'}</Text>
+          <RatingBadge rating={plumber?.rating ?? 0} count={plumber?.ratingsCount ?? 0} style={styles.badge} />
         </View>
 
-        {/* Menu Items Block */}
         <View style={styles.menuContainer}>
           <ProfileMenuItem title="Personal Details" onPress={() => handleNavigation('Personal Details')} />
           <ProfileMenuItem title="Bank Details" onPress={() => handleNavigation('Bank Details')} />
           <ProfileMenuItem title="Documents" onPress={() => handleNavigation('Documents')} />
           <ProfileMenuItem title="Vehicle Details" onPress={() => handleNavigation('Vehicle Details')} />
-          
-          {/* Availability Toggle Menu Row */}
           <ProfileMenuItem
             title="Availability Status"
             rightElement={
@@ -90,7 +91,6 @@ export function ProfileScreen({ navigation }: Props) {
               />
             }
           />
-
           <ProfileMenuItem title="Help & Support" onPress={() => handleNavigation('Support')} />
         </View>
 
