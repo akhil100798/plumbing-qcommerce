@@ -15,6 +15,7 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { authService } from '../../services/auth/authService';
+import { isRenderStagingBackend } from '../../services/mockPolicy';
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
 import { useDispatch } from 'react-redux';
@@ -25,28 +26,51 @@ type Props = StackScreenProps<AuthStackParamList, 'Login'>;
 export function LoginScreen({ navigation }: Props) {
   const dispatch = useDispatch();
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [usePasswordLogin, setUsePasswordLogin] = useState(false);
+  const supportsStagingCredentialLogin = isRenderStagingBackend();
 
   const handleContinue = async () => {
-    if (phone.length < 10) {
-      Alert.alert('Invalid Number', 'Please enter a valid 10-digit mobile number.');
-      return;
-    }
-
     setLoading(true);
     dispatch(authStart());
-    const formattedPhone = `+91 ${phone}`;
 
     try {
+      if (usePasswordLogin) {
+        if (!email || !password) {
+          setLoading(false);
+          dispatch(authFailure('Please fill in all credentials fields'));
+          Alert.alert('Invalid Input', 'Please fill in all credentials fields');
+          return;
+        }
+
+        const data = await authService.loginWithCredentials(email, password);
+        dispatch(authSuccess(data));
+        setLoading(false);
+        navigation.replace('Main' as any);
+        return;
+      }
+
+      if (phone.length < 10) {
+        setLoading(false);
+        dispatch(authFailure('Please enter a valid 10-digit mobile number.'));
+        Alert.alert('Invalid Number', 'Please enter a valid 10-digit mobile number.');
+        return;
+      }
+
+      const formattedPhone = `+91 ${phone}`;
       await authService.sendOtp(formattedPhone);
       setLoading(false);
       navigation.navigate('Otp', { phone: formattedPhone });
     } catch (err: any) {
       setLoading(false);
-      dispatch(authFailure(err.message || 'Could not send OTP'));
-      Alert.alert('Failed to send OTP', err.message || 'Could not send OTP. Please try again.');
+      dispatch(authFailure(err.message || 'Could not authenticate'));
+      Alert.alert(
+        usePasswordLogin ? 'Login Failed' : 'Failed to send OTP',
+        err.message || (usePasswordLogin ? 'Could not log in. Please try again.' : 'Could not send OTP. Please try again.')
+      );
     }
   };
 
@@ -63,27 +87,46 @@ export function LoginScreen({ navigation }: Props) {
           </View>
 
           <View style={styles.form}>
-            <Text style={styles.inputLabel}>Mobile Number</Text>
-            <View style={styles.phoneInputRow}>
-              <View style={styles.countryCode}>
-                <Text style={styles.countryCodeText}>+91</Text>
-              </View>
-              <TextInput
-                style={styles.textInput}
-                placeholder="98765 43210"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="phone-pad"
-                maxLength={10}
-                value={phone}
-                onChangeText={(val) => setPhone(val.replace(/[^0-9]/g, ''))}
-              />
-            </View>
+            {usePasswordLogin ? (
+              <>
+                <Text style={styles.inputLabel}>Email Address</Text>
+                <View style={styles.passwordInputContainer}>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="plumber@plumbcommerce.com"
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={email}
+                    onChangeText={setEmail}
+                  />
+                </View>
+              </>
+            ) : (
+              <>
+                <Text style={styles.inputLabel}>Mobile Number</Text>
+                <View style={styles.phoneInputRow}>
+                  <View style={styles.countryCode}>
+                    <Text style={styles.countryCodeText}>+91</Text>
+                  </View>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="98765 43210"
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                    value={phone}
+                    onChangeText={(val) => setPhone(val.replace(/[^0-9]/g, ''))}
+                  />
+                </View>
+              </>
+            )}
 
             <Text style={styles.inputLabel}>Password</Text>
             <View style={styles.passwordInputContainer}>
               <TextInput
                 style={styles.textInput}
-                placeholder="‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢‚Ä¢"
+                placeholder="ïïïïïïïï"
                 placeholderTextColor={colors.textMuted}
                 secureTextEntry
                 value={password}
@@ -97,7 +140,7 @@ export function LoginScreen({ navigation }: Props) {
                 onPress={() => setRememberMe(!rememberMe)}
               >
                 <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-                  {rememberMe && <Text style={styles.checkmark}>‚úì</Text>}
+                  {rememberMe && <Text style={styles.checkmark}>?</Text>}
                 </View>
                 <Text style={styles.rememberText}>Remember me</Text>
               </TouchableOpacity>
@@ -108,7 +151,7 @@ export function LoginScreen({ navigation }: Props) {
             </View>
 
             <PrimaryButton
-              title="Login"
+              title={usePasswordLogin ? 'Login' : 'Send OTP'}
               onPress={handleContinue}
               loading={loading}
               style={styles.continueButton}
@@ -122,14 +165,22 @@ export function LoginScreen({ navigation }: Props) {
 
             <View style={styles.socialRow}>
               <TouchableOpacity style={styles.socialCard}>
-                <Text style={styles.socialIcon}>üåê</Text>
+                <Text style={styles.socialIcon}>??</Text>
                 <Text style={styles.socialLabel}>Google</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.socialCard}>
-                <Text style={styles.socialIcon}>üìû</Text>
+                <Text style={styles.socialIcon}>??</Text>
                 <Text style={styles.socialLabel}>Phone</Text>
               </TouchableOpacity>
             </View>
+
+            {supportsStagingCredentialLogin ? (
+              <TouchableOpacity style={styles.stagingToggle} onPress={() => setUsePasswordLogin((prev) => !prev)}>
+                <Text style={styles.stagingToggleText}>
+                  {usePasswordLogin ? 'Use OTP Login' : 'Use Staging Email / Password'}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
 
           <View style={styles.footer}>
@@ -308,6 +359,15 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
+  },
+  stagingToggle: {
+    marginTop: spacing.lg,
+    alignItems: 'center',
+  },
+  stagingToggleText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.bold,
   },
   footer: {
     alignItems: 'center',

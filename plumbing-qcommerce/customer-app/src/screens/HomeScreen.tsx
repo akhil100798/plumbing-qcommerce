@@ -715,7 +715,7 @@ export function HomeScreen({ navigation }: any) {
 
         <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Order Materials (Q-Commerce)</Text>
         <View style={styles.productList}>
-          {products.map((p) => {
+          {Array.isArray(products) && products.map((p) => {
             const count = cart[p.id] || 0;
             return (
               <View key={p.id} style={styles.productCard}>

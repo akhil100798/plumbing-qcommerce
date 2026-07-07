@@ -7,6 +7,7 @@ import {
   warnUsingDevMockFallback,
 } from '../mockPolicy';
 import { PlumberProfile } from '../../types';
+import { profileService } from '../profile/profileService';
 
 export interface LoginResponse {
   token: string;
@@ -16,7 +17,34 @@ export interface LoginResponse {
   email: string;
 }
 
+export interface CredentialLoginResponse {
+  plumber: PlumberProfile;
+  token: string;
+  refreshToken: string;
+}
+
 export const authService = {
+  loginWithCredentials: async (
+    email: string,
+    password: string
+  ): Promise<CredentialLoginResponse> => {
+    try {
+      const response = await apiClient.post<{ token: string; refreshToken: string }>(ENDPOINTS.AUTH.LOGIN, {
+        email,
+        password,
+      });
+      const { token, refreshToken } = response.data;
+
+      setAuthToken(token);
+      setRefreshToken(refreshToken);
+
+      const plumber = await profileService.fetchProfile();
+      return { plumber, token, refreshToken };
+    } catch (error) {
+      throw createBackendUnavailableError('Plumber credential login', error);
+    }
+  },
+
   login: async (phone: string, code: string): Promise<{ plumber: PlumberProfile; token: string; refreshToken: string }> => {
     try {
       const response = await apiClient.post<LoginResponse>(ENDPOINTS.AUTH.VERIFY_OTP, { phone, code });

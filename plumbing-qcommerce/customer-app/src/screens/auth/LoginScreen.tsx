@@ -1,5 +1,5 @@
 import { StackScreenProps } from '@react-navigation/stack';
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -12,20 +12,61 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useDispatch } from 'react-redux';
 
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { AuthRepository } from '../../services/auth/authRepository';
+import { ProfileRepository } from '../../services/profile/profileRepository';
+import { isRenderStagingBackend } from '../../services/mockPolicy';
+import { loginFailure, loginStart, loginSuccess } from '../../redux/slices/authSlice';
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
 
 type Props = StackScreenProps<AuthStackParamList, 'Login'>;
 
 export function LoginScreen({ navigation }: Props) {
+  const dispatch = useDispatch();
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [usePasswordLogin, setUsePasswordLogin] = useState(false);
   const [loading, setLoading] = useState(false);
   const phoneInputRef = useRef<TextInput>(null);
+  const supportsStagingCredentialLogin = isRenderStagingBackend();
 
   const handleContinue = async () => {
+    if (usePasswordLogin) {
+      if (!email || !password) {
+        Alert.alert('Invalid Credentials', 'Please enter your email and password.');
+        return;
+      }
+
+      setLoading(true);
+      dispatch(loginStart());
+
+      try {
+        const loginResponse = await AuthRepository.login({ email, password });
+        const user = await ProfileRepository.getUserProfile();
+        dispatch(
+          loginSuccess({
+            user,
+            token: loginResponse.token,
+            refreshToken: loginResponse.refreshToken,
+          })
+        );
+        setLoading(false);
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Main' as never }],
+        });
+      } catch (err: any) {
+        setLoading(false);
+        dispatch(loginFailure(err.message || 'Could not log in.'));
+        Alert.alert('Authentication Failed', err.message || 'Could not log in. Please try again.');
+      }
+      return;
+    }
+
     if (phone.length < 10) {
       Alert.alert('Invalid Number', 'Please enter a valid 10-digit mobile number.');
       return;
@@ -52,7 +93,7 @@ export function LoginScreen({ navigation }: Props) {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonText}>‚Üê</Text>
+            <Text style={styles.backButtonText}>?</Text>
           </TouchableOpacity>
 
           <View style={styles.header}>
@@ -61,25 +102,56 @@ export function LoginScreen({ navigation }: Props) {
           </View>
 
           <View style={styles.form}>
-            <Text style={styles.inputLabel}>Mobile Number</Text>
-            <View style={styles.phoneInputRow}>
-              <View style={styles.countryCode}>
-                <Text style={styles.countryCodeText}>+91</Text>
-              </View>
-              <TextInput
-                ref={phoneInputRef}
-                style={styles.textInput}
-                placeholder="98765 43210"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="phone-pad"
-                maxLength={10}
-                value={phone}
-                onChangeText={(val) => setPhone(val.replace(/[^0-9]/g, ''))}
-              />
-            </View>
+            {usePasswordLogin ? (
+              <>
+                <Text style={styles.inputLabel}>Email Address</Text>
+                <View style={styles.singleInputRow}>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="customer@plumbcommerce.com"
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={email}
+                    onChangeText={setEmail}
+                  />
+                </View>
+
+                <Text style={styles.inputLabel}>Password</Text>
+                <View style={styles.singleInputRow}>
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="ïïïïïïïï"
+                    placeholderTextColor={colors.textMuted}
+                    secureTextEntry
+                    value={password}
+                    onChangeText={setPassword}
+                  />
+                </View>
+              </>
+            ) : (
+              <>
+                <Text style={styles.inputLabel}>Mobile Number</Text>
+                <View style={styles.phoneInputRow}>
+                  <View style={styles.countryCode}>
+                    <Text style={styles.countryCodeText}>+91</Text>
+                  </View>
+                  <TextInput
+                    ref={phoneInputRef}
+                    style={styles.textInput}
+                    placeholder="98765 43210"
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                    value={phone}
+                    onChangeText={(val) => setPhone(val.replace(/[^0-9]/g, ''))}
+                  />
+                </View>
+              </>
+            )}
 
             <PrimaryButton
-              title="Continue"
+              title={usePasswordLogin ? 'Login' : 'Continue'}
               onPress={handleContinue}
               loading={loading}
               style={styles.continueButton}
@@ -93,14 +165,22 @@ export function LoginScreen({ navigation }: Props) {
 
             <View style={styles.socialRow}>
               <TouchableOpacity style={styles.socialCard}>
-                <Text style={styles.socialIcon}>üåê</Text>
+                <Text style={styles.socialIcon}>??</Text>
                 <Text style={styles.socialLabel}>Google</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.socialCard}>
-                <Text style={styles.socialIcon}>üçé</Text>
+                <Text style={styles.socialIcon}>??</Text>
                 <Text style={styles.socialLabel}>Apple</Text>
               </TouchableOpacity>
             </View>
+
+            {supportsStagingCredentialLogin ? (
+              <TouchableOpacity style={styles.modeSwitch} onPress={() => setUsePasswordLogin((prev) => !prev)}>
+                <Text style={styles.modeSwitchText}>
+                  {usePasswordLogin ? 'Use OTP Login' : 'Use Staging Email / Password'}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
 
           <View style={styles.footer}>
@@ -186,6 +266,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: spacing.xl,
   },
+  singleInputRow: {
+    height: 56,
+    borderRadius: borderRadius.md,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    overflow: 'hidden',
+    marginBottom: spacing.xl,
+  },
   countryCode: {
     backgroundColor: colors.background,
     justifyContent: 'center',
@@ -251,6 +339,15 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
+  },
+  modeSwitch: {
+    marginTop: spacing.lg,
+    alignItems: 'center',
+  },
+  modeSwitchText: {
+    color: colors.primary,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
   },
   footer: {
     alignItems: 'center',

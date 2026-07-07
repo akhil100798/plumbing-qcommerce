@@ -48,6 +48,8 @@ export const createBackendUnavailableError = (feature: string, error?: unknown) 
 export const createUnsupportedBackendError = (feature: string) =>
   new Error(`${feature} is not available from the staging backend yet.`);
 
+export const isRenderStagingBackend = () => BACKEND_URL.includes('plumbing-qcommerce.onrender.com');
+
 export const getConfiguredEdgeUrl = () => {
   if (EDGE_URL && (!isLocalUrl(EDGE_URL) || canUseDevMockFallbacks())) {
     return EDGE_URL;
