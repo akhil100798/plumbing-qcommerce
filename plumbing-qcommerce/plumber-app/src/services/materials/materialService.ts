@@ -98,6 +98,7 @@ export const materialService = {
       if (order.status === 'DELIVERED') return 'DELIVERED';
       if (order.status === 'OUT_FOR_DELIVERY') return 'DELIVERING';
       if (order.status === 'CANCELLED') return 'REJECTED';
+      if (order.status === 'PENDING') return 'PENDING_APPROVAL';
       return 'APPROVED';
     } catch (error) {
       if (canUseDevMockFallbacks()) {
@@ -105,6 +106,24 @@ export const materialService = {
         return 'PENDING_APPROVAL';
       }
       throw createBackendUnavailableError('Material request status', error);
+    }
+  },
+
+  fetchMaterialDetails: async (orderId: number): Promise<any> => {
+    try {
+      const response = await apiClient.get<any>(ENDPOINTS.DELIVERY.STATUS(orderId));
+      return response.data;
+    } catch (error) {
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Material request details', error);
+        return {
+          id: orderId,
+          status: 'PENDING',
+          deliveryPartnerName: null,
+          deliveryPartnerPhone: null,
+        };
+      }
+      throw createBackendUnavailableError('Material request details', error);
     }
   },
 };

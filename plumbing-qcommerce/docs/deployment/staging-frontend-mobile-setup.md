@@ -1,90 +1,53 @@
-# Phase 14C Staging Frontend and Mobile Setup
+# Staging Frontend & Mobile Setup Guide
 
-## Backend Staging URL
+This guide describes how to configure and run the customer, plumber, and store mobile applications using the live staging backend.
 
-```text
-https://plumbing-qcommerce.onrender.com
-```
+## 1. Environment Configurations
 
-Use `/health/live` for Render health checks. `/actuator/health` can report degraded status if optional infrastructure health contributors are enabled.
+All three mobile applications (customer-app, plumber-app, store-app) utilize Expo and read configurations from `.env` or `.env.local` files.
 
-## Architecture
+### Configuration for Live Staging Testing
 
-- Admin portal calls the Spring Boot backend directly.
-- Customer, plumber, and store mobile apps call the Spring Boot backend directly for REST APIs.
-- Edge service remains optional for WebSocket and nearby plumber flows. Keep `EXPO_PUBLIC_EDGE_URL` empty for backend-only staging smoke tests.
+Create a `.env.local` file in each app directory (`customer-app/`, `plumber-app/`, `store-app/`) with the following values:
 
-## Admin Portal Staging URL
-
-```text
-https://admin-portal-ten-weld.vercel.app
-```
-
-## Mobile App Environment
-
-Applies to `customer-app`, `plumber-app`, and `store-app`.
-
-Local development:
-
-```text
-EXPO_PUBLIC_API_BASE_URL=http://localhost:8081
-EXPO_PUBLIC_BACKEND_URL=http://localhost:8081
-EXPO_PUBLIC_EDGE_URL=http://localhost:3000
-EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=true
-```
-
-Render staging backend:
-
-```text
-EXPO_PUBLIC_API_BASE_URL=https://plumbing-qcommerce.onrender.com
-EXPO_PUBLIC_BACKEND_URL=https://plumbing-qcommerce.onrender.com
-EXPO_PUBLIC_EDGE_URL=
+```env
+EXPO_PUBLIC_API_BASE_URL=https://plumbing-qcommerce.onrender.com/api/v1
 EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false
 ```
 
-`EXPO_PUBLIC_API_BASE_URL` is preferred. `EXPO_PUBLIC_BACKEND_URL` remains supported for backward compatibility.
-Mock fallback is disabled by default for staging. Local demo data may be used only when both the app is running locally and `EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=true`.
+> [!IMPORTANT]
+> Setting `EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=false` disables all client-side mocks, forcing the apps to use real backend API calls.
 
-## Backend Staging Seed Requirement
+## 2. Running the Apps Locally
 
-```text
-APP_DEMO_SEED_ENABLED=true
-APP_MOBILE_DEMO_SEED_ENABLED=true
+Run the following commands in the respective app directories:
+
+```bash
+# Install dependencies
+npm install
+
+# Start Expo dev server
+npm run start
 ```
 
-Default staging accounts:
+Press `a` to run on Android Emulator/Device or `i` to run on iOS Simulator.
 
-- `superadmin@plumbcommerce.com`
-- `customer@plumbcommerce.com`
-- `plumber@plumbcommerce.com`
-- `store@plumbcommerce.com`
+## 3. Real E2E Flow Credentials
 
-Default staging password:
+Use the pre-seeded staging accounts:
 
-```text
-password
-```
+- **Customer App**:
+  - Email: `customer@plumbcommerce.com`
+  - Password: `password`
+- **Plumber App**:
+  - Email: `plumber@plumbcommerce.com`
+  - Password: `password`
+- **Store App**:
+  - Email: `store@plumbcommerce.com`
+  - Password: `password`
 
-## Render Backend CORS
+## 4. Phase 14G Verification Status
 
-```text
-CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3100,http://localhost:3101,http://localhost:19006,http://localhost:19007,http://localhost:19008,http://localhost:19009,https://admin-portal-ten-weld.vercel.app
-```
-
-## Current Phase 14F Findings
-
-- Customer staging no longer simulates payment-method mutation, payment confirmation, delivery OTP confirmation, or service completion success.
-- Plumber staging no longer simulates navigation arrival or photo-upload success; those flows now fail closed with clear unavailable states.
-- Store staging no longer exposes mock reviews or promotions as live staging data.
-- Remaining fixture-only P3 items are limited to tests, dev examples, and web QA fallback components.
-- Local validation PASS:
-  - `customer-app`: typecheck, tests, build
-  - `plumber-app`: typecheck, tests, build
-  - `store-app`: typecheck, tests, build
-- Latest live staging smoke PASS:
-  - `/health/live`: `UP`
-  - `customer@plumbcommerce.com`: login PASS
-  - `plumber@plumbcommerce.com`: login PASS
-  - `store@plumbcommerce.com`: login PASS
-- Mobile staging remains `PARTIAL` because several real backend endpoints are still unavailable, but staging no longer reports fake success for those flows.
-- Production deployment remains `NO`.
+- **Customer App Material Approval**: Connects directly to backend `confirm` and `release` endpoints.
+- **Plumber Job Sync**: Reloads active job status from `/orders/plumber` on launch.
+- **Store Dispatch Rider Assignment**: Queries live available riders from `/delivery/partners` and assigns them using the `/delivery/{orderId}/assign` POST API.

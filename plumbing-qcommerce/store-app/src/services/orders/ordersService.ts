@@ -2,7 +2,7 @@ import { apiClient } from '../api/axiosClient';
 import { ENDPOINTS } from '../api/endpoints';
 import { Order } from '../../types';
 import { mockOrders } from '../../mocks';
-import { store } from '../../redux/store';
+import { storeService } from '../store/storeService';
 import { dispatchService } from '../dispatch/dispatchService';
 import {
   canUseDevMockFallbacks,
@@ -12,35 +12,45 @@ import {
 } from '../mockPolicy';
 
 let localOrders: Order[] = [...mockOrders];
+const ORDER_STATUSES = ['CONFIRMED', 'PACKING', 'READY_FOR_PICKUP', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];
 
-const mapApiOrderToOrder = (o: any): Order => {
-  return {
-    id: o.id,
-    customerId: o.customerId || 0,
-    customerName: o.customerName || 'Customer',
-    storeId: o.storeId || 0,
-    storeName: o.storeName || 'Store',
-    totalAmount: o.totalAmount,
-    status: o.status as any,
-    createdAt: o.createdAt || new Date().toISOString(),
-    deliveryPartnerName: o.deliveryPartnerName,
-    deliveryPartnerPhone: o.deliveryPartnerPhone,
-    deliveryOtp: o.deliveryOtp,
-    estimatedDeliveryAt: o.estimatedDeliveryAt,
-    items: (o.items || []).map((i: any) => ({
-      productId: i.productId,
-      productName: i.productName || 'Item',
-      quantity: i.quantity,
-      price: i.price,
-    }))
-  };
+const mapApiOrderToOrder = (order: any): Order => ({
+  id: order.id,
+  customerId: order.customerId || order.customer?.id || 0,
+  customerName: order.customerName || order.customer?.fullName || 'Customer',
+  customerPhone: order.customerPhone || order.customer?.phone,
+  storeId: order.storeId || order.store?.id || 0,
+  storeName: order.storeName || order.store?.name || 'Store',
+  totalAmount: Number(order.totalAmount || 0),
+  status: order.status,
+  createdAt: order.createdAt || new Date().toISOString(),
+  deliveryPartnerName: order.deliveryPartnerName,
+  deliveryPartnerPhone: order.deliveryPartnerPhone,
+  deliveryOtp: order.deliveryOtp,
+  estimatedDeliveryAt: order.estimatedDeliveryAt,
+  address: order.address || order.description || 'Staging backend service location',
+  items: (order.items || []).map((item: any) => ({
+    productId: item.productId,
+    productName: item.productName || 'Item',
+    quantity: item.quantity,
+    price: Number(item.price || 0),
+  })),
+});
+
+const loadOrdersByStatus = async (statuses: string[]): Promise<Order[]> => {
+  const responses = await Promise.all(statuses.map((status) => apiClient.get(ENDPOINTS.orders.byStatus(status))));
+  const merged = responses.flatMap((response) => response.data || []).map(mapApiOrderToOrder);
+  const deduped = new Map<number, Order>();
+  merged.forEach((order) => deduped.set(order.id, order));
+  return Array.from(deduped.values()).sort((left, right) => right.id - left.id);
 };
 
 export const ordersService = {
   getOrders: async (): Promise<Order[]> => {
     try {
-      const response = await apiClient.get(ENDPOINTS.orders.byStatus('CONFIRMED'));
-      return (response.data || []).map(mapApiOrderToOrder);
+      const orders = await loadOrdersByStatus(ORDER_STATUSES);
+      localOrders = orders;
+      return orders;
     } catch (e) {
       if (canUseDevMockFallbacks()) {
         warnUsingDevMockFallback('Store order list', e);
@@ -57,7 +67,7 @@ export const ordersService = {
     } catch (e) {
       if (canUseDevMockFallbacks()) {
         warnUsingDevMockFallback(`Store order details ${orderId}`, e);
-        const found = localOrders.find((o) => o.id === orderId);
+        const found = localOrders.find((order) => order.id === orderId);
         if (!found) throw new Error('Order not found');
         return found;
       }
@@ -67,15 +77,15 @@ export const ordersService = {
 
   acceptOrder: async (orderId: number, storeId?: number): Promise<Order> => {
     try {
-      const sId = storeId || store.getState().profile.storeProfile?.id || 123;
-      const response = await apiClient.patch(ENDPOINTS.orders.accept(orderId), { storeId: sId });
+      const storeProfile = storeId ? { id: storeId } : await storeService.getCurrentStoreProfile();
+      const response = await apiClient.patch(ENDPOINTS.orders.accept(orderId), { storeId: storeProfile.id });
       return mapApiOrderToOrder(response.data);
     } catch (e) {
       if (canUseDevMockFallbacks()) {
         warnUsingDevMockFallback(`Store accept order ${orderId}`, e);
-        const idx = localOrders.findIndex((o) => o.id === orderId);
+        const idx = localOrders.findIndex((order) => order.id === orderId);
         if (idx !== -1) {
-          localOrders[idx] = { ...localOrders[idx], status: 'CONFIRMED' };
+          localOrders[idx] = { ...localOrders[idx], status: 'PACKING' };
           return localOrders[idx];
         }
         throw new Error('Order not found');
@@ -90,7 +100,7 @@ export const ordersService = {
     }
 
     warnUsingDevMockFallback(`Store reject order ${orderId}`, new Error('Store order rejection'));
-    const idx = localOrders.findIndex((o) => o.id === orderId);
+    const idx = localOrders.findIndex((order) => order.id === orderId);
     if (idx !== -1) {
       localOrders[idx] = { ...localOrders[idx], status: 'CANCELLED' };
       return localOrders[idx];
@@ -99,33 +109,18 @@ export const ordersService = {
   },
 
   markPacking: async (orderId: number, storeId?: number): Promise<Order> => {
-    try {
-      const sId = storeId || store.getState().profile.storeProfile?.id || 123;
-      const response = await apiClient.patch(ENDPOINTS.orders.accept(orderId), { storeId: sId });
-      return mapApiOrderToOrder(response.data);
-    } catch (e) {
-      if (canUseDevMockFallbacks()) {
-        warnUsingDevMockFallback(`Store mark packing ${orderId}`, e);
-        const idx = localOrders.findIndex((o) => o.id === orderId);
-        if (idx !== -1) {
-          localOrders[idx] = { ...localOrders[idx], status: 'PACKING' };
-          return localOrders[idx];
-        }
-        throw new Error('Order not found');
-      }
-      throw createBackendUnavailableError(`mark packing for order ${orderId}`, e);
-    }
+    return ordersService.acceptOrder(orderId, storeId);
   },
 
   markPacked: async (orderId: number, packingNote?: string, storeId?: number): Promise<Order> => {
     try {
-      const sId = storeId || store.getState().profile.storeProfile?.id || 123;
-      const response = await apiClient.patch(ENDPOINTS.orders.pack(orderId), { storeId: sId, packingNote });
+      const storeProfile = storeId ? { id: storeId } : await storeService.getCurrentStoreProfile();
+      const response = await apiClient.patch(ENDPOINTS.orders.pack(orderId), { storeId: storeProfile.id, packingNote });
       return mapApiOrderToOrder(response.data);
     } catch (e) {
       if (canUseDevMockFallbacks()) {
         warnUsingDevMockFallback(`Store mark packed ${orderId}`, e);
-        const idx = localOrders.findIndex((o) => o.id === orderId);
+        const idx = localOrders.findIndex((order) => order.id === orderId);
         if (idx !== -1) {
           localOrders[idx] = { ...localOrders[idx], status: 'READY_FOR_PICKUP', packingNote };
           return localOrders[idx];
@@ -138,43 +133,41 @@ export const ordersService = {
 
   handOverPackage: async (orderId: number, deliveryPartnerId?: number, otp?: string, storeId?: number): Promise<Order> => {
     try {
-      const sId = storeId || store.getState().profile.storeProfile?.id || 123;
-      let dpId = deliveryPartnerId;
+      const storeProfile = storeId ? { id: storeId } : await storeService.getCurrentStoreProfile();
+      let partnerId = deliveryPartnerId;
       let deliveryOtp = otp;
-      
-      if (!dpId || !deliveryOtp) {
+
+      if (!partnerId || !deliveryOtp) {
         const details = await ordersService.getOrderDetails(orderId);
-        deliveryOtp = deliveryOtp || details.deliveryOtp;
-        
-        if (!dpId && details.deliveryPartnerName) {
+        deliveryOtp = deliveryOtp || details.deliveryOtp || undefined;
+
+        if (!partnerId && details.deliveryPartnerName) {
           try {
             const riders = await dispatchService.getAvailableRiders();
-            const found = riders.find((r) => r.fullName === details.deliveryPartnerName);
-            if (found) dpId = found.id;
-          } catch (err) {
-            console.warn('Failed to resolve rider name to ID:', err);
+            const match = riders.find((rider) => rider.fullName === details.deliveryPartnerName);
+            if (match) {
+              partnerId = match.id;
+            }
+          } catch (error) {
+            console.warn('Failed to resolve delivery partner ID:', error);
           }
-        }
-        
-        if (!dpId) {
-          throw createUnsupportedBackendError('Store delivery partner resolution');
-        }
-
-        if (!deliveryOtp) {
-          throw createUnsupportedBackendError('Store delivery OTP resolution');
         }
       }
 
+      if (!partnerId && !canUseDevMockFallbacks()) {
+        throw createUnsupportedBackendError('Store delivery partner resolution');
+      }
+
       const response = await apiClient.post(ENDPOINTS.orders.handover(orderId), {
-        storeId: sId,
-        deliveryPartnerId: dpId,
-        otp: deliveryOtp
+        storeId: storeProfile.id,
+        deliveryPartnerId: partnerId,
+        otp: deliveryOtp,
       });
       return mapApiOrderToOrder(response.data);
     } catch (e) {
       if (canUseDevMockFallbacks()) {
         warnUsingDevMockFallback(`Store handover package ${orderId}`, e);
-        const idx = localOrders.findIndex((o) => o.id === orderId);
+        const idx = localOrders.findIndex((order) => order.id === orderId);
         if (idx !== -1) {
           localOrders[idx] = { ...localOrders[idx], status: 'OUT_FOR_DELIVERY' };
           return localOrders[idx];

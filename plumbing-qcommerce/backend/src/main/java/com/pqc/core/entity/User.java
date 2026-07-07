@@ -44,6 +44,9 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Transient
+    private Boolean availability;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

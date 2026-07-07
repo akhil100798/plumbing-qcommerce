@@ -225,6 +225,14 @@ public class ServiceOrderService {
         return orderRepository.findByCustomer_Id(customerId);
     }
 
+    public List<ServiceOrder> getOrdersByPlumber(Long plumberId) {
+        User actor = currentUser.require();
+        if (actor.getRole() != Role.ADMIN && !actor.getId().equals(plumberId)) {
+            throw new AccessDeniedException("Plumbers may view only their own orders");
+        }
+        return orderRepository.findByPlumber_Id(plumberId);
+    }
+
     public List<ServiceOrder> getOrdersByStatus(OrderStatus status) {
         Role role = currentUser.require().getRole();
         if (role != Role.ADMIN && role != Role.PLUMBER && role != Role.STORE_MANAGER) {

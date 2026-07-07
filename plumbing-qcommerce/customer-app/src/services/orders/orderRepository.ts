@@ -27,6 +27,11 @@ export const OrderRepository = {
     return response.data;
   },
 
+  getCustomerMaterialRequests: async (): Promise<any[]> => {
+    const response = await apiClient.get<any[]>('/checkout/material-requests/customer');
+    return response.data;
+  },
+
   cancelServiceOrder: async (id: number): Promise<ServiceOrderDTO> => {
     const response = await apiClient.patch<ServiceOrderDTO>(`/orders/${id}/cancel`);
     return response.data;

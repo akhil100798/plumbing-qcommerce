@@ -25,7 +25,7 @@ export const StoreProfileScreen = () => {
       }
 
       try {
-        const data = await storeService.getStoreProfile(user.id);
+        const data = await storeService.getCurrentStoreProfile();
         setProfile(data);
         setNotice(null);
       } catch (error) {
@@ -173,4 +173,5 @@ const styles = StyleSheet.create({
   },
 });
 export default StoreProfileScreen;
+
 

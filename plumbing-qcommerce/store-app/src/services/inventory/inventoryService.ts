@@ -8,35 +8,38 @@ import {
   createUnsupportedBackendError,
   warnUsingDevMockFallback,
 } from '../mockPolicy';
-import { store } from '../../redux/store';
+import { storeService } from '../store/storeService';
 
 let localProducts: Product[] = [...mockProducts];
 
+const mapStockToProduct = (stock: any): Product => {
+  const product = stock.product || stock;
+  return {
+    id: product.id,
+    sku: product.sku,
+    name: product.name,
+    description: product.description,
+    price: Number(product.price),
+    mrp: Number(product.price) * 1.15,
+    imageUrl: product.imageUrl,
+    categoryId: product.category?.id || product.categoryId || 1,
+    categoryName: product.category?.name || product.categoryName || 'General',
+    stock: Number(stock.availableQuantity ?? stock.stock ?? 0),
+  };
+};
+
 export const inventoryService = {
-  getInventory: async (storeId: number): Promise<{ products: Product[]; categories: Category[] }> => {
+  getInventory: async (storeId?: number): Promise<{ products: Product[]; categories: Category[] }> => {
     try {
-      const response = await apiClient.get(ENDPOINTS.store.inventory(storeId));
-      const stocks: any[] = response.data || [];
+      const inventoryEndpoint = storeId ? ENDPOINTS.store.inventory(storeId) : ENDPOINTS.store.meInventory;
+      const [stockResponse, catResponse] = await Promise.all([
+        apiClient.get(inventoryEndpoint),
+        apiClient.get(ENDPOINTS.catalog.categories),
+      ]);
 
-      const catResponse = await apiClient.get(ENDPOINTS.catalog.categories);
+      const products: Product[] = (stockResponse.data || []).map(mapStockToProduct);
       const categories: Category[] = catResponse.data || [];
-
-      const products: Product[] = stocks.map((st: any) => {
-        const p = st.product;
-        return {
-          id: p.id,
-          sku: p.sku,
-          name: p.name,
-          description: p.description,
-          price: p.price,
-          mrp: p.price * 1.15,
-          imageUrl: p.imageUrl,
-          categoryId: p.category?.id || 1,
-          categoryName: p.category?.name || 'PVC Pipes',
-          stock: st.quantity,
-        };
-      });
-
+      localProducts = products;
       return { products, categories };
     } catch (e) {
       if (canUseDevMockFallbacks()) {
@@ -50,23 +53,23 @@ export const inventoryService = {
   getProductDetails: async (productId: number): Promise<Product> => {
     try {
       const response = await apiClient.get(ENDPOINTS.catalog.productDetails(productId));
-      const p = response.data;
+      const product = response.data;
       return {
-        id: p.id,
-        sku: p.sku,
-        name: p.name,
-        description: p.description,
-        price: p.price,
-        mrp: p.price * 1.15,
-        imageUrl: p.imageUrl,
-        categoryId: p.categoryId,
-        categoryName: p.categoryName || 'General',
-        stock: p.stock ?? 0,
+        id: product.id,
+        sku: product.sku,
+        name: product.name,
+        description: product.description,
+        price: Number(product.price),
+        mrp: Number(product.price) * 1.15,
+        imageUrl: product.imageUrl,
+        categoryId: product.category?.id || product.categoryId || 1,
+        categoryName: product.category?.name || product.categoryName || 'General',
+        stock: Number(product.stock ?? 0),
       };
     } catch (e) {
       if (canUseDevMockFallbacks()) {
         warnUsingDevMockFallback(`Store product details ${productId}`, e);
-        const found = localProducts.find((p) => p.id === productId);
+        const found = localProducts.find((product) => product.id === productId);
         if (!found) throw new Error('Product not found');
         return found;
       }
@@ -90,7 +93,7 @@ export const inventoryService = {
       discount: product.discount || 0,
       imageUrl: product.imageUrl || 'https://images.unsplash.com/photo-1595206133361-b1fe343e5e23?q=80&w=200',
       categoryId: product.categoryId || 1,
-      categoryName: product.categoryName || 'PVC Pipes',
+      categoryName: product.categoryName || 'Pipes',
       stock: product.stock || 0,
       brand: product.brand || 'General',
       gst: product.gst || 18,
@@ -105,7 +108,7 @@ export const inventoryService = {
     }
 
     warnUsingDevMockFallback(`Store update product ${productId}`, new Error('Catalog product updates'));
-    const idx = localProducts.findIndex((p) => p.id === productId);
+    const idx = localProducts.findIndex((existing) => existing.id === productId);
     if (idx !== -1) {
       localProducts[idx] = { ...localProducts[idx], ...product };
       return localProducts[idx];
@@ -115,28 +118,13 @@ export const inventoryService = {
 
   updateStock: async (productId: number, stockCount: number, storeId?: number): Promise<Product> => {
     try {
-      const sId = storeId || store.getState().profile.storeProfile?.id || 123;
+      const storeProfile = storeId ? { id: storeId } : await storeService.getCurrentStoreProfile();
       const response = await apiClient.put(
-        ENDPOINTS.store.updateStock(sId, productId), 
+        ENDPOINTS.store.updateStock(storeProfile.id, productId),
         { quantity: stockCount }
       );
-      const st = response.data;
-      const p = st.product;
-      
-      const updatedProduct: Product = {
-        id: p.id,
-        sku: p.sku,
-        name: p.name,
-        description: p.description,
-        price: p.price,
-        mrp: p.price * 1.15,
-        imageUrl: p.imageUrl,
-        categoryId: p.category?.id || 1,
-        categoryName: p.category?.name || 'General',
-        stock: st.availableQuantity,
-      };
-
-      const idx = localProducts.findIndex((lp) => lp.id === productId);
+      const updatedProduct = mapStockToProduct(response.data);
+      const idx = localProducts.findIndex((product) => product.id === productId);
       if (idx !== -1) {
         localProducts[idx] = updatedProduct;
       }
@@ -144,7 +132,7 @@ export const inventoryService = {
     } catch (e) {
       if (canUseDevMockFallbacks()) {
         warnUsingDevMockFallback(`Store update stock ${productId}`, e);
-        const idx = localProducts.findIndex((p) => p.id === productId);
+        const idx = localProducts.findIndex((product) => product.id === productId);
         if (idx !== -1) {
           localProducts[idx] = { ...localProducts[idx], stock: stockCount };
           return localProducts[idx];
@@ -157,12 +145,11 @@ export const inventoryService = {
 
   getLowStock: async (): Promise<Product[]> => {
     try {
-      const response = await apiClient.get(ENDPOINTS.dashboard.forecast);
-      console.log('AI forecast details:', response.data);
-      return localProducts.filter((p) => p.stock <= 5);
+      const inventory = await inventoryService.getInventory();
+      return inventory.products.filter((product) => product.stock <= 5);
     } catch (e) {
-      console.warn('API getLowStock failed, fallback to filter logic:', e);
-      return localProducts.filter((p) => p.stock <= 5);
+      console.warn('Inventory low-stock lookup failed:', e);
+      return localProducts.filter((product) => product.stock <= 5);
     }
   }
 };

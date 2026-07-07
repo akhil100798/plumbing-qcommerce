@@ -9,22 +9,54 @@ import {
 } from '../mockPolicy';
 import { ActiveJob, JobOffer } from '../../types';
 
+const fallbackLocation = (order: any) => {
+  if (order.customerLatitude != null && order.customerLongitude != null) {
+    return `Lat ${Number(order.customerLatitude).toFixed(4)}, Lng ${Number(order.customerLongitude).toFixed(4)}`;
+  }
+  return 'Customer service location';
+};
+
+const mapServiceOrderToOffer = (order: any): JobOffer => ({
+  jobId: String(order.id),
+  customerId: String(order.customer?.id || order.customerId || ''),
+  customerName: order.customer?.fullName || order.customerName || 'Customer',
+  customerRating: 4.8,
+  distance: 2.4,
+  location: fallbackLocation(order),
+  latitude: Number(order.customerLatitude ?? order.latitude ?? 17.4485),
+  longitude: Number(order.customerLongitude ?? order.longitude ?? 78.3741),
+  estimatedEarnings: Number(order.totalAmount ?? order.serviceCharge ?? 299),
+  issueDescription: order.description,
+  category: order.requestType || 'Service',
+});
+
+const mapServiceOrderToActiveJob = (order: any, status: ActiveJob['status']): ActiveJob => ({
+  jobId: String(order.id),
+  customer: {
+    id: String(order.customer?.id || order.customerId || ''),
+    fullName: order.customer?.fullName || order.customerName || 'Customer',
+    phone: order.customer?.phone || order.customerPhone || '',
+    rating: 4.8,
+  },
+  status,
+  address: fallbackLocation(order),
+  latitude: Number(order.customerLatitude ?? order.latitude ?? 17.4485),
+  longitude: Number(order.customerLongitude ?? order.longitude ?? 78.3741),
+  customerNote: order.description,
+  estimatedEarnings: Number(order.totalAmount ?? order.serviceCharge ?? 299),
+  partsCharge: Number(order.partsCharge ?? 0),
+  timeline: {
+    accepted: order.acceptedAt,
+    started: order.startedAt,
+    completed: order.completedAt,
+  },
+});
+
 export const jobService = {
   fetchIncomingJobs: async (): Promise<JobOffer[]> => {
     try {
       const response = await apiClient.get<any[]>(ENDPOINTS.ORDERS.BY_STATUS('PENDING'));
-      return response.data.map((order) => ({
-        jobId: String(order.id),
-        customerId: String(order.customerId),
-        customerName: order.customerName || 'Customer',
-        customerRating: 4.8,
-        distance: 2.4,
-        location: order.address || 'Service Location',
-        latitude: order.latitude,
-        longitude: order.longitude,
-        estimatedEarnings: order.serviceCharge || 299,
-        issueDescription: order.description,
-      }));
+      return (response.data || []).map(mapServiceOrderToOffer);
     } catch (error) {
       if (canUseDevMockFallbacks()) {
         warnUsingDevMockFallback('Fetch incoming jobs', error);
@@ -36,31 +68,9 @@ export const jobService = {
 
   acceptJob: async (jobId: string): Promise<ActiveJob> => {
     try {
-      const numericId = jobId.replace(/[^0-9]/g, '');
-      const cleanId = numericId ? parseInt(numericId) : 1;
+      const cleanId = parseInt(jobId.replace(/[^0-9]/g, '')) || 1;
       const response = await apiClient.patch<any>(ENDPOINTS.ORDERS.ACCEPT(cleanId));
-      const order = response.data;
-      
-      return {
-        jobId: String(order.id),
-        customer: {
-          id: String(order.customerId || 'cust_99'),
-          fullName: order.customerName || 'Akhil Verma',
-          phone: order.customerPhone || '+91 9999999999',
-          rating: 4.8,
-        },
-        status: 'accepted',
-        address: order.address || 'H.No 12-5-45, Street 3, Miyapur, Hyderabad - 500049',
-        latitude: order.latitude || 17.4933,
-        longitude: order.longitude || 78.3489,
-        customerNote: order.description || 'Water leakage behind the wash basin.',
-        estimatedEarnings: order.serviceCharge || 299,
-        partsCharge: order.partsCharge || 0,
-        timeline: {
-          assigned: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          accepted: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      };
+      return mapServiceOrderToActiveJob(response.data, 'accepted');
     } catch (error) {
       if (canUseDevMockFallbacks()) {
         warnUsingDevMockFallback('Accept plumber job', error);
@@ -80,7 +90,6 @@ export const jobService = {
   startNavigation: async (jobId: string): Promise<void> => {
     if (canUseDevMockFallbacks()) {
       warnUsingDevMockFallback('Start navigation', new Error(jobId));
-      console.log(`Started navigation for job ${jobId}`);
       return;
     }
 
@@ -90,7 +99,6 @@ export const jobService = {
   markArrived: async (jobId: string): Promise<void> => {
     if (canUseDevMockFallbacks()) {
       warnUsingDevMockFallback('Mark arrived', new Error(jobId));
-      console.log(`Plumber reached destination for job ${jobId}`);
       return;
     }
 
@@ -99,33 +107,9 @@ export const jobService = {
 
   startWork: async (jobId: string): Promise<ActiveJob> => {
     try {
-      const numericId = jobId.replace(/[^0-9]/g, '');
-      const cleanId = numericId ? parseInt(numericId) : 1;
+      const cleanId = parseInt(jobId.replace(/[^0-9]/g, '')) || 1;
       const response = await apiClient.patch<any>(ENDPOINTS.ORDERS.START(cleanId));
-      const order = response.data;
-      return {
-        jobId: String(order.id),
-        customer: {
-          id: String(order.customerId),
-          fullName: order.customerName || 'Customer',
-          phone: order.customerPhone || '',
-          rating: 4.8,
-        },
-        status: 'started',
-        address: order.address,
-        latitude: order.latitude,
-        longitude: order.longitude,
-        customerNote: order.description,
-        estimatedEarnings: order.serviceCharge || 299,
-        partsCharge: order.partsCharge || 0,
-        timeline: {
-          assigned: '10:15 AM',
-          accepted: '10:16 AM',
-          on_the_way: '10:17 AM',
-          reached: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          started: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      };
+      return mapServiceOrderToActiveJob(response.data, 'started');
     } catch (error) {
       if (canUseDevMockFallbacks()) {
         warnUsingDevMockFallback('Start plumber job', error);
@@ -135,7 +119,6 @@ export const jobService = {
           status: 'started',
           timeline: {
             ...MOCK_ACTIVE_JOB.timeline,
-            reached: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             started: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           },
         };
@@ -146,36 +129,11 @@ export const jobService = {
 
   completeJob: async (jobId: string, partsCharge?: number): Promise<ActiveJob> => {
     try {
-      const numericId = jobId.replace(/[^0-9]/g, '');
-      const cleanId = numericId ? parseInt(numericId) : 1;
+      const cleanId = parseInt(jobId.replace(/[^0-9]/g, '')) || 1;
       const response = await apiClient.patch<any>(
         `${ENDPOINTS.ORDERS.COMPLETE(cleanId)}?partsCharge=${partsCharge || 0}`
       );
-      const order = response.data;
-      return {
-        jobId: String(order.id),
-        customer: {
-          id: String(order.customerId),
-          fullName: order.customerName || 'Customer',
-          phone: order.customerPhone || '',
-          rating: 4.8,
-        },
-        status: 'completed',
-        address: order.address,
-        latitude: order.latitude,
-        longitude: order.longitude,
-        customerNote: order.description,
-        estimatedEarnings: order.serviceCharge || 299,
-        partsCharge: order.partsCharge || partsCharge || 0,
-        timeline: {
-          assigned: '10:15 AM',
-          accepted: '10:16 AM',
-          on_the_way: '10:17 AM',
-          reached: '10:30 AM',
-          started: '10:35 AM',
-          completed: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
-      };
+      return mapServiceOrderToActiveJob(response.data, 'completed');
     } catch (error) {
       if (canUseDevMockFallbacks()) {
         warnUsingDevMockFallback('Complete plumber job', error);
@@ -186,13 +144,36 @@ export const jobService = {
           partsCharge: partsCharge || 0,
           timeline: {
             ...MOCK_ACTIVE_JOB.timeline,
-            reached: '10:30 AM',
-            started: '10:35 AM',
             completed: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           },
         };
       }
       throw createBackendUnavailableError('Complete plumber job', error);
+    }
+  },
+
+  fetchActiveJob: async (): Promise<ActiveJob | null> => {
+    try {
+      const response = await apiClient.get<any[]>(ENDPOINTS.ORDERS.PLUMBER_ASSIGNED);
+      const orders = response.data || [];
+      const activeOrder = orders.find(
+        (order) =>
+          order.status === 'ACCEPTED' ||
+          order.status === 'IN_PROGRESS' ||
+          order.status === 'COMBINED_ORDER'
+      );
+      if (!activeOrder) return null;
+
+      const mappedStatus: ActiveJob['status'] =
+        activeOrder.status === 'ACCEPTED' ? 'accepted' : 'started';
+
+      return mapServiceOrderToActiveJob(activeOrder, mappedStatus);
+    } catch (error) {
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Fetch active job', error);
+        return null;
+      }
+      throw createBackendUnavailableError('Fetch active job', error);
     }
   },
 };

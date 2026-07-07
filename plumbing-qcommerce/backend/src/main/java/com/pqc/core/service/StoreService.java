@@ -1,8 +1,14 @@
 package com.pqc.core.service;
 
-import com.pqc.core.entity.*;
 import com.pqc.core.dto.StockUpdateRequest;
-import com.pqc.core.repository.*;
+import com.pqc.core.entity.Product;
+import com.pqc.core.entity.Role;
+import com.pqc.core.entity.Stock;
+import com.pqc.core.entity.Store;
+import com.pqc.core.entity.User;
+import com.pqc.core.repository.ProductRepository;
+import com.pqc.core.repository.StockRepository;
+import com.pqc.core.repository.StoreRepository;
 import com.pqc.core.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -34,6 +40,20 @@ public class StoreService {
     public Store getStoreById(Long id) {
         return storeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Store not found with ID: " + id));
+    }
+
+    public Store getCurrentStoreForManager() {
+        User user = currentUser.require();
+        if (user.getRole() == Role.ADMIN) {
+            return storeRepository.findAll().stream()
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("No stores are available"));
+        }
+        if (user.getRole() != Role.STORE_MANAGER) {
+            throw new AccessDeniedException("Only store managers or admins can access the current store profile");
+        }
+        return storeRepository.findFirstByManager_Id(user.getId())
+                .orElseThrow(() -> new RuntimeException("Store profile not found for the current manager"));
     }
 
     @Transactional

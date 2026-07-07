@@ -89,6 +89,13 @@ public class ServiceOrderController {
         return ResponseEntity.ok(orderService.getOrdersByCustomer(customerId));
     }
 
+    /** GET /api/v1/orders/plumber — Get current plumber's service orders */
+    @GetMapping("/plumber")
+    @PreAuthorize("hasRole('PLUMBER')")
+    public ResponseEntity<List<ServiceOrder>> getByPlumber() {
+        return ResponseEntity.ok(orderService.getOrdersByPlumber(currentUser.require().getId()));
+    }
+
     /** GET /api/v1/orders/status/{status} — For store manager dashboard (all PENDING) */
     @GetMapping("/status/{status}")
     @PreAuthorize("hasAnyRole('PLUMBER', 'STORE_MANAGER', 'ADMIN')")

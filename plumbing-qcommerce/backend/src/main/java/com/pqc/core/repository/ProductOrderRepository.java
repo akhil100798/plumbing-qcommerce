@@ -13,13 +13,16 @@ import java.util.Collection;
 
 public interface ProductOrderRepository extends JpaRepository<ProductOrder, Long>, JpaSpecificationExecutor<ProductOrder> {
     List<ProductOrder> findByCustomerId(Long customerId);
+    List<ProductOrder> findByCustomerIdAndServiceOrderIsNotNull(Long customerId);
     List<ProductOrder> findByStoreId(Long storeId);
     List<ProductOrder> findByStoreIdAndStatus(Long storeId, ProductOrderStatus status);
+    List<ProductOrder> findByStore_Manager_IdAndServiceOrderIsNotNull(Long managerId);
     List<ProductOrder> findByDeliveryPartnerId(Long deliveryPartnerId);
     List<ProductOrder> findByStatus(ProductOrderStatus status);
     long countByStatus(ProductOrderStatus status);
     List<ProductOrder> findByServiceOrderId(Long serviceOrderId);
     List<ProductOrder> findByServiceOrderIdAndStatus(Long serviceOrderId, ProductOrderStatus status);
+    List<ProductOrder> findByServiceOrder_Plumber_Id(Long plumberId);
     long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
     long countByCustomerId(Long customerId);
     long countByDeliveryPartnerId(Long deliveryPartnerId);
@@ -31,3 +34,4 @@ public interface ProductOrderRepository extends JpaRepository<ProductOrder, Long
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM ProductOrder o WHERE o.status = :status")
     BigDecimal sumTotalAmountByStatus(@Param("status") ProductOrderStatus status);
 }
+

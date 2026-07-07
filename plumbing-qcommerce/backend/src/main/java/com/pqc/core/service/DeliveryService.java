@@ -84,4 +84,50 @@ public class DeliveryService {
         log.info("Order #{} assigned to delivery partner #{}.", orderId, partnerId);
         return savedOrder;
     }
+
+    /**
+     * Force assigns a delivery partner by a Store Manager or Admin.
+     */
+    @Transactional
+    public ProductOrder forceAssignDeliveryPartner(Long orderId, Long partnerId) {
+        ProductOrder order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        User partner = userRepository.findById(partnerId)
+                .orElseThrow(() -> new RuntimeException("Delivery partner not found: " + partnerId));
+
+        if (partner.getRole() != Role.DELIVERY_PARTNER) {
+            throw new IllegalArgumentException("User " + partnerId + " is not a delivery partner.");
+        }
+
+        order.setDeliveryPartner(partner);
+        String otp = deliveryOtpService.generateOtp(order.getId(), partner.getId());
+        order.setDeliveryOtp(otp);
+        order.setEstimatedDeliveryAt(LocalDateTime.now().plusMinutes(30));
+        order.setStatus(ProductOrderStatus.OUT_FOR_DELIVERY);
+
+        ProductOrder savedOrder = orderRepository.save(order);
+
+        // Save to Outbox for Live WebSocket tracking in Edge Service
+        String payload = "{" +
+                "\"orderId\":" + savedOrder.getId() + "," +
+                "\"deliveryPartnerId\":" + partnerId + "," +
+                "\"deliveryPartnerName\":\"" + partner.getFullName() + "\"," +
+                "\"deliveryOtp\":\"[REDACTED]\"," +
+                "\"customerId\":" + savedOrder.getCustomer().getId() +
+                "}";
+
+        OutboxEvent outboxEvent = OutboxEvent.builder()
+                .aggregateId(String.valueOf(savedOrder.getId()))
+                .aggregateType("PRODUCT_ORDER")
+                .eventType("DELIVERY_ASSIGNED")
+                .topic("delivery-assigned")
+                .payload(payload)
+                .processed(false)
+                .build();
+        outboxRepository.save(outboxEvent);
+
+        log.info("Order #{} force assigned to delivery partner #{} by store manager/admin.", orderId, partnerId);
+        return savedOrder;
+    }
 }

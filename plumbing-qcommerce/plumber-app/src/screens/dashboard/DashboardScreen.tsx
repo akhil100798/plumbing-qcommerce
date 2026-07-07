@@ -18,12 +18,13 @@ import { borderRadius, colors, shadows, spacing, typography } from '../../theme'
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
 import { setAvailability } from '../../redux/slices/authSlice';
-import { addIncomingJob, removeIncomingJob } from '../../redux/slices/jobSlice';
+import { addIncomingJob, removeIncomingJob, setActiveJob } from '../../redux/slices/jobSlice';
 import { websocketService } from '../../services/websocket/websocketService';
-import { getConfiguredEdgeUrl } from '../../services/mockPolicy';
+import { getConfiguredEdgeUrl, canUseDevMockFallbacks } from '../../services/mockPolicy';
 import { earningsService } from '../../services/earnings/earningsService';
 import { setEarningsData } from '../../redux/slices/earningsSlice';
 import { profileService } from '../../services/profile/profileService';
+import { jobService } from '../../services/jobs/jobService';
 
 type Props = StackScreenProps<AppStackParamList, 'Main'>;
 
@@ -55,6 +56,24 @@ export function DashboardScreen({ navigation }: Props) {
     };
     fetchStats();
   }, [dispatch]);
+
+  // Recover active job on mount if missing from state
+  useEffect(() => {
+    const recoverActiveJob = async () => {
+      if (canUseDevMockFallbacks()) return;
+      try {
+        const active = await jobService.fetchActiveJob();
+        if (active) {
+          dispatch(setActiveJob(active));
+        }
+      } catch (err) {
+        console.error('Failed to recover active job on mount:', err);
+      }
+    };
+    if (!activeJob) {
+      recoverActiveJob();
+    }
+  }, [dispatch, activeJob]);
 
   // Handle Availability Toggle
   const handleToggleOnline = async (value: boolean) => {

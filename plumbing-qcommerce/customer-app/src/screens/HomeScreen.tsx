@@ -198,6 +198,44 @@ export function HomeScreen({ navigation }: any) {
     };
   }, [activeProductOrder, edgeServerUrl]);
 
+  useEffect(() => {
+    if (!token || !currentUser?.id) {
+      return;
+    }
+
+    let cancelled = false;
+    const syncMaterialRequests = async () => {
+      try {
+        const requests = await OrderRepository.getCustomerMaterialRequests();
+        if (cancelled) {
+          return;
+        }
+
+        const pendingRequest = (requests || []).find((request: any) => request.status === 'PENDING');
+        if (pendingRequest) {
+          setMaterialPaymentRequest({
+            productOrderId: pendingRequest.id,
+            serviceOrderId: pendingRequest.serviceOrderId,
+            plumberName: pendingRequest.assignedPlumberName || 'Assigned plumber',
+            totalAmount: Number(pendingRequest.totalAmount || 0),
+            message: 'Your plumber requested additional materials to finish the service. Approve payment to continue.',
+          });
+        } else if (!socket) {
+          setMaterialPaymentRequest(null);
+        }
+      } catch (error) {
+        console.log('Failed to sync customer material requests:', error);
+      }
+    };
+
+    syncMaterialRequests();
+    const interval = setInterval(syncMaterialRequests, 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [token, currentUser?.id, socket]);
+
   // Polling for Product Order Status updates
   useEffect(() => {
     if (!activeProductOrder) return;
@@ -988,6 +1026,7 @@ const styles = StyleSheet.create({
   materialApproveBtn: { flex: 2, height: 52, borderRadius: 14, backgroundColor: '#F59E0B', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
   materialApproveBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '900', textAlign: 'center' },
 });
+
 
 
 

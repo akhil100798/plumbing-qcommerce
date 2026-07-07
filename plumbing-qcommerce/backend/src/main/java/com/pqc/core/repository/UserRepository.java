@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -20,4 +21,5 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     long countByRoleIn(Collection<Role> roles);
     Page<User> findByRoleIn(Collection<Role> roles, Pageable pageable);
     long countByRoleAndStatus(Role role, UserStatus status);
+    List<User> findByRole(Role role);
 }

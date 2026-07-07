@@ -1,5 +1,5 @@
 import { StackScreenProps } from '@react-navigation/stack';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Alert,
   SafeAreaView,
@@ -8,12 +8,15 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from 'react-native';
 
 import { MaterialCard } from '../components/cards/MaterialCard';
 import { PrimaryButton } from '../components/common/PrimaryButton';
 import { SecondaryButton } from '../components/common/SecondaryButton';
 import { canUseDevMockFallbacks, warnUsingDevMockFallback } from '../services/mockPolicy';
+import { OrderRepository } from '../services/orders/orderRepository';
+import { CartRepository } from '../services/cart/cartRepository';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
 
@@ -28,57 +31,126 @@ const mockMaterials = [
 export function MaterialApprovalScreen({ route, navigation }: Props) {
   const { serviceOrderId, plumberName } = route.params;
   const [loading, setLoading] = useState(false);
+  const [items, setItems] = useState<{ name: string; qty: number; price: number }[]>([]);
+  const [total, setTotal] = useState<number>(0);
+  const [productOrderId, setProductOrderId] = useState<number | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const mockFallbackEnabled = canUseDevMockFallbacks();
 
-  const totalAmount = mockFallbackEnabled
-    ? mockMaterials.reduce((sum, item) => sum + item.price * item.qty, 0)
-    : 0;
+  useEffect(() => {
+    async function loadMaterialRequest() {
+      setLoading(true);
+      setErrorMsg(null);
+      try {
+        const requests = await OrderRepository.getCustomerMaterialRequests();
+        const pendingRequest = requests.find(
+          (req: any) => req.serviceOrderId === serviceOrderId && req.status === 'PENDING'
+        );
+        if (pendingRequest) {
+          setProductOrderId(pendingRequest.id);
+          setTotal(Number(pendingRequest.totalAmount));
+          const mappedItems = (pendingRequest.items || []).map((i: any) => ({
+            name: i.productName,
+            qty: i.quantity,
+            price: Number(i.price),
+          }));
+          setItems(mappedItems);
+        } else {
+          setErrorMsg('No pending material requests found for this service order.');
+        }
+      } catch (err: any) {
+        console.error('Failed to fetch material requests:', err);
+        setErrorMsg('Failed to load material requests from the server.');
+      } finally {
+        setLoading(false);
+      }
+    }
 
-  const handleDecline = () => {
     if (!mockFallbackEnabled) {
-      Alert.alert(
-        'Feature unavailable',
-        'Material approval is not connected to the staging backend yet.'
-      );
+      loadMaterialRequest();
+    } else {
+      setItems(mockMaterials);
+      setTotal(mockMaterials.reduce((sum, item) => sum + item.price * item.qty, 0));
+    }
+  }, [serviceOrderId, mockFallbackEnabled]);
+
+  const handleDecline = async () => {
+    if (mockFallbackEnabled) {
+      warnUsingDevMockFallback('Material approval decline', new Error(String(serviceOrderId)));
+      Alert.alert('Material request declined', 'Plumber will be notified.');
+      navigation.goBack();
       return;
     }
 
-    warnUsingDevMockFallback('Material approval decline', new Error(serviceOrderId));
-    Alert.alert('Material request declined', 'Plumber will be notified.');
-    navigation.goBack();
-  };
-
-  const handleApproveAndPay = () => {
-    if (!mockFallbackEnabled) {
-      Alert.alert(
-        'Feature unavailable',
-        'Material approval and payment are not connected to the staging backend yet.'
-      );
+    if (!productOrderId) {
+      Alert.alert('Error', 'No active material request found.');
       return;
     }
 
     setLoading(true);
-    warnUsingDevMockFallback('Material approval payment', new Error(serviceOrderId));
-    setTimeout(() => {
+    try {
+      await CartRepository.releaseReservation(productOrderId);
+      Alert.alert('Material request declined', 'Reservation has been released successfully.');
+      navigation.goBack();
+    } catch (err: any) {
+      console.error('Failed to decline material request:', err);
+      Alert.alert('Error', 'Failed to decline material request. Please try again.');
+    } finally {
       setLoading(false);
-      navigation.replace('ServiceCompletion', {
-        plumberName: plumberName,
-      });
-    }, 1500);
+    }
+  };
+
+  const handleApproveAndPay = async () => {
+    if (mockFallbackEnabled) {
+      setLoading(true);
+      warnUsingDevMockFallback('Material approval payment', new Error(String(serviceOrderId)));
+      setTimeout(() => {
+        setLoading(false);
+        navigation.replace('ServiceCompletion', {
+          plumberName: plumberName,
+        });
+      }, 1500);
+      return;
+    }
+
+    if (!productOrderId) {
+      Alert.alert('Error', 'No active material request found.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await CartRepository.confirmPayment(productOrderId);
+      Alert.alert('Success', 'Payment confirmed! Materials will be delivered to your site shortly.', [
+        {
+          text: 'OK',
+          onPress: () => {
+            navigation.replace('ServiceCompletion', {
+              plumberName: plumberName,
+            });
+          },
+        },
+      ]);
+    } catch (err: any) {
+      console.error('Failed to pay for materials:', err);
+      Alert.alert('Payment Failed', 'Could not process material payment. Please check your balance and try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>?</Text>
+          <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Material Approval</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.requestBanner}>
-          <Text style={styles.bannerEmoji}>???</Text>
+          <Text style={styles.bannerEmoji}>⚠️</Text>
           <View style={styles.bannerTextContainer}>
             <Text style={styles.bannerTitle}>Materials Requested</Text>
             <Text style={styles.bannerSub}>
@@ -88,24 +160,33 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
         </View>
 
         <Text style={styles.sectionTitle}>Required Items</Text>
-        {mockFallbackEnabled ? (
-          <MaterialCard items={mockMaterials} totalAmount={totalAmount} />
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.loadingText}>Loading requested materials...</Text>
+          </View>
+        ) : errorMsg ? (
+          <View style={styles.unavailableCard}>
+            <Text style={styles.unavailableTitle}>Pending Request Info</Text>
+            <Text style={styles.unavailableText}>{errorMsg}</Text>
+          </View>
+        ) : items.length > 0 ? (
+          <MaterialCard items={items} totalAmount={total} />
         ) : (
           <View style={styles.unavailableCard}>
-            <Text style={styles.unavailableTitle}>Material approval is blocked in staging</Text>
+            <Text style={styles.unavailableTitle}>No Materials Requested</Text>
             <Text style={styles.unavailableText}>
-              This screen no longer injects fake material items. Please use local dev with
-              ` EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS=true ` to exercise the demo-only flow.
+              There are no pending material approvals at this time.
             </Text>
           </View>
         )}
 
         <View style={styles.noticeCard}>
-          <Text style={styles.noticeEmoji}>?</Text>
+          <Text style={styles.noticeEmoji}>🚚</Text>
           <Text style={styles.noticeText}>
             {mockFallbackEnabled
               ? 'These materials will be delivered to your house via our instant 15-minute delivery partner.'
-              : 'Staging now surfaces a blocked backend dependency here instead of silently simulating delivery.'}
+              : 'These materials will be dispatched from our nearest store and delivered directly to the job site.'}
           </Text>
         </View>
       </ScrollView>
@@ -117,12 +198,20 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
           textColor={colors.textSecondary}
           outlineColor={colors.borderDark}
           style={styles.actionBtn}
+          disabled={loading || (!mockFallbackEnabled && !productOrderId)}
         />
         <PrimaryButton
-          title={mockFallbackEnabled ? `Approve & Pay ?${totalAmount}` : 'Backend Integration Required'}
+          title={
+            loading
+              ? 'Processing...'
+              : productOrderId || mockFallbackEnabled
+              ? `Approve & Pay ₹${total}`
+              : 'No Pending Request'
+          }
           onPress={handleApproveAndPay}
           loading={loading}
           style={styles.actionBtnPrimary}
+          disabled={loading || (!mockFallbackEnabled && !productOrderId)}
         />
       </View>
     </SafeAreaView>
@@ -203,7 +292,7 @@ const styles = StyleSheet.create({
   },
   unavailableCard: {
     borderWidth: 1,
-    borderColor: colors.error,
+    borderColor: colors.border,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     padding: spacing.md,
@@ -211,13 +300,23 @@ const styles = StyleSheet.create({
   unavailableTitle: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
-    color: colors.error,
+    color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
   unavailableText: {
     fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
     lineHeight: 18,
+  },
+  loadingContainer: {
+    padding: spacing.xl,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  loadingText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
   },
   noticeCard: {
     flexDirection: 'row',

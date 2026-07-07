@@ -14,8 +14,9 @@ import { AppHeader } from '../../components/common/AppHeader';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { MapPreview } from '../../components/maps/MapPreview';
-import { setDeliveryTracking } from '../../redux/slices/materialSlice';
+import { setDeliveryTracking, updateApprovalStatus } from '../../redux/slices/materialSlice';
 import { canUseDevMockFallbacks } from '../../services/mockPolicy';
+import { materialService } from '../../services/materials/materialService';
 import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
@@ -35,18 +36,64 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
     { id: 'delivered', label: 'Delivered', active: approvalStatus === 'DELIVERED' },
   ];
 
+  const productOrderId = deliveryTracking?.productOrderId;
+
   useEffect(() => {
-    if (isDevFallback && !deliveryTracking) {
-      dispatch(
-        setDeliveryTracking({
-          riderName: 'Suresh Kumar',
-          riderPhone: '+91 8888888888',
-          riderRating: 4.7,
-          eta: '11:00 AM',
-        })
-      );
+    if (isDevFallback) {
+      if (!deliveryTracking) {
+        dispatch(
+          setDeliveryTracking({
+            riderName: 'Suresh Kumar',
+            riderPhone: '+91 8888888888',
+            riderRating: 4.7,
+            eta: '11:00 AM',
+          })
+        );
+      }
+      return;
     }
-  }, [dispatch, deliveryTracking, isDevFallback]);
+
+    if (!productOrderId) return;
+
+    const fetchDetails = async () => {
+      try {
+        const details = await materialService.fetchMaterialDetails(productOrderId);
+        
+        let mappedStatus: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'DELIVERING' | 'DELIVERED' = 'PENDING_APPROVAL';
+        if (details.status === 'DELIVERED') {
+          mappedStatus = 'DELIVERED';
+        } else if (details.status === 'OUT_FOR_DELIVERY') {
+          mappedStatus = 'DELIVERING';
+        } else if (details.status === 'CANCELLED') {
+          mappedStatus = 'REJECTED';
+        } else if (details.status === 'PENDING') {
+          mappedStatus = 'PENDING_APPROVAL';
+        } else {
+          mappedStatus = 'APPROVED';
+        }
+
+        dispatch(updateApprovalStatus(mappedStatus));
+
+        dispatch(
+          setDeliveryTracking({
+            productOrderId,
+            riderName: details.deliveryPartnerName || undefined,
+            riderPhone: details.deliveryPartnerPhone || undefined,
+            riderRating: 4.8,
+            eta: details.estimatedDeliveryAt ? new Date(details.estimatedDeliveryAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined,
+          })
+        );
+      } catch (err) {
+        console.error('Failed to fetch material request details:', err);
+      }
+    };
+
+    fetchDetails();
+
+    const intervalId = setInterval(fetchDetails, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [dispatch, productOrderId, isDevFallback, deliveryTracking]);
 
   const handleCallRider = () => {
     if (!deliveryTracking?.riderPhone) {
