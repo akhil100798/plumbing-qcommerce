@@ -49,14 +49,14 @@ sequenceDiagram
 * **Request Payload**:
   ```json
   {
-    "idToken": "eyJhbGciOiJSUzI1NiIs..."
+    "idToken": "<GOOGLE_OIDC_ID_TOKEN>"
   }
   ```
 * **Response Payload (Successful Auth)**:
   ```json
   {
-    "accessToken": "eyJhbGciOiJIUzUxMi...",
-    "refreshToken": "7c8e9d...",
+    "accessToken": "<APP_ACCESS_TOKEN>",
+    "refreshToken": "<APP_REFRESH_TOKEN>",
     "user": {
       "id": 42,
       "email": "customer@gmail.com",
