@@ -30,9 +30,13 @@ import { AppStackParamList } from '../types/navigation';
 import { AuthNavigator } from './AuthNavigator';
 import { MainTabNavigator } from './MainTabNavigator';
 
+import { useSelector } from 'react-redux';
+
 const Stack = createStackNavigator<AppStackParamList>();
 
 export function RootNavigator() {
+  const { isAuthenticated, user } = useSelector((state: any) => state.auth);
+
   return (
     <NavigationContainer>
       <Stack.Navigator
@@ -40,8 +44,17 @@ export function RootNavigator() {
           headerShown: false,
         }}
       >
-        <Stack.Screen name="Auth" component={AuthNavigator} />
-        <Stack.Screen name="Main" component={MainTabNavigator} />
+        {isAuthenticated && user?.profileComplete === false ? (
+          <Stack.Screen 
+            name="Auth" 
+            component={AuthNavigator} 
+            initialParams={{ screen: 'CompleteProfile' } as any}
+          />
+        ) : !isAuthenticated ? (
+          <Stack.Screen name="Auth" component={AuthNavigator} />
+        ) : (
+          <>
+            <Stack.Screen name="Main" component={MainTabNavigator} />
         <Stack.Screen name="Search" component={SearchScreen} />
         <Stack.Screen name="Categories" component={CategoryScreen} />
         <Stack.Screen name="ProductListing" component={ProductListingScreen} />
@@ -66,6 +79,8 @@ export function RootNavigator() {
         <Stack.Screen name="OrderConfirmation" component={OrderConfirmationScreen} />
         <Stack.Screen name="StoreDetails" component={StoreDetailsScreen} />
         <Stack.Screen name="Chat" component={ChatScreen} />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

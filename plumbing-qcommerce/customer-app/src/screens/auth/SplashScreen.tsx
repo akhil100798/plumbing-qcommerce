@@ -35,12 +35,21 @@ export function SplashScreen({ navigation }: Props) {
             })
           );
 
-          navigation.dispatch(
-            CommonActions.reset({
-              index: 0,
-              routes: [{ name: 'Main' }],
-            })
-          );
+          if (user && user.profileComplete === false) {
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'CompleteProfile' }],
+              })
+            );
+          } else {
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'Main' }],
+              })
+            );
+          }
           return;
         }
       } catch (err) {
