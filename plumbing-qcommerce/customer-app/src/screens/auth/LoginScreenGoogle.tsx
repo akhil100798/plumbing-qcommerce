@@ -15,12 +15,11 @@ import {
 import { useDispatch } from 'react-redux';
 import * as Linking from 'expo-linking';
 
-import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { AuthRepository } from '../../services/auth/authRepository';
 import { ProfileRepository } from '../../services/profile/profileRepository';
 import { isRenderStagingBackend } from '../../services/mockPolicy';
 import { loginFailure, loginStart, loginSuccess } from '../../redux/slices/authSlice';
-import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
+import { borderRadius, colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
 
 type Props = StackScreenProps<AuthStackParamList, 'Login'>;
@@ -32,9 +31,19 @@ export function LoginScreen({ navigation }: Props) {
   const [phone, setPhone] = useState('');
   const [usePasswordLogin, setUsePasswordLogin] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleMessage, setGoogleMessage] = useState('');
 
   const phoneInputRef = useRef<TextInput>(null);
   const supportsStagingCredentialLogin = isRenderStagingBackend();
+
+  const notify = (title: string, message: string) => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
+      window.alert(`${title}\n\n${message}`);
+      return;
+    }
+    Alert.alert(title, message);
+  };
 
   useEffect(() => {
     const handleCallbackUrl = async (url: string) => {
@@ -43,12 +52,22 @@ export function LoginScreen({ navigation }: Props) {
       if (url.includes('id_token=')) {
         const match = url.match(/id_token=([^&]+)/);
         if (match) {
-          idToken = match[1];
+          idToken = decodeURIComponent(match[1]);
         }
+      }
+
+      if (!idToken && url.includes('error=')) {
+        const match = url.match(/error=([^&]+)/);
+        const error = match ? decodeURIComponent(match[1]) : 'Google sign-in was cancelled.';
+        setGoogleMessage(error);
+        notify('Google Sign-in', error);
+        return;
       }
 
       if (idToken) {
         dispatch(loginStart());
+        setGoogleLoading(true);
+        setGoogleMessage('Completing Google sign-in...');
         try {
           const response = await AuthRepository.googleLogin(idToken);
           dispatch(
@@ -71,7 +90,11 @@ export function LoginScreen({ navigation }: Props) {
           }
         } catch (err: any) {
           dispatch(loginFailure(err.message || 'Google login failed'));
-          Alert.alert('Login Failed', err.message || 'Google login failed');
+          const message = err.message || 'Google login failed';
+          setGoogleMessage(message);
+          notify('Login Failed', message);
+        } finally {
+          setGoogleLoading(false);
         }
       }
     };
@@ -89,26 +112,43 @@ export function LoginScreen({ navigation }: Props) {
     }
   }, [navigation, dispatch]);
 
-  const handleGoogleLogin = () => {
-    const clientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
+  const handleGoogleLogin = async () => {
+    setGoogleMessage('');
+    const clientId =
+      process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
+      process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ||
+      '';
     if (!clientId) {
-      Alert.alert(
-        'Google Client ID missing',
-        'Please configure EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in your environment variables.'
-      );
+      const message =
+        'Please configure EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in customer-app/.env before using Google sign-in.';
+      setGoogleMessage(message);
+      notify('Google Client ID missing', message);
       return;
     }
+
+    setGoogleLoading(true);
+    setGoogleMessage('Opening Google sign-in...');
     const redirectUri = Linking.createURL('oauth-callback');
+    const nonce = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(
       clientId
     )}&redirect_uri=${encodeURIComponent(
       redirectUri
-    )}&response_type=id_token&scope=openid%20email%20profile&nonce=random_nonce`;
+    )}&response_type=id_token&scope=openid%20email%20profile&nonce=${encodeURIComponent(
+      nonce
+    )}&prompt=select_account`;
 
-    if (Platform.OS === 'web') {
-      window.location.href = googleAuthUrl;
-    } else {
-      Linking.openURL(googleAuthUrl);
+    try {
+      if (Platform.OS === 'web') {
+        window.location.assign(googleAuthUrl);
+        return;
+      }
+      await Linking.openURL(googleAuthUrl);
+    } catch (err: any) {
+      const message = err.message || 'Could not open Google sign-in. Please try again.';
+      setGoogleMessage(message);
+      notify('Google Sign-in Failed', message);
+      setGoogleLoading(false);
     }
   };
 
@@ -241,10 +281,17 @@ export function LoginScreen({ navigation }: Props) {
             </View>
 
             <View style={styles.socialRow}>
-              <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
+              <TouchableOpacity
+                style={[styles.googleButton, googleLoading ? styles.disabledSocialButton : {}]}
+                onPress={handleGoogleLogin}
+                disabled={googleLoading}
+              >
                 <Text style={styles.googleIcon}>G</Text>
-                <Text style={styles.googleButtonText}>Continue with Google</Text>
+                <Text style={styles.googleButtonText}>
+                  {googleLoading ? 'Opening Google...' : 'Continue with Google'}
+                </Text>
               </TouchableOpacity>
+              {googleMessage ? <Text style={styles.googleMessage}>{googleMessage}</Text> : null}
             </View>
 
             {supportsStagingCredentialLogin ? (
@@ -423,6 +470,9 @@ const styles = StyleSheet.create({
     height: 48,
     width: '100%',
   },
+  disabledSocialButton: {
+    opacity: 0.7,
+  },
   googleIcon: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -434,6 +484,13 @@ const styles = StyleSheet.create({
     color: '#334155',
     fontWeight: '600',
     fontFamily: typography.fontFamily.medium,
+  },
+  googleMessage: {
+    marginTop: spacing.sm,
+    color: colors.textSecondary,
+    fontSize: typography.fontSize.xs,
+    lineHeight: typography.lineHeight.tight,
+    textAlign: 'center',
   },
   modeSwitch: {
     alignItems: 'center',
