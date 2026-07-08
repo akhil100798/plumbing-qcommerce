@@ -5,6 +5,7 @@ export type AuthStackParamList = {
   Onboarding: undefined;
   Login: undefined;
   Otp: { phone: string };
+  CompleteProfile: undefined;
 };
 
 export type MainTabParamList = {

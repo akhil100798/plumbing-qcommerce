@@ -49,4 +49,19 @@ export const AuthRepository = {
     }
     return result;
   },
+
+  googleLogin: async (idToken: string): Promise<any> => {
+    const response = await apiClient.post<any>('/auth/google/customer', { idToken });
+    const result = response.data;
+    if (result.accessToken) {
+      setAuthToken(result.accessToken);
+      setRefreshToken(result.refreshToken);
+    }
+    return result;
+  },
+
+  completeProfile: async (data: any): Promise<any> => {
+    const response = await apiClient.put<any>('/customers/me/profile-completion', data);
+    return response.data;
+  },
 };

@@ -7,6 +7,10 @@ interface UserInfo {
   fullName: string;
   role: string;
   phone: string;
+  phoneVerified?: boolean;
+  profileComplete?: boolean;
+  authProvider?: string;
+  profileImageUrl?: string;
 }
 
 interface AuthState {
@@ -59,8 +63,11 @@ const authSlice = createSlice({
       setAuthToken(null);
       setRefreshToken(null);
     },
+    updateUser: (state, action: PayloadAction<UserInfo>) => {
+      state.user = { ...state.user, ...action.payload };
+    },
   },
 });
 
-export const { loginStart, loginSuccess, loginFailure, logout } = authSlice.actions;
+export const { loginStart, loginSuccess, loginFailure, logout, updateUser } = authSlice.actions;
 export default authSlice.reducer;

@@ -11,6 +11,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import lombok.extern.slf4j.Slf4j;
+import com.pqc.core.dto.GoogleCustomerAuthRequest;
+import com.pqc.core.dto.GoogleCustomerAuthResponse;
+import com.pqc.core.service.GoogleTokenVerifierService;
+import com.pqc.core.repository.UserAddressRepository;
 
 import java.util.Map;
 
@@ -21,12 +26,15 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final com.pqc.core.service.RefreshTokenService refreshTokenService;
+    private final GoogleTokenVerifierService googleTokenVerifierService;
+    private final UserAddressRepository userAddressRepository;
 
     /**
      * POST /api/v1/auth/register
@@ -134,6 +142,109 @@ public class AuthController {
                     "refreshToken", rotatedToken.getToken()
             ));
         } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * POST /api/v1/auth/google/customer
+     * Public endpoint for customer Google signup/login.
+     */
+    @PostMapping("/google/customer")
+    public ResponseEntity<?> googleCustomerAuth(@RequestBody GoogleCustomerAuthRequest request) {
+        if (request.getIdToken() == null || request.getIdToken().isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "idToken is required"));
+        }
+
+        try {
+            GoogleTokenVerifierService.GoogleClaims claims = googleTokenVerifierService.verifyToken(request.getIdToken());
+            
+            // Find existing user by providerId (Google sub)
+            User user = userRepository.findAll().stream()
+                    .filter(u -> claims.sub().equals(u.getProviderId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (user == null) {
+                // If not found by providerId, check by email
+                User existingUserByEmail = userRepository.findByEmail(claims.email()).orElse(null);
+                if (existingUserByEmail != null) {
+                    // Check if existing user has privileged role
+                    if (existingUserByEmail.getRole() != Role.CUSTOMER) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                .body(Map.of("error", "Google authentication is only allowed for CUSTOMER role"));
+                    }
+                    
+                    // Link Google provider to existing CUSTOMER user
+                    user = existingUserByEmail;
+                    user.setAuthProvider("GOOGLE");
+                    user.setProviderId(claims.sub());
+                    if (user.getProfileImageUrl() == null) {
+                        user.setProfileImageUrl(claims.picture());
+                    }
+                    
+                    // Determine if profile complete
+                    boolean hasAddress = !userAddressRepository.findByUserId(user.getId()).isEmpty();
+                    boolean complete = user.getFullName() != null && !user.getFullName().isBlank() 
+                            && user.getPhone() != null && !user.getPhone().isBlank() && hasAddress;
+                    user.setProfileComplete(complete);
+                    
+                    user = userRepository.save(user);
+                } else {
+                    // Create new CUSTOMER user
+                    user = User.builder()
+                            .email(claims.email())
+                            .fullName(claims.name() != null ? claims.name() : "Google Customer")
+                            .role(Role.CUSTOMER)
+                            .authProvider("GOOGLE")
+                            .providerId(claims.sub())
+                            .profileImageUrl(claims.picture())
+                            .status(UserStatus.ACTIVE)
+                            .phoneVerified(false)
+                            .profileComplete(false)
+                            .build();
+                    
+                    user = userRepository.save(user);
+                }
+            } else {
+                // User exists with providerId. Check if they have address and phone completed.
+                boolean hasAddress = !userAddressRepository.findByUserId(user.getId()).isEmpty();
+                boolean complete = user.getFullName() != null && !user.getFullName().isBlank() 
+                        && user.getPhone() != null && !user.getPhone().isBlank() && hasAddress;
+                if (user.getProfileComplete() != complete) {
+                    user.setProfileComplete(complete);
+                    user = userRepository.save(user);
+                }
+            }
+
+            if (user.getStatus() != UserStatus.ACTIVE) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Account is " + user.getStatus().name().toLowerCase() + ". Please contact support."));
+            }
+
+            String accessToken = jwtService.generateToken(user.getEmail(), user.getRole().name());
+            com.pqc.core.entity.RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+
+            GoogleCustomerAuthResponse.UserDto userDto = GoogleCustomerAuthResponse.UserDto.builder()
+                    .id(user.getId())
+                    .email(user.getEmail())
+                    .fullName(user.getFullName())
+                    .role(user.getRole().name())
+                    .phone(user.getPhone())
+                    .phoneVerified(user.getPhoneVerified())
+                    .profileComplete(user.getProfileComplete())
+                    .authProvider(user.getAuthProvider())
+                    .profileImageUrl(user.getProfileImageUrl())
+                    .build();
+
+            return ResponseEntity.ok(GoogleCustomerAuthResponse.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken.getToken())
+                    .user(userDto)
+                    .build());
+
+        } catch (Exception e) {
+            log.error("Google authentication failed", e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
         }
     }
