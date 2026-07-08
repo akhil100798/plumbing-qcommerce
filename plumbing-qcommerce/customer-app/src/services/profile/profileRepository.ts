@@ -6,6 +6,10 @@ export interface UserProfile {
   fullName: string;
   phone: string;
   role: string;
+  phoneVerified?: boolean;
+  profileComplete?: boolean;
+  authProvider?: string;
+  profileImageUrl?: string;
 }
 
 export interface ProfileStats {

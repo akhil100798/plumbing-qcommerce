@@ -291,15 +291,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.text || '#0F172A',
-    fontFamily: typography.bold,
+    color: colors.textPrimary || '#0F172A',
+    fontFamily: typography.fontFamily.bold,
   },
   subtitle: {
     fontSize: 14,
     color: colors.textSecondary || '#64748B',
     marginTop: spacing.xs,
     lineHeight: 20,
-    fontFamily: typography.regular,
+    fontFamily: typography.fontFamily.regular,
   },
   form: {
     backgroundColor: '#FFFFFF',
@@ -314,10 +314,10 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.text || '#1E293B',
+    color: colors.textPrimary || '#1E293B',
     marginTop: spacing.md,
     marginBottom: spacing.xs,
-    fontFamily: typography.semiBold,
+    fontFamily: typography.fontFamily.medium,
   },
   textInput: {
     height: 48,
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#0F172A',
     backgroundColor: '#FAFAFA',
-    fontFamily: typography.regular,
+    fontFamily: typography.fontFamily.regular,
   },
   readonlyInput: {
     backgroundColor: '#F1F5F9',
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     color: colors.error || '#EF4444',
     fontSize: 12,
     marginTop: spacing.xs,
-    fontFamily: typography.regular,
+    fontFamily: typography.fontFamily.regular,
   },
   phoneInputRow: {
     flexDirection: 'row',
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
   countryCodeText: {
     fontSize: 15,
     color: '#475569',
-    fontFamily: typography.semiBold,
+    fontFamily: typography.fontFamily.medium,
   },
   flexInput: {
     flex: 1,
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
-    fontFamily: typography.bold,
+    fontFamily: typography.fontFamily.bold,
   },
   logoutButton: {
     marginTop: spacing.md,
@@ -405,6 +405,6 @@ const styles = StyleSheet.create({
     color: '#475569',
     fontSize: 15,
     fontWeight: '600',
-    fontFamily: typography.semiBold,
+    fontFamily: typography.fontFamily.medium,
   },
 });

@@ -313,13 +313,13 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#0F172A',
-    fontFamily: typography.bold,
+    fontFamily: typography.fontFamily.bold,
   },
   subtitle: {
     fontSize: 15,
     color: '#64748B',
     marginTop: spacing.xs,
-    fontFamily: typography.regular,
+    fontFamily: typography.fontFamily.regular,
   },
   form: {
     backgroundColor: '#FFFFFF',
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     marginTop: spacing.md,
     marginBottom: spacing.xs,
-    fontFamily: typography.semiBold,
+    fontFamily: typography.fontFamily.medium,
   },
   singleInputRow: {
     width: '100%',
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#0F172A',
     backgroundColor: '#FAFAFA',
-    fontFamily: typography.regular,
+    fontFamily: typography.fontFamily.regular,
   },
   phoneInputRow: {
     flexDirection: 'row',
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   countryCodeText: {
     fontSize: 15,
     color: '#475569',
-    fontFamily: typography.semiBold,
+    fontFamily: typography.fontFamily.medium,
   },
   flexInput: {
     flex: 1,
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
-    fontFamily: typography.bold,
+    fontFamily: typography.fontFamily.bold,
   },
   dividerRow: {
     flexDirection: 'row',
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#64748B',
     paddingHorizontal: spacing.sm,
-    fontFamily: typography.regular,
+    fontFamily: typography.fontFamily.regular,
   },
   socialRow: {
     width: '100%',
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#334155',
     fontWeight: '600',
-    fontFamily: typography.semiBold,
+    fontFamily: typography.fontFamily.medium,
   },
   modeSwitch: {
     alignItems: 'center',
@@ -443,6 +443,6 @@ const styles = StyleSheet.create({
   modeSwitchText: {
     fontSize: 14,
     color: '#64748B',
-    fontFamily: typography.semiBold,
+    fontFamily: typography.fontFamily.medium,
   },
 });

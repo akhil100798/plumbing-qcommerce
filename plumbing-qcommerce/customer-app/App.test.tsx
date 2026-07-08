@@ -3,13 +3,17 @@ import TestRenderer, { act } from 'react-test-renderer';
 import { describe, expect, it, vi } from 'vitest';
 import { Provider } from 'react-redux';
 
+vi.stubGlobal('__DEV__', true);
+
 import App from './App';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { store } from './src/redux/store';
 
 vi.mock('react-native', () => ({
   ActivityIndicator: 'ActivityIndicator',
+  KeyboardAvoidingView: 'KeyboardAvoidingView',
   Alert: { alert: vi.fn() },
+  Platform: { OS: 'ios' },
   Pressable: 'Pressable',
   SafeAreaView: 'SafeAreaView',
   ScrollView: 'ScrollView',
@@ -37,6 +41,13 @@ vi.mock('expo-secure-store', () => ({
   getItemAsync: vi.fn(() => Promise.resolve(null)),
   setItemAsync: vi.fn(() => Promise.resolve()),
   deleteItemAsync: vi.fn(() => Promise.resolve()),
+}));
+
+vi.mock('expo-linking', () => ({
+  addEventListener: vi.fn(() => ({ remove: vi.fn() })),
+  createURL: vi.fn((path: string) => 'plumbcommerce://' + path),
+  getInitialURL: vi.fn(() => Promise.resolve(null)),
+  openURL: vi.fn(() => Promise.resolve()),
 }));
 
 
