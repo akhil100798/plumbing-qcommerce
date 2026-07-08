@@ -1,0 +1,31 @@
+title = "PlumbCommerce Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allow documented dummy, local-development, and test-only placeholders"
+regexes = [
+  '''(?i)rootpassword''',
+  '''(?i)local-(postgres|mongo|development)-[a-z0-9-]*''',
+  '''(?i)replace-with-[a-z0-9-]+''',
+  '''(?i)REPLACE_[A-Z0-9_]+''',
+  '''(?i)STAGING_[A-Z0-9_]+''',
+  '''(?i)<[a-z0-9_-]*(password|secret|token|key|host|user|name|id)[a-z0-9_-]*>''',
+  '''(?i)(password123|Admin@123|Manager@123|Plumber@123|Customer@123|Fix@12345)''',
+  '''(?i)PlumbCommerceJwtSecretKey-2024-CHANGE_IN_PRODUCTION!''',
+  '''(?i)PlumbCommerceLocalSecret-ChangeInProd''',
+  '''(?i)PlumbCommerceLocalSecretKeyFallbackForDeveloperModeOnlyChangeThisInProduction''',
+  '''(?i)your-very-strong-jwt-secret-key-here-at-least-256-bits-long-for-hs256''',
+  '''(?i)test-hash-secret-key-minimum-32-chars-long''',
+  '''(?i)a-very-(long-and-secure-random-secret-key-32-chars|strong-and-secure-hash-secret-value)''',
+]
+paths = [
+  '''(^|/)docs/''',
+  '''(^|/)evidence/''',
+  '''(^|/)qa-[^/]+\.(js|ps1)$''',
+  '''(^|/)runtime-smoke\.js$''',
+  '''(^|/)smoke-capture\.js$''',
+  '''(^|/)capture-phase10\.js$''',
+  '''(^|/)\.env\.(example|render\.example|cloudrun\.example)$''',
+]
