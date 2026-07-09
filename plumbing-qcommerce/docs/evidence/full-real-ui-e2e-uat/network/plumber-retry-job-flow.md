@@ -1,0 +1,12 @@
+body-login=Welcome Back! Login to continue Mobile Number +91 Password Remember me Forgot Password? Send OTP OR CONTINUE WITH Google Phone Use Staging Email / Password New here? Register as Plumber
+body-jobs=Welcome Back! Login to continue Mobile Number +91 Password Remember me Forgot Password? Send OTP OR CONTINUE WITH Google Phone Use Staging Email / Password New here? Register as Plumber
+count Accept Job=0
+count Accept=0
+count View Details=0
+count Start Navigation=0
+count I Have Arrived=0
+count Start Work=0
+count Complete Service=0
+count Finish Job=0
+count Complete & Finish=0
+body-final=Welcome Back! Login to continue Mobile Number +91 Password Remember me Forgot Password? Send OTP OR CONTINUE WITH Google Phone Use Staging Email / Password New here? Register as Plumber
