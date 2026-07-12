@@ -90,6 +90,7 @@ class UserEndpointSecurityTest {
                     {
                       "email": "new@example.com",
                       "password": "Password123!",
+                      "confirmPassword": "Password123!",
                       "fullName": "New User",
                       "phone": "9999999999",
                       "role": "ADMIN"
@@ -210,6 +211,7 @@ class UserEndpointSecurityTest {
                     {
                       "email": "known@example.com",
                       "password": "Password123!",
+                      "confirmPassword": "Password123!",
                       "fullName": "Known User",
                       "phone": "9999999999"
                     }

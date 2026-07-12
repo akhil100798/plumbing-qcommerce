@@ -11,25 +11,56 @@ import { InventoryScreen } from './src/screens/inventory/InventoryScreen';
 import { store } from './src/redux/store';
 import { theme } from './src/theme';
 
-vi.mock('react-native', () => ({
-  ActivityIndicator: 'ActivityIndicator',
-  Alert: { alert: vi.fn() },
-  Pressable: 'Pressable',
-  SafeAreaView: 'SafeAreaView',
-  ScrollView: 'ScrollView',
-  StyleSheet: { create: (styles: unknown) => styles },
-  Switch: 'Switch',
-  Text: 'Text',
-  TextInput: 'TextInput',
-  TouchableOpacity: 'TouchableOpacity',
-  View: 'View',
-  Platform: { OS: 'web' },
-  StatusBar: 'StatusBar',
-  KeyboardAvoidingView: 'KeyboardAvoidingView',
-  FlatList: 'FlatList',
-  Modal: 'Modal',
-  Image: 'Image',
-}));
+vi.mock('react-native', async () => {
+  function AnimatedValue(this: any) {
+    this.setValue = vi.fn();
+    this.interpolate = vi.fn(() => ({ __val: 0 }));
+    this.addListener = vi.fn();
+    this.removeAllListeners = vi.fn();
+  }
+  const animOp = () => ({ start: vi.fn(), stop: vi.fn(), reset: vi.fn() });
+  return {
+    ActivityIndicator: 'ActivityIndicator',
+    Alert: { alert: vi.fn() },
+    Pressable: 'Pressable',
+    SafeAreaView: 'SafeAreaView',
+    ScrollView: 'ScrollView',
+    StyleSheet: { create: (styles: unknown) => styles, flatten: (s: unknown) => s },
+    Switch: 'Switch',
+    Text: 'Text',
+    TextInput: 'TextInput',
+    TouchableOpacity: 'TouchableOpacity',
+    View: 'View',
+    Platform: { OS: 'web', select: (obj: any) => obj.web ?? obj.default },
+    StatusBar: 'StatusBar',
+    KeyboardAvoidingView: 'KeyboardAvoidingView',
+    FlatList: 'FlatList',
+    Modal: 'Modal',
+    Image: 'Image',
+    Animated: {
+      Value: AnimatedValue,
+      ValueXY: vi.fn().mockImplementation(function(this: any) {
+        this.x = new (AnimatedValue as any)();
+        this.y = new (AnimatedValue as any)();
+        this.setValue = vi.fn();
+      }),
+      timing: vi.fn(() => animOp()),
+      spring: vi.fn(() => animOp()),
+      decay: vi.fn(() => animOp()),
+      parallel: vi.fn(() => animOp()),
+      sequence: vi.fn(() => animOp()),
+      loop: vi.fn(() => animOp()),
+      View: 'View',
+      Text: 'Text',
+      Image: 'Image',
+      ScrollView: 'ScrollView',
+      FlatList: 'FlatList',
+      createAnimatedComponent: vi.fn((c: any) => c),
+      event: vi.fn(() => vi.fn()),
+      add: vi.fn((a: any) => a),
+    },
+  };
+});
 
 vi.mock('react-native-gesture-handler', () => ({
   GestureHandlerRootView: ({ children }: any) => children,
