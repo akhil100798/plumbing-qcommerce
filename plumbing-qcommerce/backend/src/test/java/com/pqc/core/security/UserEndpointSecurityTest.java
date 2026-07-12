@@ -10,6 +10,7 @@ import com.pqc.core.repository.ProductRepository;
 import com.pqc.core.repository.StockRepository;
 import com.pqc.core.repository.UserAddressRepository;
 import com.pqc.core.repository.UserRepository;
+import com.pqc.core.repository.RefreshTokenRepository;
 import com.pqc.core.repository.ServiceOrderRepository;
 import com.pqc.core.repository.StoreRepository;
 import com.pqc.core.repository.OutboxEventRepository;
@@ -35,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class UserEndpointSecurityTest {
 
     @Autowired private MockMvc mvc;
-
+@Autowired private RefreshTokenRepository refreshTokenRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private JwtService jwtService;
@@ -69,6 +70,8 @@ class UserEndpointSecurityTest {
         storeRepository.flush();
         userAddressRepository.deleteAll();
         userAddressRepository.flush();
+                refreshTokenRepository.deleteAll();
+        refreshTokenRepository.flush();
         userRepository.deleteAll();
         userRepository.flush();
     }
