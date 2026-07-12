@@ -1,9 +1,10 @@
-import { LoginResponse } from '../services/auth/authTypes';
+﻿import { LoginResponse } from '../services/auth/authTypes';
 
 export type AuthStackParamList = {
   Splash: undefined;
   Onboarding: undefined;
   Login: undefined;
+  Register: undefined;
   Otp: { phone: string };
   CompleteProfile: undefined;
 };
@@ -43,9 +44,3 @@ export type AppStackParamList = {
   StoreDetails: { storeId: number; storeName: string };
   Chat: { name: string; role: string };
 };
-
-
-
-
-
-
