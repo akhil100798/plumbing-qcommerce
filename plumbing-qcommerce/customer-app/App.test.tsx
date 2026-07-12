@@ -9,20 +9,53 @@ import App from './App';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { store } from './src/redux/store';
 
-vi.mock('react-native', () => ({
-  ActivityIndicator: 'ActivityIndicator',
-  KeyboardAvoidingView: 'KeyboardAvoidingView',
-  Alert: { alert: vi.fn() },
-  Platform: { OS: 'ios' },
-  Pressable: 'Pressable',
-  SafeAreaView: 'SafeAreaView',
-  ScrollView: 'ScrollView',
-  StyleSheet: { create: (styles: unknown) => styles },
-  Text: 'Text',
-  TextInput: 'TextInput',
-  TouchableOpacity: 'TouchableOpacity',
-  View: 'View',
-}));
+vi.mock('react-native', async () => {
+  function AnimatedValue(this: any) {
+    this.setValue = vi.fn();
+    this.interpolate = vi.fn(() => ({ __val: 0 }));
+    this.addListener = vi.fn();
+    this.removeAllListeners = vi.fn();
+  }
+  const animOp = () => ({ start: vi.fn(), stop: vi.fn(), reset: vi.fn() });
+  return {
+    ActivityIndicator: 'ActivityIndicator',
+    KeyboardAvoidingView: 'KeyboardAvoidingView',
+    Alert: { alert: vi.fn() },
+    Platform: { OS: 'ios', select: (obj: any) => obj.ios ?? obj.default },
+    Pressable: 'Pressable',
+    SafeAreaView: 'SafeAreaView',
+    ScrollView: 'ScrollView',
+    StatusBar: 'StatusBar',
+    StyleSheet: { create: (styles: unknown) => styles, flatten: (s: unknown) => s },
+    Switch: 'Switch',
+    Text: 'Text',
+    TextInput: 'TextInput',
+    TouchableOpacity: 'TouchableOpacity',
+    View: 'View',
+    Animated: {
+      Value: AnimatedValue,
+      ValueXY: vi.fn().mockImplementation(function(this: any) {
+        this.x = new (AnimatedValue as any)();
+        this.y = new (AnimatedValue as any)();
+        this.setValue = vi.fn();
+      }),
+      timing: vi.fn(() => animOp()),
+      spring: vi.fn(() => animOp()),
+      decay: vi.fn(() => animOp()),
+      parallel: vi.fn(() => animOp()),
+      sequence: vi.fn(() => animOp()),
+      loop: vi.fn(() => animOp()),
+      View: 'View',
+      Text: 'Text',
+      Image: 'Image',
+      ScrollView: 'ScrollView',
+      FlatList: 'FlatList',
+      createAnimatedComponent: vi.fn((c: any) => c),
+      event: vi.fn(() => vi.fn()),
+      add: vi.fn((a: any) => a),
+    },
+  };
+});
 
 vi.mock('socket.io-client', () => ({
   default: () => ({

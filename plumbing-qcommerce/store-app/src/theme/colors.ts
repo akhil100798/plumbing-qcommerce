@@ -11,9 +11,12 @@ export const colors = {
   warningLight: '#FEF3C7',
   danger: '#EF4444',         // Danger Red
   dangerLight: '#FEE2E2',
+  error: '#EF4444',          // Alias for danger
+  errorLight: '#FEE2E2',     // Alias for dangerLight
 
   // Neutrals
   background: '#F8FAFC',     // Background
+  surface: '#FFFFFF',        // Card / button surface
   card: '#FFFFFF',           // Card Surface
   textPrimary: '#0F172A',    // Text Primary
   textSecondary: '#64748B',  // Text Secondary

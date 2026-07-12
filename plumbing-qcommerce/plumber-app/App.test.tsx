@@ -8,22 +8,53 @@ import { DashboardScreen } from './src/screens/dashboard/DashboardScreen';
 import { ProfileScreen } from './src/screens/profile/ProfileScreen';
 import { store } from './src/redux/store';
 
-vi.mock('react-native', () => ({
-  ActivityIndicator: 'ActivityIndicator',
-  Alert: { alert: vi.fn() },
-  Pressable: 'Pressable',
-  SafeAreaView: 'SafeAreaView',
-  ScrollView: 'ScrollView',
-  StyleSheet: { create: (styles: unknown) => styles },
-  Switch: 'Switch',
-  Text: 'Text',
-  TextInput: 'TextInput',
-  TouchableOpacity: 'TouchableOpacity',
-  View: 'View',
-  Platform: { OS: 'web' },
-  StatusBar: 'StatusBar',
-  KeyboardAvoidingView: 'KeyboardAvoidingView',
-}));
+vi.mock('react-native', async () => {
+  function AnimatedValue(this: any) {
+    this.setValue = vi.fn();
+    this.interpolate = vi.fn(() => ({ __val: 0 }));
+    this.addListener = vi.fn();
+    this.removeAllListeners = vi.fn();
+  }
+  const animOp = () => ({ start: vi.fn(), stop: vi.fn(), reset: vi.fn() });
+  return {
+    ActivityIndicator: 'ActivityIndicator',
+    Alert: { alert: vi.fn() },
+    Pressable: 'Pressable',
+    SafeAreaView: 'SafeAreaView',
+    ScrollView: 'ScrollView',
+    StyleSheet: { create: (styles: unknown) => styles, flatten: (s: unknown) => s },
+    Switch: 'Switch',
+    Text: 'Text',
+    TextInput: 'TextInput',
+    TouchableOpacity: 'TouchableOpacity',
+    View: 'View',
+    Platform: { OS: 'web', select: (obj: any) => obj.web ?? obj.default },
+    StatusBar: 'StatusBar',
+    KeyboardAvoidingView: 'KeyboardAvoidingView',
+    Animated: {
+      Value: AnimatedValue,
+      ValueXY: vi.fn().mockImplementation(function(this: any) {
+        this.x = new (AnimatedValue as any)();
+        this.y = new (AnimatedValue as any)();
+        this.setValue = vi.fn();
+      }),
+      timing: vi.fn(() => animOp()),
+      spring: vi.fn(() => animOp()),
+      decay: vi.fn(() => animOp()),
+      parallel: vi.fn(() => animOp()),
+      sequence: vi.fn(() => animOp()),
+      loop: vi.fn(() => animOp()),
+      View: 'View',
+      Text: 'Text',
+      Image: 'Image',
+      ScrollView: 'ScrollView',
+      FlatList: 'FlatList',
+      createAnimatedComponent: vi.fn((c: any) => c),
+      event: vi.fn(() => vi.fn()),
+      add: vi.fn((a: any) => a),
+    },
+  };
+});
 
 vi.mock('socket.io-client', () => ({
   default: () => ({
@@ -88,7 +119,7 @@ describe('plumber app tests', () => {
     });
     const tree = renderer!.toJSON();
 
-    expect(JSON.stringify(tree)).toContain('PlumbCommerce');
+    expect(JSON.stringify(tree)).toContain('FixKart');
     expect(JSON.stringify(tree)).toContain('Today\'s Earnings');
     expect(JSON.stringify(tree)).toContain('Quick Actions');
   });
