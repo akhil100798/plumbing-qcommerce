@@ -38,7 +38,7 @@ export function ProfileScreen({ navigation }: Props) {
   };
 
   const handleLogout = () => {
-    Alert.alert('Confirm Logout', 'Are you sure you want to logout of the PlumbCommerce Plumber app?', [
+    Alert.alert('Confirm Logout', 'Are you sure you want to logout of the FixKart Plumber app?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Logout',

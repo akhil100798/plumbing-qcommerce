@@ -11,6 +11,7 @@ import { fetchWalletStart, fetchWalletSuccess, fetchWalletFailure, updateBalance
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
 import { Transaction } from '../../types';
+import WalletIcon from '../../assets/icons/wallet.svg';
 
 export const WalletScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
@@ -70,7 +71,7 @@ export const WalletScreen = () => {
 
   return (
     <ScreenWrapper style={styles.container}>
-      <AppHeader title="Wallet" onBack={() => navigation.goBack()} />
+      <AppHeader title="Wallet" onBackPress={() => navigation.goBack()} />
 
       <View style={styles.balanceCard}>
         <Text style={styles.cardLabel}>Available Balance</Text>
@@ -97,7 +98,7 @@ export const WalletScreen = () => {
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>💸</Text>
+            <WalletIcon width={40} height={40} stroke={colors.textMuted} style={{ marginBottom: spacing.md }} />
             <Text style={styles.emptyText}>No transaction records found</Text>
           </View>
         }

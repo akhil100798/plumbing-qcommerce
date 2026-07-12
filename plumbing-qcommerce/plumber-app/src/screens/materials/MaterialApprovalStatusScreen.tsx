@@ -18,6 +18,8 @@ import { updateApprovalStatus } from '../../redux/slices/materialSlice';
 import { colors, spacing, typography, borderRadius } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
+import SuccessCheckIcon from '../../assets/icons/success-check.svg';
+import ErrorWarningIcon from '../../assets/icons/error-warning.svg';
 
 type Props = StackScreenProps<AppStackParamList, 'MaterialApprovalStatus'>;
 
@@ -29,15 +31,17 @@ export function MaterialApprovalStatusScreen({ route, navigation }: Props) {
   );
   const [statusNotice, setStatusNotice] = useState<string | null>(null);
 
-  const cleanOrderId = productOrderId || 1;
 
   useEffect(() => {
     let active = true;
 
     const checkStatus = async () => {
-      if (!active) return;
+      if (!active || !productOrderId) {
+        if (active) setStatusNotice('Material request id is missing. Submit a real material request before tracking approval.');
+        return;
+      }
       try {
-        const status = await materialService.fetchMaterialStatus(cleanOrderId);
+        const status = await materialService.fetchMaterialStatus(productOrderId);
         setStatusNotice(null);
         dispatch(updateApprovalStatus(status));
       } catch (err: any) {
@@ -55,11 +59,15 @@ export function MaterialApprovalStatusScreen({ route, navigation }: Props) {
       active = false;
       clearInterval(interval);
     };
-  }, [cleanOrderId, dispatch]);
+  }, [productOrderId, dispatch]);
 
   const handleTrackMaterial = () => {
     if (approvalStatus === 'APPROVED' || approvalStatus === 'DELIVERING' || approvalStatus === 'DELIVERED') {
-      navigation.navigate('MaterialTracking', { jobId, productOrderId: cleanOrderId });
+      if (!productOrderId) {
+        Alert.alert('Missing material request', 'Submit a real material request before tracking approval.');
+        return;
+      }
+      navigation.navigate('MaterialTracking', { jobId, productOrderId });
       return;
     }
 
@@ -77,9 +85,13 @@ export function MaterialApprovalStatusScreen({ route, navigation }: Props) {
       
       <ScrollView contentContainerStyle={styles.content}>
         <View style={[styles.statusBanner, isApproved ? styles.approvedBanner : styles.pendingBanner]}>
-          <Text style={[styles.statusBannerIcon, isApproved && { color: colors.success }]}>
-            {isApproved ? '?' : '?'}
-          </Text>
+          <View style={{ marginRight: spacing.sm }}>
+            {isApproved ? (
+              <SuccessCheckIcon width={22} height={22} stroke={colors.success} />
+            ) : (
+              <ErrorWarningIcon width={22} height={22} stroke={colors.warning} />
+            )}
+          </View>
           <Text style={[styles.statusBannerText, isApproved && { color: colors.success }]}> 
             {isApproved ? 'Customer Approved' : 'Waiting for Customer Approval'}
           </Text>
@@ -93,10 +105,11 @@ export function MaterialApprovalStatusScreen({ route, navigation }: Props) {
         )}
 
         <View style={styles.card}>
+          <Text style={styles.debugText}>Job ID: {jobId}{productOrderId ? ` ? Material Order ID: ${productOrderId}` : ''}</Text>
           <Text style={styles.sectionLabel}>Request Summary</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Material Request</Text>
-            <Text style={styles.summaryValue}>?{totalAmount}</Text>
+            <Text style={styles.summaryValue}>{`\u20B9`}{totalAmount}</Text>
           </View>
           <Text style={styles.subText}>{requestedMaterials.length} items requested on site.</Text>
           <View style={styles.divider} />
@@ -106,7 +119,7 @@ export function MaterialApprovalStatusScreen({ route, navigation }: Props) {
                 <Text style={styles.itemName}>
                   {item.name} <Text style={styles.itemQty}>x{item.quantity}</Text>
                 </Text>
-                <Text style={styles.itemPrice}>?{item.price * item.quantity}</Text>
+                <Text style={styles.itemPrice}>{`\u20B9`}{item.price * item.quantity}</Text>
               </View>
             ))}
           </View>
@@ -204,6 +217,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     marginBottom: spacing.lg,
+  },
+  debugText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
   sectionLabel: {
     fontSize: typography.fontSize.xs,

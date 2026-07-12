@@ -12,6 +12,11 @@ import { NavigationProp, RouteProp, useNavigation, useRoute, useIsFocused } from
 import { AppStackParamList } from '../../types/navigation';
 import { Order, Rider } from '../../types';
 
+import ReadyPickupIllustration from '../../assets/illustrations/ready-pickup-illustration.svg';
+import RiderIcon from '../../assets/icons/rider.svg';
+import PhoneIcon from '../../assets/icons/phone.svg';
+import StarIcon from '../../assets/icons/star.svg';
+
 export const ReadyForPickupScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const route = useRoute<RouteProp<AppStackParamList, 'ReadyForPickup'>>();
@@ -73,11 +78,11 @@ export const ReadyForPickupScreen = () => {
 
   return (
     <ScreenWrapper style={styles.container}>
-      <AppHeader title="Ready for Pickup" onBack={() => navigation.goBack()} />
+      <AppHeader title="Ready for Pickup" onBackPress={() => navigation.goBack()} />
 
       <View style={styles.content}>
         <View style={styles.boxCard}>
-          <Text style={styles.boxEmoji}>📦</Text>
+          <ReadyPickupIllustration width={120} height={80} style={{ marginBottom: spacing.md }} />
           <Text style={styles.boxTitle}>Order Packed Successfully!</Text>
           <Text style={styles.boxSub}>Waiting for rider to pick up the package.</Text>
         </View>
@@ -89,12 +94,12 @@ export const ReadyForPickupScreen = () => {
             <View style={styles.riderHeader}>
               <View style={styles.riderInfo}>
                 <View style={styles.riderAvatar}>
-                  <Text style={styles.avatarText}>🚴</Text>
+                  <RiderIcon width={20} height={20} stroke={colors.primary} />
                 </View>
                 <View>
                   <Text style={styles.riderName}>{rider.fullName}</Text>
                   <View style={styles.ratingRow}>
-                    <Text style={styles.star}>★</Text>
+                    <StarIcon width={10} height={10} fill={colors.warning} stroke={colors.warning} style={{ marginRight: 2 }} />
                     <Text style={styles.ratingVal}>{rider.rating}</Text>
                   </View>
                 </View>
@@ -103,7 +108,7 @@ export const ReadyForPickupScreen = () => {
                 style={styles.phoneBtn}
                 onPress={() => Alert.alert('Call Rider', `Calling ${rider.phone}`)}
               >
-                <Text style={styles.phoneEmoji}>📞</Text>
+                <PhoneIcon width={16} height={16} stroke={colors.primary} />
               </TouchableOpacity>
             </View>
 

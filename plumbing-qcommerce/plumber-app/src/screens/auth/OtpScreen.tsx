@@ -17,6 +17,7 @@ import { colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
 import { useDispatch } from 'react-redux';
 import { authSuccess, authFailure } from '../../redux/slices/authSlice';
+import ShieldIcon from '../../assets/icons/shield-verified.svg';
 
 type Props = StackScreenProps<AuthStackParamList, 'Otp'>;
 
@@ -97,6 +98,11 @@ export function OtpScreen({ route, navigation }: Props) {
           loading={loading}
           style={styles.verifyButton}
         />
+
+        <View style={styles.securityWrapper}>
+          <ShieldIcon width={64} height={64} stroke={colors.primary} />
+          <Text style={styles.securityText}>Your data is safe with us</Text>
+        </View>
       </View>
     </ScreenWrapper>
   );
@@ -147,5 +153,16 @@ const styles = StyleSheet.create({
   verifyButton: {
     marginTop: spacing.xl,
     width: '100%',
+  },
+  securityWrapper: {
+    alignItems: 'center',
+    marginTop: spacing.giant,
+    gap: spacing.sm,
+    opacity: 0.8,
+  },
+  securityText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
   },
 });

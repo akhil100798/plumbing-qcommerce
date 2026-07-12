@@ -10,6 +10,12 @@ import { AccountScreen } from '../screens/profile/AccountScreen';
 import { colors, spacing, typography } from '../theme';
 import { MainTabParamList } from '../types/navigation';
 
+import HomeIcon from '../assets/icons/home.svg';
+import OrderIcon from '../assets/icons/order.svg';
+import InventoryIcon from '../assets/icons/inventory.svg';
+import MaterialRequestIcon from '../assets/icons/material-request.svg';
+import ProfileIcon from '../assets/icons/profile.svg';
+
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export function MainTabNavigator() {
@@ -24,24 +30,22 @@ export function MainTabNavigator() {
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarIcon: ({ color, focused }) => {
-          let emoji = '🏠';
+          let IconComp = HomeIcon;
           if (route.name === 'HomeTab') {
-            emoji = '🏠';
+            IconComp = HomeIcon;
           } else if (route.name === 'OrdersTab') {
-            emoji = '📋';
+            IconComp = OrderIcon;
           } else if (route.name === 'InventoryTab') {
-            emoji = '📦';
+            IconComp = InventoryIcon;
           } else if (route.name === 'DispatchTab') {
-            emoji = '🚚';
+            IconComp = MaterialRequestIcon;
           } else if (route.name === 'AccountTab') {
-            emoji = '👤';
+            IconComp = ProfileIcon;
           }
 
           return (
             <View style={styles.iconWrapper}>
-              <Text style={[styles.tabEmoji, { opacity: focused ? 1 : 0.6 }]}>
-                {emoji}
-              </Text>
+              <IconComp width={20} height={20} stroke={color} />
             </View>
           );
         },

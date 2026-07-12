@@ -10,6 +10,13 @@ import { authService } from '../../services/auth/authService';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
 
+import ProfileIcon from '../../assets/icons/profile.svg';
+import NotificationIcon from '../../assets/icons/notification.svg';
+import SettingsIcon from '../../assets/icons/settings.svg';
+import ReviewsIcon from '../../assets/icons/reviews.svg';
+import WarehouseIcon from '../../assets/icons/warehouse.svg';
+import BarcodeIcon from '../../assets/icons/barcode.svg';
+
 export const AccountScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const dispatch = useAppDispatch();
@@ -53,12 +60,24 @@ export const AccountScreen = () => {
     }
   };
 
+  const getInitials = (name?: string) => {
+    if (!name) return 'SP';
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
+  };
+
   return (
     <ScreenWrapper style={styles.container}>
       <AppHeader title="Account" />
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.profileHeader}>
-          <View style={styles.avatar}><Text style={styles.avatarText}>??</Text></View>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{getInitials(user?.fullName)}</Text>
+          </View>
           <View style={styles.userDetails}>
             <Text style={styles.userName}>{user?.fullName || 'Store account'}</Text>
             <Text style={styles.userEmail}>{user?.email || 'Unavailable in staging'}</Text>
@@ -66,21 +85,25 @@ export const AccountScreen = () => {
           </View>
         </View>
 
-        <View style={styles.noticeCard}><Text style={styles.noticeText}>Help, privacy, and terms content on this screen remains static informational content in staging.</Text></View>
+        <View style={styles.noticeCard}>
+          <Text style={styles.noticeText}>Help, privacy, and terms content on this screen remains static informational content in staging.</Text>
+        </View>
 
         <View style={styles.menuCard}>
-          <ProfileMenuItem emoji="??" label="Profile Settings" onPress={() => handleItemPress('profile')} />
-          <ProfileMenuItem emoji="??" label="Notification Settings" onPress={() => handleItemPress('notifications')} />
-          <ProfileMenuItem emoji="??" label="App Language" onPress={() => handleItemPress('language')} />
+          <ProfileMenuItem icon={ProfileIcon} label="Profile Settings" onPress={() => handleItemPress('profile')} />
+          <ProfileMenuItem icon={NotificationIcon} label="Notification Settings" onPress={() => handleItemPress('notifications')} />
+          <ProfileMenuItem icon={SettingsIcon} label="App Language" onPress={() => handleItemPress('language')} />
         </View>
 
         <View style={[styles.menuCard, { marginTop: spacing.md }]}>
-          <ProfileMenuItem emoji="?" label="Help & Support" onPress={() => handleItemPress('help')} />
-          <ProfileMenuItem emoji="???" label="Privacy Policy" onPress={() => handleItemPress('privacy')} />
-          <ProfileMenuItem emoji="??" label="Terms & Conditions" onPress={() => handleItemPress('terms')} />
+          <ProfileMenuItem icon={ReviewsIcon} label="Help & Support" onPress={() => handleItemPress('help')} />
+          <ProfileMenuItem icon={WarehouseIcon} label="Privacy Policy" onPress={() => handleItemPress('privacy')} />
+          <ProfileMenuItem icon={BarcodeIcon} label="Terms & Conditions" onPress={() => handleItemPress('terms')} />
         </View>
 
-        <TouchableOpacity activeOpacity={0.8} style={styles.logoutBtn} onPress={handleLogout}><Text style={styles.logoutText}>Logout</Text></TouchableOpacity>
+        <TouchableOpacity activeOpacity={0.8} style={styles.logoutBtn} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
       </ScrollView>
     </ScreenWrapper>
   );

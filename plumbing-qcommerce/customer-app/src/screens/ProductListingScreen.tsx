@@ -2,6 +2,7 @@ import { StackScreenProps } from '@react-navigation/stack';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   SafeAreaView,
   StyleSheet,
@@ -121,10 +122,10 @@ export function ProductListingScreen({ route, navigation }: Props) {
       </View>
 
       <View style={styles.filterRow}>
-        <TouchableOpacity style={styles.filterBtn}>
+        <TouchableOpacity style={styles.filterBtn} onPress={() => Alert.alert('Filter', 'Product filters are coming soon. Use category search for now.') }>
           <Text style={styles.filterBtnText}>?? Filter</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.filterBtn}>
+        <TouchableOpacity style={styles.filterBtn} onPress={() => Alert.alert('Sort', 'Sorting is coming soon. Products are currently shown by backend relevance.')}>
           <Text style={styles.filterBtnText}>Sort ??</Text>
         </TouchableOpacity>
       </View>

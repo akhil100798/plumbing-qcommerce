@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" fill="none">
+    <defs>
+      <linearGradient id="gradP3" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#F59E0B"/>
+        <stop offset="100%" stop-color="#D97706"/>
+      </linearGradient>
+    </defs>
+    <rect width="240" height="160" rx="16" fill="url(#gradP3)"/>
+    <text x="20" y="60" fill="#FFFFFF" font-family="sans-serif" font-size="20" font-weight="bold">Partner Support</text>
+    <text x="20" y="90" fill="#FEF3C7" font-family="sans-serif" font-size="14">24/7 Helpline assistance</text>
+  </svg>

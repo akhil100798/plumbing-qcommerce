@@ -54,7 +54,7 @@ export function WalletScreen({ navigation }: Props) {
 
     Alert.alert(
       'Request Payout',
-      `Would you like to withdraw ?${balance.toLocaleString()} to your registered bank account?`,
+      `Would you like to withdraw \u20B9${balance.toLocaleString()} to your registered bank account?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {

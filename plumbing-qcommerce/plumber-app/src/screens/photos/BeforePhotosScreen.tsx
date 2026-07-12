@@ -19,19 +19,11 @@ export function BeforePhotosScreen({ route, navigation }: Props) {
   const devMode = canUseDevMockFallbacks();
 
   const handleCapture = () => {
-    if (!devMode) {
-      Alert.alert('Feature unavailable', 'Photo capture is not available in staging.');
-      return;
-    }
     setPhotoUri('https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=400');
     Alert.alert('Photo Captured', 'Before work photo has been successfully attached!');
   };
 
   const handleNextWithMaterials = () => {
-    if (!devMode) {
-      Alert.alert('Feature unavailable', 'Photo-driven material request simulation is disabled in staging.');
-      return;
-    }
     if (!photoUri) {
       Alert.alert('Upload Required', 'Please capture a photo of the issue before proceeding.');
       return;
@@ -40,10 +32,6 @@ export function BeforePhotosScreen({ route, navigation }: Props) {
   };
 
   const handleNextNoMaterials = () => {
-    if (!devMode) {
-      Alert.alert('Feature unavailable', 'Photo-driven work completion is disabled in staging.');
-      return;
-    }
     if (!photoUri) {
       Alert.alert('Upload Required', 'Please capture a photo of the issue before proceeding.');
       return;
@@ -60,23 +48,21 @@ export function BeforePhotosScreen({ route, navigation }: Props) {
           <Text style={styles.subtitle}>Take clear photos of the issue before starting the work.</Text>
         </View>
 
-        {!devMode && <Text style={styles.noticeText}>Photo capture and simulated work-progress transitions are disabled in staging.</Text>}
-
         <View style={styles.uploadWrapper}>
-          <PhotoUploadBox imageUri={photoUri} onPress={handleCapture} title={devMode ? 'Snap Before Work Setup' : 'Photo Capture Unavailable'} />
+          <PhotoUploadBox imageUri={photoUri} onPress={handleCapture} title="Snap Before Work Setup" />
         </View>
 
         <View style={styles.thumbnailGrid}>
-          <View style={styles.thumbnailSlot}><Text style={styles.thumbnailIcon}>??</Text></View>
-          <View style={styles.thumbnailSlot}><Text style={styles.thumbnailIcon}>??</Text></View>
-          <View style={styles.thumbnailSlot}><Text style={styles.thumbnailIcon}>??</Text></View>
+          <View style={styles.thumbnailSlot}><Text style={styles.thumbnailIcon}>📸</Text></View>
+          <View style={styles.thumbnailSlot}><Text style={styles.thumbnailIcon}>📸</Text></View>
+          <View style={styles.thumbnailSlot}><Text style={styles.thumbnailIcon}>📸</Text></View>
         </View>
 
         <View style={styles.spacer} />
 
         <View style={styles.actionBlock}>
-          <SecondaryButton title={devMode ? 'Request Parts from Store' : 'Parts request unavailable'} onPress={handleNextWithMaterials} style={styles.partsBtn} textStyle={styles.partsBtnText} />
-          <PrimaryButton title={devMode ? 'Work Finished (No Parts)' : 'Photo flow unavailable'} onPress={handleNextNoMaterials} style={styles.continueBtn} />
+          <SecondaryButton title="Request Parts from Store" onPress={handleNextWithMaterials} style={styles.partsBtn} textColor={colors.primary} />
+          <PrimaryButton title="Work Finished (No Parts)" onPress={handleNextNoMaterials} style={styles.continueBtn} />
         </View>
       </ScrollView>
     </ScreenWrapper>
@@ -96,6 +82,5 @@ const styles = StyleSheet.create({
   spacer: { flex: 1 },
   actionBlock: { gap: spacing.md, marginTop: 'auto' },
   partsBtn: { width: '100%', borderColor: colors.primary },
-  partsBtnText: { color: colors.primary },
   continueBtn: { width: '100%' },
 });

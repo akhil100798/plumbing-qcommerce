@@ -205,7 +205,7 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
             loading
               ? 'Processing...'
               : productOrderId || mockFallbackEnabled
-              ? `Approve & Pay ₹${total}`
+              ? `Approve Material Request`
               : 'No Pending Request'
           }
           onPress={handleApproveAndPay}

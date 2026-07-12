@@ -1,10 +1,11 @@
 package com.pqc.core.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pqc.core.entity.Role;
 import com.pqc.core.entity.User;
+import com.pqc.core.entity.UserStatus;
 import com.pqc.core.repository.RefreshTokenRepository;
 import com.pqc.core.repository.UserRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,14 +22,9 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Integration tests for the Authentication API:
- * - POST /api/v1/auth/register
- * - POST /api/v1/auth/login
- * - POST /api/v1/auth/refresh
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -60,26 +56,33 @@ class AuthControllerTest {
         jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
     }
 
-    // ========== REGISTER ==========
-
     @Test
     void register_validRequest_returns201WithCustomerRole() throws Exception {
         Map<String, String> body = Map.of(
                 "email", "newuser@example.com",
                 "password", "SecurePass123!",
+                "confirmPassword", "SecurePass123!",
                 "fullName", "New User",
-                "phone", "9876543210"
+                "phone", "9876543210",
+                "role", "ADMIN"
         );
 
         mvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.token").exists())
+                .andExpect(jsonPath("$.refreshToken").exists())
                 .andExpect(jsonPath("$.email").value("newuser@example.com"))
+                .andExpect(jsonPath("$.fullName").value("New User"))
+                .andExpect(jsonPath("$.phone").value("9876543210"))
                 .andExpect(jsonPath("$.role").value("CUSTOMER"))
-                .andExpect(jsonPath("$.id").exists());
+                .andExpect(jsonPath("$.userId").exists())
+                .andExpect(jsonPath("$.phoneVerified").value(false))
+                .andExpect(jsonPath("$.profileComplete").value(true))
+                .andExpect(jsonPath("$.authProvider").value("LOCAL"))
+                .andExpect(jsonPath("$.user.role").value("CUSTOMER"));
 
-        // Verify user saved in DB with CUSTOMER role regardless of input
         assertThat(userRepository.findByEmail("newuser@example.com")).isPresent();
         assertThat(userRepository.findByEmail("newuser@example.com").get().getRole())
                 .isEqualTo(Role.CUSTOMER);
@@ -87,42 +90,43 @@ class AuthControllerTest {
 
     @Test
     void register_duplicateEmail_returns409Conflict() throws Exception {
-        // Pre-create user
         userRepository.save(User.builder()
                 .email("existing@example.com")
                 .password(passwordEncoder.encode("Password123!"))
                 .fullName("Existing User")
-                .phone("1111111111")
+                .phone("9111111111")
                 .role(Role.CUSTOMER)
                 .build());
 
         Map<String, String> body = Map.of(
                 "email", "existing@example.com",
                 "password", "AnotherPass123!",
+                "confirmPassword", "AnotherPass123!",
                 "fullName", "Duplicate User",
-                "phone", "2222222222"
+                "phone", "9222222222"
         );
 
         mvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error").value("Email already registered"));
+                .andExpect(jsonPath("$.message").value("Email already registered"));
     }
 
     @Test
     void register_missingEmail_returns400() throws Exception {
         Map<String, String> body = Map.of(
                 "password", "Password123!",
+                "confirmPassword", "Password123!",
                 "fullName", "No Email User",
-                "phone", "3333333333"
+                "phone", "9333333333"
         );
 
         mvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("email is required"));
+                .andExpect(jsonPath("$.message").value("email is required"));
     }
 
     @Test
@@ -130,24 +134,25 @@ class AuthControllerTest {
         Map<String, String> body = Map.of(
                 "email", "nopassword@example.com",
                 "fullName", "No Password User",
-                "phone", "4444444444"
+                "confirmPassword", "Password123!",
+                "phone", "9444444444"
         );
 
         mvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("password is required"));
+                .andExpect(jsonPath("$.message").value("password is required"));
     }
 
     @Test
     void register_roleInjectionAttempt_roleAlwaysCustomer() throws Exception {
-        // Even if attacker sends role=ADMIN, it should be ignored
         Map<String, String> body = Map.of(
                 "email", "hacker@example.com",
                 "password", "Password123!",
+                "confirmPassword", "Password123!",
                 "fullName", "Hacker User",
-                "phone", "5555555555",
+                "phone", "9555555555",
                 "role", "ADMIN"
         );
 
@@ -158,7 +163,81 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.role").value("CUSTOMER"));
     }
 
-    // ========== LOGIN ==========
+    @Test
+    void register_duplicatePhone_returns409Conflict() throws Exception {
+        userRepository.save(User.builder()
+                .email("existing-phone@example.com")
+                .password(passwordEncoder.encode("Password123!"))
+                .fullName("Existing Phone User")
+                .phone("9666666666")
+                .role(Role.CUSTOMER)
+                .build());
+
+        Map<String, String> body = Map.of(
+                "email", "another@example.com",
+                "password", "Password123!",
+                "confirmPassword", "Password123!",
+                "fullName", "Another User",
+                "phone", "9666666666"
+        );
+
+        mvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Phone already registered"));
+    }
+
+    @Test
+    void register_passwordMismatch_returns400() throws Exception {
+        Map<String, String> body = Map.of(
+                "email", "mismatch@example.com",
+                "password", "Password123!",
+                "confirmPassword", "Password1234!",
+                "fullName", "Mismatch User",
+                "phone", "9777777777"
+        );
+
+        mvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("confirmPassword must match password"));
+    }
+
+    @Test
+    void register_weakPassword_returns400() throws Exception {
+        Map<String, String> body = Map.of(
+                "email", "weak@example.com",
+                "password", "short",
+                "confirmPassword", "short",
+                "fullName", "Weak Password User",
+                "phone", "9888888888"
+        );
+
+        mvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Password must be at least 8 characters"));
+    }
+
+    @Test
+    void register_invalidEmail_returns400() throws Exception {
+        Map<String, String> body = Map.of(
+                "email", "not-an-email",
+                "password", "Password123!",
+                "confirmPassword", "Password123!",
+                "fullName", "Invalid Email User",
+                "phone", "9899999999"
+        );
+
+        mvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid email address"));
+    }
 
     @Test
     void login_validCredentials_returnsJwtAndRefreshToken() throws Exception {
@@ -166,7 +245,7 @@ class AuthControllerTest {
                 .email("login@example.com")
                 .password(passwordEncoder.encode("Password123!"))
                 .fullName("Login User")
-                .phone("6666666666")
+                .phone("9111111111")
                 .role(Role.CUSTOMER)
                 .build());
 
@@ -180,9 +259,14 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").exists())
+                .andExpect(jsonPath("$.accessToken").exists())
                 .andExpect(jsonPath("$.refreshToken").exists())
                 .andExpect(jsonPath("$.role").value("CUSTOMER"))
-                .andExpect(jsonPath("$.email").value("login@example.com"));
+                .andExpect(jsonPath("$.email").value("login@example.com"))
+                .andExpect(jsonPath("$.fullName").value("Login User"))
+                .andExpect(jsonPath("$.phone").value("9111111111"))
+                .andExpect(jsonPath("$.user.email").value("login@example.com"))
+                .andExpect(jsonPath("$.password").doesNotExist());
     }
 
     @Test
@@ -191,7 +275,7 @@ class AuthControllerTest {
                 .email("wrongpass@example.com")
                 .password(passwordEncoder.encode("CorrectPassword!"))
                 .fullName("Wrong Pass User")
-                .phone("7777777777")
+                .phone("9222222222")
                 .role(Role.CUSTOMER)
                 .build());
 
@@ -204,7 +288,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("Invalid credentials"));
+                .andExpect(jsonPath("$.message").value("Invalid credentials"));
     }
 
     @Test
@@ -214,12 +298,11 @@ class AuthControllerTest {
                 "password", "Password123!"
         );
 
-        // Oracle prevention: same response for wrong user and wrong password
         mvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error").value("Invalid credentials"));
+                .andExpect(jsonPath("$.message").value("Invalid credentials"));
     }
 
     @Test
@@ -228,10 +311,54 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("email and password are required"));
+                .andExpect(jsonPath("$.message").value("email and password are required"));
     }
 
-    // ========== REFRESH TOKEN ==========
+    @Test
+    void login_inactiveUser_returns401() throws Exception {
+        userRepository.save(User.builder()
+                .email("inactive@example.com")
+                .password(passwordEncoder.encode("Password123!"))
+                .fullName("Inactive User")
+                .phone("9333333333")
+                .role(Role.CUSTOMER)
+                .status(UserStatus.SUSPENDED)
+                .build());
+
+        mvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", "inactive@example.com",
+                                "password", "Password123!"
+                        ))))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Account is suspended. Please contact support."));
+    }
+
+    @Test
+    void register_userCanLoginAfterRegistration() throws Exception {
+        Map<String, String> body = Map.of(
+                "email", "roundtrip@example.com",
+                "password", "Password123!",
+                "confirmPassword", "Password123!",
+                "fullName", "Round Trip User",
+                "phone", "9444444444"
+        );
+
+        mvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isCreated());
+
+        mvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", "roundtrip@example.com",
+                                "password", "Password123!"
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("roundtrip@example.com"));
+    }
 
     @Test
     void refresh_validToken_returnsNewTokenPair() throws Exception {
@@ -239,11 +366,10 @@ class AuthControllerTest {
                 .email("refresh@example.com")
                 .password(passwordEncoder.encode("Password123!"))
                 .fullName("Refresh User")
-                .phone("8888888888")
+                .phone("9555555555")
                 .role(Role.CUSTOMER)
                 .build());
 
-        // First login to get a refresh token
         MvcResult loginResult = mvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
@@ -257,7 +383,6 @@ class AuthControllerTest {
                 loginResult.getResponse().getContentAsString(), Map.class);
         String refreshToken = (String) loginBody.get("refreshToken");
 
-        // Use refresh token to get new pair
         mvc.perform(post("/api/v1/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("refreshToken", refreshToken))))
@@ -280,6 +405,6 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Missing refresh token"));
+                .andExpect(jsonPath("$.message").value("Missing refresh token"));
     }
 }

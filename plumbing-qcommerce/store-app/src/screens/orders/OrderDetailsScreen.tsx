@@ -13,6 +13,9 @@ import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navig
 import { AppStackParamList } from '../../types/navigation';
 import { Order } from '../../types';
 
+import PhoneIcon from '../../assets/icons/phone.svg';
+import LocationIcon from '../../assets/icons/location-pin.svg';
+
 export const OrderDetailsScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const route = useRoute<RouteProp<AppStackParamList, 'OrderDetails'>>();
@@ -93,7 +96,7 @@ export const OrderDetailsScreen = () => {
 
   return (
     <ScreenWrapper style={styles.container}>
-      <AppHeader title="Order Details" onBack={() => navigation.goBack()} />
+      <AppHeader title="Order Details" onBackPress={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.section}>
@@ -103,12 +106,15 @@ export const OrderDetailsScreen = () => {
               <Text style={styles.customerName}>{order.customerName}</Text>
               {order.customerPhone && (
                 <TouchableOpacity onPress={() => Alert.alert('Call customer', `Calling ${order.customerPhone}`)}>
-                  <Text style={styles.phoneEmoji}>📞</Text>
+                  <PhoneIcon width={16} height={16} stroke={colors.primary} />
                 </TouchableOpacity>
               )}
             </View>
             <Text style={styles.customerAddress}>{order.address || 'Address not specified'}</Text>
-            <Text style={styles.distanceText}>📍 2.4 km away</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs, gap: spacing.xs }}>
+              <LocationIcon width={14} height={14} stroke={colors.textSecondary} />
+              <Text style={styles.distanceText}>2.4 km away</Text>
+            </View>
           </View>
         </View>
 

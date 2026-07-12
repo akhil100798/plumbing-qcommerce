@@ -29,6 +29,20 @@ import { addToCart as addToCartAction, clearCart as clearCartAction } from '../r
 import { loginStart, loginSuccess, loginFailure, logout } from '../redux/slices/authSlice';
 import { startSearching, stopSearching, setActiveJob, setBookingConfig } from '../redux/slices/plumbersSlice';
 import { setActiveProductOrder, updateProductOrderStatus } from '../redux/slices/ordersSlice';
+import { AppIcon } from '../components/common/AppIcon';
+import { IconBadge } from '../components/common/IconBadge';
+import { AnimatedBanner } from '../components/common/AnimatedBanner';
+
+import LocationPinIcon from '../assets/icons/location-pin.svg';
+import NotificationIcon from '../assets/icons/notification.svg';
+import PipeLeakIcon from '../assets/icons/pipe-leak.svg';
+import TapRepairIcon from '../assets/icons/tap-repair.svg';
+import ToiletRepairIcon from '../assets/icons/drain-cleaning.svg';
+import WaterTankIcon from '../assets/icons/water-heater.svg';
+import MotorRepairIcon from '../assets/icons/repair.svg';
+import PlusIcon from '../assets/icons/plus.svg';
+import SplashHero from '../assets/illustrations/customer-splash-hero.svg';
+import PlumberHero from '../assets/illustrations/plumber-service-hero.svg';
 
 const EDGE_UNAVAILABLE_MESSAGE = 'Nearby plumber live tracking is not configured in staging.';
 const CUSTOMER_ID = 'cust_999';
@@ -89,17 +103,29 @@ const categories = ['Leak repair', 'Drain clean', 'Tap install', 'Bathroom', 'Mo
 interface HomeCategory {
   id: number;
   name: string;
-  icon: string;
+  iconName: string;
 }
 
 const homeCategories: HomeCategory[] = [
-  { id: 1, name: 'Pipe Leakage', icon: '🚰' },
-  { id: 2, name: 'Tap Repair', icon: '🚿' },
-  { id: 3, name: 'Toilet Repair', icon: '🚽' },
-  { id: 4, name: 'Water Tank', icon: '🛢️' },
-  { id: 5, name: 'Motor Repair', icon: '⚙️' },
-  { id: 6, name: 'More', icon: '➕' },
+  { id: 1, name: 'Pipe Leakage', iconName: 'pipe-leak' },
+  { id: 2, name: 'Tap Repair', iconName: 'tap-repair' },
+  { id: 3, name: 'Toilet Repair', iconName: 'drain-cleaning' },
+  { id: 4, name: 'Water Tank', iconName: 'water-heater' },
+  { id: 5, name: 'Motor Repair', iconName: 'repair' },
+  { id: 6, name: 'More', iconName: 'plus' },
 ];
+
+const getCategoryIcon = (iconName: string) => {
+  switch (iconName) {
+    case 'pipe-leak': return PipeLeakIcon;
+    case 'tap-repair': return TapRepairIcon;
+    case 'drain-cleaning': return ToiletRepairIcon;
+    case 'water-heater': return WaterTankIcon;
+    case 'repair': return MotorRepairIcon;
+    case 'plus': return PlusIcon;
+    default: return PipeLeakIcon;
+  }
+};
 
 const nearbyStores = [
   { id: 1, name: 'Sri Pipes', distance: '0.8 km', duration: '15-20 min' },
@@ -120,7 +146,7 @@ export function HomeScreen({ navigation }: any) {
   const [socket, setSocket] = useState<Socket | null>(null);
   const edgeServerUrl = getConfiguredEdgeUrl();
   const edgeUnavailable = !edgeServerUrl;
-  
+
   // Plumber Booking State from Redux
   const isSearching = useSelector((state: RootState) => state.plumbers.isSearching);
   const activeJob = useSelector((state: RootState) => state.plumbers.activeJob);
@@ -187,7 +213,7 @@ export function HomeScreen({ navigation }: any) {
       Alert.alert('Delivery Rider Assigned', `${data.deliveryPartnerName} has picked up your materials and is out for delivery!`);
     });
 
-    // Phase 3: Plumber requested parts mid-job — show payment approval card
+    // Phase 3: Plumber requested parts mid-job � show payment approval card
     newSocket.on('MATERIAL_PAYMENT_REQUIRED', (data: MaterialPaymentRequest) => {
       console.log('Received MATERIAL_PAYMENT_REQUIRED:', data);
       setMaterialPaymentRequest(data);
@@ -244,7 +270,7 @@ export function HomeScreen({ navigation }: any) {
       try {
         const data = await OrderRepository.getProductOrderStatus(activeProductOrder.id);
         dispatch(setActiveProductOrder(data));
-        
+
         if (data.status === 'DELIVERED') {
           Alert.alert('Order Delivered', 'Your plumbing materials have been delivered successfully!');
           clearInterval(interval);
@@ -347,8 +373,8 @@ export function HomeScreen({ navigation }: any) {
       setIsApprovingPayment(false);
       setMaterialPaymentRequest(null);
       Alert.alert(
-        '✅ Payment Approved!',
-        'Parts are being dispatched to your plumber’s location. Work will resume shortly.'
+        '�S& Payment Approved!',
+        'Parts are being dispatched to your plumber�"s location. Work will resume shortly.'
       );
     } catch (err: any) {
       setIsApprovingPayment(false);
@@ -357,13 +383,35 @@ export function HomeScreen({ navigation }: any) {
   };
 
   const requestNearbyPlumber = async () => {
-    if (!edgeServerUrl) {
-      Alert.alert('Feature unavailable', EDGE_UNAVAILABLE_MESSAGE);
-      return;
-    }
-
     dispatch(startSearching());
     try {
+      if (!edgeServerUrl) {
+        const order = await PlumberRepository.createServiceOrder({
+          description: `${selectedCategory} - ${selectedService.title}`,
+          latitude: 17.4485,
+          longitude: 78.3741,
+          requestType:
+            selectedMode === 'store'
+              ? 'STORE_ROUTED'
+              : selectedMode === 'expert'
+              ? 'DIRECT_PLUMBER'
+              : 'NEARBY_AUTO',
+        });
+
+        dispatch(stopSearching());
+        dispatch(
+          setActiveJob({
+            plumberId: order.plumber?.id ? String(order.plumber.id) : `order_${order.id}`,
+            message: `Service order #${order.id} created. It is now visible in the plumber app.`,
+          })
+        );
+        Alert.alert(
+          'Request sent',
+          `Service order #${order.id} was created and sent to the plumber workflow.`
+        );
+        return;
+      }
+
       const result = await PlumberRepository.requestNearbyPlumber({
         customerId: currentUser?.id ?? 0,
         longitude: -122.4194,
@@ -390,6 +438,7 @@ export function HomeScreen({ navigation }: any) {
       navigation.navigate('Categories');
     } else {
       dispatch(setBookingConfig({ mode: selectedMode, category: category.name }));
+      navigation.navigate('PlumberConfirmation', { issueType: category.name });
     }
   };
 
@@ -450,8 +499,8 @@ export function HomeScreen({ navigation }: any) {
                     value={otpInput}
                     onChangeText={setOtpInput}
                   />
-                  <TouchableOpacity 
-                    style={[styles.primaryButton, { backgroundColor: '#3B82F6', minWidth: 100 }]} 
+                  <TouchableOpacity
+                    style={[styles.primaryButton, { backgroundColor: '#3B82F6', minWidth: 100 }]}
                     onPress={verifyOrderOtp}
                   >
                     {isVerifyingOtp ? (
@@ -464,8 +513,8 @@ export function HomeScreen({ navigation }: any) {
               </View>
             )}
 
-            <TouchableOpacity 
-              style={[styles.secondaryButton, { borderColor: '#3B82F6' }]} 
+            <TouchableOpacity
+              style={[styles.secondaryButton, { borderColor: '#3B82F6' }]}
               onPress={() => {
                 dispatch(setActiveProductOrder(null));
                 setOtpInput('');
@@ -484,10 +533,10 @@ export function HomeScreen({ navigation }: any) {
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.trackingContent}>
-          {/* Phase 3: Material Payment Approval Card — floats at top if request is pending */}
+          {/* Phase 3: Material Payment Approval Card � floats at top if request is pending */}
           {materialPaymentRequest && (
             <View style={styles.materialApprovalCard}>
-              <Text style={styles.materialApprovalEyebrow}>🔧 Parts Needed by Your Plumber</Text>
+              <Text style={styles.materialApprovalEyebrow}>�x� Parts Needed by Your Plumber</Text>
               <Text style={styles.materialApprovalTitle}>{materialPaymentRequest.plumberName} needs supplies</Text>
               <Text style={styles.materialApprovalMsg}>{materialPaymentRequest.message}</Text>
               <View style={styles.materialApprovalAmountRow}>
@@ -508,7 +557,7 @@ export function HomeScreen({ navigation }: any) {
                 >
                   {isApprovingPayment
                     ? <ActivityIndicator color="#FFFFFF" />
-                    : <Text style={styles.materialApproveBtnText}>Approve & Pay Rs. {materialPaymentRequest.totalAmount}</Text>
+                    : <Text style={styles.materialApproveBtnText}>Approve Material Request</Text>
                   }
                 </TouchableOpacity>
               </View>
@@ -566,24 +615,27 @@ export function HomeScreen({ navigation }: any) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.locationSelector}>
-          <Text style={styles.pinEmoji}>📍</Text>
+          <AppIcon icon={LocationPinIcon} size={18} color={colors.primary} />
           <Text style={styles.locationTitle}>Hyderabad</Text>
-          <Text style={styles.dropdownArrow}>▼</Text>
+          <Text style={styles.dropdownArrow}>��</Text>
         </View>
-        <TouchableOpacity
-          style={styles.notificationBell}
-          onPress={() => navigation.navigate('Notifications')}
-        >
-          <Text style={styles.bellEmoji}>🔔</Text>
-          {unreadCount > 0 && <View style={styles.bellBadge} />}
-        </TouchableOpacity>
-
+        <IconBadge count={unreadCount}>
+          <TouchableOpacity
+            style={styles.notificationBell}
+            onPress={() => navigation.navigate('Notifications')}
+          >
+            <AppIcon icon={NotificationIcon} size={22} color={colors.textPrimary} />
+          </TouchableOpacity>
+        </IconBadge>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.greetingSection}>
           <Text style={styles.greetingText}>Good Evening,</Text>
-          <Text style={styles.profileName}>Akhil 👋</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={styles.profileName}>Akhil</Text>
+            <Text style={[styles.greetingText, { marginLeft: 6 }]}>�x9</Text>
+          </View>
         </View>
 
         <View style={styles.searchBarContainer}>
@@ -594,27 +646,33 @@ export function HomeScreen({ navigation }: any) {
           />
         </View>
 
-        <View style={[styles.hero, { backgroundColor: colors.primary }]}>
-          <View style={styles.heroLeft}>
-            <Text style={styles.heroTitle}>Plumbing Emergency?</Text>
-            <TouchableOpacity 
-              style={styles.heroButton} 
-              onPress={requestNearbyPlumber}
-              disabled={isSearching || edgeUnavailable}
-            >
-              {isSearching ? (
-                <ActivityIndicator color={colors.primary} />
-              ) : (
-                <Text style={styles.heroButtonText}>Find Plumber Now</Text>
-              )}
-            </TouchableOpacity>
-            <Text style={styles.etaText}>ETA 10-15 mins</Text>
-            {edgeUnavailable && (
-              <Text style={styles.edgeNoticeText}>{EDGE_UNAVAILABLE_MESSAGE}</Text>
-            )}
-          </View>
-          <Text style={styles.heroPlumberIllustration}>👨‍🔧</Text>
-        </View>
+        {/* Promo / Quick Booking Slider */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.promoCarousel}
+          contentContainerStyle={styles.promoCarouselContent}
+        >
+          <AnimatedBanner
+            title="Plumbing Emergency?"
+            subtitle="Get the nearest expert plumber routed to you in 8-12 mins"
+            illustration={<PlumberHero width={100} height={80} />}
+            ctaText={isSearching ? "Searching..." : "Find Plumber"}
+            onCtaPress={requestNearbyPlumber}
+            backgroundColor={colors.primary}
+            style={styles.promoBanner}
+          />
+          <AnimatedBanner
+            title="50% OFF first task"
+            subtitle="Book trusted services today. Use code FIX50"
+            illustration={<SplashHero width={100} height={80} />}
+            ctaText="Book Now"
+            onCtaPress={() => navigation.navigate('BookPlumber')}
+            backgroundColor={colors.success}
+            subtitleColor="#D1FAE5"
+            style={styles.promoBanner}
+          />
+        </ScrollView>
 
         <View style={styles.whatNeedSection}>
           <Text style={styles.sectionTitle}>What do you need?</Text>
@@ -626,7 +684,7 @@ export function HomeScreen({ navigation }: any) {
                 onPress={() => handleCategoryPress(item)}
               >
                 <View style={styles.gridIconCircle}>
-                  <Text style={styles.gridEmoji}>{item.icon}</Text>
+                  <AppIcon icon={getCategoryIcon(item.iconName)} size={24} color={colors.primary} />
                 </View>
                 <Text style={styles.gridLabel}>{item.name}</Text>
               </TouchableOpacity>
@@ -637,7 +695,7 @@ export function HomeScreen({ navigation }: any) {
         <View style={styles.storesSection}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Nearby Stores</Text>
-            <TouchableOpacity onPress={() => {}}>
+            <TouchableOpacity onPress={() => navigation.navigate('Main', { screen: 'StoreTab' })}>
               <Text style={styles.seeAllLink}>See all</Text>
             </TouchableOpacity>
           </View>
@@ -649,7 +707,12 @@ export function HomeScreen({ navigation }: any) {
                 name={store.name}
                 distance={store.distance}
                 duration={store.duration}
-                onPress={() => {}}
+                onPress={() =>
+                  navigation.navigate('StoreDetails', {
+                    storeId: store.id,
+                    storeName: store.name,
+                  })
+                }
               />
             ))}
           </View>
@@ -765,8 +828,8 @@ export function HomeScreen({ navigation }: any) {
         </View>
 
         {/* Temporary Logout button for testing Auth flows */}
-        <TouchableOpacity 
-          style={[styles.secondaryButton, { marginTop: 24 }]} 
+        <TouchableOpacity
+          style={[styles.secondaryButton, { marginTop: 24 }]}
           onPress={() => {
             dispatch(logout());
             navigation.navigate('Auth', { screen: 'Login' });
@@ -1012,7 +1075,7 @@ const styles = StyleSheet.create({
   otpInputSub: { color: '#4B5563', fontSize: 12, fontWeight: '700', marginVertical: 6, lineHeight: 18 },
   otpInputRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
   otpTextInput: { flex: 1, height: 52, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#BFDBFE', paddingHorizontal: 16, fontSize: 18, fontWeight: '900', color: '#1E3A8A', letterSpacing: 4, textAlign: 'center' },
-  // Phase 3 — Material Payment Approval Card
+  // Phase 3 � Material Payment Approval Card
   materialApprovalCard: { margin: 18, marginBottom: 0, backgroundColor: '#FFFBEB', borderRadius: 24, padding: 18, borderWidth: 2, borderColor: '#F59E0B' },
   materialApprovalEyebrow: { color: '#92400E', fontSize: 12, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.5 },
   materialApprovalTitle: { color: '#111827', fontSize: 20, fontWeight: '900', marginTop: 6 },
@@ -1025,13 +1088,16 @@ const styles = StyleSheet.create({
   materialDeclineBtnText: { color: '#475569', fontSize: 14, fontWeight: '900' },
   materialApproveBtn: { flex: 2, height: 52, borderRadius: 14, backgroundColor: '#F59E0B', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
   materialApproveBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '900', textAlign: 'center' },
+  promoCarousel: {
+    marginVertical: spacing.md,
+    height: 180,
+  },
+  promoCarouselContent: {
+    paddingHorizontal: spacing.layout,
+    gap: spacing.md,
+  },
+  promoBanner: {
+    width: 320,
+    height: 160,
+  },
 });
-
-
-
-
-
-
-
-
-

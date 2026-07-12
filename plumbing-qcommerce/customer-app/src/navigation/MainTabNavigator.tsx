@@ -1,6 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { HomeScreen } from '../screens/HomeScreen';
 import { OrdersScreen } from '../screens/OrdersScreen';
@@ -8,6 +8,12 @@ import { ProfileScreen } from '../screens/ProfileScreen';
 import { StoreScreen } from '../screens/StoreScreen';
 import { colors, spacing, typography } from '../theme';
 import { MainTabParamList } from '../types/navigation';
+import { AnimatedBottomTabButton } from '../components/common/AnimatedBottomTabButton';
+import { AppIcon } from '../components/common/AppIcon';
+import HomeIcon from '../assets/icons/home.svg';
+import StoreIcon from '../assets/icons/store-directory.svg';
+import OrdersIcon from '../assets/icons/order.svg';
+import ProfileIcon from '../assets/icons/profile.svg';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -21,40 +27,21 @@ export function MainTabNavigator() {
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
-        tabBarIcon: ({ color, focused }) => {
-          let iconName = '🏠';
+        tabBarButton: (props) => <AnimatedBottomTabButton {...props} />,
+        tabBarIcon: ({ color }) => {
+          let IconComp = HomeIcon;
           if (route.name === 'HomeTab') {
-            iconName = 'Home';
+            IconComp = HomeIcon;
           } else if (route.name === 'StoreTab') {
-            iconName = 'Store';
+            IconComp = StoreIcon;
           } else if (route.name === 'OrdersTab') {
-            iconName = 'Orders';
+            IconComp = OrdersIcon;
           } else if (route.name === 'ProfileTab') {
-            iconName = 'Profile';
+            IconComp = ProfileIcon;
           }
 
-          // Custom emoji-based icon tabs
-          const getEmoji = (name: string) => {
-            switch (name) {
-              case 'Home':
-                return '🏠';
-              case 'Store':
-                return '🏪';
-              case 'Orders':
-                return '📋';
-              case 'Profile':
-                return '👤';
-              default:
-                return '🏠';
-            }
-          };
-
           return (
-            <View style={styles.iconWrapper}>
-              <Text style={[styles.tabEmoji, { opacity: focused ? 1 : 0.6 }]}>
-                {getEmoji(iconName)}
-              </Text>
-            </View>
+            <AppIcon icon={IconComp} size={22} color={color} />
           );
         },
       })}

@@ -71,7 +71,8 @@ public class PlumberMaterialService {
         // Reuse CheckoutService to reserve stock — the customer ID passed is the
         // service order's customer so the inventory lock is customer-attributed.
         Long customerId = serviceOrder.getCustomer().getId();
-        ProductOrder productOrder = checkoutService.reserveStock(customerId, storeId, cartItems);
+        Long targetStoreId = (serviceOrder.getStore() != null) ? serviceOrder.getStore().getId() : storeId;
+        ProductOrder productOrder = checkoutService.reserveStock(customerId, targetStoreId, cartItems);
 
         // Link the product order back to the service order
         productOrder.setServiceOrder(serviceOrder);
@@ -80,6 +81,7 @@ public class PlumberMaterialService {
         // Promote the service order to COMBINED_ORDER
         serviceOrder.setStatus(OrderStatus.COMBINED_ORDER);
         serviceOrderRepository.save(serviceOrder);
+
 
         // Publish Outbox event → Edge Service will push a WebSocket notification
         // to the customer so they see the payment approval card.

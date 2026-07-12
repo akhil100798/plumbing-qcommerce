@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   Alert,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
@@ -17,13 +18,47 @@ import { ActiveJobCard } from '../../components/cards/ActiveJobCard';
 import { colors, spacing, typography, borderRadius } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
-import { updateJobStatus } from '../../redux/slices/jobSlice';
+import { setActiveJob, updateJobStatus } from '../../redux/slices/jobSlice';
+import { jobService } from '../../services/jobs/jobService';
 
 type Props = StackScreenProps<AppStackParamList, 'ActiveJob'>;
 
 export function ActiveJobScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
+  const { jobId } = route.params;
   const { activeJob } = useSelector((state: RootState) => state.job);
+
+  const [syncLoading, setSyncLoading] = useState(false);
+
+  useEffect(() => {
+    async function syncJob() {
+      if (jobId && (!activeJob || activeJob.jobId !== String(jobId))) {
+        setSyncLoading(true);
+        try {
+          const job = await jobService.fetchJobById(String(jobId));
+          dispatch(setActiveJob(job));
+        } catch (err) {
+          console.error('Failed to sync job:', err);
+          Alert.alert('Error', 'Failed to retrieve details for Job #' + jobId);
+        } finally {
+          setSyncLoading(false);
+        }
+      }
+    }
+    syncJob();
+  }, [jobId, activeJob?.jobId]);
+
+  if (syncLoading && !activeJob) {
+    return (
+      <ScreenWrapper>
+        <AppHeader title="Active Job" onBackPress={() => navigation.goBack()} />
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.emptyText}>Syncing job details...</Text>
+        </View>
+      </ScreenWrapper>
+    );
+  }
 
   if (!activeJob) {
     return (
@@ -108,6 +143,7 @@ export function ActiveJobScreen({ route, navigation }: Props) {
       
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.customerBlock}>
+          <Text style={styles.debugText}>Job ID: {activeJob.jobId} | Status: {activeJob.status}{activeJob.jobId !== String(jobId || '') ? ` | Target: ${jobId}` : ''}</Text>
           <Text style={styles.label}>Customer details</Text>
           <CustomerCard
             name={activeJob.customer.fullName}
@@ -165,6 +201,11 @@ const styles = StyleSheet.create({
   },
   jobDetailsBlock: {
     marginBottom: spacing.lg,
+  },
+  debugText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
   label: {
     fontSize: typography.fontSize.xs,

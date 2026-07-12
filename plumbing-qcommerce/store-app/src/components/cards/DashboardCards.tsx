@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SvgProps } from 'react-native-svg';
 import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
 
 // ==========================================
@@ -35,7 +36,7 @@ interface OrderSummaryCardProps {
   label: string;
   count: number;
   color: string;
-  emoji: string;
+  icon: React.FC<SvgProps>;
   onPress: () => void;
 }
 
@@ -43,7 +44,7 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
   label,
   count,
   color,
-  emoji,
+  icon: IconComponent,
   onPress,
 }) => {
   return (
@@ -53,7 +54,7 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
       onPress={onPress}
     >
       <View style={[styles.iconBox, { backgroundColor: `${color}15` }]}>
-        <Text style={styles.boxEmoji}>{emoji}</Text>
+        <IconComponent width={20} height={20} stroke={color} />
       </View>
       <View style={styles.cardDetails}>
         <Text style={styles.summaryCount}>{count}</Text>
@@ -68,13 +69,13 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
 // ==========================================
 interface QuickActionCardProps {
   label: string;
-  emoji: string;
+  icon: React.FC<SvgProps>;
   onPress: () => void;
 }
 
 export const QuickActionCard: React.FC<QuickActionCardProps> = ({
   label,
-  emoji,
+  icon: IconComponent,
   onPress,
 }) => {
   return (
@@ -83,7 +84,9 @@ export const QuickActionCard: React.FC<QuickActionCardProps> = ({
       style={styles.actionCard}
       onPress={onPress}
     >
-      <Text style={styles.actionEmoji}>{emoji}</Text>
+      <View style={styles.actionIconWrapper}>
+        <IconComponent width={24} height={24} stroke={colors.primary} />
+      </View>
       <Text style={styles.actionLabel}>{label}</Text>
     </TouchableOpacity>
   );
@@ -149,9 +152,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: spacing.sm,
   },
-  boxEmoji: {
-    fontSize: 18,
-  },
   cardDetails: {
     justifyContent: 'center',
   },
@@ -175,11 +175,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     ...shadows.sm,
-    height: 84,
+    height: 94,
   },
-  actionEmoji: {
-    fontSize: 24,
+  actionIconWrapper: {
     marginBottom: spacing.xs,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: `${colors.primary}12`,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   actionLabel: {
     fontSize: typography.fontSize.xs,

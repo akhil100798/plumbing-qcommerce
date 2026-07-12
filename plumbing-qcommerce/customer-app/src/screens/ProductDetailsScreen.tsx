@@ -1,5 +1,6 @@
 import { StackScreenProps } from '@react-navigation/stack';
 import React, { useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import {
   ActivityIndicator,
   Alert,
@@ -21,6 +22,7 @@ import {
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
 
+import { addToCart } from '../redux/slices/cartSlice';
 import { ProductRepository } from '../services/products/productRepository';
 import { ProductDTO } from '../services/products/productTypes';
 
@@ -28,6 +30,7 @@ type Props = StackScreenProps<AppStackParamList, 'ProductDetails'>;
 
 export function ProductDetailsScreen({ route, navigation }: Props) {
   const { productId } = route.params;
+  const dispatch = useDispatch();
   const [product, setProduct] = useState<ProductDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +76,8 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
   };
 
   const handleAddToCart = () => {
-    Alert.alert('Added to Cart', `${product?.name} has been added to your cart.`);
+    Array.from({ length: quantity }).forEach(() => dispatch(addToCart(productId)));
+    Alert.alert('Added to Cart', `${quantity} x ${product?.name} added to your cart.`);
   };
 
   if (loading) {
@@ -108,11 +112,11 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
           <Text style={styles.backButtonText}>?</Text>
         </TouchableOpacity>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.iconBtn}>
-            <Text style={styles.iconEmoji}>??</Text>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Cart')}>
+            <Text style={styles.iconEmoji}>Cart</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn}>
-            <Text style={styles.iconEmoji}>??</Text>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => Alert.alert('Share product', `${product.name} - Rs.${product.price}`)}>
+            <Text style={styles.iconEmoji}>Share</Text>
           </TouchableOpacity>
         </View>
       </View>

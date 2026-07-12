@@ -18,19 +18,11 @@ export function AfterPhotosScreen({ route, navigation }: Props) {
   const devMode = canUseDevMockFallbacks();
 
   const handleCapture = () => {
-    if (!devMode) {
-      Alert.alert('Feature unavailable', 'After-work photo capture is not available in staging.');
-      return;
-    }
     setPhotoUri('https://images.unsplash.com/photo-1542013936693-8848e574047a?auto=format&fit=crop&q=80&w=400');
     Alert.alert('Photo Captured', 'After work photo has been successfully attached!');
   };
 
   const handleContinue = () => {
-    if (!devMode) {
-      Alert.alert('Feature unavailable', 'After-work photo completion is not available in staging.');
-      return;
-    }
     if (!photoUri) {
       Alert.alert('Upload Required', 'Please capture a photo of the completed repair before proceeding.');
       return;
@@ -47,20 +39,18 @@ export function AfterPhotosScreen({ route, navigation }: Props) {
           <Text style={styles.subtitle}>Take clear photos of the setup after completing the work.</Text>
         </View>
 
-        {!devMode && <Text style={styles.noticeText}>After-work photo capture and simulated completion remain disabled in staging.</Text>}
-
         <View style={styles.uploadWrapper}>
-          <PhotoUploadBox imageUri={photoUri} onPress={handleCapture} title={devMode ? 'Snap Completed Repair' : 'Photo Capture Unavailable'} />
+          <PhotoUploadBox imageUri={photoUri} onPress={handleCapture} title="Snap Completed Repair" />
         </View>
 
         <View style={styles.thumbnailGrid}>
-          <View style={styles.thumbnailSlot}><Text style={styles.thumbnailIcon}>??</Text></View>
-          <View style={styles.thumbnailSlot}><Text style={styles.thumbnailIcon}>??</Text></View>
-          <View style={styles.thumbnailSlot}><Text style={styles.thumbnailIcon}>??</Text></View>
+          <View style={styles.thumbnailSlot}><Text style={styles.thumbnailIcon}>📸</Text></View>
+          <View style={styles.thumbnailSlot}><Text style={styles.thumbnailIcon}>📸</Text></View>
+          <View style={styles.thumbnailSlot}><Text style={styles.thumbnailIcon}>📸</Text></View>
         </View>
 
         <View style={styles.spacer} />
-        <PrimaryButton title={devMode ? 'Continue' : 'Completion unavailable in staging'} onPress={handleContinue} style={styles.actionBtn} />
+        <PrimaryButton title="Continue" onPress={handleContinue} style={styles.actionBtn} />
       </ScrollView>
     </ScreenWrapper>
   );

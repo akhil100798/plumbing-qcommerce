@@ -62,7 +62,7 @@ export const DispatchAssignmentScreen = () => {
 
   return (
     <ScreenWrapper style={styles.container}>
-      <AppHeader title="Assign Rider" onBack={() => navigation.goBack()} />
+      <AppHeader title="Assign Rider" onBackPress={() => navigation.goBack()} />
 
       {order && (
         <View style={styles.orderSummary}>

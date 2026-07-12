@@ -1,20 +1,28 @@
-import { apiClient, setAuthToken, setRefreshToken } from '../apiClient';
+﻿import { apiClient, setAuthToken, setRefreshToken } from '../apiClient';
 import { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from './authTypes';
+
+const persistTokens = (token?: string | null, refreshToken?: string | null) => {
+  if (token) {
+    setAuthToken(token);
+  }
+  if (refreshToken) {
+    setRefreshToken(refreshToken);
+  }
+};
 
 export const AuthRepository = {
   login: async (data: LoginRequest): Promise<LoginResponse> => {
     const response = await apiClient.post<LoginResponse>('/auth/login', data);
     const result = response.data;
-    if (result.token) {
-      setAuthToken(result.token);
-      setRefreshToken(result.refreshToken);
-    }
+    persistTokens(result.token || result.accessToken, result.refreshToken);
     return result;
   },
 
   register: async (data: RegisterRequest): Promise<RegisterResponse> => {
     const response = await apiClient.post<RegisterResponse>('/auth/register', data);
-    return response.data;
+    const result = response.data;
+    persistTokens(result.token || result.accessToken, result.refreshToken);
+    return result;
   },
 
   logout: async (): Promise<void> => {
@@ -43,10 +51,7 @@ export const AuthRepository = {
   verifyOtp: async (phone: string, code: string): Promise<LoginResponse> => {
     const response = await apiClient.post<LoginResponse>('/auth/verify-otp', { phone, code });
     const result = response.data;
-    if (result.token) {
-      setAuthToken(result.token);
-      setRefreshToken(result.refreshToken);
-    }
+    persistTokens(result.token || result.accessToken, result.refreshToken);
     return result;
   },
 

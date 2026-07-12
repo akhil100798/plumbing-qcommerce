@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -13,7 +14,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { CustomerCard } from '../../components/cards/CustomerCard';
 import { jobService } from '../../services/jobs/jobService';
-import { updateJobStatus } from '../../redux/slices/jobSlice';
+import { setActiveJob, updateJobStatus } from '../../redux/slices/jobSlice';
 import { colors, spacing, typography, borderRadius } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
@@ -22,6 +23,7 @@ type Props = StackScreenProps<AppStackParamList, 'StartWork'>;
 
 export function StartWorkScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
+  const { jobId } = route.params;
   const { activeJob } = useSelector((state: RootState) => state.job);
   
   const [checklist, setChecklist] = useState([
@@ -40,12 +42,13 @@ export function StartWorkScreen({ route, navigation }: Props) {
 
   const handleStartWork = async () => {
     if (!checklist[0].checked || !checklist[1].checked) {
-      alert('Please check at least the first two items before starting.');
+      Alert.alert('Checklist incomplete', 'Please check at least the first two items before starting.');
       return;
     }
 
-    if (activeJob) {
-      const updatedJob = await jobService.startWork(activeJob.jobId);
+    try {
+      const updatedJob = await jobService.startWork(jobId);
+      dispatch(setActiveJob(updatedJob));
       dispatch(
         updateJobStatus({
           status: 'started',
@@ -53,8 +56,9 @@ export function StartWorkScreen({ route, navigation }: Props) {
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         })
       );
-      // Navigate to before photos upload
-      navigation.replace('BeforePhotos', { jobId: activeJob.jobId });
+      navigation.replace('BeforePhotos', { jobId });
+    } catch (err: any) {
+      Alert.alert('Start work failed', err?.message || 'Could not start this job. Please retry after arrival succeeds.');
     }
   };
 
@@ -62,9 +66,10 @@ export function StartWorkScreen({ route, navigation }: Props) {
 
   return (
     <ScreenWrapper>
-      <AppHeader title={`Job #${activeJob.jobId}`} onBackPress={() => navigation.goBack()} />
+      <AppHeader title={`Job #${jobId}`} onBackPress={() => navigation.goBack()} />
       
       <View style={styles.container}>
+        <Text style={styles.debugText}>Job ID: {jobId} ? Status: {activeJob.status}</Text>
         <Text style={styles.sectionLabel}>Before you start</Text>
         
         <View style={styles.checklistCard}>
@@ -117,6 +122,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: spacing.layout,
     backgroundColor: colors.background,
+  },
+  debugText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
   sectionLabel: {
     fontSize: typography.fontSize.xs,

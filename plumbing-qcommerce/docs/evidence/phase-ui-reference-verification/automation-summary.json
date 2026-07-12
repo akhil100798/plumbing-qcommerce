@@ -1,0 +1,20 @@
+[
+  {
+    "app": "customer",
+    "requests": 2,
+    "localHits": 2,
+    "notes": []
+  },
+  {
+    "app": "plumber",
+    "requests": 2,
+    "localHits": 2,
+    "notes": []
+  },
+  {
+    "app": "store",
+    "requests": 2,
+    "localHits": 2,
+    "notes": []
+  }
+]

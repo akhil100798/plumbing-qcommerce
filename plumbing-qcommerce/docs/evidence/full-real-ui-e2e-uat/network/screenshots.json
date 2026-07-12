@@ -1,0 +1,48 @@
+{
+  "customer": [
+    "docs/evidence/full-real-ui-e2e-uat/customer-app/001-login.png",
+    "docs/evidence/full-real-ui-e2e-uat/customer-app/002-invalid-login.png",
+    "docs/evidence/full-real-ui-e2e-uat/customer-app/003-home-after-login.png",
+    "docs/evidence/full-real-ui-e2e-uat/customer-app/004-book-plumber.png",
+    "docs/evidence/full-real-ui-e2e-uat/customer-app/005-service-selected.png",
+    "docs/evidence/full-real-ui-e2e-uat/customer-app/006-booking-details.png",
+    "docs/evidence/full-real-ui-e2e-uat/customer-app/007-before-confirm-booking.png",
+    "docs/evidence/full-real-ui-e2e-uat/customer-app/008-service-order-created.png",
+    "docs/evidence/full-real-ui-e2e-uat/customer-app/009-customer-tracking-waiting.png",
+    "docs/evidence/full-real-ui-e2e-uat/customer-app/010-material-approval-list.png",
+    "docs/evidence/full-real-ui-e2e-uat/customer-app/012-material-approved-result.png",
+    "docs/evidence/full-real-ui-e2e-uat/customer-app/013-final-service-status.png",
+    "docs/evidence/full-real-ui-e2e-uat/customer-app/016-completed-order-history.png"
+  ],
+  "plumber": [
+    "docs/evidence/full-real-ui-e2e-uat/plumber-app/001-login.png",
+    "docs/evidence/full-real-ui-e2e-uat/plumber-app/002-dashboard-after-login.png",
+    "docs/evidence/full-real-ui-e2e-uat/plumber-app/003-availability-online.png",
+    "docs/evidence/full-real-ui-e2e-uat/plumber-app/004-jobs-list.png",
+    "docs/evidence/full-real-ui-e2e-uat/plumber-app/005-job-details-or-accept-result.png",
+    "docs/evidence/full-real-ui-e2e-uat/plumber-app/006-accept-job-result.png",
+    "docs/evidence/full-real-ui-e2e-uat/plumber-app/007-start-navigation.png",
+    "docs/evidence/full-real-ui-e2e-uat/plumber-app/009-reached-customer.png",
+    "docs/evidence/full-real-ui-e2e-uat/plumber-app/010-start-work.png",
+    "docs/evidence/full-real-ui-e2e-uat/plumber-app/011-material-request-screen.png",
+    "docs/evidence/full-real-ui-e2e-uat/plumber-app/013-material-quantity-updated.png",
+    "docs/evidence/full-real-ui-e2e-uat/plumber-app/014-material-request-submit-result.png",
+    "docs/evidence/full-real-ui-e2e-uat/plumber-app/015-material-approval-status.png",
+    "docs/evidence/full-real-ui-e2e-uat/plumber-app/016-material-tracking.png",
+    "docs/evidence/full-real-ui-e2e-uat/plumber-app/020-complete-job-screen.png",
+    "docs/evidence/full-real-ui-e2e-uat/plumber-app/023-job-completed.png"
+  ],
+  "store": [
+    "docs/evidence/full-real-ui-e2e-uat/store-app/001-login.png",
+    "docs/evidence/full-real-ui-e2e-uat/store-app/002-dashboard-after-login.png",
+    "docs/evidence/full-real-ui-e2e-uat/store-app/003-material-requests-or-orders.png",
+    "docs/evidence/full-real-ui-e2e-uat/store-app/004-material-order-details.png",
+    "docs/evidence/full-real-ui-e2e-uat/store-app/005-accept-request-result.png",
+    "docs/evidence/full-real-ui-e2e-uat/store-app/006-start-packing.png",
+    "docs/evidence/full-real-ui-e2e-uat/store-app/008-mark-packed-result.png",
+    "docs/evidence/full-real-ui-e2e-uat/store-app/009-ready-for-pickup.png",
+    "docs/evidence/full-real-ui-e2e-uat/store-app/010-rider-assignment.png",
+    "docs/evidence/full-real-ui-e2e-uat/store-app/012-final-order-status.png",
+    "docs/evidence/full-real-ui-e2e-uat/store-app/013-inventory-after-fulfillment.png"
+  ]
+}

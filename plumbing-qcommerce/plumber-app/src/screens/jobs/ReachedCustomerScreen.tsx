@@ -19,10 +19,11 @@ import { RootState } from '../../redux/store';
 type Props = StackScreenProps<AppStackParamList, 'ReachedCustomer'>;
 
 export function ReachedCustomerScreen({ route, navigation }: Props) {
+  const { jobId } = route.params;
   const { activeJob } = useSelector((state: RootState) => state.job);
 
   const handleNext = () => {
-    navigation.replace('StartWork', { jobId: activeJob?.jobId || 'PC123456' });
+    navigation.replace('StartWork', { jobId });
   };
 
   if (!activeJob) return null;
@@ -50,6 +51,7 @@ export function ReachedCustomerScreen({ route, navigation }: Props) {
         </View>
 
         <View style={styles.customerSection}>
+          <Text style={styles.debugText}>Job ID: {jobId}</Text>
           <Text style={styles.sectionLabel}>Customer Details</Text>
           <CustomerCard
             name={activeJob.customer.fullName}
@@ -120,6 +122,11 @@ const styles = StyleSheet.create({
   },
   customerSection: {
     marginBottom: spacing.lg,
+  },
+  debugText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
   sectionLabel: {
     fontSize: typography.fontSize.xs,

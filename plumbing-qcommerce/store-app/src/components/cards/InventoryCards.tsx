@@ -2,6 +2,8 @@ import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
 import { Product, Category } from '../../types';
+import WarehouseIcon from '../../assets/icons/warehouse.svg';
+import ArrowRightIcon from '../../assets/icons/arrow-right.svg';
 
 // ==========================================
 // INVENTORY CATEGORY CARD
@@ -25,7 +27,7 @@ export const InventoryCategoryCard: React.FC<InventoryCategoryCardProps> = ({
     >
       <View style={styles.catLeft}>
         <View style={styles.catIconBox}>
-          <Text style={styles.catEmoji}>📂</Text>
+          <WarehouseIcon width={16} height={16} stroke={colors.primary} />
         </View>
         <View>
           <Text style={styles.catName}>{category.name}</Text>
@@ -34,7 +36,7 @@ export const InventoryCategoryCard: React.FC<InventoryCategoryCardProps> = ({
           )}
         </View>
       </View>
-      <Text style={styles.catArrow}>▶</Text>
+      <ArrowRightIcon width={12} height={12} stroke={colors.textMuted} />
     </TouchableOpacity>
   );
 };
@@ -97,7 +99,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             onEditPress();
           }}
         >
-          <Text style={styles.editText}>✏️ Edit</Text>
+          <Text style={styles.editText}>Edit</Text>
         </TouchableOpacity>
       )}
     </TouchableOpacity>

@@ -121,7 +121,7 @@ export function LoginScreen({ navigation }: Props) {
                 <View style={styles.singleInputRow}>
                   <TextInput
                     style={styles.textInput}
-                    placeholder="••••••••"
+                placeholder="********"
                     placeholderTextColor={colors.textMuted}
                     secureTextEntry
                     value={password}
@@ -164,11 +164,11 @@ export function LoginScreen({ navigation }: Props) {
             </View>
 
             <View style={styles.socialRow}>
-              <TouchableOpacity style={styles.socialCard}>
+              <TouchableOpacity style={styles.socialCard} onPress={() => Alert.alert('Google login', 'Use the main Google login screen for OAuth sign-in.')}>
                 <Text style={styles.socialIcon}>??</Text>
                 <Text style={styles.socialLabel}>Google</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialCard}>
+              <TouchableOpacity style={styles.socialCard} onPress={() => Alert.alert('Apple login', 'Apple sign-in is not configured for staging yet.')}>
                 <Text style={styles.socialIcon}>??</Text>
                 <Text style={styles.socialLabel}>Apple</Text>
               </TouchableOpacity>

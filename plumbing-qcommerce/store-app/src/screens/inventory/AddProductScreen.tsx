@@ -73,7 +73,7 @@ export const AddProductScreen = () => {
     <ScreenWrapper style={styles.container}>
       <AppHeader
         title={isEditMode ? 'Edit Product' : 'Add Product'}
-        onBack={() => navigation.goBack()}
+        onBackPress={() => navigation.goBack()}
       />
 
       <ProductForm

@@ -10,6 +10,14 @@ import { AppStackParamList } from '../../types/navigation';
 import { Store } from '../../types';
 import { useAppSelector } from '../../redux/store';
 
+import ProfileIcon from '../../assets/icons/profile.svg';
+import WarehouseIcon from '../../assets/icons/warehouse.svg';
+import WalletIcon from '../../assets/icons/wallet.svg';
+import BarcodeIcon from '../../assets/icons/barcode.svg';
+import SettingsIcon from '../../assets/icons/settings.svg';
+import ClockIcon from '../../assets/icons/clock.svg';
+import StarIcon from '../../assets/icons/star.svg';
+
 export const StoreProfileScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const user = useAppSelector(state => state.auth.storeUser);
@@ -63,22 +71,27 @@ export const StoreProfileScreen = () => {
     }
   };
 
+  const getStoreInitials = (name?: string) => {
+    if (!name) return 'SP';
+    return name.slice(0, 2).toUpperCase();
+  };
+
   return (
     <ScreenWrapper style={styles.container}>
-      <AppHeader title="Store Profile" onBack={() => navigation.goBack()} />
+      <AppHeader title="Store Profile" onBackPress={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.scroll}>
         {notice && <Text style={styles.noticeText}>{notice}</Text>}
         {profile && (
           <View style={styles.profileHeader}>
             <View style={styles.storeAvatar}>
-              <Text style={styles.storeAvatarText}>??</Text>
+              <Text style={styles.storeAvatarText}>{getStoreInitials(profile.name)}</Text>
             </View>
             <Text style={styles.storeName}>{profile.name}</Text>
             <Text style={styles.storeId}>Store ID: {profile.id}</Text>
 
             <View style={styles.ratingRow}>
-              <Text style={styles.star}>?</Text>
+              <StarIcon width={14} height={14} fill={colors.warning} stroke={colors.warning} style={{ marginRight: 4 }} />
               <Text style={styles.ratingVal}>{profile.rating ?? 0} </Text>
               <Text style={styles.ratingCount}>{profile.rating ? '(rating available)' : '(not available in staging)'}</Text>
             </View>
@@ -86,12 +99,12 @@ export const StoreProfileScreen = () => {
         )}
 
         <View style={styles.menuContainer}>
-          <ProfileMenuItem emoji="??" label="Store Details" onPress={() => handleMenuPress('details')} />
-          <ProfileMenuItem emoji="??" label="Business Information" onPress={() => handleMenuPress('business')} />
-          <ProfileMenuItem emoji="??" label="Bank Details" onPress={() => handleMenuPress('bank')} />
-          <ProfileMenuItem emoji="??" label="GST Details" onPress={() => handleMenuPress('gst')} />
-          <ProfileMenuItem emoji="??" label="Documents" onPress={() => handleMenuPress('docs')} />
-          <ProfileMenuItem emoji="?" label="Store Timings" onPress={() => handleMenuPress('timings')} />
+          <ProfileMenuItem icon={ProfileIcon} label="Store Details" onPress={() => handleMenuPress('details')} />
+          <ProfileMenuItem icon={WarehouseIcon} label="Business Information" onPress={() => handleMenuPress('business')} />
+          <ProfileMenuItem icon={WalletIcon} label="Bank Details" onPress={() => handleMenuPress('bank')} />
+          <ProfileMenuItem icon={BarcodeIcon} label="GST Details" onPress={() => handleMenuPress('gst')} />
+          <ProfileMenuItem icon={SettingsIcon} label="Documents" onPress={() => handleMenuPress('docs')} />
+          <ProfileMenuItem icon={ClockIcon} label="Store Timings" onPress={() => handleMenuPress('timings')} />
         </View>
       </ScrollView>
     </ScreenWrapper>

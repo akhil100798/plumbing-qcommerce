@@ -20,6 +20,7 @@ import { materialService } from '../../services/materials/materialService';
 import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
+import StarIcon from '../../assets/icons/star.svg';
 
 type Props = StackScreenProps<AppStackParamList, 'MaterialTracking'>;
 
@@ -174,7 +175,7 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
           <View style={styles.riderDetails}>
             <Text style={styles.riderName}>{deliveryTracking?.riderName || 'Dispatch unavailable'}</Text>
             <View style={styles.ratingRow}>
-              <Text style={styles.star}>?</Text>
+              <StarIcon width={14} height={14} fill={colors.warning} stroke={colors.warning} style={{ marginRight: 4 }} />
               <Text style={styles.rating}>{deliveryTracking?.riderRating ?? 0}</Text>
             </View>
           </View>

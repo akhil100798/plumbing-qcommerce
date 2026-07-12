@@ -18,6 +18,8 @@ import java.util.UUID;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiError> handleAccessDenied(
             AccessDeniedException ex,
@@ -60,11 +62,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
+        log.error("RuntimeException occurred: ", ex);
+        String msg = ex.getMessage();
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
             "timestamp", LocalDateTime.now().toString(),
             "status", 404,
             "error", "Not Found",
-            "message", ex.getMessage()
+            "message", msg != null ? msg : "Not Found"
         ));
     }
 
@@ -105,11 +109,13 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex) {
+        log.error("Unhandled exception occurred: ", ex);
+        String msg = ex.getMessage();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
             "timestamp", LocalDateTime.now().toString(),
             "status", 500,
             "error", "Internal Server Error",
-            "message", "An unexpected error occurred."
+            "message", msg != null ? msg : "An unexpected error occurred."
         ));
     }
 }

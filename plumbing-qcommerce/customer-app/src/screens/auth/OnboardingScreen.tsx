@@ -1,23 +1,26 @@
 import { StackScreenProps } from '@react-navigation/stack';
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  Animated,
 } from 'react-native';
 
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { borderRadius, colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
+import SplashHero from '../../assets/illustrations/customer-splash-hero.svg';
+import PlumberHero from '../../assets/illustrations/plumber-service-hero.svg';
+import ServicesBanner from '../../assets/illustrations/home-services-banner.svg';
 
 type Props = StackScreenProps<AuthStackParamList, 'Onboarding'>;
 
 interface Slide {
   title: string;
   subtitle: string;
-  icon: string;
   accent: string;
 }
 
@@ -25,29 +28,40 @@ const slides: Slide[] = [
   {
     title: 'Plumbing Help\nIn Minutes',
     subtitle: 'Book plumbers, order materials or get expert solutions at your doorstep.',
-    icon: '🛵',
     accent: '#E6F4FE',
   },
   {
     title: 'Quality You Can\nTrust',
     subtitle: 'Verified plumbers, genuine materials and secure payments.',
-    icon: '🛡️',
     accent: '#ECFDF5',
   },
   {
     title: 'Fast Delivery\n& Service',
     subtitle: 'From quick deliveries to emergency repairs, we are always here.',
-    icon: '⏱️',
     accent: '#FFFBEB',
   },
 ];
 
 export function OnboardingScreen({ navigation }: Props) {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
   const handleNext = () => {
     if (currentSlideIndex < slides.length - 1) {
-      setCurrentSlideIndex(currentSlideIndex + 1);
+      // Transition out
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: -20, duration: 150, useNativeDriver: true })
+      ]).start(() => {
+        setCurrentSlideIndex(currentSlideIndex + 1);
+        slideAnim.setValue(20);
+        // Transition in
+        Animated.parallel([
+          Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+          Animated.spring(slideAnim, { toValue: 0, tension: 40, friction: 6, useNativeDriver: true })
+        ]).start();
+      });
     } else {
       navigation.replace('Login');
     }
@@ -60,6 +74,19 @@ export function OnboardingScreen({ navigation }: Props) {
   const currentSlide = slides[currentSlideIndex];
   const isLastSlide = currentSlideIndex === slides.length - 1;
 
+  const getIllustration = (index: number) => {
+    switch (index) {
+      case 0:
+        return <SplashHero width={180} height={120} />;
+      case 1:
+        return <PlumberHero width={180} height={120} />;
+      case 2:
+        return <ServicesBanner width={180} height={120} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -68,13 +95,13 @@ export function OnboardingScreen({ navigation }: Props) {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.slideContainer}>
+      <Animated.View style={[styles.slideContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         <View style={[styles.imageContainer, { backgroundColor: currentSlide.accent }]}>
-          <Text style={styles.illustrationIcon}>{currentSlide.icon}</Text>
+          {getIllustration(currentSlideIndex)}
         </View>
         <Text style={styles.title}>{currentSlide.title}</Text>
         <Text style={styles.subtitle}>{currentSlide.subtitle}</Text>
-      </View>
+      </Animated.View>
 
       <View style={styles.footer}>
         <View style={styles.dotsContainer}>

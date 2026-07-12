@@ -11,6 +11,19 @@ import { inventoryService } from '../../services/inventory/inventoryService';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
 
+import WarehouseIcon from '../../assets/icons/warehouse.svg';
+import NotificationIcon from '../../assets/icons/notification.svg';
+import OrderIcon from '../../assets/icons/order.svg';
+import PackingIcon from '../../assets/icons/packing.svg';
+import ReadyPickupIcon from '../../assets/icons/ready-pickup.svg';
+import SuccessCheckIcon from '../../assets/icons/success-check.svg';
+import ProductAddIcon from '../../assets/icons/product-add.svg';
+import StockUpdateIcon from '../../assets/icons/stock-update.svg';
+import DispatchIcon from '../../assets/icons/dispatch.svg';
+import PromotionIcon from '../../assets/icons/promotion.svg';
+import LowStockIcon from '../../assets/icons/low-stock.svg';
+import ArrowRightIcon from '../../assets/icons/arrow-right.svg';
+
 export const DashboardScreen = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
@@ -52,17 +65,17 @@ export const DashboardScreen = () => {
     <ScreenWrapper style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.storeEmoji}>??</Text>
+          <WarehouseIcon width={24} height={24} stroke={colors.primary} style={{ marginRight: spacing.sm }} />
           <View>
             <Text style={styles.storeName}>{user?.fullName || user?.email || 'Store account'}</Text>
-            <Text style={styles.storeStatus}>{error ? 'Staging data limited' : '?? Connected'}</Text>
+            <Text style={styles.storeStatus}>{error ? 'Staging data limited' : '● Connected'}</Text>
           </View>
         </View>
         <TouchableOpacity
           style={styles.notifBtn}
           onPress={() => navigation.navigate('Notifications')}
         >
-          <Text style={styles.notifEmoji}>??</Text>
+          <NotificationIcon width={20} height={20} stroke={colors.textPrimary} />
         </TouchableOpacity>
       </View>
 
@@ -84,14 +97,14 @@ export const DashboardScreen = () => {
               label="New"
               count={orderSummary.newCount}
               color={colors.warning}
-              emoji="??"
+              icon={OrderIcon}
               onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}
             />
             <OrderSummaryCard
               label="Packing"
               count={orderSummary.packingCount}
               color={colors.primary}
-              emoji="??"
+              icon={PackingIcon}
               onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}
             />
           </View>
@@ -100,14 +113,14 @@ export const DashboardScreen = () => {
               label="Ready"
               count={orderSummary.readyCount}
               color={colors.success}
-              emoji="??"
+              icon={ReadyPickupIcon}
               onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}
             />
             <OrderSummaryCard
               label="Delivered"
               count={orderSummary.deliveredCount}
               color={colors.textSecondary}
-              emoji="?"
+              icon={SuccessCheckIcon}
               onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}
             />
           </View>
@@ -118,24 +131,24 @@ export const DashboardScreen = () => {
           <View style={styles.gridRow}>
             <QuickActionCard
               label="Add Product"
-              emoji="?"
+              icon={ProductAddIcon}
               onPress={() => navigation.navigate('AddProduct')}
             />
             <QuickActionCard
               label="Update Stock"
-              emoji="??"
+              icon={StockUpdateIcon}
               onPress={() => navigation.navigate('Main', { screen: 'InventoryTab' })}
             />
           </View>
           <View style={[styles.gridRow, { marginTop: spacing.sm }]}>
             <QuickActionCard
               label="Dispatch Orders"
-              emoji="???"
+              icon={DispatchIcon}
               onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}
             />
             <QuickActionCard
               label="Offers"
-              emoji="??"
+              icon={PromotionIcon}
               onPress={() => navigation.navigate('OffersPromotions')}
             />
           </View>
@@ -146,12 +159,14 @@ export const DashboardScreen = () => {
             style={styles.alertBanner}
             onPress={() => navigation.navigate('LowStockAlert')}
           >
-            <Text style={styles.alertEmoji}>??</Text>
+            <View style={{ marginRight: spacing.sm }}>
+              <LowStockIcon width={24} height={24} stroke={colors.danger} />
+            </View>
             <View style={styles.alertTextWrapper}>
               <Text style={styles.alertTitle}>{lowStockCount} Products are low in stock</Text>
               <Text style={styles.alertSub}>Tap to review and restock immediately</Text>
             </View>
-            <Text style={styles.alertArrow}>?</Text>
+            <ArrowRightIcon width={16} height={16} stroke={colors.danger} />
           </TouchableOpacity>
         )}
       </ScrollView>

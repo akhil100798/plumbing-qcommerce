@@ -8,6 +8,15 @@ import {
 } from '../mockPolicy';
 import { MaterialItem, MaterialRequest } from '../../types';
 
+const parseServiceOrderId = (serviceOrderId: string): number => {
+  const digits = String(serviceOrderId || '').match(/\d+/)?.[0];
+  const orderId = digits ? Number(digits) : NaN;
+  if (!Number.isFinite(orderId) || orderId <= 0) {
+    throw new Error(`Invalid service order id: ${serviceOrderId}`);
+  }
+  return orderId;
+};
+
 export const materialService = {
   searchMaterials: async (query: string): Promise<MaterialItem[]> => {
     try {
@@ -35,7 +44,7 @@ export const materialService = {
     items: { productId: number; quantity: number }[]
   ): Promise<{ id: number; totalAmount: number; items: MaterialItem[] }> => {
     try {
-      const numericOrderId = parseInt(serviceOrderId.replace(/[^0-9]/g, '')) || 1;
+      const numericOrderId = parseServiceOrderId(serviceOrderId);
       const response = await apiClient.post<any>(ENDPOINTS.DELIVERY.MATERIAL_REQUEST, {
         serviceOrderId: numericOrderId,
         storeId: 1,

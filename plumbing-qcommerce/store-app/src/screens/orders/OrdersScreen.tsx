@@ -10,6 +10,7 @@ import { ordersService } from '../../services/orders/ordersService';
 import { NavigationProp, useNavigation, useIsFocused } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
 import { Order } from '../../types';
+import OrderIcon from '../../assets/icons/order.svg';
 
 export const OrdersScreen = () => {
   const dispatch = useAppDispatch();
@@ -133,7 +134,7 @@ export const OrdersScreen = () => {
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>📋</Text>
+            <OrderIcon width={40} height={40} stroke={colors.textMuted} style={{ marginBottom: spacing.md }} />
             <Text style={styles.emptyText}>No orders in this state</Text>
           </View>
         }

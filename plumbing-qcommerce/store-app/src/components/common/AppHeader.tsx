@@ -1,11 +1,14 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Text } from 'react-native';
 import { colors, spacing, typography } from '../../theme';
+import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
 
 interface AppHeaderProps {
   title: string;
   subtitle?: string;
+  /** Called when the back button is pressed. Accepts onBack or onBackPress for compatibility. */
   onBack?: () => void;
+  onBackPress?: () => void;
   rightAction?: React.ReactNode;
 }
 
@@ -13,14 +16,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   title,
   subtitle,
   onBack,
+  onBackPress,
   rightAction,
 }) => {
+  const handleBack = onBackPress ?? onBack;
+
   return (
     <View style={styles.container}>
       <View style={styles.leftRow}>
-        {onBack && (
-          <TouchableOpacity style={styles.backButton} onPress={onBack}>
-            <Text style={styles.backEmoji}>◀</Text>
+        {handleBack && (
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <ArrowLeftIcon width={20} height={20} stroke={colors.primary} />
           </TouchableOpacity>
         )}
         <View style={styles.textContainer}>
@@ -52,10 +58,6 @@ const styles = StyleSheet.create({
   backButton: {
     marginRight: spacing.md,
     padding: spacing.xs,
-  },
-  backEmoji: {
-    fontSize: 16,
-    color: colors.primary,
   },
   textContainer: {
     flex: 1,

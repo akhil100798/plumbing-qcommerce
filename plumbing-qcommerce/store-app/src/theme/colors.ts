@@ -1,19 +1,22 @@
 export const colors = {
   // Brand colors
-  primary: '#2563EB',        // Primary Blue
+  primary: '#0B6BFF',        // FixKart Primary Blue
   primaryDark: '#0F172A',    // Dark Blue
   primaryLight: '#DBEAFE',
 
   // Status indicators
-  success: '#10B981',        // Success Green
+  success: '#20C45A',        // FixKart Success Green
   successLight: '#D1FAE5',
   warning: '#F59E0B',        // Warning Orange
   warningLight: '#FEF3C7',
   danger: '#EF4444',         // Danger Red
   dangerLight: '#FEE2E2',
+  error: '#EF4444',          // Alias for danger
+  errorLight: '#FEE2E2',     // Alias for dangerLight
 
   // Neutrals
   background: '#F8FAFC',     // Background
+  surface: '#FFFFFF',        // Card / button surface
   card: '#FFFFFF',           // Card Surface
   textPrimary: '#0F172A',    // Text Primary
   textSecondary: '#64748B',  // Text Secondary
