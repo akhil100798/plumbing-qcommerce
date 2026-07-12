@@ -5,6 +5,19 @@ const path = require('path');
 
 const config = getDefaultConfig(__dirname);
 
+const { transformer, resolver } = config;
+
+config.transformer = {
+  ...transformer,
+  babelTransformerPath: require.resolve('react-native-svg-transformer'),
+};
+
+config.resolver = {
+  ...resolver,
+  assetExts: resolver.assetExts.filter((ext) => ext !== 'svg'),
+  sourceExts: [...resolver.sourceExts, 'svg'],
+};
+
 // Web-specific module aliases
 const webAliases = {
   'react-native-maps': path.resolve(__dirname, 'src/mocks/react-native-maps.web.tsx'),

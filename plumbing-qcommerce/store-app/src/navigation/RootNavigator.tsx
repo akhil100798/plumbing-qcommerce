@@ -16,7 +16,7 @@ import { ProductDetailsScreen } from '../screens/inventory/ProductDetailsScreen'
 import { AddProductScreen } from '../screens/inventory/AddProductScreen';
 import { MaterialRequestsScreen } from '../screens/orders/MaterialRequestsScreen';
 import { DispatchAssignmentScreen } from '../screens/dispatch/DispatchAssignmentScreen';
-import { ReviewsRatingsScreen } from '../screens/reviews/ReviewsRatingsScreen';
+import { ReviewsRatingsScreen } from '../screens/reviews/ReviewsRatingsScreenNew';
 import { OffersPromotionsScreen } from '../screens/offers/OffersPromotionsScreen';
 import { StoreProfileScreen } from '../screens/profile/StoreProfileScreen';
 import { AccountScreen } from '../screens/profile/AccountScreen';

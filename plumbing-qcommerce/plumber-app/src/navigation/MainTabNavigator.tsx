@@ -10,6 +10,12 @@ import { ProfileScreen } from '../screens/profile/ProfileScreen';
 import { colors, spacing, typography } from '../theme';
 import { MainTabParamList } from '../types/navigation';
 
+import HomeIcon from '../assets/icons/home.svg';
+import JobsIcon from '../assets/icons/active-job.svg';
+import EarningsIcon from '../assets/icons/earnings.svg';
+import MaterialsIcon from '../assets/icons/material-request.svg';
+import ProfileIcon from '../assets/icons/profile.svg';
+
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export function MainTabNavigator() {
@@ -23,24 +29,27 @@ export function MainTabNavigator() {
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarIcon: ({ color, focused }) => {
-          let emoji = '🏠';
+          let IconComponent = HomeIcon;
           if (route.name === 'Home') {
-            emoji = '🏠';
+            IconComponent = HomeIcon;
           } else if (route.name === 'Jobs') {
-            emoji = '🔧';
+            IconComponent = JobsIcon;
           } else if (route.name === 'Earnings') {
-            emoji = '📈';
+            IconComponent = EarningsIcon;
           } else if (route.name === 'Materials') {
-            emoji = '🔩';
+            IconComponent = MaterialsIcon;
           } else if (route.name === 'Profile') {
-            emoji = '👤';
+            IconComponent = ProfileIcon;
           }
 
           return (
             <View style={styles.iconWrapper}>
-              <Text style={[styles.tabEmoji, { opacity: focused ? 1 : 0.6 }]}>
-                {emoji}
-              </Text>
+              <IconComponent
+                width={22}
+                height={22}
+                stroke={color}
+                fill="none"
+              />
             </View>
           );
         },
@@ -92,8 +101,5 @@ const styles = StyleSheet.create({
   iconWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  tabEmoji: {
-    fontSize: 20,
   },
 });

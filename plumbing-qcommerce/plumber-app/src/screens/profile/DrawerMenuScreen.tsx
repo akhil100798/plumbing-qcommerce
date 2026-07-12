@@ -16,6 +16,17 @@ import { colors, spacing, typography } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
 
+import HomeIcon from '../../assets/icons/home.svg';
+import ActiveJobIcon from '../../assets/icons/active-job.svg';
+import EarningsIcon from '../../assets/icons/earnings.svg';
+import WalletIcon from '../../assets/icons/wallet.svg';
+import RatingIcon from '../../assets/icons/rating.svg';
+import ShieldIcon from '../../assets/icons/shield-verified.svg';
+import SupportIcon from '../../assets/icons/chat.svg';
+import SettingsIcon from '../../assets/icons/settings.svg';
+import LogoutIcon from '../../assets/icons/logout.svg';
+import CloseIcon from '../../assets/icons/close.svg';
+
 type Props = StackScreenProps<AppStackParamList, any>;
 
 export function DrawerMenuScreen({ navigation }: Props) {
@@ -23,15 +34,14 @@ export function DrawerMenuScreen({ navigation }: Props) {
   const { plumber } = useSelector((state: RootState) => state.auth);
 
   const menuItems = [
-    { label: 'Dashboard', icon: '🏠', destination: 'Main' },
-    { label: 'My Jobs', icon: '🔧', destination: 'ActiveJob' },
-    { label: 'Earnings', icon: '📈', destination: 'Earnings' },
-    { label: 'Materials', icon: '🔩', destination: 'MaterialRequest' },
-    { label: 'Training Center', icon: '🎓', destination: null },
-    { label: 'Refer & Earn', icon: '🎁', destination: null },
-    { label: 'Notifications', icon: '🔔', destination: null, badge: 3 },
-    { label: 'Settings', icon: '⚙️', destination: null },
-    { label: 'Help & Support', icon: '❓', destination: 'Chat', params: { name: 'Help Support', role: 'Support' } },
+    { label: 'Dashboard', icon: HomeIcon, destination: 'Main' },
+    { label: 'My Jobs', icon: ActiveJobIcon, destination: 'ActiveJob' },
+    { label: 'Earnings', icon: EarningsIcon, destination: 'Earnings' },
+    { label: 'My Wallet', icon: WalletIcon, destination: 'Wallet' },
+    { label: 'Reviews', icon: RatingIcon, destination: null },
+    { label: 'Documents', icon: ShieldIcon, destination: null },
+    { label: 'Support', icon: SupportIcon, destination: 'Chat', params: { name: 'Support', role: 'Support' } },
+    { label: 'Settings', icon: SettingsIcon, destination: null },
   ];
 
   const handleLogout = () => {
@@ -42,7 +52,7 @@ export function DrawerMenuScreen({ navigation }: Props) {
   const handleItemPress = (item: any) => {
     if (item.destination) {
       if (item.destination === 'ActiveJob') {
-        navigation.navigate('Main'); // go back to main to show home, or alert
+        navigation.navigate('Main'); 
       } else {
         navigation.navigate(item.destination, item.params);
       }
@@ -55,7 +65,7 @@ export function DrawerMenuScreen({ navigation }: Props) {
         {/* Drawer Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.closeText}>✕</Text>
+            <CloseIcon width={24} height={24} stroke={colors.surface} />
           </TouchableOpacity>
           
           <View style={styles.profileRow}>
@@ -74,29 +84,27 @@ export function DrawerMenuScreen({ navigation }: Props) {
 
         {/* Drawer Body (Menu Items) */}
         <ScrollView contentContainerStyle={styles.menuContainer}>
-          {menuItems.map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.menuRow}
-              onPress={() => handleItemPress(item)}
-            >
-              <View style={styles.rowLeft}>
-                <Text style={styles.menuIcon}>{item.icon}</Text>
-                <Text style={styles.menuLabel}>{item.label}</Text>
-              </View>
-              {item.badge && (
-                <View style={styles.badgeContainer}>
-                  <Text style={styles.badgeText}>{item.badge}</Text>
+          {menuItems.map((item, index) => {
+            const IconComp = item.icon;
+            return (
+              <TouchableOpacity
+                key={index}
+                style={styles.menuRow}
+                onPress={() => handleItemPress(item)}
+              >
+                <View style={styles.rowLeft}>
+                  <IconComp width={20} height={20} stroke={colors.textMuted} />
+                  <Text style={styles.menuLabel}>{item.label}</Text>
                 </View>
-              )}
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
 
         {/* Drawer Footer */}
         <View style={styles.footer}>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutIcon}>🚪</Text>
+            <LogoutIcon width={20} height={20} stroke={colors.error} />
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>

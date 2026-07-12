@@ -52,7 +52,7 @@ export const OffersPromotionsScreen = () => {
     <ScreenWrapper style={styles.container}>
       <AppHeader
         title="Offers & Promotions"
-        onBack={() => navigation.goBack()}
+        onBackPress={() => navigation.goBack()}
         rightAction={
           <TouchableOpacity style={styles.addBtn} onPress={() => devMode ? setShowModal(true) : Alert.alert('Feature unavailable', 'Offer creation is not available in staging.')}>
             <Text style={styles.addBtnText}>{devMode ? '? New' : 'Unavailable'}</Text>

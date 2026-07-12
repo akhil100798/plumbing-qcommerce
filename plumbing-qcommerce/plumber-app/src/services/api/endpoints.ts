@@ -8,6 +8,7 @@ export const ENDPOINTS = {
   },
   ORDERS: {
     ACCEPT: (id: string | number) => `/orders/${id}/accept`,
+    ARRIVE: (id: string | number) => `/orders/${id}/arrive`,
     START: (id: string | number) => `/orders/${id}/start`,
     COMPLETE: (id: string | number) => `/orders/${id}/complete`,
     CANCEL: (id: string | number) => `/orders/${id}/cancel`,

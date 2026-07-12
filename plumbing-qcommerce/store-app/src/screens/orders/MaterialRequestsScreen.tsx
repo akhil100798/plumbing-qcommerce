@@ -9,6 +9,8 @@ import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
 import { MaterialRequest } from '../../types';
 
+import WarehouseIcon from '../../assets/icons/warehouse.svg';
+
 export const MaterialRequestsScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   
@@ -56,7 +58,7 @@ export const MaterialRequestsScreen = () => {
 
   return (
     <ScreenWrapper style={styles.container}>
-      <AppHeader title="Material Requests" onBack={() => navigation.goBack()} />
+      <AppHeader title="Material Requests" onBackPress={() => navigation.goBack()} />
 
       {/* Tabs */}
       <View style={styles.tabBar}>
@@ -102,7 +104,7 @@ export const MaterialRequestsScreen = () => {
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>🔧</Text>
+            <WarehouseIcon width={40} height={40} stroke={colors.textMuted} style={{ marginBottom: spacing.md }} />
             <Text style={styles.emptyText}>No material requests in this state</Text>
           </View>
         }

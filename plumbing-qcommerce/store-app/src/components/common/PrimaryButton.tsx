@@ -1,69 +1,132 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Pressable,
   StyleProp,
   StyleSheet,
   Text,
+  View,
   ViewStyle,
 } from 'react-native';
-import { colors, borderRadius, spacing, typography } from '../../theme';
+
+import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
+import { animation } from '../../theme/animation';
 
 interface PrimaryButtonProps {
   title: string;
   onPress: () => void;
-  style?: StyleProp<ViewStyle>;
   loading?: boolean;
   disabled?: boolean;
+  success?: boolean;
+  iconLeft?: React.ReactNode;
+  iconRight?: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
 }
 
-export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
+export function PrimaryButton({
   title,
   onPress,
-  style,
   loading = false,
   disabled = false,
-}) => {
-  const isButtonDisabled = disabled || loading;
-  
+  success = false,
+  iconLeft,
+  iconRight,
+  style,
+  accessibilityLabel,
+}: PrimaryButtonProps) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const isInteractionDisabled = disabled || loading || success;
+
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: animation.pressScale,
+      useNativeDriver: true,
+      speed: 100,
+      bounciness: 0,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 100,
+      bounciness: 4,
+    }).start();
+  };
+
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={isButtonDisabled}
-      style={({ pressed }) => [
-        styles.button,
-        style,
-        isButtonDisabled && styles.disabledButton,
-        pressed && !isButtonDisabled && styles.pressedButton,
-      ]}
-    >
-      {loading ? (
-        <ActivityIndicator size="small" color={colors.card} />
-      ) : (
-        <Text style={styles.text}>{title}</Text>
-      )}
-    </Pressable>
+    <Animated.View style={{ transform: [{ scale }], width: style ? undefined : 'auto' }}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={isInteractionDisabled}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel || title}
+        style={({ pressed }) => [
+          styles.button,
+          success && styles.successButton,
+          style,
+          isInteractionDisabled && !success && styles.disabledButton,
+          pressed && !isInteractionDisabled && styles.pressedButton,
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator color={colors.surface} size="small" />
+        ) : success ? (
+          <View style={styles.contentRow}>
+            <Text style={styles.text}>✓ Success</Text>
+          </View>
+        ) : (
+          <View style={styles.contentRow}>
+            {iconLeft && <View style={styles.iconLeftContainer}>{iconLeft}</View>}
+            <Text style={styles.text}>{title}</Text>
+            {iconRight && <View style={styles.iconRightContainer}>{iconRight}</View>}
+          </View>
+        )}
+      </Pressable>
+    </Animated.View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   button: {
     backgroundColor: colors.primary,
-    height: 48,
-    borderRadius: borderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 52,
+    minWidth: 132,
+    ...shadows.sm,
+  },
+  successButton: {
+    backgroundColor: colors.success,
   },
   disabledButton: {
-    backgroundColor: colors.textMuted,
+    opacity: 0.5,
   },
   pressedButton: {
-    opacity: 0.9,
+    backgroundColor: colors.primaryDark,
   },
   text: {
-    color: colors.card,
+    color: colors.surface,
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.bold,
+  },
+  contentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconLeftContainer: {
+    marginRight: spacing.xs,
+  },
+  iconRightContainer: {
+    marginLeft: spacing.xs,
   },
 });

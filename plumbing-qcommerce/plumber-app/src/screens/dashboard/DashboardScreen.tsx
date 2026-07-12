@@ -25,6 +25,12 @@ import { earningsService } from '../../services/earnings/earningsService';
 import { setEarningsData } from '../../redux/slices/earningsSlice';
 import { profileService } from '../../services/profile/profileService';
 import { jobService } from '../../services/jobs/jobService';
+import LogoMark from '../../assets/icons/logo-mark.svg';
+import ChatIcon from '../../assets/icons/chat.svg';
+import ActiveJobIcon from '../../assets/icons/active-job.svg';
+import CalendarIcon from '../../assets/icons/calendar.svg';
+import WalletIcon from '../../assets/icons/wallet.svg';
+import ProfileIcon from '../../assets/icons/profile.svg';
 
 type Props = StackScreenProps<AppStackParamList, 'Main'>;
 
@@ -163,9 +169,59 @@ export function DashboardScreen({ navigation }: Props) {
     };
   }, [isOnline, plumber]);
 
+  // Poll for pending orders if edge/websockets are unavailable or as a fallback
+  useEffect(() => {
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+    if (isOnline && plumber?.id) {
+      const fetchAndDispatchPendingJobs = async () => {
+        try {
+          const pendingJobs = await jobService.fetchIncomingJobs();
+          if (pendingJobs && pendingJobs.length > 0) {
+            pendingJobs.forEach((job) => {
+              // Avoid duplicate alerts for already tracked jobs
+              const exists = incomingJobs.find((ij: any) => ij.jobId === job.jobId);
+              if (!exists) {
+                dispatch(addIncomingJob(job));
+                Alert.alert(
+                  '🔔 New Job Offer!',
+                  `A job was broadcasted nearby! ${job.distance.toFixed(1)} km away.`,
+                  [
+                    { text: 'Decline', style: 'cancel', onPress: () => dispatch(removeIncomingJob(job.jobId)) },
+                    {
+                      text: 'View Details',
+                      onPress: () => {
+                        navigation.navigate('IncomingJobRequest', {
+                          jobId: job.jobId,
+                          customerId: job.customerId,
+                          distance: job.distance,
+                        });
+                      },
+                    },
+                  ]
+                );
+              }
+            });
+          }
+        } catch (err) {
+          console.log('Failed to poll pending service requests:', err);
+        }
+      };
+
+      // Run initial check
+      fetchAndDispatchPendingJobs();
+
+      // Poll every 8 seconds
+      pollInterval = setInterval(fetchAndDispatchPendingJobs, 8000);
+    }
+
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+    };
+  }, [isOnline, plumber, incomingJobs, dispatch, navigation]);
+
   // Open Drawer Menu helper
   const openDrawer = () => {
-    // Navigate to drawer or custom Drawer screen
     navigation.navigate('Profile' as any);
   };
 
@@ -174,19 +230,19 @@ export function DashboardScreen({ navigation }: Props) {
       {/* Top Navbar */}
       <View style={styles.navBar}>
         <TouchableOpacity style={styles.menuBtn} onPress={openDrawer}>
-          <Text style={styles.menuIcon}>☰</Text>
+          <LogoMark width={24} height={24} stroke={colors.primary} />
         </TouchableOpacity>
         
         <View style={styles.brandContainer}>
-          <Text style={styles.brandText}>PlumbCommerce</Text>
-          <Text style={styles.brandSub}>Plumber App</Text>
+          <Text style={styles.brandText}>FixKart</Text>
+          <Text style={styles.brandSub}>Help. Fix. Earn. Repeat.</Text>
         </View>
 
         <TouchableOpacity 
           style={styles.drawerBtn} 
           onPress={() => navigation.navigate('Chat', { name: 'Support Operations', role: 'Support' })}
         >
-          <Text style={styles.chatBubble}>💬</Text>
+          <ChatIcon width={24} height={24} stroke={colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -270,7 +326,7 @@ export function DashboardScreen({ navigation }: Props) {
             }}
           >
             <View style={[styles.actionCircle, { backgroundColor: '#DBEAFE' }]}>
-              <Text style={styles.actionEmoji}>🔧</Text>
+              <ActiveJobIcon width={24} height={24} stroke={colors.primary} />
             </View>
             <Text style={styles.actionLabel}>Active Job</Text>
           </TouchableOpacity>
@@ -280,7 +336,7 @@ export function DashboardScreen({ navigation }: Props) {
             onPress={() => navigation.navigate('JobHistory' as any)}
           >
             <View style={[styles.actionCircle, { backgroundColor: '#D1FAE5' }]}>
-              <Text style={styles.actionEmoji}>📋</Text>
+              <CalendarIcon width={24} height={24} stroke={colors.success} />
             </View>
             <Text style={styles.actionLabel}>History</Text>
           </TouchableOpacity>
@@ -290,7 +346,7 @@ export function DashboardScreen({ navigation }: Props) {
             onPress={() => navigation.navigate('Wallet' as any)}
           >
             <View style={[styles.actionCircle, { backgroundColor: '#FEF3C7' }]}>
-              <Text style={styles.actionEmoji}>💳</Text>
+              <WalletIcon width={24} height={24} stroke={colors.warning} />
             </View>
             <Text style={styles.actionLabel}>My Wallet</Text>
           </TouchableOpacity>
@@ -300,7 +356,7 @@ export function DashboardScreen({ navigation }: Props) {
             onPress={() => navigation.navigate('Profile' as any)}
           >
             <View style={[styles.actionCircle, { backgroundColor: '#FEE2E2' }]}>
-              <Text style={styles.actionEmoji}>👤</Text>
+              <ProfileIcon width={24} height={24} stroke={colors.error} />
             </View>
             <Text style={styles.actionLabel}>Profile</Text>
           </TouchableOpacity>
@@ -313,7 +369,7 @@ export function DashboardScreen({ navigation }: Props) {
               <Text style={styles.goalTitle}>Complete 3 more jobs</Text>
               <Text style={styles.goalSub}>to earn ₹450 extra today</Text>
             </View>
-            <Text style={styles.giftEmoji}>🎁</Text>
+            <LogoMark width={28} height={28} stroke={colors.warning} />
           </View>
           <View style={styles.progressBarBg}>
             <View style={[styles.progressBarFill, { width: '66%' }]} />

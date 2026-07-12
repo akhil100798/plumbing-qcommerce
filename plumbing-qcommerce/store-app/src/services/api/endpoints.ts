@@ -39,6 +39,9 @@ export const ENDPOINTS = {
     balance: '/wallet',
     transactions: '/wallet/transactions',
   },
+  reviews: {
+    list: '/reviews/store',
+  },
   notifications: {
     list: '/notifications',
     markRead: (id: number) => `/notifications/${id}/read`,

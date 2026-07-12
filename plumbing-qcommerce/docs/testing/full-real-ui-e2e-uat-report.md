@@ -1,11 +1,19 @@
 # Full Real UI E2E UAT Report
 
 ## 1. Executive Summary
-- Overall result: PARTIAL / BLOCKED
-- Main flow result: Customer can create a real service order through UI; plumber can login and view job, but job progression blocks at arrival with backend 500.
+- **Overall result:** PARTIAL — Critical P0 fixes applied, remaining phases need re-test
+- **Main flow result:** Customer booking ✅, Plumber accept+arrive ✅, PlumberTrackingScreen material approval card ✅ FIXED. Store fulfillment, OTP delivery, and job completion phases still pending fresh test.
 - Apps tested: customer-app, plumber-app, store-app
 - Backend URL: https://plumbing-qcommerce.onrender.com
-- Production Ready: NO
+- **Production Ready:** NO — Store/OTP/Completion phases need full verification
+
+### Bugs Fixed This Session
+| # | Bug | Status |
+|---|-----|--------|
+| B-01 | PATCH /arrive hitting stale order ID /orders/1 (fetchJobById + descending sort fix) | ✅ FIXED |
+| B-02 | fetchActiveJob hardcodes 'accepted', ignores arrivedAt | ✅ FIXED |
+| B-03 | PlumberTrackingScreen had no material approval card (hardcoded staging limitation notice) | ✅ FIXED |
+| B-07 | GlobalExceptionHandler.java NPE in Map.of() | ✅ FIXED (prev session) |
 
 ## 2. Test Environment
 - Branch/commit tested: phase13a-local-staging-sms / working tree with local uncommitted UI changes

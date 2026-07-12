@@ -1,7 +1,19 @@
 import React from 'react';
 import { StyleSheet, Text, Switch, TouchableOpacity, View } from 'react-native';
+import { SvgProps } from 'react-native-svg';
 import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
 import { Transaction, Review, Offer, AppNotification } from '../../types';
+
+import OrderIcon from '../../assets/icons/order.svg';
+import RiderIcon from '../../assets/icons/rider.svg';
+import WalletIcon from '../../assets/icons/wallet.svg';
+import LowStockIcon from '../../assets/icons/low-stock.svg';
+import PromotionIcon from '../../assets/icons/promotion.svg';
+import NotificationIcon from '../../assets/icons/notification.svg';
+import ArrowRightIcon from '../../assets/icons/arrow-right.svg';
+import StarIcon from '../../assets/icons/star.svg';
+import PlusIcon from '../../assets/icons/plus.svg';
+import MinusIcon from '../../assets/icons/minus.svg';
 
 // ==========================================
 // TRANSACTION CARD
@@ -17,7 +29,11 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({ transaction })
     <View style={styles.transCard}>
       <View style={styles.transLeft}>
         <View style={[styles.transIconBox, { backgroundColor: isCredit ? colors.successLight : colors.dangerLight }]}>
-          <Text style={styles.transIconEmoji}>{isCredit ? '➕' : '➖'}</Text>
+          {isCredit ? (
+            <PlusIcon width={14} height={14} stroke={colors.success} />
+          ) : (
+            <MinusIcon width={14} height={14} stroke={colors.danger} />
+          )}
         </View>
         <View style={styles.transDetails}>
           <Text numberOfLines={1} style={styles.transDesc}>{transaction.description}</Text>
@@ -47,12 +63,14 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
         <Text style={styles.revUser}>{review.customerName}</Text>
         <View style={styles.starsRow}>
           {[...Array(5)].map((_, i) => (
-            <Text
+            <StarIcon
               key={i}
-              style={[styles.starEmoji, { color: i < review.rating ? colors.warning : colors.borderDark }]}
-            >
-              ★
-            </Text>
+              width={14}
+              height={14}
+              stroke={i < review.rating ? colors.warning : colors.borderDark}
+              fill={i < review.rating ? colors.warning : 'none'}
+              style={{ marginRight: 2 }}
+            />
           ))}
         </View>
       </View>
@@ -103,14 +121,16 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
 }) => {
   const getIcon = (type: string) => {
     switch (type) {
-      case 'NEW_ORDER': return '📥';
-      case 'RIDER_ASSIGNED': return '🚴';
-      case 'PAYMENT_RECEIVED': return '💵';
-      case 'LOW_STOCK': return '⚠️';
-      case 'OFFER_ACTIVATED': return '🎁';
-      default: return '🔔';
+      case 'NEW_ORDER': return OrderIcon;
+      case 'RIDER_ASSIGNED': return RiderIcon;
+      case 'PAYMENT_RECEIVED': return WalletIcon;
+      case 'LOW_STOCK': return LowStockIcon;
+      case 'OFFER_ACTIVATED': return PromotionIcon;
+      default: return NotificationIcon;
     }
   };
+
+  const IconComponent = getIcon(notification.type);
 
   return (
     <TouchableOpacity
@@ -119,7 +139,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
       onPress={onPress}
     >
       <View style={styles.notifIconBox}>
-        <Text style={styles.notifEmoji}>{getIcon(notification.type)}</Text>
+        <IconComponent width={18} height={18} stroke={colors.textPrimary} />
       </View>
       <View style={styles.notifText}>
         <Text style={styles.notifTitle}>{notification.title}</Text>
@@ -137,12 +157,14 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
 // PROFILE MENU ITEM
 // ==========================================
 interface ProfileMenuItemProps {
-  emoji: string;
+  icon?: React.FC<SvgProps>;
+  emoji?: string;
   label: string;
   onPress: () => void;
 }
 
 export const ProfileMenuItem: React.FC<ProfileMenuItemProps> = ({
+  icon: IconComponent,
   emoji,
   label,
   onPress,
@@ -154,10 +176,16 @@ export const ProfileMenuItem: React.FC<ProfileMenuItemProps> = ({
       onPress={onPress}
     >
       <View style={styles.profileItemLeft}>
-        <Text style={styles.itemEmoji}>{emoji}</Text>
+        {IconComponent ? (
+          <View style={{ marginRight: spacing.md }}>
+            <IconComponent width={18} height={18} stroke={colors.primary} />
+          </View>
+        ) : (
+          <Text style={styles.itemEmoji}>{emoji}</Text>
+        )}
         <Text style={styles.itemLabel}>{label}</Text>
       </View>
-      <Text style={styles.itemArrow}>▶</Text>
+      <ArrowRightIcon width={12} height={12} stroke={colors.textMuted} />
     </TouchableOpacity>
   );
 };

@@ -8,9 +8,11 @@ import com.pqc.core.repository.UserRepository;
 import com.pqc.core.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -55,7 +57,7 @@ public class ServiceOrderService {
             throw new AccessDeniedException("Customers may create only their own orders");
         }
         User customer = userRepository.findById(customerId)
-                .orElseThrow(() -> new RuntimeException("Customer not found: " + customerId));
+                .orElseThrow(() -> notFound("Customer not found: " + customerId));
 
         ServiceOrder order = ServiceOrder.builder()
                 .customer(customer)
@@ -88,14 +90,20 @@ public class ServiceOrderService {
         }
         ServiceOrder order = getOrderOrThrow(orderId);
 
+        if (order.getStatus() == OrderStatus.ACCEPTED
+                && order.getPlumber() != null
+                && order.getPlumber().getId().equals(plumberId)) {
+            return order;
+        }
+
         if (order.getStatus() != OrderStatus.PENDING) {
-            throw new IllegalArgumentException("Order #" + orderId + " cannot be accepted. Status: " + order.getStatus());
+            throw conflict("Order #" + orderId + " cannot be accepted. Status: " + order.getStatus());
         }
 
         User plumber = userRepository.findById(plumberId)
-                .orElseThrow(() -> new RuntimeException("Plumber not found: " + plumberId));
+                .orElseThrow(() -> notFound("Plumber not found: " + plumberId));
         if (plumber.getRole() != Role.PLUMBER) {
-            throw new IllegalArgumentException("Assigned user is not a plumber");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Assigned user is not a plumber");
         }
 
         order.setPlumber(plumber);
@@ -114,6 +122,32 @@ public class ServiceOrderService {
     }
 
     /**
+     * Plumber arrived at the site
+     */
+    @Transactional
+    public ServiceOrder arriveOrder(Long orderId) {
+        ServiceOrder order = getOrderOrThrow(orderId);
+        requireAssignedPlumber(order);
+
+        if (order.getStatus() != OrderStatus.ACCEPTED
+                && order.getStatus() != OrderStatus.IN_PROGRESS
+                && order.getStatus() != OrderStatus.COMBINED_ORDER) {
+            throw conflict("Order must be ACCEPTED or active to mark arrival. Current status: " + order.getStatus());
+        }
+
+        if (order.getArrivedAt() == null) {
+            order.setArrivedAt(LocalDateTime.now());
+        }
+        ServiceOrder saved = orderRepository.save(order);
+
+        saveToOutbox(String.valueOf(saved.getId()), "ORDER_ARRIVED", "order-arrived",
+                "ORDER_ARRIVED:" + saved.getId() + ":PLUMBER:" + order.getPlumber().getId() + ":CUSTOMER:" + order.getCustomer().getId());
+
+        log.info("Plumber arrived at site for order #{}", saved.getId());
+        return saved;
+    }
+
+    /**
      * Plumber is on-site, work has started
      */
     @Transactional
@@ -121,12 +155,22 @@ public class ServiceOrderService {
         ServiceOrder order = getOrderOrThrow(orderId);
         requireAssignedPlumber(order);
 
+        if (order.getStatus() == OrderStatus.IN_PROGRESS || order.getStatus() == OrderStatus.COMBINED_ORDER) {
+            return order;
+        }
+
         if (order.getStatus() != OrderStatus.ACCEPTED) {
-            throw new IllegalArgumentException("Order cannot be started from status: " + order.getStatus());
+            throw conflict("Order cannot be started from status: " + order.getStatus());
+        }
+
+        if (order.getArrivedAt() == null) {
+            throw conflict("Order must be marked arrived before work can start.");
         }
 
         order.setStatus(OrderStatus.IN_PROGRESS);
-        order.setStartedAt(LocalDateTime.now());
+        if (order.getStartedAt() == null) {
+            order.setStartedAt(LocalDateTime.now());
+        }
         log.info("Order #{} is now IN_PROGRESS", orderId);
 
         return orderRepository.save(order);
@@ -149,7 +193,7 @@ public class ServiceOrderService {
 
         if (order.getStatus() != OrderStatus.IN_PROGRESS
                 && order.getStatus() != OrderStatus.COMBINED_ORDER) {
-            throw new IllegalArgumentException("Order cannot be completed from status: " + order.getStatus());
+            throw conflict("Order cannot be completed from status: " + order.getStatus());
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -158,7 +202,8 @@ public class ServiceOrderService {
 
         // ---- BILLING ENGINE ----
         // 1. Labour cost
-        long minutesWorked = ChronoUnit.MINUTES.between(order.getStartedAt(), now);
+        LocalDateTime startedAt = order.getStartedAt() != null ? order.getStartedAt() : now;
+        long minutesWorked = ChronoUnit.MINUTES.between(startedAt, now);
         double hoursWorked = Math.max(0.5, minutesWorked / 60.0);
         BigDecimal labor = HOURLY_LABOR_RATE.multiply(BigDecimal.valueOf(hoursWorked));
 
@@ -211,7 +256,7 @@ public class ServiceOrderService {
             throw new AccessDeniedException("Only the owning customer or an administrator may cancel this order");
         }
         if (order.getStatus() == OrderStatus.COMPLETED) {
-            throw new IllegalArgumentException("Cannot cancel a completed order.");
+            throw conflict("Cannot cancel a completed order.");
         }
         order.setStatus(OrderStatus.CANCELLED);
         return orderRepository.save(order);
@@ -266,6 +311,14 @@ public class ServiceOrderService {
 
     private ServiceOrder getOrderOrThrow(Long id) {
         return orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Service order not found: " + id));
+                .orElseThrow(() -> notFound("Service order not found: " + id));
+    }
+
+    private ResponseStatusException notFound(String message) {
+        return new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+    }
+
+    private ResponseStatusException conflict(String message) {
+        return new ResponseStatusException(HttpStatus.CONFLICT, message);
     }
 }

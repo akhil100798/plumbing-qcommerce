@@ -11,6 +11,9 @@ import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
 import { Product } from '../../types';
 
+import LowStockIcon from '../../assets/icons/low-stock.svg';
+import SuccessCheckIcon from '../../assets/icons/success-check.svg';
+
 export const LowStockAlertScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const dispatch = useAppDispatch();
@@ -71,11 +74,11 @@ export const LowStockAlertScreen = () => {
 
   return (
     <ScreenWrapper style={styles.container}>
-      <AppHeader title="Low Stock Alerts" onBack={() => navigation.goBack()} />
+      <AppHeader title="Low Stock Alerts" onBackPress={() => navigation.goBack()} />
 
       <View style={styles.alertHeader}>
         <View style={styles.alertIconBox}>
-          <Text style={styles.alertEmoji}>⚠️</Text>
+          <LowStockIcon width={18} height={18} stroke={colors.danger} />
         </View>
         <View style={styles.alertTextWrapper}>
           <Text style={styles.alertTitle}>{lowStockItems.length} Products are low in stock</Text>
@@ -98,7 +101,7 @@ export const LowStockAlertScreen = () => {
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>🎉</Text>
+            <SuccessCheckIcon width={40} height={40} stroke={colors.success} style={{ marginBottom: spacing.md }} />
             <Text style={styles.emptyText}>All products are sufficiently stocked!</Text>
           </View>
         }

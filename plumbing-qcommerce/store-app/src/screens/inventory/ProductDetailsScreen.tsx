@@ -67,7 +67,7 @@ export const ProductDetailsScreen = () => {
 
   return (
     <ScreenWrapper style={styles.container}>
-      <AppHeader title="Product Details" onBack={() => navigation.goBack()} />
+      <AppHeader title="Product Details" onBackPress={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.imageCard}>

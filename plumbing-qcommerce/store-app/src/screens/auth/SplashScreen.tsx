@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, ActivityIndicator, Animated } from 'react-native';
 import { colors, spacing, typography } from '../../theme';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { getAuthToken, setAuthToken, setRefreshToken, apiClient } from '../../services/api/axiosClient';
@@ -10,13 +10,51 @@ import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
 import { User } from '../../types';
 
+import LogoMark from '../../assets/icons/logo-mark.svg';
+import StoreSplashHero from '../../assets/illustrations/store-splash-hero.svg';
+
 export const SplashScreen = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
 
+  const scale = useRef(new Animated.Value(0.3)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const floatAnim = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
+    // Start animations
+    Animated.parallel([
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 5,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Floating hero animation loop
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, {
+          toValue: -8,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim, {
+          toValue: 0,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
     const checkAuth = async () => {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       try {
         const token = await getAuthToken();
@@ -42,16 +80,23 @@ export const SplashScreen = () => {
 
   return (
     <ScreenWrapper backgroundColor={colors.primary} barStyle="light-content" style={styles.container}>
-      <View style={styles.logoContainer}>
+      <Animated.View style={[styles.logoContainer, { transform: [{ scale }], opacity }]}>
         <View style={styles.iconBox}>
-          <Text style={styles.iconEmoji}>??</Text>
+          <LogoMark width={48} height={48} stroke={colors.primary} />
         </View>
-        <Text style={styles.brandTitle}>PlumbCommerce</Text>
-        <Text style={styles.brandSubtitle}>Store Partner</Text>
-        <Text style={styles.tagline}>Manage. Deliver. Grow.</Text>
-      </View>
+        <Text style={styles.brandTitle}>FixKart</Text>
+        <Text style={styles.brandSubtitle}>Store Partner App</Text>
+        <Text style={styles.tagline}>Parts that keep every repair going.</Text>
+      </Animated.View>
 
-      <ActivityIndicator size="large" color={colors.card} style={styles.loader} />
+      <Animated.View style={[styles.heroContainer, { transform: [{ translateY: floatAnim }] }]}>
+        <StoreSplashHero width={220} height={150} />
+      </Animated.View>
+
+      <View style={styles.footer}>
+        <ActivityIndicator size="small" color={colors.card} />
+        <Text style={styles.loadingText}>Partnering in progress...</Text>
+      </View>
     </ScreenWrapper>
   );
 };
@@ -60,9 +105,11 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
     alignItems: 'center',
+    flex: 1,
   },
   logoContainer: {
     alignItems: 'center',
+    marginBottom: spacing.lg,
   },
   iconBox: {
     width: 80,
@@ -72,30 +119,49 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.md,
-  },
-  iconEmoji: {
-    fontSize: 42,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
   },
   brandTitle: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: typography.fontWeight.black,
     color: colors.card,
   },
   brandSubtitle: {
-    fontSize: typography.fontSize.lg,
+    fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.medium,
     color: colors.primaryLight,
     marginTop: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
   },
   tagline: {
-    fontSize: typography.fontSize.xs,
+    fontSize: typography.fontSize.sm,
     color: colors.primaryLight,
     marginTop: spacing.md,
-    letterSpacing: 1.2,
+    textAlign: 'center',
+    paddingHorizontal: spacing.xl,
   },
-  loader: {
-    marginTop: spacing.giant,
+  heroContainer: {
+    marginVertical: spacing.xl,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 40,
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  loadingText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.primaryLight,
+    opacity: 0.8,
   },
 });
+
 export default SplashScreen;
 

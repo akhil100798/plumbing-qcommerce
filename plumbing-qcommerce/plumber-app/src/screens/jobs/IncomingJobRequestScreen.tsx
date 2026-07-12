@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  Alert,
   StyleSheet,
   Text,
   View,
@@ -23,7 +24,7 @@ type Props = StackScreenProps<AppStackParamList, 'IncomingJobRequest'>;
 export function IncomingJobRequestScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
   const { jobId, customerId, distance } = route.params;
-  const [timer, setTimer] = useState(15);
+  const [timer, setTimer] = useState(60);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -59,9 +60,9 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
       
       // Navigate to Active Job
       navigation.replace('ActiveJob', { jobId });
-    } catch (error) {
+    } catch (error: any) {
       setLoading(false);
-      console.error('Failed to accept job:', error);
+      Alert.alert('Accept job failed', error?.message || 'Could not accept this service request. Please retry.');
     }
   };
 
@@ -71,6 +72,7 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
       
       <View style={styles.content}>
         <View style={styles.cardWrapper}>
+          <Text style={styles.debugText}>Job ID: {jobId}</Text>
           <JobRequestCard
             issueDescription="Pipe Leakage in Bathroom"
             category="Bathroom"
@@ -97,10 +99,10 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
             title="Decline"
             onPress={handleDecline}
             style={styles.declineBtn}
-            textStyle={styles.declineText}
+            textColor={colors.error}
           />
           <PrimaryButton
-            title="Accept Request"
+            title="Accept Job"
             onPress={handleAccept}
             loading={loading}
             style={styles.acceptBtn}
@@ -119,6 +121,11 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     marginBottom: spacing.xl,
+  },
+  debugText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
   sectionLabel: {
     fontSize: typography.fontSize.sm,

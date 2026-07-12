@@ -1,11 +1,24 @@
 // metro.config.js
 // Expo/Metro bundler configuration for PlumbCommerce Customer App
-// Key purpose: alias native-only packages to web-compatible stubs when bundling for web
+// Key purpose: alias native-only packages to web-compatible stubs when bundling for web and support local SVGs.
 
 const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
 const config = getDefaultConfig(__dirname);
+
+const { transformer, resolver } = config;
+
+config.transformer = {
+  ...transformer,
+  babelTransformerPath: require.resolve('react-native-svg-transformer'),
+};
+
+config.resolver = {
+  ...resolver,
+  assetExts: resolver.assetExts.filter((ext) => ext !== 'svg'),
+  sourceExts: [...resolver.sourceExts, 'svg'],
+};
 
 // Web-specific module aliases
 // react-native-maps doesn't have a web implementation; we provide a visual stub.

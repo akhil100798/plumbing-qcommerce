@@ -14,14 +14,12 @@ import {
 } from 'react-native';
 import { useDispatch } from 'react-redux';
 
-import { AppIcon } from '../../components/common/AppIcon';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { loginFailure, loginStart, loginSuccess } from '../../redux/slices/authSlice';
 import { AuthRepository } from '../../services/auth/authRepository';
 import { AuthResponse } from '../../services/auth/authTypes';
 import { borderRadius, colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
-import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
 
 type Props = StackScreenProps<AuthStackParamList, 'Register'>;
 
@@ -110,7 +108,7 @@ export function RegisterScreen({ navigation }: Props) {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <AppIcon icon={ArrowLeftIcon} size={20} color={colors.textPrimary} />
+            <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
 
           <View style={styles.header}>
@@ -205,6 +203,11 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
     marginBottom: spacing.md,
+  },
+  backButtonText: {
+    fontSize: 20,
+    color: '#0F172A',
+    fontWeight: 'bold',
   },
   header: {
     marginBottom: spacing.xl,

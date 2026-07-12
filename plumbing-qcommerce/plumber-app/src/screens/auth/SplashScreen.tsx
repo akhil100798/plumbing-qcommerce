@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 
@@ -14,12 +15,51 @@ import { authSuccess, logout } from '../../redux/slices/authSlice';
 import { profileService } from '../../services/profile/profileService';
 import { tokenStorage } from '../../services/api/tokenStorage';
 
+import LogoMark from '../../assets/icons/logo-mark.svg';
+import PlumberHero from '../../assets/illustrations/plumber-splash-hero.svg';
+
 type Props = StackScreenProps<AuthStackParamList, 'Splash'>;
 
 export function SplashScreen({ navigation }: Props) {
   const dispatch = useDispatch();
 
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.75)).current;
+  const floatAnim = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
+    // Entrance animation
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Floating animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, {
+          toValue: -8,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim, {
+          toValue: 0,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
     const checkAuth = async () => {
       try {
         const token = await tokenStorage.getItem('authToken');
@@ -47,25 +87,28 @@ export function SplashScreen({ navigation }: Props) {
       }
     };
 
-    const timer = setTimeout(checkAuth, 2000);
+    const timer = setTimeout(checkAuth, 3000);
     return () => clearTimeout(timer);
-  }, [navigation, dispatch]);
+  }, [navigation, dispatch, fadeAnim, scaleAnim, floatAnim]);
 
   return (
     <View style={styles.container}>
-      <View style={styles.logoContainer}>
-        <View style={styles.logoCircle}>
-          <Text style={styles.logoIcon}>ðŸ”§</Text>
+      <Animated.View style={[styles.logoContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+        <View style={styles.logoRow}>
+          <LogoMark width={48} height={48} stroke={colors.primary} />
+          <Text style={styles.appName}>FixKart</Text>
         </View>
-        <Text style={styles.appName}>PlumbCommerce</Text>
-        <Text style={styles.appSubtitle}>Plumber App</Text>
-      </View>
+        <Text style={styles.tagline}>Fix it. Fast. Fixed with FixKart.</Text>
+      </Animated.View>
+
+      <Animated.View style={[styles.heroContainer, { transform: [{ translateY: floatAnim }] }]}>
+        <PlumberHero width={240} height={160} />
+      </Animated.View>
 
       <View style={styles.footer}>
-        <ActivityIndicator color={colors.surface} size="small" />
-        <Text style={styles.footerText}>
-          Connecting you with more jobs, more earnings.
-        </Text>
+        <ActivityIndicator color={colors.primary} size="small" />
+        <Text style={styles.footerText}>Partnering in progress...</Text>
+        <Text style={styles.versionText}>Ver: 1.0.0</Text>
       </View>
     </View>
   );
@@ -74,50 +117,50 @@ export function SplashScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing.xl,
   },
   logoContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
+    marginTop: spacing.giant,
+    marginBottom: spacing.xl,
   },
-  logoCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
+  logoRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  logoIcon: {
-    fontSize: 48,
+    gap: spacing.sm,
   },
   appName: {
-    fontSize: 28,
+    fontSize: 36,
     fontWeight: typography.fontWeight.black,
-    color: colors.surface,
+    color: colors.primary,
   },
-  appSubtitle: {
+  tagline: {
     fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.primaryLight,
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    marginTop: 4,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
+    marginTop: spacing.xs,
+  },
+  heroContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   footer: {
     alignItems: 'center',
     marginBottom: spacing.giant,
-    gap: spacing.md,
+    gap: spacing.xs,
   },
   footerText: {
-    color: colors.primaryLight,
+    color: colors.textSecondary,
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
-    textAlign: 'center',
+  },
+  versionText: {
+    color: colors.textMuted,
+    fontSize: typography.fontSize.xs,
+    marginTop: spacing.xs,
   },
 });

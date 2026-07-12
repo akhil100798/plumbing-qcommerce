@@ -15,7 +15,6 @@ import {
 import { useDispatch } from 'react-redux';
 import * as Linking from 'expo-linking';
 
-import { AppIcon } from '../../components/common/AppIcon';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { SecondaryButton } from '../../components/common/SecondaryButton';
 import { loginFailure, loginStart, loginSuccess } from '../../redux/slices/authSlice';
@@ -23,8 +22,6 @@ import { AuthRepository } from '../../services/auth/authRepository';
 import { AuthResponse } from '../../services/auth/authTypes';
 import { borderRadius, colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
-import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
-import GoogleIcon from '../../assets/icons/google.svg';
 
 type Props = StackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -207,7 +204,7 @@ export function LoginScreen({ navigation }: Props) {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <AppIcon icon={ArrowLeftIcon} size={20} color={colors.textPrimary} />
+            <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
 
           <View style={styles.header}>
@@ -276,7 +273,6 @@ export function LoginScreen({ navigation }: Props) {
                 disabled={googleLoading}
                 outlineColor={colors.border}
                 textColor={colors.textPrimary}
-                iconLeft={<AppIcon icon={GoogleIcon} size={20} />}
                 style={styles.googleButton}
               />
               {googleMessage ? <Text style={styles.googleMessage}>{googleMessage}</Text> : null}
@@ -313,6 +309,11 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
     marginBottom: spacing.md,
+  },
+  backButtonText: {
+    fontSize: 20,
+    color: '#0F172A',
+    fontWeight: 'bold',
   },
   header: {
     marginBottom: spacing.xl,
@@ -419,9 +420,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#CBD5E1',

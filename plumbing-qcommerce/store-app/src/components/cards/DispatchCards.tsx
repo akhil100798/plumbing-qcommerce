@@ -2,6 +2,8 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
 import { Rider, MaterialRequest } from '../../types';
+import RiderIcon from '../../assets/icons/rider.svg';
+import StarIcon from '../../assets/icons/star.svg';
 
 // ==========================================
 // RIDER CARD
@@ -25,12 +27,12 @@ export const RiderCard: React.FC<RiderCardProps> = ({
     >
       <View style={styles.riderLeft}>
         <View style={styles.riderAvatar}>
-          <Text style={styles.avatarText}>🚴</Text>
+          <RiderIcon width={18} height={18} stroke={colors.primary} />
         </View>
         <View style={styles.riderDetails}>
           <Text style={styles.riderName}>{rider.fullName}</Text>
           <View style={styles.ratingRow}>
-            <Text style={styles.ratingStar}>★</Text>
+            <StarIcon width={10} height={10} fill={colors.warning} stroke={colors.warning} style={{ marginRight: 2 }} />
             <Text style={styles.ratingVal}>{rider.rating}</Text>
             <Text style={styles.vehicleNum}> • {rider.vehicleNumber}</Text>
           </View>
@@ -60,12 +62,17 @@ export const MaterialRequestCard: React.FC<MaterialRequestCardProps> = ({
 }) => {
   const itemsText = request.items.map(i => `${i.productName} (x${i.quantity})`).join(', ');
 
+  const getPlumberInitials = (name?: string) => {
+    if (!name) return 'P';
+    return name.slice(0, 2).toUpperCase();
+  };
+
   return (
     <View style={styles.requestCard}>
       <View style={styles.requestHeader}>
         <View style={styles.plumberInfo}>
           <View style={styles.plumberAvatar}>
-            <Text style={styles.plumberAvatarText}>🔧</Text>
+            <Text style={styles.plumberAvatarText}>{getPlumberInitials(request.plumberName)}</Text>
           </View>
           <View>
             <Text style={styles.plumberName}>{request.plumberName}</Text>

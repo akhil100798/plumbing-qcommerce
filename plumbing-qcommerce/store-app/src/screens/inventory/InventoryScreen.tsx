@@ -11,6 +11,8 @@ import { inventoryService } from '../../services/inventory/inventoryService';
 import { NavigationProp, useNavigation, useIsFocused } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
 import { Product } from '../../types';
+import PlusIcon from '../../assets/icons/plus.svg';
+import WarehouseIcon from '../../assets/icons/warehouse.svg';
 
 export const InventoryScreen = () => {
   const dispatch = useAppDispatch();
@@ -61,7 +63,10 @@ export const InventoryScreen = () => {
             style={styles.addButton}
             onPress={() => navigation.navigate('AddProduct')}
           >
-            <Text style={styles.addBtnText}>➕ Add</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <PlusIcon width={14} height={14} stroke={colors.primary} />
+              <Text style={styles.addBtnText}>Add</Text>
+            </View>
           </TouchableOpacity>
         }
       />
@@ -137,7 +142,7 @@ export const InventoryScreen = () => {
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>📦</Text>
+            <WarehouseIcon width={40} height={40} stroke={colors.textMuted} style={{ marginBottom: spacing.md }} />
             <Text style={styles.emptyText}>No matching products found</Text>
           </View>
         }

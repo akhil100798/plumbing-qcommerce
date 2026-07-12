@@ -91,7 +91,7 @@ export const PackingScreen = () => {
 
   return (
     <ScreenWrapper style={styles.container}>
-      <AppHeader title="Packing Order" subtitle={`#ORD-${order.id}`} onBack={() => navigation.goBack()} />
+      <AppHeader title="Packing Order" subtitle={`#ORD-${order.id}`} onBackPress={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.checklistHeader}>

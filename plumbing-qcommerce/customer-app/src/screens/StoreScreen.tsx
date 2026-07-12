@@ -19,6 +19,9 @@ import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList, MainTabParamList } from '../types/navigation';
 import { apiClient } from '../services/apiClient';
 
+import { EmptyStateCard } from '../components/common/EmptyStateCard';
+import EmptyStateIcon from '../assets/icons/empty-state.svg';
+
 type Props = CompositeScreenProps<
   BottomTabScreenProps<MainTabParamList, 'StoreTab'>,
   StackScreenProps<AppStackParamList>
@@ -117,9 +120,11 @@ export function StoreScreen({ navigation }: Props) {
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : filteredStores.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No matching partner stores found.</Text>
-          </View>
+          <EmptyStateCard
+            title="No partner stores found"
+            subtitle="We couldn't find any hardware store matching your search query. Try another keyword!"
+            illustration={<EmptyStateIcon width={100} height={80} />}
+          />
         ) : (
           filteredStores.map((store) => (
             <StoreCard

@@ -59,7 +59,7 @@ export const SalesAnalyticsScreen = () => {
     <ScreenWrapper style={styles.container}>
       <AppHeader
         title="Sales Analytics"
-        onBack={() => navigation.goBack()}
+        onBackPress={() => navigation.goBack()}
         rightAction={
           <View style={styles.filterToggle}>
             <TouchableOpacity

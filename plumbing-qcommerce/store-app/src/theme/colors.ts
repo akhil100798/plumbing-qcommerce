@@ -1,11 +1,11 @@
 export const colors = {
   // Brand colors
-  primary: '#2563EB',        // Primary Blue
+  primary: '#0B6BFF',        // FixKart Primary Blue
   primaryDark: '#0F172A',    // Dark Blue
   primaryLight: '#DBEAFE',
 
   // Status indicators
-  success: '#10B981',        // Success Green
+  success: '#20C45A',        // FixKart Success Green
   successLight: '#D1FAE5',
   warning: '#F59E0B',        // Warning Orange
   warningLight: '#FEF3C7',

@@ -3,6 +3,8 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
 import { StatusChip } from '../common/StatusChip';
 import { Order, OrderItem } from '../../types';
+import OrderBoxIcon from '../../assets/icons/order-box.svg';
+import SuccessCheckIcon from '../../assets/icons/success-check.svg';
 
 // ==========================================
 // ORDER CARD (LIST VIEW)
@@ -69,11 +71,12 @@ interface OrderItemCardProps {
   item: OrderItem;
 }
 
+
 export const OrderItemCard: React.FC<OrderItemCardProps> = ({ item }) => {
   return (
     <View style={styles.itemCard}>
       <View style={styles.itemBullet}>
-        <Text style={styles.bulletText}>📦</Text>
+        <OrderBoxIcon width={18} height={18} stroke={colors.primary} />
       </View>
       <View style={styles.itemInfo}>
         <Text style={styles.itemName}>{item.productName}</Text>
@@ -93,6 +96,7 @@ interface PackingItemCardProps {
   onTogglePack: () => void;
 }
 
+
 export const PackingItemCard: React.FC<PackingItemCardProps> = ({
   item,
   isPacked,
@@ -106,7 +110,7 @@ export const PackingItemCard: React.FC<PackingItemCardProps> = ({
     >
       <View style={styles.packingLeft}>
         <View style={[styles.checkbox, isPacked && styles.checkedBox]}>
-          {isPacked && <Text style={styles.checkmark}>✓</Text>}
+          {isPacked && <SuccessCheckIcon width={12} height={12} stroke={colors.card} />}
         </View>
         <View style={styles.packingDetails}>
           <Text style={[styles.packingName, isPacked && styles.packedText]}>

@@ -60,6 +60,13 @@ public class ServiceOrderController {
         return ResponseEntity.ok(orderService.acceptOrder(id, currentUser.require().getId()));
     }
 
+    /** PATCH /api/v1/orders/{id}/arrive — Plumber marks arrival */
+    @PatchMapping("/{id}/arrive")
+    @PreAuthorize("hasRole('PLUMBER') and @orderAuthorization.isAssignedPlumber(#id, authentication)")
+    public ResponseEntity<ServiceOrder> arriveOrder(@PathVariable Long id) {
+        return ResponseEntity.ok(orderService.arriveOrder(id));
+    }
+
     /** PATCH /api/v1/orders/{id}/start — Plumber marks work started */
     @PatchMapping("/{id}/start")
     @PreAuthorize("hasRole('PLUMBER') and @orderAuthorization.isAssignedPlumber(#id, authentication)")

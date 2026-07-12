@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" fill="none">
+  <!-- Background panel -->
+  <rect width="240" height="160" rx="16" fill="#F8FAFC"/>
+  <!-- Decorative abstract lines representing data streams -->
+  <path d="M40 110 C 80 90, 100 120, 140 100 S 180 80, 200 90" stroke="#0B6BFF" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 4" opacity="0.3"/>
+  <!-- Shelves/Warehouse grid -->
+  <rect x="50" y="40" width="140" height="80" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+  <line x1="50" y1="66" x2="190" y2="66" stroke="#E2E8F0" stroke-width="1.5"/>
+  <line x1="50" y1="93" x2="190" y2="93" stroke="#E2E8F0" stroke-width="1.5"/>
+  <!-- Product boxes on shelves -->
+  <rect x="65" y="46" width="25" height="15" rx="3" fill="#0B6BFF" opacity="0.85"/>
+  <rect x="105" y="46" width="20" height="15" rx="3" fill="#20C45A" opacity="0.85"/>
+  <rect x="150" y="46" width="25" height="15" rx="3" fill="#F59E0B" opacity="0.85"/>
+  
+  <rect x="60" y="72" width="20" height="15" rx="3" fill="#64748B" opacity="0.85"/>
+  <rect x="95" y="72" width="30" height="15" rx="3" fill="#0B6BFF" opacity="0.85"/>
+  
+  <rect x="75" y="99" width="35" height="15" rx="3" fill="#20C45A" opacity="0.85"/>
+  <rect x="145" y="99" width="25" height="15" rx="3" fill="#64748B" opacity="0.85"/>
+  <!-- Floating sync cycle loops -->
+  <path d="M120 15 A 8 8 0 0 1 128 23" stroke="#20C45A" stroke-width="2" stroke-linecap="round"/>
+  <path d="M128 23 A 8 8 0 0 1 120 31" stroke="#20C45A" stroke-width="2" stroke-linecap="round"/>
+</svg>

@@ -11,6 +11,8 @@ import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
 import { AppNotification } from '../../types';
 
+import NotificationIcon from '../../assets/icons/notification.svg';
+
 export const NotificationsScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const dispatch = useAppDispatch();
@@ -63,7 +65,7 @@ export const NotificationsScreen = () => {
     <ScreenWrapper style={styles.container}>
       <AppHeader
         title="Notifications"
-        onBack={() => navigation.goBack()}
+        onBackPress={() => navigation.goBack()}
         rightAction={
           notifications.some(n => !n.read) ? (
             <TouchableOpacity onPress={handleMarkAllRead} style={styles.markAllBtn}>
@@ -87,7 +89,7 @@ export const NotificationsScreen = () => {
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>🔔</Text>
+            <NotificationIcon width={40} height={40} stroke={colors.textMuted} style={{ marginBottom: spacing.sm }} />
             <Text style={styles.emptyText}>No notifications found</Text>
           </View>
         }

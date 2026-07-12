@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" fill="none">
+    <defs>
+      <linearGradient id="gradP2" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#20C45A"/>
+        <stop offset="100%" stop-color="#047857"/>
+      </linearGradient>
+    </defs>
+    <rect width="240" height="160" rx="16" fill="url(#gradP2)"/>
+    <text x="20" y="60" fill="#FFFFFF" font-family="sans-serif" font-size="20" font-weight="bold">Verified Leads</text>
+    <text x="20" y="90" fill="#D1FAE5" font-family="sans-serif" font-size="14">Genuine domestic tasks</text>
+  </svg>
