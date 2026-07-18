@@ -70,7 +70,7 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
           setMaterialRequest(null);
         }
       } catch (err) {
-        // silently fail — show nothing if network unavailable
+        // silently fail â€” show nothing if network unavailable
       }
     };
 
@@ -137,17 +137,17 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
           </MapView>
         </View>
 
-        {/* Material Approval Card — shown when plumber requests parts */}
+        {/* Material Approval Card â€” shown when plumber requests parts */}
         {materialRequest && (
           <View style={styles.approvalCard}>
-            <Text style={styles.approvalEyebrow}>⚠️ Parts Needed by Your Plumber</Text>
+            <Text style={styles.approvalEyebrow}>âš ï¸ Parts Needed by Your Plumber</Text>
             <Text style={styles.approvalTitle}>{materialRequest.plumberName} needs supplies</Text>
             <Text style={styles.approvalMsg}>
               Your plumber has inspected the issue and requested additional materials to complete the job.
             </Text>
             <View style={styles.approvalAmountRow}>
               <Text style={styles.approvalLabel}>Total to Approve</Text>
-              <Text style={styles.approvalAmount}>₹{materialRequest.totalAmount}</Text>
+              <Text style={styles.approvalAmount}>â‚¹{materialRequest.totalAmount}</Text>
             </View>
             <View style={styles.approvalActions}>
               <TouchableOpacity
@@ -192,7 +192,7 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
         {devMode && (
           <SecondaryButton
             title="Simulate Material Request (Dev Only)"
-            onPress={() => navigation.navigate('MaterialApproval', { serviceOrderId: 'order_service_777', plumberName })}
+            onPress={() => navigation.navigate('MaterialApproval', { serviceOrderId: orderId, plumberName })}
             style={styles.simulateBtn}
           />
         )}
