@@ -73,7 +73,6 @@ export function MainTabNavigator() {
       <Tab.Screen
         name="Materials"
         component={MaterialRequestScreen as any}
-        initialParams={{ jobId: 'PC123456' }}
         options={{ tabBarLabel: 'Materials' }}
       />
       <Tab.Screen

@@ -6,21 +6,23 @@ import com.pqc.core.repository.*;
 import com.pqc.core.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
 /**
- * Phase 3 — Handles a plumber's mid-job request for parts/materials.
+ * Phase 3 â€” Handles a plumber's mid-job request for parts/materials.
  *
  * Flow:
  *   1. Plumber calls createMaterialRequest() while IN_PROGRESS on a ServiceOrder.
  *   2. This creates a new ProductOrder (PENDING) linked to the ServiceOrder.
  *   3. ServiceOrder status upgrades to COMBINED_ORDER.
- *   4. Customer receives a WebSocket push (via OutboxEvent → Kafka → Edge Service).
- *   5. Customer confirms payment → CheckoutService.confirmPayment() detects the
+ *   4. Customer receives a WebSocket push (via OutboxEvent â†’ Kafka â†’ Edge Service).
+ *   5. Customer confirms payment â†’ CheckoutService.confirmPayment() detects the
  *      serviceOrder link and emits an ORDER_CONFIRMED event for delivery dispatch.
  */
 @Service
@@ -54,7 +56,7 @@ public class PlumberMaterialService {
         }
 
         ServiceOrder serviceOrder = serviceOrderRepository.findById(serviceOrderId)
-                .orElseThrow(() -> new RuntimeException("Service order not found: " + serviceOrderId));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Service order not found: " + serviceOrderId));
 
         if (serviceOrder.getPlumber() == null
                 || !serviceOrder.getPlumber().getId().equals(actor.getId())) {
@@ -63,12 +65,10 @@ public class PlumberMaterialService {
 
         if (serviceOrder.getStatus() != OrderStatus.IN_PROGRESS
                 && serviceOrder.getStatus() != OrderStatus.COMBINED_ORDER) {
-            throw new IllegalStateException(
-                    "Material requests can only be made while a job is IN_PROGRESS or COMBINED_ORDER. " +
-                    "Current status: " + serviceOrder.getStatus());
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Material requests can only be made while a job is IN_PROGRESS or COMBINED_ORDER. Current status: " + serviceOrder.getStatus());
         }
 
-        // Reuse CheckoutService to reserve stock — the customer ID passed is the
+        // Reuse CheckoutService to reserve stock â€” the customer ID passed is the
         // service order's customer so the inventory lock is customer-attributed.
         Long customerId = serviceOrder.getCustomer().getId();
         Long targetStoreId = (serviceOrder.getStore() != null) ? serviceOrder.getStore().getId() : storeId;
@@ -83,7 +83,7 @@ public class PlumberMaterialService {
         serviceOrderRepository.save(serviceOrder);
 
 
-        // Publish Outbox event → Edge Service will push a WebSocket notification
+        // Publish Outbox event â†’ Edge Service will push a WebSocket notification
         // to the customer so they see the payment approval card.
         String payload = buildMaterialRequestPayload(serviceOrder, productOrder, actor);
         OutboxEvent event = OutboxEvent.builder()

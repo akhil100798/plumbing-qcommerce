@@ -34,13 +34,20 @@ export const MaterialRequestsScreen = () => {
     loadRequests();
   }, []);
 
-  const handlePrepare = async (req: MaterialRequest) => {
+  const handleAdvance = async (req: MaterialRequest) => {
     setLoading(true);
     try {
-      const updated = await materialRequestService.prepareOrder(req.id);
-      // Update local state list
+      const updated = req.status === 'PENDING'
+        ? await materialRequestService.prepareOrder(req.id)
+        : await materialRequestService.completePreparation(req.id);
+
       setRequests(prev => prev.map(r => r.id === req.id ? updated : r));
-      Alert.alert('Order Ready', `Material request for plumber ${req.plumberName} is prepared and packed!`);
+
+      if (updated.status === 'PREPARING') {
+        Alert.alert('Order Accepted', `Material request for plumber ${req.plumberName} is now being packed.`);
+      } else if (updated.status === 'READY') {
+        Alert.alert('Packed', `Material request for plumber ${req.plumberName} is ready for pickup.`);
+      }
     } catch (e: any) {
       Alert.alert('Error', e.message || 'Operation failed');
     } finally {
@@ -56,11 +63,16 @@ export const MaterialRequestsScreen = () => {
     });
   };
 
+  const getActionTitle = (request: MaterialRequest) => {
+    if (request.status === 'PENDING') return 'Accept Request';
+    if (request.status === 'PREPARING') return 'Mark Packed';
+    return undefined;
+  };
+
   return (
     <ScreenWrapper style={styles.container}>
       <AppHeader title="Material Requests" onBackPress={() => navigation.goBack()} />
 
-      {/* Tabs */}
       <View style={styles.tabBar}>
         {(['new', 'preparing', 'completed'] as const).map(tab => {
           const isActive = activeTab === tab;
@@ -98,8 +110,8 @@ export const MaterialRequestsScreen = () => {
         renderItem={({ item }) => (
           <MaterialRequestCard
             request={item}
-            onPressAction={() => handlePrepare(item)}
-            actionTitle="Prepare Order"
+            onPressAction={getActionTitle(item) ? () => handleAdvance(item) : undefined}
+            actionTitle={getActionTitle(item)}
           />
         )}
         ListEmptyComponent={
@@ -172,10 +184,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing.giant,
-  },
-  emptyEmoji: {
-    fontSize: 48,
-    marginBottom: spacing.md,
   },
   emptyText: {
     fontSize: typography.fontSize.sm,

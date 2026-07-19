@@ -25,15 +25,17 @@ type Props = StackScreenProps<AppStackParamList, 'MaterialRequest'>;
 
 export function MaterialRequestScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
-  const { jobId } = route.params;
+  const routeJobId = route.params?.jobId;
   const { loading } = useSelector((state: RootState) => state.material);
+  const activeJob = useSelector((state: RootState) => state.job.activeJob);
 
   const [query, setQuery] = useState('');
   const [catalog, setCatalog] = useState<MaterialItem[]>([]);
   const [draft, setDraft] = useState<{ [productId: number]: number }>({});
 
+  const resolvedJobId = routeJobId || activeJob?.jobId || null;
+
   useEffect(() => {
-    // Search materials on mount/query change
     const fetchCatalog = async () => {
       const results = await materialService.searchMaterials(query);
       setCatalog(results);
@@ -71,6 +73,11 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
   );
 
   const handleSendToCustomer = async () => {
+    if (!resolvedJobId) {
+      Alert.alert('No active job', 'Open an active job first so materials are linked to the correct service order.');
+      return;
+    }
+
     const itemsPayload = selectedItems.map((item) => ({
       productId: item.productId,
       quantity: draft[item.productId],
@@ -83,7 +90,7 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
 
     dispatch(setMaterialLoading(true));
     try {
-      const response = await materialService.createMaterialRequest(jobId, itemsPayload);
+      const response = await materialService.createMaterialRequest(resolvedJobId, itemsPayload);
       const itemsWithQty = selectedItems.map((item) => ({
         ...item,
         quantity: draft[item.productId],
@@ -99,13 +106,13 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
 
       Alert.alert(
         'Request Sent!',
-        `Material request raised. Waiting for customer approval.`,
+        'Material request raised. Waiting for customer approval.',
         [
           {
             text: 'OK',
             onPress: () => {
               navigation.replace('MaterialApprovalStatus', {
-                jobId,
+                jobId: resolvedJobId,
                 productOrderId: response.id,
               });
             },
@@ -123,6 +130,16 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
       <AppHeader title="Request Material" onBackPress={() => navigation.goBack()} />
       
       <View style={styles.container}>
+        <Text style={styles.debugText}>Job ID: {resolvedJobId ?? 'Unavailable'}</Text>
+        {!resolvedJobId && (
+          <View style={styles.infoCard}>
+            <Text style={styles.infoTitle}>No active service order selected</Text>
+            <Text style={styles.infoText}>
+              Return to the active job screen and open materials from that job so the request uses the real backend service order ID.
+            </Text>
+          </View>
+        )}
+
         <SearchInput value={query} onChangeText={setQuery} />
 
         <FlatList
@@ -141,7 +158,6 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
           showsVerticalScrollIndicator={false}
         />
 
-        {/* Totals Summary Footer Overlay */}
         <View style={styles.footer}>
           <View style={styles.totalsRow}>
             <View>
@@ -150,7 +166,7 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
             </View>
             <View style={styles.alignRight}>
               <Text style={styles.totalsLabel}>Total Amount</Text>
-              <Text style={styles.totalPrice}>₹{totalAmount}</Text>
+              <Text style={styles.totalPrice}>Rs {totalAmount}</Text>
             </View>
           </View>
 
@@ -159,6 +175,7 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
             onPress={handleSendToCustomer}
             loading={loading}
             style={styles.actionBtn}
+            disabled={!resolvedJobId}
           />
         </View>
       </View>
@@ -172,8 +189,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.layout,
     backgroundColor: colors.background,
   },
+  debugText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+  },
+  infoCard: {
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  infoTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  infoText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
   listContent: {
-    paddingBottom: 170, // Padding to avoid overlap with footer
+    paddingBottom: 170,
     paddingTop: spacing.xs,
   },
   footer: {

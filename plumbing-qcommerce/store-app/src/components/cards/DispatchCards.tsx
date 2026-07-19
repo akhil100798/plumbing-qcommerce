@@ -5,9 +5,6 @@ import { Rider, MaterialRequest } from '../../types';
 import RiderIcon from '../../assets/icons/rider.svg';
 import StarIcon from '../../assets/icons/star.svg';
 
-// ==========================================
-// RIDER CARD
-// ==========================================
 interface RiderCardProps {
   rider: Rider;
   selected: boolean;
@@ -46,13 +43,10 @@ export const RiderCard: React.FC<RiderCardProps> = ({
   );
 };
 
-// ==========================================
-// MATERIAL REQUEST CARD
-// ==========================================
 interface MaterialRequestCardProps {
   request: MaterialRequest;
-  onPressAction: () => void;
-  actionTitle: string;
+  onPressAction?: () => void;
+  actionTitle?: string;
 }
 
 export const MaterialRequestCard: React.FC<MaterialRequestCardProps> = ({
@@ -67,6 +61,8 @@ export const MaterialRequestCard: React.FC<MaterialRequestCardProps> = ({
     return name.slice(0, 2).toUpperCase();
   };
 
+  const showAction = !!onPressAction && !!actionTitle && (request.status === 'PENDING' || request.status === 'PREPARING');
+
   return (
     <View style={styles.requestCard}>
       <View style={styles.requestHeader}>
@@ -79,7 +75,7 @@ export const MaterialRequestCard: React.FC<MaterialRequestCardProps> = ({
             <Text style={styles.plumberSub}>Mid-Job Request</Text>
           </View>
         </View>
-        <Text style={styles.requestAmount}>₹{request.totalAmount}</Text>
+        <Text style={styles.requestAmount}>Rs {request.totalAmount}</Text>
       </View>
 
       <Text numberOfLines={2} style={styles.requestItems}>
@@ -88,14 +84,14 @@ export const MaterialRequestCard: React.FC<MaterialRequestCardProps> = ({
 
       <View style={styles.requestFooter}>
         <Text style={styles.requestStatus}>Status: {request.status}</Text>
-        {request.status === 'PENDING' && (
+        {showAction ? (
           <TouchableOpacity
             style={styles.requestAction}
             onPress={onPressAction}
           >
             <Text style={styles.requestActionText}>{actionTitle}</Text>
           </TouchableOpacity>
-        )}
+        ) : null}
       </View>
     </View>
   );
@@ -148,11 +144,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 2,
   },
-  ratingStar: {
-    color: colors.warning,
-    fontSize: 12,
-    marginRight: 2,
-  },
   ratingVal: {
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
@@ -186,8 +177,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.round,
     backgroundColor: colors.primary,
   },
-
-  // MaterialRequestCard
   requestCard: {
     backgroundColor: colors.card,
     borderRadius: borderRadius.md,

@@ -15,6 +15,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,8 +27,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Integration tests for Phase 3: Plumber Marketplace & Combined Workflows.
  *
  * Tests the complete mid-job material request lifecycle:
- *   1. Plumber raises material request → ServiceOrder status → COMBINED_ORDER
- *   2. Customer confirms payment → ServiceOrder reverts to IN_PROGRESS
+ *   1. Plumber raises material request â†’ ServiceOrder status â†’ COMBINED_ORDER
+ *   2. Customer confirms payment â†’ ServiceOrder reverts to IN_PROGRESS
  *   3. Billing engine aggregates delivered parts charge + 10% referral commission
  *   4. Guard rails: non-plumber cannot raise requests, wrong status throws
  */
@@ -187,7 +188,7 @@ class PlumberMaterialIntegrationTest {
                 .reservedQuantity(0)
                 .build());
 
-        // Act — plumber requests 2 units of PVC pipe
+        // Act â€” plumber requests 2 units of PVC pipe
         List<CartItemDTO> items = List.of(new CartItemDTO(product.getId(), 2));
         ProductOrder materialOrder = plumberMaterialService.createMaterialRequest(
                 serviceOrder.getId(), store.getId(), items);
@@ -242,7 +243,7 @@ class PlumberMaterialIntegrationTest {
         assertThat(events).anyMatch(e -> "MATERIAL_ORDER_CONFIRMED".equals(e.getEventType()));
     }
 
-    // ========== 2. Billing Engine — Combined Parts Aggregation ==========
+    // ========== 2. Billing Engine â€” Combined Parts Aggregation ==========
 
     @Test
     void givenDeliveredMaterialOrder_whenJobCompleted_thenPartsAndCommissionAggregated() {
@@ -260,7 +261,7 @@ class PlumberMaterialIntegrationTest {
         serviceOrder.setStartedAt(java.time.LocalDateTime.now().minusMinutes(90));
         serviceOrderRepository.save(serviceOrder);
 
-        // Act — complete the job (no extra cash charges)
+        // Act â€” complete the job (no extra cash charges)
         ServiceOrder completed = serviceOrderService.completeOrder(serviceOrder.getId(), null);
 
         // Labor = 1.5h * 300 = 450.00
@@ -302,7 +303,8 @@ class PlumberMaterialIntegrationTest {
 
         assertThatThrownBy(() ->
                 plumberMaterialService.createMaterialRequest(serviceOrder.getId(), store.getId(), items))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode().value()).isEqualTo(409))
                 .hasMessageContaining("IN_PROGRESS or COMBINED_ORDER");
     }
 

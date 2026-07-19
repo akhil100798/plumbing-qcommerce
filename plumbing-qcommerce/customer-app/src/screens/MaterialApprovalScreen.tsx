@@ -10,7 +10,6 @@ import {
   View,
   ActivityIndicator,
 } from 'react-native';
-
 import { MaterialCard } from '../components/cards/MaterialCard';
 import { PrimaryButton } from '../components/common/PrimaryButton';
 import { SecondaryButton } from '../components/common/SecondaryButton';
@@ -19,15 +18,12 @@ import { OrderRepository } from '../services/orders/orderRepository';
 import { CartRepository } from '../services/cart/cartRepository';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
-
 type Props = StackScreenProps<AppStackParamList, 'MaterialApproval'>;
-
 const mockMaterials = [
   { name: 'CPVC Pipe 1 Inch (3 meters)', qty: 2, price: 180 },
   { name: 'L-Bow Joint 1 Inch', qty: 3, price: 45 },
   { name: 'Solvent Cement Glue 100ml', qty: 1, price: 120 },
 ];
-
 export function MaterialApprovalScreen({ route, navigation }: Props) {
   const { serviceOrderId, plumberName } = route.params;
   const [loading, setLoading] = useState(false);
@@ -36,7 +32,6 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
   const [productOrderId, setProductOrderId] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const mockFallbackEnabled = canUseDevMockFallbacks();
-
   useEffect(() => {
     async function loadMaterialRequest() {
       setLoading(true);
@@ -44,7 +39,8 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
       try {
         const requests = await OrderRepository.getCustomerMaterialRequests();
         const pendingRequest = requests.find(
-          (req: any) => req.serviceOrderId === serviceOrderId && req.status === 'PENDING'
+          (req: any) =>
+            String(req.serviceOrderId) === String(serviceOrderId) && req.status === 'PENDING'
         );
         if (pendingRequest) {
           setProductOrderId(pendingRequest.id);
@@ -65,7 +61,6 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
         setLoading(false);
       }
     }
-
     if (!mockFallbackEnabled) {
       loadMaterialRequest();
     } else {
@@ -73,7 +68,6 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
       setTotal(mockMaterials.reduce((sum, item) => sum + item.price * item.qty, 0));
     }
   }, [serviceOrderId, mockFallbackEnabled]);
-
   const handleDecline = async () => {
     if (mockFallbackEnabled) {
       warnUsingDevMockFallback('Material approval decline', new Error(String(serviceOrderId)));
@@ -81,12 +75,10 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
       navigation.goBack();
       return;
     }
-
     if (!productOrderId) {
       Alert.alert('Error', 'No active material request found.');
       return;
     }
-
     setLoading(true);
     try {
       await CartRepository.releaseReservation(productOrderId);
@@ -99,7 +91,6 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
       setLoading(false);
     }
   };
-
   const handleApproveAndPay = async () => {
     if (mockFallbackEnabled) {
       setLoading(true);
@@ -112,12 +103,10 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
       }, 1500);
       return;
     }
-
     if (!productOrderId) {
       Alert.alert('Error', 'No active material request found.');
       return;
     }
-
     setLoading(true);
     try {
       await CartRepository.confirmPayment(productOrderId);
@@ -138,19 +127,17 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
       setLoading(false);
     }
   };
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
+          <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Material Approval</Text>
       </View>
-
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.requestBanner}>
-          <Text style={styles.bannerEmoji}>⚠️</Text>
+          <Text style={styles.bannerEmoji}>!</Text>
           <View style={styles.bannerTextContainer}>
             <Text style={styles.bannerTitle}>Materials Requested</Text>
             <Text style={styles.bannerSub}>
@@ -158,7 +145,6 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
             </Text>
           </View>
         </View>
-
         <Text style={styles.sectionTitle}>Required Items</Text>
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -180,9 +166,8 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
             </Text>
           </View>
         )}
-
         <View style={styles.noticeCard}>
-          <Text style={styles.noticeEmoji}>🚚</Text>
+          <Text style={styles.noticeEmoji}>Truck</Text>
           <Text style={styles.noticeText}>
             {mockFallbackEnabled
               ? 'These materials will be delivered to your house via our instant 15-minute delivery partner.'
@@ -190,7 +175,6 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
           </Text>
         </View>
       </ScrollView>
-
       <View style={styles.footer}>
         <SecondaryButton
           title="Decline"
@@ -205,7 +189,7 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
             loading
               ? 'Processing...'
               : productOrderId || mockFallbackEnabled
-              ? `Approve Material Request`
+              ? 'Approve Material Request'
               : 'No Pending Request'
           }
           onPress={handleApproveAndPay}
@@ -217,7 +201,6 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -352,3 +335,5 @@ const styles = StyleSheet.create({
     flex: 2,
   },
 });
+
+

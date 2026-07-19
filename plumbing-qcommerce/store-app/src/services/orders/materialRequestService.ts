@@ -17,8 +17,9 @@ const mapBackendStatus = (status: string): MaterialRequest['status'] => {
     case 'CONFIRMED':
       return 'PENDING';
     case 'PACKING':
-    case 'READY_FOR_PICKUP':
       return 'PREPARING';
+    case 'READY_FOR_PICKUP':
+      return 'READY';
     case 'OUT_FOR_DELIVERY':
     case 'DELIVERED':
       return 'COMPLETED';
@@ -44,6 +45,13 @@ const mapRequest = (request: any): MaterialRequest => ({
   createdAt: request.createdAt || new Date().toISOString(),
 });
 
+const updateLocalRequest = (updated: MaterialRequest) => {
+  const idx = localMaterialRequests.findIndex((request) => request.id === updated.id);
+  if (idx !== -1) {
+    localMaterialRequests[idx] = updated;
+  }
+};
+
 export const materialRequestService = {
   getMaterialRequests: async (): Promise<MaterialRequest[]> => {
     try {
@@ -64,7 +72,9 @@ export const materialRequestService = {
     try {
       const storeProfile = await storeService.getCurrentStoreProfile();
       const response = await apiClient.patch(ENDPOINTS.orders.accept(requestId), { storeId: storeProfile.id });
-      return mapRequest(response.data);
+      const mapped = mapRequest(response.data);
+      updateLocalRequest(mapped);
+      return mapped;
     } catch (e) {
       if (canUseDevMockFallbacks()) {
         warnUsingDevMockFallback('Store material request prepare', new Error(String(requestId)));
@@ -83,13 +93,15 @@ export const materialRequestService = {
     try {
       const storeProfile = await storeService.getCurrentStoreProfile();
       const response = await apiClient.patch(ENDPOINTS.orders.pack(requestId), { storeId: storeProfile.id });
-      return mapRequest(response.data);
+      const mapped = mapRequest(response.data);
+      updateLocalRequest(mapped);
+      return mapped;
     } catch (e) {
       if (canUseDevMockFallbacks()) {
         warnUsingDevMockFallback('Store material request complete preparation', new Error(String(requestId)));
         const idx = localMaterialRequests.findIndex((request) => request.id === requestId);
         if (idx !== -1) {
-          localMaterialRequests[idx] = { ...localMaterialRequests[idx], status: 'COMPLETED' };
+          localMaterialRequests[idx] = { ...localMaterialRequests[idx], status: 'READY' };
           return localMaterialRequests[idx];
         }
         throw new Error('Request not found');

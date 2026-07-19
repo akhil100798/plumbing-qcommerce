@@ -1,4 +1,4 @@
-﻿import { LoginResponse } from '../services/auth/authTypes';
+import { LoginResponse } from '../services/auth/authTypes';
 
 export type AuthStackParamList = {
   Splash: undefined;
@@ -31,7 +31,7 @@ export type AppStackParamList = {
   BookPlumber: undefined;
   PlumberConfirmation: { issueType: string };
   PlumberTracking: { orderId: number; plumberId: string; plumberName: string };
-  MaterialApproval: { serviceOrderId: string; plumberName: string };
+  MaterialApproval: { serviceOrderId: number; plumberName: string };
   ServiceCompletion: { plumberName: string };
   AddressManagement: undefined;
   PaymentMethods: undefined;
