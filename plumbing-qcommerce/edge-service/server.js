@@ -28,6 +28,7 @@ const { verifyToken, socketAuth } = require('./middleware/authMiddleware');
 const { updateDeliveryPartnerLocation, findNearbyDeliveryPartners, generateOtp, verifyOtp } = require('./services/deliveryService');
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
+const DELIVERY_ENABLED = process.env.FEATURE_DELIVERY_ENABLED === 'true';
 const ALLOWED_ORIGINS_ENV = process.env.ALLOWED_ORIGINS;
 let allowedOrigins = [];
 
@@ -195,6 +196,7 @@ function createEdgeApp(options = {}) {
     });
 
     app.post('/api/v1/edge/delivery/otp/generate', edgeVerifyToken, async (req, res) => {
+        if (!DELIVERY_ENABLED) return res.status(404).json({ error: 'Delivery is disabled for the current MVP' });
         const { orderId } = req.body;
         if (!orderId) {
             return res.status(400).json({ error: "orderId is required" });
@@ -208,6 +210,7 @@ function createEdgeApp(options = {}) {
     });
 
     app.post('/api/v1/edge/delivery/otp/verify', edgeVerifyToken, async (req, res) => {
+        if (!DELIVERY_ENABLED) return res.status(404).json({ error: 'Delivery is disabled for the current MVP' });
         const { orderId, otp } = req.body;
         if (!orderId || !otp) {
             return res.status(400).json({ error: "orderId and otp are required" });

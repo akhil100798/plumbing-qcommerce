@@ -2,9 +2,18 @@ package com.pqc.core.entity;
 
 public enum ProductOrderStatus {
     PENDING,
+    REQUESTED,
+    STORE_REVIEWING,
+    APPROVED,
+    PARTIALLY_AVAILABLE,
+    REJECTED,
+    RESERVED,
     CONFIRMED,
+    PREPARING,
     PACKING,
     READY_FOR_PICKUP,
+    PLUMBER_AT_STORE,
+    COLLECTED,
     OUT_FOR_DELIVERY,
     DELIVERED,
     FAILED,

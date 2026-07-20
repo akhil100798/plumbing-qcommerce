@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import org.springframework.core.env.Environment;
 import com.pqc.core.service.DeliveryOtpService;
@@ -18,6 +19,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/delivery")
+@ConditionalOnProperty(name = "features.delivery-enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class DeliveryController {
 

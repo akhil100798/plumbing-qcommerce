@@ -94,3 +94,6 @@ app:
     admin-demo-enabled: ${APP_SEED_ADMIN_DEMO_ENABLED:false}
     fail-if-prod-demo-enabled: ${APP_SEED_FAIL_IF_PROD_DEMO_ENABLED:true}
     demo-password: ${APP_SEED_DEMO_PASSWORD:password}
+
+features:
+  delivery-enabled: ${FEATURE_DELIVERY_ENABLED:false}

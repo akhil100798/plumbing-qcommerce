@@ -57,6 +57,33 @@ public class ProductOrder {
     @Column(name = "estimated_delivery_at")
     private LocalDateTime estimatedDeliveryAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "requested_by_plumber_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private User requestedByPlumber;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "collected_by_plumber_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private User collectedByPlumber;
+
+    @Column(name = "notes", length = 1000)
+    private String notes;
+
+    @Column(name = "store_confirmed_at")
+    private LocalDateTime storeConfirmedAt;
+
+    @Column(name = "plumber_arrived_at")
+    private LocalDateTime plumberArrivedAt;
+
+    @Column(name = "plumber_collected_at")
+    private LocalDateTime plumberCollectedAt;
+
+    @Column(name = "collection_confirmed_at")
+    private LocalDateTime collectionConfirmedAt;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<ProductOrderItem> items = new ArrayList<>();

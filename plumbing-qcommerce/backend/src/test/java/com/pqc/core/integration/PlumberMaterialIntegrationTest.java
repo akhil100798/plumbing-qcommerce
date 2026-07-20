@@ -75,6 +75,7 @@ class PlumberMaterialIntegrationTest {
 
     private User customer;
     private User plumber;
+    private User manager;
     private Store store;
     private ServiceOrder serviceOrder;
     private Category category;
@@ -126,7 +127,7 @@ class PlumberMaterialIntegrationTest {
                 .role(Role.PLUMBER)
                 .build());
 
-        User manager = userRepository.save(User.builder()
+        manager = userRepository.save(User.builder()
                 .fullName("Test Manager")
                 .email("test.manager@pqc.com")
                 .password("hashed")
@@ -197,17 +198,16 @@ class PlumberMaterialIntegrationTest {
         assertThat(materialOrder.getServiceOrder()).isNotNull();
         assertThat(materialOrder.getServiceOrder().getId()).isEqualTo(serviceOrder.getId());
 
-        // Assert ServiceOrder promoted to COMBINED_ORDER
+        // Request is persisted without reserving stock or dispatching delivery.
         ServiceOrder updated = serviceOrderRepository.findById(serviceOrder.getId()).orElseThrow();
-        assertThat(updated.getStatus()).isEqualTo(OrderStatus.COMBINED_ORDER);
-
-        // Assert OutboxEvent was published
-        List<OutboxEvent> events = outboxRepository.findAll();
-        assertThat(events).anyMatch(e -> "MATERIAL_REQUEST_CREATED".equals(e.getEventType()));
+        assertThat(updated.getStatus()).isEqualTo(OrderStatus.MATERIALS_REQUIRED);
+        assertThat(materialOrder.getStatus()).isEqualTo(ProductOrderStatus.REQUESTED);
+        assertThat(stockRepository.findByStoreIdAndProductId(store.getId(), product.getId()).orElseThrow().getAvailableQuantity()).isEqualTo(50);
+        assertThat(outboxRepository.findAll()).isEmpty();
     }
 
     @Test
-    void givenMaterialRequest_whenCustomerConfirms_thenServiceOrderReturnsToInProgress() {
+    void givenMaterialRequest_whenSubmitted_thenStoreReviewStartsWithoutPayment() {
         Product product = productRepository.save(Product.builder()
                 .sku("ELBOW-001")
                 .name("Elbow Joint")
@@ -225,25 +225,50 @@ class PlumberMaterialIntegrationTest {
         ProductOrder materialOrder = plumberMaterialService.createMaterialRequest(
                 serviceOrder.getId(), store.getId(), items);
 
-        assertThat(materialOrder.getStatus()).isEqualTo(ProductOrderStatus.PENDING);
-
-        // Customer confirms payment
-        checkoutService.confirmPayment(materialOrder.getId());
-
-        // ServiceOrder must revert to IN_PROGRESS
+        assertThat(materialOrder.getStatus()).isEqualTo(ProductOrderStatus.REQUESTED);
+        plumberMaterialService.submit(materialOrder.getId());
         ServiceOrder updated = serviceOrderRepository.findById(serviceOrder.getId()).orElseThrow();
-        assertThat(updated.getStatus()).isEqualTo(OrderStatus.IN_PROGRESS);
-
-        // ProductOrder must be CONFIRMED
-        ProductOrder confirmed = productOrderRepository.findById(materialOrder.getId()).orElseThrow();
-        assertThat(confirmed.getStatus()).isEqualTo(ProductOrderStatus.CONFIRMED);
-
-        // OutboxEvent must be MATERIAL_ORDER_CONFIRMED
-        List<OutboxEvent> events = outboxRepository.findAll();
-        assertThat(events).anyMatch(e -> "MATERIAL_ORDER_CONFIRMED".equals(e.getEventType()));
+        assertThat(updated.getStatus()).isEqualTo(OrderStatus.WAITING_FOR_STORE);
+        assertThat(productOrderRepository.findById(materialOrder.getId()).orElseThrow().getStatus())
+                .isEqualTo(ProductOrderStatus.STORE_REVIEWING);
+        assertThat(reservationRepository.findByOrderId(materialOrder.getId())).isEmpty();
     }
 
     // ========== 2. Billing Engine â€” Combined Parts Aggregation ==========
+
+    @Test
+    void storePickupLifecycle_reservesAndFinalizesInventoryExactlyOnce() {
+        Product product = productRepository.save(Product.builder().sku("PICKUP-001").name("Pickup Valve")
+                .price(new BigDecimal("100.00")).category(category).build());
+        stockRepository.save(Stock.builder().product(product).store(store).availableQuantity(10).reservedQuantity(0).build());
+        ProductOrder request = plumberMaterialService.createMaterialRequest(serviceOrder.getId(), store.getId(),
+                List.of(new CartItemDTO(product.getId(), 3)));
+        plumberMaterialService.submit(request.getId());
+        authenticate(manager);
+        plumberMaterialService.approve(request.getId(), null);
+        plumberMaterialService.reserve(request.getId());
+        Stock reserved = stockRepository.findByStoreIdAndProductId(store.getId(), product.getId()).orElseThrow();
+        assertThat(reserved.getAvailableQuantity()).isEqualTo(7);
+        assertThat(reserved.getReservedQuantity()).isEqualTo(3);
+        plumberMaterialService.prepare(request.getId());
+        plumberMaterialService.ready(request.getId());
+        authenticate(plumber);
+        plumberMaterialService.arrived(request.getId());
+        plumberMaterialService.collect(request.getId());
+        authenticate(manager);
+        plumberMaterialService.confirmCollection(request.getId());
+        Stock collected = stockRepository.findByStoreIdAndProductId(store.getId(), product.getId()).orElseThrow();
+        assertThat(collected.getAvailableQuantity()).isEqualTo(7);
+        assertThat(collected.getReservedQuantity()).isZero();
+        assertThat(productOrderRepository.findById(request.getId()).orElseThrow().getStatus()).isEqualTo(ProductOrderStatus.COLLECTED);
+        assertThatThrownBy(() -> plumberMaterialService.confirmCollection(request.getId()))
+                .isInstanceOf(ResponseStatusException.class).hasMessageContaining("record collection first");
+    }
+
+    private void authenticate(User user) {
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                user.getEmail(), null, List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))));
+    }
 
     @Test
     void givenDeliveredMaterialOrder_whenJobCompleted_thenPartsAndCommissionAggregated() {
@@ -305,7 +330,7 @@ class PlumberMaterialIntegrationTest {
                 plumberMaterialService.createMaterialRequest(serviceOrder.getId(), store.getId(), items))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode().value()).isEqualTo(409))
-                .hasMessageContaining("IN_PROGRESS or COMBINED_ORDER");
+                .hasMessageContaining("active job");
     }
 
     @Test

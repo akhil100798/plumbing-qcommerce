@@ -13,29 +13,29 @@ import java.util.List;
 /**
  * Phase 3 — REST endpoint for mid-job material requests.
  *
- * POST /api/v1/delivery/material-request
+ * POST /api/v1/service-orders/{serviceOrderId}/material-requests
  *   Body: { serviceOrderId, storeId, items: [ {productId, quantity}, ... ] }
  *   Auth: PLUMBER only
  */
 @RestController
-@RequestMapping("/api/v1/delivery")
+@RequestMapping("/api/v1/service-orders")
 @RequiredArgsConstructor
 public class MaterialRequestController {
 
     private final PlumberMaterialService plumberMaterialService;
 
-    @PostMapping("/material-request")
+    @PostMapping("/{serviceOrderId}/material-requests")
     @PreAuthorize("hasRole('PLUMBER')")
     public ResponseEntity<ProductOrder> createMaterialRequest(
+            @PathVariable Long serviceOrderId,
             @RequestBody MaterialRequestBody body) {
         ProductOrder order = plumberMaterialService.createMaterialRequest(
-                body.serviceOrderId(), body.storeId(), body.items());
-        return ResponseEntity.ok(order);
+                serviceOrderId, body.storeId(), body.items());
+        return ResponseEntity.status(201).body(order);
     }
 
     // DTO for the request body
     public record MaterialRequestBody(
-            Long serviceOrderId,
             Long storeId,
             List<CartItemDTO> items) {}
 }
