@@ -1,6 +1,7 @@
 import { apiRequest } from "./apiClient";
 
 export type ProductOrderStatus = "PENDING" | "CONFIRMED" | "PACKING" | "READY_FOR_PICKUP" | "OUT_FOR_DELIVERY" | "DELIVERED" | "FAILED" | "CANCELLED";
+export type MaterialRequestStatus = "REQUESTED" | "STORE_REVIEWING" | "APPROVED" | "PARTIALLY_AVAILABLE" | "REJECTED" | "RESERVED" | "PREPARING" | "READY_FOR_PICKUP" | "PLUMBER_AT_STORE" | "COLLECTED" | "CANCELLED";
 export type ServiceJobStatus = "PENDING" | "ACCEPTED" | "IN_PROGRESS" | "COMBINED_ORDER" | "COMPLETED" | "PAID" | "CANCELLED";
 
 export interface OperationsDashboardResponse {
@@ -79,6 +80,23 @@ export interface OperationsMaterialRequestSummary {
   createdAt?: string | null;
 }
 
+export interface OperationsMaterialRequestDetail {
+  requestId: number;
+  serviceOrderId?: number | null;
+  plumberName?: string | null;
+  customerName?: string | null;
+  storeName?: string | null;
+  status: MaterialRequestStatus;
+  amount?: number | null;
+  createdAt?: string | null;
+  storeConfirmedAt?: string | null;
+  plumberArrivedAt?: string | null;
+  collectionConfirmedAt?: string | null;
+  notes?: string | null;
+  items: Array<{ productName: string; requestedQuantity: number; reservedQuantity: number; unitPrice: number }>;
+  statusHistory: Array<{ status: string; changedAt: string; notes?: string | null }>;
+}
+
 export interface AvailableDeliveryPartnerResponse {
   id: number;
   name: string;
@@ -144,3 +162,46 @@ export function reassignDelivery(orderId: string | number, deliveryPartnerId: nu
 export function cancelOperationsProductOrder(orderId: string | number, reason: string) {
   return apiRequest<OperationsProductOrderSummary>(`/api/v1/admin/operations/product-orders/${orderId}/cancel`, { method: "PATCH", body: { reason } });
 }
+
+// ── Admin Material Requests (AdminMaterialRequestController) ─────────────────
+
+export function listAdminMaterialRequests(query: {
+  status?: MaterialRequestStatus | "";
+  storeId?: string;
+  plumberId?: string;
+  customerId?: string;
+  serviceOrderId?: string;
+  page?: number;
+  size?: number;
+} = {}) {
+  return apiRequest<PageResponse<OperationsMaterialRequestSummary>>(
+    `/api/v1/admin/material-requests${toQueryString({
+      status: query.status || undefined,
+      storeId: query.storeId,
+      plumberId: query.plumberId,
+      customerId: query.customerId,
+      serviceOrderId: query.serviceOrderId,
+      page: query.page ?? 0,
+      size: query.size ?? 20,
+    })}`
+  );
+}
+
+export function getAdminMaterialRequest(id: string | number) {
+  return apiRequest<OperationsMaterialRequestDetail>(`/api/v1/admin/material-requests/${id}`);
+}
+
+export function adminReassignMaterialRequestStore(id: string | number, storeId: number) {
+  return apiRequest<OperationsMaterialRequestDetail>(`/api/v1/admin/material-requests/${id}/reassign-store`, {
+    method: "POST",
+    body: { storeId },
+  });
+}
+
+export function adminCancelMaterialRequest(id: string | number, reason: string) {
+  return apiRequest<OperationsMaterialRequestDetail>(`/api/v1/admin/material-requests/${id}/cancel`, {
+    method: "POST",
+    body: { reason },
+  });
+}
+

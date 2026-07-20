@@ -26,17 +26,19 @@ const mapRequest = (request: any): MaterialRequest => ({
   id: request.id,
   serviceOrderId: Number(request.serviceOrderId || 0),
   storeId: Number(request.storeId || 0),
-  plumberId: 0,
-  plumberName: request.assignedPlumberName || 'Assigned plumber',
+  plumberId: Number(request.plumberId || 0),
+  plumberName: request.plumberName || request.assignedPlumberName || 'Assigned plumber',
   items: (request.items || []).map((item: any) => ({
     productId: item.productId,
     productName: item.productName || 'Item',
-    quantity: item.quantity,
-    price: Number(item.price || 0),
+    quantity: item.quantity || item.requestedQuantity || 0,
+    price: Number(item.price || item.unitPrice || 0),
   })),
   totalAmount: Number(request.totalAmount || 0),
   status: mapBackendStatus(request.status),
   createdAt: request.createdAt || new Date().toISOString(),
+  rawStatus: request.status,
+  plumberCollectedAt: request.plumberCollectedAt,
 });
 
 const updateLocalRequest = (updated: MaterialRequest) => {
@@ -79,6 +81,17 @@ export const materialRequestService = {
       return mapped;
     } catch (e) {
       throw createBackendUnavailableError('Store material request pickup readiness', e);
+    }
+  },
+
+  confirmCollection: async (requestId: number): Promise<MaterialRequest> => {
+    try {
+      const response = await apiClient.post(ENDPOINTS.materialRequests.confirmCollection(requestId));
+      const mapped = mapRequest(response.data);
+      updateLocalRequest(mapped);
+      return mapped;
+    } catch (e) {
+      throw createBackendUnavailableError('Store material request collection confirmation', e);
     }
   }
 };

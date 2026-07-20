@@ -191,8 +191,9 @@ class PlumberMaterialIntegrationTest {
 
         // Act â€” plumber requests 2 units of PVC pipe
         List<CartItemDTO> items = List.of(new CartItemDTO(product.getId(), 2));
-        ProductOrder materialOrder = plumberMaterialService.createMaterialRequest(
+        var response = plumberMaterialService.createMaterialRequest(
                 serviceOrder.getId(), store.getId(), items);
+        ProductOrder materialOrder = productOrderRepository.findById(response.id()).orElseThrow();
 
         // Assert ProductOrder is linked
         assertThat(materialOrder.getServiceOrder()).isNotNull();
@@ -222,16 +223,16 @@ class PlumberMaterialIntegrationTest {
 
         // Plumber raises request
         List<CartItemDTO> items = List.of(new CartItemDTO(product.getId(), 1));
-        ProductOrder materialOrder = plumberMaterialService.createMaterialRequest(
+        var response = plumberMaterialService.createMaterialRequest(
                 serviceOrder.getId(), store.getId(), items);
 
-        assertThat(materialOrder.getStatus()).isEqualTo(ProductOrderStatus.REQUESTED);
-        plumberMaterialService.submit(materialOrder.getId());
+        assertThat(response.status()).isEqualTo("REQUESTED");
+        plumberMaterialService.submit(response.id());
         ServiceOrder updated = serviceOrderRepository.findById(serviceOrder.getId()).orElseThrow();
         assertThat(updated.getStatus()).isEqualTo(OrderStatus.WAITING_FOR_STORE);
-        assertThat(productOrderRepository.findById(materialOrder.getId()).orElseThrow().getStatus())
+        assertThat(productOrderRepository.findById(response.id()).orElseThrow().getStatus())
                 .isEqualTo(ProductOrderStatus.STORE_REVIEWING);
-        assertThat(reservationRepository.findByOrderId(materialOrder.getId())).isEmpty();
+        assertThat(reservationRepository.findByOrderId(response.id())).isEmpty();
     }
 
     // ========== 2. Billing Engine â€” Combined Parts Aggregation ==========
@@ -241,27 +242,27 @@ class PlumberMaterialIntegrationTest {
         Product product = productRepository.save(Product.builder().sku("PICKUP-001").name("Pickup Valve")
                 .price(new BigDecimal("100.00")).category(category).build());
         stockRepository.save(Stock.builder().product(product).store(store).availableQuantity(10).reservedQuantity(0).build());
-        ProductOrder request = plumberMaterialService.createMaterialRequest(serviceOrder.getId(), store.getId(),
+        var request = plumberMaterialService.createMaterialRequest(serviceOrder.getId(), store.getId(),
                 List.of(new CartItemDTO(product.getId(), 3)));
-        plumberMaterialService.submit(request.getId());
+        plumberMaterialService.submit(request.id());
         authenticate(manager);
-        plumberMaterialService.approve(request.getId(), null);
-        plumberMaterialService.reserve(request.getId());
+        plumberMaterialService.approve(request.id(), null);
+        plumberMaterialService.reserve(request.id());
         Stock reserved = stockRepository.findByStoreIdAndProductId(store.getId(), product.getId()).orElseThrow();
         assertThat(reserved.getAvailableQuantity()).isEqualTo(7);
         assertThat(reserved.getReservedQuantity()).isEqualTo(3);
-        plumberMaterialService.prepare(request.getId());
-        plumberMaterialService.ready(request.getId());
+        plumberMaterialService.prepare(request.id());
+        plumberMaterialService.ready(request.id());
         authenticate(plumber);
-        plumberMaterialService.arrived(request.getId());
-        plumberMaterialService.collect(request.getId());
+        plumberMaterialService.arrived(request.id());
+        plumberMaterialService.collect(request.id());
         authenticate(manager);
-        plumberMaterialService.confirmCollection(request.getId());
+        plumberMaterialService.confirmCollection(request.id());
         Stock collected = stockRepository.findByStoreIdAndProductId(store.getId(), product.getId()).orElseThrow();
         assertThat(collected.getAvailableQuantity()).isEqualTo(7);
         assertThat(collected.getReservedQuantity()).isZero();
-        assertThat(productOrderRepository.findById(request.getId()).orElseThrow().getStatus()).isEqualTo(ProductOrderStatus.COLLECTED);
-        assertThatThrownBy(() -> plumberMaterialService.confirmCollection(request.getId()))
+        assertThat(productOrderRepository.findById(request.id()).orElseThrow().getStatus()).isEqualTo(ProductOrderStatus.COLLECTED);
+        assertThatThrownBy(() -> plumberMaterialService.confirmCollection(request.id()))
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("record collection first");
     }
 

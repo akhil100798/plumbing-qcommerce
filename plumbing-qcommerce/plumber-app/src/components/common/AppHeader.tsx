@@ -10,6 +10,7 @@ import { colors, spacing, typography } from '../../theme';
 
 interface AppHeaderProps {
   title: string;
+  subtitle?: string;
   onBackPress?: () => void;
   rightElement?: React.ReactNode;
   showBack?: boolean;
@@ -17,6 +18,7 @@ interface AppHeaderProps {
 
 export function AppHeader({
   title,
+  subtitle,
   onBackPress,
   rightElement,
   showBack = true,
@@ -31,9 +33,14 @@ export function AppHeader({
         <View style={styles.placeholder} />
       )}
       
-      <Text style={styles.title} numberOfLines={1}>
-        {title}
-      </Text>
+      <View style={styles.titleBlock}>
+        <Text style={styles.title} numberOfLines={1}>
+          {title}
+        </Text>
+        {subtitle ? (
+          <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>
+        ) : null}
+      </View>
       
       {rightElement ? (
         <View style={styles.rightContainer}>{rightElement}</View>
@@ -46,11 +53,12 @@ export function AppHeader({
 
 const styles = StyleSheet.create({
   container: {
-    height: 56,
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.layout,
+    paddingVertical: spacing.xs,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
@@ -63,13 +71,22 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontWeight: 'bold',
   },
+  titleBlock: {
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: spacing.md,
+  },
   title: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
-    flex: 1,
     textAlign: 'center',
-    marginHorizontal: spacing.md,
+  },
+  subtitle: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 2,
   },
   rightContainer: {
     minWidth: 32,

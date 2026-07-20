@@ -1,0 +1,18 @@
+ALTER TABLE service_orders DROP CONSTRAINT IF EXISTS service_orders_status_check;
+ALTER TABLE service_orders ADD CONSTRAINT service_orders_status_check CHECK (status IN (
+    'PENDING',
+    'ACCEPTED',
+    'IN_PROGRESS',
+    'COMBINED_ORDER',
+    'MATERIALS_REQUIRED',
+    'WAITING_FOR_STORE',
+    'READY_FOR_PRODUCT_PICKUP',
+    'PLUMBER_COLLECTING_PRODUCTS',
+    'PRODUCTS_COLLECTED',
+    'RETURNING_TO_CUSTOMER',
+    'WORK_RESUMED',
+    'CUSTOMER_CONFIRMED',
+    'COMPLETED',
+    'PAID',
+    'CANCELLED'
+));

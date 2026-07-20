@@ -37,9 +37,14 @@ export const MaterialRequestsScreen = () => {
   const handleAdvance = async (req: MaterialRequest) => {
     setLoading(true);
     try {
-      const updated = req.status === 'PENDING'
-        ? await materialRequestService.prepareOrder(req.id)
-        : await materialRequestService.completePreparation(req.id);
+      let updated: MaterialRequest;
+      if (req.status === 'PENDING') {
+        updated = await materialRequestService.prepareOrder(req.id);
+      } else if (req.status === 'PREPARING') {
+        updated = await materialRequestService.completePreparation(req.id);
+      } else {
+        updated = await materialRequestService.confirmCollection(req.id);
+      }
 
       setRequests(prev => prev.map(r => r.id === req.id ? updated : r));
 
@@ -47,6 +52,8 @@ export const MaterialRequestsScreen = () => {
         Alert.alert('Order Accepted', `Material request for plumber ${req.plumberName} is now being packed.`);
       } else if (updated.status === 'READY') {
         Alert.alert('Packed', `Material request for plumber ${req.plumberName} is ready for pickup.`);
+      } else if (updated.status === 'COMPLETED') {
+        Alert.alert('Collection Confirmed', `Material collection confirmed for plumber ${req.plumberName}.`);
       }
     } catch (e: any) {
       Alert.alert('Error', e.message || 'Operation failed');
@@ -66,6 +73,9 @@ export const MaterialRequestsScreen = () => {
   const getActionTitle = (request: MaterialRequest) => {
     if (request.status === 'PENDING') return 'Accept Request';
     if (request.status === 'PREPARING') return 'Mark Packed';
+    if (request.status === 'READY' && request.rawStatus === 'PLUMBER_AT_STORE' && request.plumberCollectedAt) {
+      return 'Confirm Collection';
+    }
     return undefined;
   };
 

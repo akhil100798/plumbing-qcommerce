@@ -28,7 +28,7 @@ export function BeforePhotosScreen({ route, navigation }: Props) {
       Alert.alert('Upload Required', 'Please capture a photo of the issue before proceeding.');
       return;
     }
-    navigation.navigate('MaterialRequest', { jobId });
+    navigation.navigate('StoreSelection', { jobId });
   };
 
   const handleNextNoMaterials = () => {

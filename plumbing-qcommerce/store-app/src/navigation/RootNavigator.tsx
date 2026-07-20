@@ -59,7 +59,9 @@ export function RootNavigator() {
         
         {/* Material requests & riders */}
         <Stack.Screen name="MaterialRequests" component={MaterialRequestsScreen} />
+        {/* Delivery routes disabled for MVP:
         <Stack.Screen name="DispatchAssignment" component={DispatchAssignmentScreen} />
+        */}
         
         {/* Promos & details settings */}
         <Stack.Screen name="ReviewsRatings" component={ReviewsRatingsScreen} />

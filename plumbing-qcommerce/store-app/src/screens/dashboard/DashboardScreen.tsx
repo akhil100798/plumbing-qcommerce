@@ -142,9 +142,9 @@ export const DashboardScreen = () => {
           </View>
           <View style={[styles.gridRow, { marginTop: spacing.sm }]}>
             <QuickActionCard
-              label="Dispatch Orders"
-              icon={DispatchIcon}
-              onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}
+              label="Material Requests"
+              icon={WarehouseIcon}
+              onPress={() => navigation.navigate('MaterialRequests')}
             />
             <QuickActionCard
               label="Offers"

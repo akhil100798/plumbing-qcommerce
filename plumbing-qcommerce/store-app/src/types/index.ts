@@ -93,6 +93,8 @@ export interface MaterialRequest {
   totalAmount: number;
   status: 'PENDING' | 'PREPARING' | 'READY' | 'COMPLETED';
   createdAt: string;
+  rawStatus?: string;
+  plumberCollectedAt?: string | null;
 }
 
 export interface Transaction {

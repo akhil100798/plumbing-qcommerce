@@ -21,7 +21,8 @@ export type AppStackParamList = {
   ReachedCustomer: { jobId: string };
   StartWork: { jobId: string };
   BeforePhotos: { jobId: string };
-  MaterialRequest: { jobId: string };
+  StoreSelection: { jobId: string };
+  MaterialRequest: { jobId: string; storeId: number; storeName: string };
   MaterialApprovalStatus: { jobId: string; productOrderId?: number };
   MaterialTracking: { jobId: string; productOrderId: number };
   AfterPhotos: { jobId: string };
