@@ -26,13 +26,13 @@ describe('plumber mockPolicy', () => {
     expect(policy.getConfiguredEdgeUrl()).toBeNull();
   });
 
-  it('returns the local edge URL only for explicit local dev mode', async () => {
+  it('keeps mock and implicit local edge fallbacks disabled in local mode', async () => {
     const policy = await loadPolicy({
       apiBaseUrl: 'http://localhost:8081',
       allowMocks: 'true',
     });
 
-    expect(policy.canUseDevMockFallbacks()).toBe(true);
-    expect(policy.getConfiguredEdgeUrl()).toBe('http://localhost:3000');
+    expect(policy.canUseDevMockFallbacks()).toBe(false);
+    expect(policy.getConfiguredEdgeUrl()).toBeNull();
   });
 });

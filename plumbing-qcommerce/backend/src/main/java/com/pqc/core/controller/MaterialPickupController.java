@@ -26,9 +26,17 @@ public class MaterialPickupController {
     @PreAuthorize("hasRole('PLUMBER')")
     public List<ProductOrder> plumberRequests() { return service.plumberRequests(); }
 
+    @GetMapping("/plumber/material-requests/{id}")
+    @PreAuthorize("hasRole('PLUMBER')")
+    public ProductOrder plumberRequest(@PathVariable Long id) { return service.plumberRequestDetails(id); }
+
     @GetMapping("/store/material-requests")
     @PreAuthorize("hasRole('STORE_MANAGER')")
     public List<ProductOrder> storeRequests() { return service.storeRequests(); }
+
+    @GetMapping("/store/material-requests/{id}")
+    @PreAuthorize("hasRole('STORE_MANAGER')")
+    public ProductOrder storeRequest(@PathVariable Long id) { return service.storeRequestDetails(id); }
 
     @PostMapping("/store/material-requests/{id}/approve")
     @PreAuthorize("hasRole('STORE_MANAGER')")

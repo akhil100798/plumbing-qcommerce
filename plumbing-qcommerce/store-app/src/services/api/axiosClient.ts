@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'ax
 import { tokenStorage } from './tokenStorage';
 
 const EXPLICIT_BACKEND_URL = process.env.EXPO_PUBLIC_API_BASE_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
-const RAW_BACKEND_URL = EXPLICIT_BACKEND_URL || (process.env.EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS === 'true' ? 'http://localhost:8081' : 'https://plumbing-qcommerce.onrender.com');
+const RAW_BACKEND_URL = EXPLICIT_BACKEND_URL || 'http://localhost:8081';
 const BACKEND_URL = RAW_BACKEND_URL.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 export const apiClient = axios.create({

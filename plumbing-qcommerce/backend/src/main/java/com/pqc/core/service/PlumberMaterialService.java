@@ -75,6 +75,12 @@ public class PlumberMaterialService {
     }
 
     @Transactional(readOnly = true)
+    public ProductOrder plumberRequestDetails(Long id) { return plumberRequest(id); }
+
+    @Transactional(readOnly = true)
+    public ProductOrder storeRequestDetails(Long id) { return storeRequest(id); }
+
+    @Transactional(readOnly = true)
     public List<ProductOrder> serviceOrderRequests(Long jobId) {
         User actor = currentUser.require();
         ServiceOrder job = jobs.findById(jobId).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Service order not found"));

@@ -17,8 +17,11 @@ export const ENDPOINTS = {
     PLUMBER_ASSIGNED: '/orders/plumber',
   },
   DELIVERY: {
-    MATERIAL_REQUEST: '/delivery/material-request',
-    STATUS: (id: string | number) => `/delivery/${id}/status`,
+    MATERIAL_REQUEST: (jobId: string | number) => `/service-orders/${jobId}/material-requests`,
+    SUBMIT: (id: string | number) => `/material-requests/${id}/submit`,
+    STATUS: (id: string | number) => `/plumber/material-requests/${id}`,
+    ARRIVED: (id: string | number) => `/plumber/material-requests/${id}/arrived-at-store`,
+    COLLECT: (id: string | number) => `/plumber/material-requests/${id}/collect`,
   },
   WALLET: {
     GET_WALLET: '/wallet',

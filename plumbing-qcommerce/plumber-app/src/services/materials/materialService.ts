@@ -1,11 +1,6 @@
 import { apiClient } from '../api/axiosClient';
 import { ENDPOINTS } from '../api/endpoints';
-import { MOCK_CATALOG } from '../mocks/mockData';
-import {
-  canUseDevMockFallbacks,
-  createBackendUnavailableError,
-  warnUsingDevMockFallback,
-} from '../mockPolicy';
+import { createBackendUnavailableError } from '../mockPolicy';
 import { MaterialItem, MaterialRequest } from '../../types';
 
 const parseServiceOrderId = (serviceOrderId: string): number => {
@@ -29,12 +24,6 @@ export const materialService = {
         image: item.imageUrl,
       }));
     } catch (error) {
-      if (canUseDevMockFallbacks()) {
-        warnUsingDevMockFallback('Material search', error);
-        return MOCK_CATALOG.filter((item) =>
-          item.name.toLowerCase().includes(query.toLowerCase())
-        );
-      }
       throw createBackendUnavailableError('Material catalog search', error);
     }
   },
@@ -45,11 +34,11 @@ export const materialService = {
   ): Promise<{ id: number; totalAmount: number; items: MaterialItem[] }> => {
     try {
       const numericOrderId = parseServiceOrderId(serviceOrderId);
-      const response = await apiClient.post<any>(ENDPOINTS.DELIVERY.MATERIAL_REQUEST, {
-        serviceOrderId: numericOrderId,
+      const response = await apiClient.post<any>(ENDPOINTS.DELIVERY.MATERIAL_REQUEST(numericOrderId), {
         storeId: 1,
         items: items,
       });
+      await apiClient.post(ENDPOINTS.DELIVERY.SUBMIT(response.data.id));
 
       const order = response.data;
       const mappedItems: MaterialItem[] = (order.items || items).map((reqItem: any) => {
@@ -74,28 +63,6 @@ export const materialService = {
         items: mappedItems,
       };
     } catch (error) {
-      if (canUseDevMockFallbacks()) {
-        warnUsingDevMockFallback('Create material request', error);
-        const mockId = Math.floor(Math.random() * 100000);
-        const mappedItems = items.map((reqItem) => {
-          const catalogItem = MOCK_CATALOG.find((c) => c.productId === reqItem.productId);
-          return {
-            productId: reqItem.productId,
-            name: catalogItem?.name || `Product #${reqItem.productId}`,
-            price: catalogItem?.price || 50,
-            quantity: reqItem.quantity,
-          };
-        });
-        const totalAmount = mappedItems.reduce(
-          (acc, item) => acc + item.price * item.quantity,
-          0
-        );
-        return {
-          id: mockId,
-          totalAmount,
-          items: mappedItems,
-        };
-      }
       throw createBackendUnavailableError('Material request creation', error);
     }
   },
@@ -104,16 +71,12 @@ export const materialService = {
     try {
       const response = await apiClient.get<any>(ENDPOINTS.DELIVERY.STATUS(orderId));
       const order = response.data;
-      if (order.status === 'DELIVERED') return 'DELIVERED';
-      if (order.status === 'OUT_FOR_DELIVERY') return 'DELIVERING';
+      if (order.status === 'COLLECTED') return 'DELIVERED';
+      if (order.status === 'READY_FOR_PICKUP' || order.status === 'PLUMBER_AT_STORE') return 'DELIVERING';
       if (order.status === 'CANCELLED') return 'REJECTED';
-      if (order.status === 'PENDING') return 'PENDING_APPROVAL';
+      if (order.status === 'REQUESTED' || order.status === 'STORE_REVIEWING') return 'PENDING_APPROVAL';
       return 'APPROVED';
     } catch (error) {
-      if (canUseDevMockFallbacks()) {
-        warnUsingDevMockFallback('Material request status', error);
-        return 'PENDING_APPROVAL';
-      }
       throw createBackendUnavailableError('Material request status', error);
     }
   },
@@ -123,15 +86,6 @@ export const materialService = {
       const response = await apiClient.get<any>(ENDPOINTS.DELIVERY.STATUS(orderId));
       return response.data;
     } catch (error) {
-      if (canUseDevMockFallbacks()) {
-        warnUsingDevMockFallback('Material request details', error);
-        return {
-          id: orderId,
-          status: 'PENDING',
-          deliveryPartnerName: null,
-          deliveryPartnerPhone: null,
-        };
-      }
       throw createBackendUnavailableError('Material request details', error);
     }
   },

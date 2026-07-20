@@ -36,17 +36,13 @@ describe('store analyticsService', () => {
     await expect(analyticsService.getSalesAnalytics()).rejects.toThrow('analytics missing');
   });
 
-  it('keeps dev analytics fallback only for explicit local development', async () => {
+  it('never fabricates analytics when the legacy mock flag is enabled', async () => {
     const { analyticsService } = await loadAnalyticsService({
       apiBaseUrl: 'http://localhost:8081',
       allowMocks: 'true',
     });
     getMock.mockRejectedValueOnce(new Error('offline'));
 
-    await expect(analyticsService.getSalesAnalytics()).resolves.toMatchObject({
-      revenue: 18540,
-      orders: 12,
-      averageOrderValue: 1545,
-    });
+    await expect(analyticsService.getSalesAnalytics()).rejects.toThrow('offline');
   });
 });
