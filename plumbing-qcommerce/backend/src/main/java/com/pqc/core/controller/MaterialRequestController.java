@@ -18,14 +18,15 @@ public class MaterialRequestController {
 
     private final PlumberMaterialService plumberMaterialService;
 
-    // POST /api/v1/service-orders/{serviceOrderId}/material-requests
-    @PostMapping("/service-orders/{serviceOrderId}/material-requests")
+    // POST /api/v1/service-orders/{serviceOrderId}/material-requests or POST /api/v1/material-requests
+    @PostMapping({"/service-orders/{serviceOrderId}/material-requests", "/material-requests"})
     @PreAuthorize("hasRole('PLUMBER')")
     public ResponseEntity<MaterialRequestDetailResponse> createMaterialRequest(
-            @PathVariable Long serviceOrderId,
+            @PathVariable(required = false) Long serviceOrderId,
             @RequestBody MaterialRequestBody body) {
+        Long jobId = serviceOrderId != null ? serviceOrderId : body.serviceOrderId();
         MaterialRequestDetailResponse detail = plumberMaterialService.createMaterialRequest(
-                serviceOrderId, body.storeId(), body.items());
+                jobId, body.storeId(), body.items());
         return ResponseEntity.status(201).body(detail);
     }
 
@@ -62,6 +63,7 @@ public class MaterialRequestController {
 
     // DTOs for request bodies
     public record MaterialRequestBody(
+            Long serviceOrderId,
             Long storeId,
             List<CartItemDTO> items) {}
 

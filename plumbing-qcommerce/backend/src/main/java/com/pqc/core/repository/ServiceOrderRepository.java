@@ -29,6 +29,9 @@ public interface ServiceOrderRepository extends JpaRepository<ServiceOrder, Long
 
     long countByStatus(OrderStatus status);
 
+    @Query("SELECT AVG(s.rating) FROM ServiceOrder s WHERE s.plumber.id = :plumberId AND s.rating IS NOT NULL")
+    Double findAverageRatingForPlumber(@org.springframework.data.repository.query.Param("plumberId") Long plumberId);
+
     @Query("SELECT COUNT(DISTINCT o.plumber.id) FROM ServiceOrder o WHERE o.status IN :statuses AND o.plumber IS NOT NULL")
     long countDistinctActivePlumbers(@org.springframework.data.repository.query.Param("statuses") List<OrderStatus> statuses);
 }

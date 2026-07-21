@@ -1,10 +1,15 @@
 package com.pqc.core.service;
 
+import com.pqc.core.dto.CustomerConfirmationResponse;
+import com.pqc.core.dto.RatingRequest;
+import com.pqc.core.dto.RatingResponse;
+import com.pqc.core.dto.ServiceOrderStatusHistoryResponse;
 import com.pqc.core.entity.*;
 import com.pqc.core.repository.OutboxEventRepository;
 import com.pqc.core.repository.ProductOrderRepository;
 import com.pqc.core.repository.ServiceOrderRepository;
 import com.pqc.core.repository.UserRepository;
+import com.pqc.core.repository.ServiceOrderStatusHistoryRepository;
 import com.pqc.core.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +37,18 @@ public class ServiceOrderService {
     private final OutboxEventRepository outboxRepository;
     private final CurrentUser currentUser;
     private final ProductOrderRepository productOrderRepository;
+    private final ServiceOrderStatusHistoryRepository historyRepository;
+
+    private void recordHistory(Long orderId, OrderStatus prev, OrderStatus next, User actor, String reason) {
+        historyRepository.save(ServiceOrderStatusHistory.builder()
+                .serviceOrderId(orderId)
+                .previousStatus(prev != null ? prev.name() : null)
+                .newStatus(next.name())
+                .actorId(actor != null ? actor.getId() : null)
+                .actorRole(actor != null && actor.getRole() != null ? actor.getRole().name() : null)
+                .reason(reason)
+                .build());
+    }
 
     private void saveToOutbox(String aggregateId, String type, String topic, String payload) {
         OutboxEvent event = OutboxEvent.builder()
@@ -69,6 +86,7 @@ public class ServiceOrderService {
                 .build();
 
         ServiceOrder saved = orderRepository.save(order);
+        recordHistory(saved.getId(), null, OrderStatus.PENDING, actor, "Order created");
 
         // Save to Outbox instead of direct Kafka call
         saveToOutbox(String.valueOf(saved.getId()), "ORDER_CREATED", "order-created",
@@ -106,11 +124,13 @@ public class ServiceOrderService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Assigned user is not a plumber");
         }
 
+        OrderStatus prev = order.getStatus();
         order.setPlumber(plumber);
         order.setStatus(OrderStatus.ACCEPTED);
         order.setAcceptedAt(LocalDateTime.now());
 
         ServiceOrder saved = orderRepository.save(order);
+        recordHistory(orderId, prev, OrderStatus.ACCEPTED, actor, "Order accepted by plumber");
 
         // Save to Outbox
         saveToOutbox(String.valueOf(orderId), "ORDER_ACCEPTED", "order-accepted",
@@ -153,6 +173,7 @@ public class ServiceOrderService {
     @Transactional
     public ServiceOrder startOrder(Long orderId) {
         ServiceOrder order = getOrderOrThrow(orderId);
+        User actor = currentUser.require();
         requireAssignedPlumber(order);
 
         if (order.getStatus() == OrderStatus.IN_PROGRESS || order.getStatus() == OrderStatus.COMBINED_ORDER) {
@@ -167,35 +188,38 @@ public class ServiceOrderService {
             throw conflict("Order must be marked arrived before work can start.");
         }
 
+        OrderStatus prev = order.getStatus();
         order.setStatus(OrderStatus.IN_PROGRESS);
         if (order.getStartedAt() == null) {
             order.setStartedAt(LocalDateTime.now());
         }
         log.info("Order #{} is now IN_PROGRESS", orderId);
 
-        return orderRepository.save(order);
+        ServiceOrder saved = orderRepository.save(order);
+        recordHistory(orderId, prev, OrderStatus.IN_PROGRESS, actor, "Work started by plumber");
+        return saved;
     }
 
     /**
      * Plumber completes the job — triggers the Billing Engine.
-     *
-     * Phase 3 enhancement: partsCharge is now computed automatically by summing
-     * the totalAmount of all DELIVERED ProductOrders linked to this ServiceOrder.
-     * A 10% referral commission on parts is also recorded for the plumber.
-     *
-     * @param orderId     The service job to complete.
-     * @param extraCharge Optional manual parts charge (e.g. cash purchases not in system).
      */
     @Transactional
     public ServiceOrder completeOrder(Long orderId, BigDecimal extraCharge) {
         ServiceOrder order = getOrderOrThrow(orderId);
+        User actor = currentUser.require();
         requireAssignedPlumber(order);
 
+        if (order.getStatus() == OrderStatus.COMPLETED || order.getStatus() == OrderStatus.CUSTOMER_CONFIRMED) {
+            return order;
+        }
+
         if (order.getStatus() != OrderStatus.IN_PROGRESS
+                && order.getStatus() != OrderStatus.WORK_RESUMED
                 && order.getStatus() != OrderStatus.COMBINED_ORDER) {
             throw conflict("Order cannot be completed from status: " + order.getStatus());
         }
 
+        OrderStatus prev = order.getStatus();
         LocalDateTime now = LocalDateTime.now();
         order.setCompletedAt(now);
         order.setStatus(OrderStatus.COMPLETED);
@@ -233,6 +257,7 @@ public class ServiceOrderService {
                         .add(PLATFORM_FEE));
 
         ServiceOrder saved = orderRepository.save(order);
+        recordHistory(orderId, prev, OrderStatus.COMPLETED, actor, "Job completed by plumber");
 
         // Publish completion event for inventory reconcile
         saveToOutbox(String.valueOf(orderId), "ORDER_COMPLETED", "order-completed",
@@ -246,6 +271,154 @@ public class ServiceOrderService {
         return saved;
     }
 
+    /**
+     * Customer confirms completion
+     */
+    @Transactional
+    public CustomerConfirmationResponse confirmOrder(Long orderId) {
+        ServiceOrder order = getOrderOrThrow(orderId);
+        User actor = currentUser.require();
+        if (actor.getRole() != Role.CUSTOMER || !order.getCustomer().getId().equals(actor.getId())) {
+            throw new AccessDeniedException("Only the owning customer may confirm completion of this order");
+        }
+
+        if (order.getStatus() == OrderStatus.CUSTOMER_CONFIRMED) {
+            return new CustomerConfirmationResponse(order.getId(), order.getStatus(), order.getCustomerConfirmedAt(), "Order already confirmed");
+        }
+
+        if (order.getStatus() != OrderStatus.COMPLETED) {
+            throw conflict("Order must be COMPLETED before customer confirmation. Current status: " + order.getStatus());
+        }
+
+        OrderStatus prev = order.getStatus();
+        order.setStatus(OrderStatus.CUSTOMER_CONFIRMED);
+        if (order.getCustomerConfirmedAt() == null) {
+            order.setCustomerConfirmedAt(LocalDateTime.now());
+        }
+
+        ServiceOrder saved = orderRepository.save(order);
+        recordHistory(orderId, prev, OrderStatus.CUSTOMER_CONFIRMED, actor, "Customer confirmed order completion");
+
+        saveToOutbox(String.valueOf(orderId), "ORDER_CUSTOMER_CONFIRMED", "order-confirmed",
+                "ORDER_CUSTOMER_CONFIRMED:" + orderId + ":CUSTOMER:" + actor.getId());
+
+        log.info("Order #{} confirmed by customer", orderId);
+        return new CustomerConfirmationResponse(saved.getId(), saved.getStatus(), saved.getCustomerConfirmedAt(), "Order confirmed successfully");
+    }
+
+    /**
+     * Customer submits rating and review
+     */
+    @Transactional
+    public RatingResponse submitRating(Long orderId, Integer rating, String comment) {
+        ServiceOrder order = getOrderOrThrow(orderId);
+        User actor = currentUser.require();
+        if (actor.getRole() != Role.CUSTOMER || !order.getCustomer().getId().equals(actor.getId())) {
+            throw new AccessDeniedException("Only the owning customer may rate this order");
+        }
+
+        if (order.getStatus() != OrderStatus.CUSTOMER_CONFIRMED && order.getStatus() != OrderStatus.COMPLETED) {
+            throw conflict("Order must be completed or confirmed before submitting rating. Current status: " + order.getStatus());
+        }
+
+        if (rating == null || rating < 1 || rating > 5) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rating must be an integer between 1 and 5");
+        }
+
+        if (comment != null && comment.length() > 1000) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comment maximum length is 1000 characters");
+        }
+
+        if (order.getRating() != null) {
+            throw conflict("Rating has already been submitted for order #" + orderId);
+        }
+
+        order.setRating(rating);
+        order.setComment(comment);
+        order.setRatedAt(LocalDateTime.now());
+
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            order.setStatus(OrderStatus.CUSTOMER_CONFIRMED);
+            order.setCustomerConfirmedAt(LocalDateTime.now());
+            recordHistory(orderId, OrderStatus.COMPLETED, OrderStatus.CUSTOMER_CONFIRMED, actor, "Rating submitted by customer");
+        }
+
+        ServiceOrder saved = orderRepository.save(order);
+
+        return new RatingResponse(
+                saved.getId(),
+                saved.getCustomer().getId(),
+                saved.getPlumber() != null ? saved.getPlumber().getId() : null,
+                saved.getRating(),
+                saved.getComment(),
+                saved.getRatedAt()
+        );
+    }
+
+    /**
+     * Retrieve rating for service order
+     */
+    @Transactional(readOnly = true)
+    public RatingResponse getRating(Long orderId) {
+        ServiceOrder order = getOrderOrThrow(orderId);
+        User actor = currentUser.require();
+        boolean allowed = actor.getRole() == Role.ADMIN
+                || actor.getRole() == Role.SUPER_ADMIN
+                || (actor.getRole() == Role.CUSTOMER && order.getCustomer().getId().equals(actor.getId()))
+                || (actor.getRole() == Role.PLUMBER && order.getPlumber() != null && order.getPlumber().getId().equals(actor.getId()))
+                || (actor.getRole() == Role.STORE_MANAGER && order.getStore() != null && order.getStore().getManager().getId().equals(actor.getId()));
+        if (!allowed) {
+            throw new AccessDeniedException("Not authorized to view rating for order " + orderId);
+        }
+
+        if (order.getRating() == null) {
+            throw notFound("Rating not found for order #" + orderId);
+        }
+
+        return new RatingResponse(
+                order.getId(),
+                order.getCustomer().getId(),
+                order.getPlumber() != null ? order.getPlumber().getId() : null,
+                order.getRating(),
+                order.getComment(),
+                order.getRatedAt()
+        );
+    }
+
+    /**
+     * Retrieve status history for service order
+     */
+    @Transactional(readOnly = true)
+    public List<ServiceOrderStatusHistoryResponse> getHistory(Long orderId) {
+        ServiceOrder order = getOrderOrThrow(orderId);
+        User actor = currentUser.require();
+        boolean allowed = actor.getRole() == Role.ADMIN
+                || actor.getRole() == Role.SUPER_ADMIN
+                || (actor.getRole() == Role.CUSTOMER && order.getCustomer().getId().equals(actor.getId()))
+                || (actor.getRole() == Role.PLUMBER && order.getPlumber() != null && order.getPlumber().getId().equals(actor.getId()))
+                || (actor.getRole() == Role.STORE_MANAGER && order.getStore() != null && order.getStore().getManager().getId().equals(actor.getId()));
+        if (!allowed) {
+            throw new AccessDeniedException("Not authorized to view history for order " + orderId);
+        }
+
+        List<ServiceOrderStatusHistory> histories = historyRepository.findByServiceOrderIdOrderByCreatedAtAsc(orderId);
+        return histories.stream()
+                .map(h -> new ServiceOrderStatusHistoryResponse(
+                        h.getId(),
+                        h.getServiceOrderId(),
+                        h.getPreviousStatus(),
+                        h.getNewStatus(),
+                        h.getNewStatus(),
+                        h.getActorId(),
+                        h.getActorRole(),
+                        h.getReason(),
+                        h.getCreatedAt(),
+                        h.getCreatedAt()
+                ))
+                .toList();
+    }
+
+    @Transactional
     public ServiceOrder cancelOrder(Long orderId) {
         ServiceOrder order = getOrderOrThrow(orderId);
         User actor = currentUser.require();

@@ -68,6 +68,15 @@ public class ServiceOrder {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    @Column(name = "customer_confirmed_at")
+    private LocalDateTime customerConfirmedAt;
+
+    @Column(name = "rated_at")
+    private LocalDateTime ratedAt;
+
+    private Integer rating;
+    private String comment;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

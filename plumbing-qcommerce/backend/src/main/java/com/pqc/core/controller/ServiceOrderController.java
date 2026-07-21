@@ -1,6 +1,10 @@
 package com.pqc.core.controller;
 
 import com.pqc.core.dto.CreateOrderRequest;
+import com.pqc.core.dto.CustomerConfirmationResponse;
+import com.pqc.core.dto.RatingRequest;
+import com.pqc.core.dto.RatingResponse;
+import com.pqc.core.dto.ServiceOrderStatusHistoryResponse;
 import com.pqc.core.entity.OrderStatus;
 import com.pqc.core.entity.RequestType;
 import com.pqc.core.entity.ServiceOrder;
@@ -25,8 +29,6 @@ public class ServiceOrderController {
 
     /**
      * POST /api/v1/orders — Customer creates a service request.
-     * BUG-11 fix: Uses typed DTO instead of raw Map to prevent NPE on wrong field names.
-     * BUG-12 fix: Returns 400 for invalid requestType enum values.
      */
     @PostMapping
     @PreAuthorize("hasRole('CUSTOMER')")
@@ -53,33 +55,59 @@ public class ServiceOrderController {
                 customerId, req.getDescription(), req.getLatitude(), req.getLongitude(), type));
     }
 
-    /** PATCH /api/v1/orders/{id}/accept?plumberId=X — Plumber/Store Manager accepts */
-    @PatchMapping("/{id}/accept")
+    /** PATCH/POST /api/v1/orders/{id}/accept — Plumber accepts */
+    @RequestMapping(value = "/{id}/accept", method = {RequestMethod.POST, RequestMethod.PATCH})
     @PreAuthorize("hasRole('PLUMBER')")
     public ResponseEntity<ServiceOrder> acceptOrder(@PathVariable Long id) {
         return ResponseEntity.ok(orderService.acceptOrder(id, currentUser.require().getId()));
     }
 
-    /** PATCH /api/v1/orders/{id}/arrive — Plumber marks arrival */
-    @PatchMapping("/{id}/arrive")
+    /** PATCH/POST /api/v1/orders/{id}/arrive — Plumber marks arrival */
+    @RequestMapping(value = "/{id}/arrive", method = {RequestMethod.POST, RequestMethod.PATCH})
     @PreAuthorize("hasRole('PLUMBER') and @orderAuthorization.isAssignedPlumber(#id, authentication)")
     public ResponseEntity<ServiceOrder> arriveOrder(@PathVariable Long id) {
         return ResponseEntity.ok(orderService.arriveOrder(id));
     }
 
-    /** PATCH /api/v1/orders/{id}/start — Plumber marks work started */
-    @PatchMapping("/{id}/start")
+    /** PATCH/POST /api/v1/orders/{id}/start — Plumber marks work started */
+    @RequestMapping(value = "/{id}/start", method = {RequestMethod.POST, RequestMethod.PATCH})
     @PreAuthorize("hasRole('PLUMBER') and @orderAuthorization.isAssignedPlumber(#id, authentication)")
     public ResponseEntity<ServiceOrder> startOrder(@PathVariable Long id) {
         return ResponseEntity.ok(orderService.startOrder(id));
     }
 
-    /** PATCH /api/v1/orders/{id}/complete — Plumber completes job, billing is calculated */
-    @PatchMapping("/{id}/complete")
+    /** POST/PATCH /api/v1/orders/{id}/complete — Plumber completes job */
+    @RequestMapping(value = "/{id}/complete", method = {RequestMethod.POST, RequestMethod.PATCH})
     @PreAuthorize("hasRole('PLUMBER') and @orderAuthorization.isAssignedPlumber(#id, authentication)")
     public ResponseEntity<ServiceOrder> completeOrder(@PathVariable Long id,
                                                        @RequestParam(required = false) BigDecimal partsCharge) {
         return ResponseEntity.ok(orderService.completeOrder(id, partsCharge));
+    }
+
+    /** POST/PATCH /api/v1/orders/{id}/confirm — Customer confirms completion */
+    @RequestMapping(value = "/{id}/confirm", method = {RequestMethod.POST, RequestMethod.PATCH})
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<CustomerConfirmationResponse> confirmOrder(@PathVariable Long id) {
+        return ResponseEntity.ok(orderService.confirmOrder(id));
+    }
+
+    /** POST /api/v1/orders/{id}/rating — Customer submits rating and comment */
+    @PostMapping("/{id}/rating")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<RatingResponse> submitRating(@PathVariable Long id, @RequestBody RatingRequest req) {
+        return ResponseEntity.ok(orderService.submitRating(id, req.getRating(), req.getComment()));
+    }
+
+    /** GET /api/v1/orders/{id}/rating — Retrieve rating for order */
+    @GetMapping("/{id}/rating")
+    public ResponseEntity<RatingResponse> getRating(@PathVariable Long id) {
+        return ResponseEntity.ok(orderService.getRating(id));
+    }
+
+    /** GET /api/v1/orders/{id}/history — Retrieve status history for order */
+    @GetMapping("/{id}/history")
+    public ResponseEntity<List<ServiceOrderStatusHistoryResponse>> getHistory(@PathVariable Long id) {
+        return ResponseEntity.ok(orderService.getHistory(id));
     }
 
     /** PATCH /api/v1/orders/{id}/cancel */
@@ -103,7 +131,7 @@ public class ServiceOrderController {
         return ResponseEntity.ok(orderService.getOrdersByPlumber(currentUser.require().getId()));
     }
 
-    /** GET /api/v1/orders/status/{status} — For store manager dashboard (all PENDING) */
+    /** GET /api/v1/orders/status/{status} — For store manager dashboard */
     @GetMapping("/status/{status}")
     @PreAuthorize("hasAnyRole('PLUMBER', 'STORE_MANAGER', 'ADMIN')")
     public ResponseEntity<List<ServiceOrder>> getByStatus(@PathVariable String status) {
@@ -117,3 +145,4 @@ public class ServiceOrderController {
         return ResponseEntity.ok(orderService.getOrderById(id));
     }
 }
+

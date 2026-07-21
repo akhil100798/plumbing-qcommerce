@@ -248,7 +248,7 @@ function createEdgeApp(options = {}) {
         }
     });
 
-    app.get('/api/v1/edge/health', async (req, res) => {
+    const healthHandler = async (req, res) => {
         let redisState = 'DISCONNECTED';
         try {
             if (edgeRedis && (edgeRedis.status === 'ready' || edgeRedis.status === 'connect' || process.env.MOCK_EDGE === 'true')) {
@@ -282,7 +282,12 @@ function createEdgeApp(options = {}) {
             socketRedisAdapter: adapterState,
             timestamp: new Date().toISOString()
         });
-    });
+    };
+
+    app.get('/api/v1/edge/health', healthHandler);
+    app.get('/health', healthHandler);
+    app.get('/health/live', healthHandler);
+    app.get('/health/ready', healthHandler);
 
     io.on('connection', (socket) => {
         console.log('Client connected:', socket.id);

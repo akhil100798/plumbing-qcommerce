@@ -27,7 +27,21 @@ public class PlumberMaterialService {
     private final StockRepository stocks;
     private final InventoryReservationRepository reservations;
     private final ProductOrderStatusHistoryRepository historyRepo;
+    private final ServiceOrderStatusHistoryRepository serviceOrderHistoryRepo;
     private final CurrentUser currentUser;
+
+    private void recordServiceOrderHistory(Long orderId, OrderStatus prev, OrderStatus next, User actor, String reason) {
+        if (serviceOrderHistoryRepo != null && orderId != null) {
+            serviceOrderHistoryRepo.save(ServiceOrderStatusHistory.builder()
+                    .serviceOrderId(orderId)
+                    .previousStatus(prev != null ? prev.name() : null)
+                    .newStatus(next.name())
+                    .actorId(actor != null ? actor.getId() : null)
+                    .actorRole(actor != null && actor.getRole() != null ? actor.getRole().name() : null)
+                    .reason(reason)
+                    .build());
+        }
+    }
 
     // ─── CREATE ──────────────────────────────────────────────────────────────
 
@@ -58,7 +72,9 @@ public class PlumberMaterialService {
         request.setItems(items); request.setTotalAmount(total);
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), null, ProductOrderStatus.REQUESTED, plumber, null);
+        OrderStatus prevJobStatus = job.getStatus();
         job.setStore(store); job.setStatus(OrderStatus.MATERIALS_REQUIRED); jobs.save(job);
+        recordServiceOrderHistory(job.getId(), prevJobStatus, OrderStatus.MATERIALS_REQUIRED, plumber, "Materials required for job");
         return toDetail(saved);
     }
 
@@ -192,8 +208,10 @@ public class PlumberMaterialService {
         User plumber = role(Role.PLUMBER);
         ProductOrderStatus prev = request.getStatus();
         move(request, ProductOrderStatus.REQUESTED, ProductOrderStatus.STORE_REVIEWING);
+        OrderStatus prevJobStatus = request.getServiceOrder().getStatus();
         request.getServiceOrder().setStatus(OrderStatus.WAITING_FOR_STORE);
         jobs.save(request.getServiceOrder());
+        recordServiceOrderHistory(request.getServiceOrder().getId(), prevJobStatus, OrderStatus.WAITING_FOR_STORE, plumber, "Material request submitted to store");
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.STORE_REVIEWING, plumber, null);
         return toDetail(saved);
@@ -320,8 +338,10 @@ public class PlumberMaterialService {
         User manager = role(Role.STORE_MANAGER);
         ProductOrderStatus prev = request.getStatus();
         move(request, ProductOrderStatus.PREPARING, ProductOrderStatus.READY_FOR_PICKUP);
+        OrderStatus prevJobStatus = request.getServiceOrder().getStatus();
         request.getServiceOrder().setStatus(OrderStatus.READY_FOR_PRODUCT_PICKUP);
         jobs.save(request.getServiceOrder());
+        recordServiceOrderHistory(request.getServiceOrder().getId(), prevJobStatus, OrderStatus.READY_FOR_PRODUCT_PICKUP, manager, "Products ready for plumber pickup");
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.READY_FOR_PICKUP, manager, null);
         return toDetail(saved);
@@ -334,8 +354,10 @@ public class PlumberMaterialService {
         ProductOrderStatus prev = request.getStatus();
         move(request, ProductOrderStatus.READY_FOR_PICKUP, ProductOrderStatus.PLUMBER_AT_STORE);
         request.setPlumberArrivedAt(LocalDateTime.now());
+        OrderStatus prevJobStatus = request.getServiceOrder().getStatus();
         request.getServiceOrder().setStatus(OrderStatus.PLUMBER_COLLECTING_PRODUCTS);
         jobs.save(request.getServiceOrder());
+        recordServiceOrderHistory(request.getServiceOrder().getId(), prevJobStatus, OrderStatus.PLUMBER_COLLECTING_PRODUCTS, plumber, "Plumber collecting products at store");
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.PLUMBER_AT_STORE, plumber, null);
         return toDetail(saved);
@@ -376,8 +398,10 @@ public class PlumberMaterialService {
         ProductOrderStatus prev = request.getStatus();
         request.setStatus(ProductOrderStatus.COLLECTED);
         request.setCollectionConfirmedAt(LocalDateTime.now());
+        OrderStatus prevJobStatus = request.getServiceOrder().getStatus();
         request.getServiceOrder().setStatus(OrderStatus.PRODUCTS_COLLECTED);
         jobs.save(request.getServiceOrder());
+        recordServiceOrderHistory(request.getServiceOrder().getId(), prevJobStatus, OrderStatus.PRODUCTS_COLLECTED, manager, "Products collected from store");
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.COLLECTED, manager, null);
         return toDetail(saved);
@@ -386,19 +410,27 @@ public class PlumberMaterialService {
     @Transactional
     public ServiceOrder returning(Long jobId) {
         ServiceOrder job = assignedJob(jobId);
+        User plumber = role(Role.PLUMBER);
         if (job.getStatus() != OrderStatus.PRODUCTS_COLLECTED)
             throw error(HttpStatus.CONFLICT, "Products must be collected first");
+        OrderStatus prev = job.getStatus();
         job.setStatus(OrderStatus.RETURNING_TO_CUSTOMER);
-        return jobs.save(job);
+        ServiceOrder saved = jobs.save(job);
+        recordServiceOrderHistory(job.getId(), prev, OrderStatus.RETURNING_TO_CUSTOMER, plumber, "Plumber returning to customer site");
+        return saved;
     }
 
     @Transactional
     public ServiceOrder resume(Long jobId) {
         ServiceOrder job = assignedJob(jobId);
+        User plumber = role(Role.PLUMBER);
         if (job.getStatus() != OrderStatus.RETURNING_TO_CUSTOMER)
             throw error(HttpStatus.CONFLICT, "Plumber must be returning to customer");
+        OrderStatus prev = job.getStatus();
         job.setStatus(OrderStatus.WORK_RESUMED);
-        return jobs.save(job);
+        ServiceOrder saved = jobs.save(job);
+        recordServiceOrderHistory(job.getId(), prev, OrderStatus.WORK_RESUMED, plumber, "Plumber resumed work");
+        return saved;
     }
 
     // ─── ADMIN ───────────────────────────────────────────────────────────────

@@ -12,6 +12,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
+import com.pqc.core.dto.ReassignPlumberRequest;
+import com.pqc.core.service.OperationsAdminService;
 import java.util.Map;
 
 @RestController
@@ -20,8 +22,18 @@ import java.util.Map;
 public class AdminController {
 
     private final AdminService adminService;
+    private final OperationsAdminService operationsAdminService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @PostMapping({"/orders/{orderId}/assign", "/orders/{orderId}/reassign"})
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'OPERATIONS_ADMIN')")
+    public ResponseEntity<?> assignPlumberToOrder(@PathVariable Long orderId, @RequestBody Map<String, Object> body) {
+        Long plumberId = body.get("plumberId") != null ? Long.valueOf(body.get("plumberId").toString()) : null;
+        String reason = body.get("reason") != null ? body.get("reason").toString() : "Assigned by admin";
+        ReassignPlumberRequest req = new ReassignPlumberRequest(plumberId, reason);
+        return ResponseEntity.ok(operationsAdminService.reassignPlumber(orderId, req));
+    }
 
     @GetMapping("/metrics")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
