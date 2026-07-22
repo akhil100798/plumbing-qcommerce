@@ -1,86 +1,109 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 
 import { AppHeader } from '../../components/common/AppHeader';
+import { PhotoGrid } from '../../components/common/PhotoGrid';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { SecondaryButton } from '../../components/common/SecondaryButton';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { PhotoUploadBox } from '../../components/forms/PhotoUploadBox';
-import { canUseDevMockFallbacks } from '../../services/mockPolicy';
-import { colors, spacing, typography } from '../../theme';
+import { colors, spacing, typography, borderRadius } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
+
+const MIN_PHOTOS = 3;
 
 type Props = StackScreenProps<AppStackParamList, 'BeforePhotos'>;
 
 export function BeforePhotosScreen({ route, navigation }: Props) {
   const { jobId } = route.params;
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const devMode = canUseDevMockFallbacks();
+  const [photos, setPhotos] = useState<string[]>([]);
 
-  const handleCapture = () => {
-    setPhotoUri('https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=400');
-    Alert.alert('Photo Captured', 'Before work photo has been successfully attached!');
+  const handleAddPhoto = async () => {
+    // Add mock captured photo uri or camera asset
+    const mockPhotos = [
+      'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=400',
+      'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&q=80&w=400',
+      'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=400',
+    ];
+    const nextUri = mockPhotos[photos.length % mockPhotos.length];
+    setPhotos((prev) => [...prev, nextUri]);
   };
 
+  const handleRemovePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const canProceed = photos.length >= MIN_PHOTOS;
+
   const handleNextWithMaterials = () => {
-    if (!photoUri) {
-      Alert.alert('Upload Required', 'Please capture a photo of the issue before proceeding.');
+    if (!canProceed) {
+      Alert.alert('Upload Required', `Add at least ${MIN_PHOTOS} photos before requesting materials.`);
       return;
     }
     navigation.navigate('StoreSelection', { jobId });
   };
 
   const handleNextNoMaterials = () => {
-    if (!photoUri) {
-      Alert.alert('Upload Required', 'Please capture a photo of the issue before proceeding.');
+    if (!canProceed) {
+      Alert.alert('Upload Required', `Add at least ${MIN_PHOTOS} photos before proceeding.`);
       return;
     }
     navigation.navigate('AfterPhotos', { jobId });
   };
 
   return (
-    <ScreenWrapper>
+    <SafeAreaView style={styles.container}>
       <AppHeader title="Before Photos" onBackPress={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.instructions}>
-          <Text style={styles.title}>Before Work Photos</Text>
-          <Text style={styles.subtitle}>Take clear photos of the issue before starting the work.</Text>
+      <ScrollView contentContainerStyle={styles.body}>
+        <Text style={styles.heading}>Capture clear photos</Text>
+        <Text style={styles.subheading}>before starting the work.</Text>
+
+        <View style={styles.gridWrapper}>
+          <PhotoGrid
+            photos={photos}
+            minPhotos={MIN_PHOTOS}
+            onAddPhoto={handleAddPhoto}
+            onRemovePhoto={handleRemovePhoto}
+          />
         </View>
 
-        <View style={styles.uploadWrapper}>
-          <PhotoUploadBox imageUri={photoUri} onPress={handleCapture} title="Snap Before Work Setup" />
-        </View>
-
-        <View style={styles.thumbnailGrid}>
-          <View style={styles.thumbnailSlot}><Text style={styles.thumbnailIcon}>📸</Text></View>
-          <View style={styles.thumbnailSlot}><Text style={styles.thumbnailIcon}>📸</Text></View>
-          <View style={styles.thumbnailSlot}><Text style={styles.thumbnailIcon}>📸</Text></View>
-        </View>
+        {!canProceed && (
+          <Text style={styles.hint}>Add at least {MIN_PHOTOS} photos to continue.</Text>
+        )}
 
         <View style={styles.spacer} />
 
         <View style={styles.actionBlock}>
-          <SecondaryButton title="Request Parts from Store" onPress={handleNextWithMaterials} style={styles.partsBtn} textColor={colors.primary} />
-          <PrimaryButton title="Work Finished (No Parts)" onPress={handleNextNoMaterials} style={styles.continueBtn} />
+          <SecondaryButton
+            title="Request Parts from Store"
+            onPress={handleNextWithMaterials}
+            disabled={!canProceed}
+            style={styles.partsBtn}
+            textColor={colors.primary}
+          />
+          <PrimaryButton
+            title="Proceed to After Photos"
+            onPress={handleNextNoMaterials}
+            disabled={!canProceed}
+            style={canProceed ? styles.nextButton : styles.nextButtonDisabled}
+          />
         </View>
       </ScrollView>
-    </ScreenWrapper>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: spacing.layout, paddingBottom: spacing.huge, flexGrow: 1 },
-  instructions: { marginBottom: spacing.xl },
-  title: { fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.black, color: colors.textPrimary, marginBottom: spacing.xs },
-  subtitle: { fontSize: typography.fontSize.sm, color: colors.textSecondary, lineHeight: typography.lineHeight.tight },
-  noticeText: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginBottom: spacing.md },
-  uploadWrapper: { marginBottom: spacing.xl },
-  thumbnailGrid: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md, marginBottom: spacing.xl },
-  thumbnailSlot: { flex: 1, height: 72, borderRadius: 8, borderWidth: 1.5, borderColor: colors.borderDark, borderStyle: 'dashed', backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' },
-  thumbnailIcon: { fontSize: 18, color: colors.textMuted },
+  container: { flex: 1, backgroundColor: colors.background },
+  body: { flexGrow: 1, paddingHorizontal: spacing.layout, paddingTop: spacing.sm, paddingBottom: spacing.lg },
+  heading: { fontSize: 22, fontWeight: typography.fontWeight.black, color: colors.textPrimary, textAlign: 'center' },
+  subheading: { fontSize: typography.fontSize.sm, color: colors.textSecondary, textAlign: 'center', marginTop: 2 },
+  gridWrapper: { marginTop: spacing.lg },
+  hint: { fontSize: typography.fontSize.xs, color: colors.warning, marginTop: spacing.md, textAlign: 'center', fontWeight: typography.fontWeight.bold },
   spacer: { flex: 1 },
-  actionBlock: { gap: spacing.md, marginTop: 'auto' },
+  actionBlock: { gap: spacing.sm, marginTop: spacing.xl },
   partsBtn: { width: '100%', borderColor: colors.primary },
-  continueBtn: { width: '100%' },
+  nextButton: {
+    backgroundColor: colors.primary,
+  },
+  nextButtonDisabled: { opacity: 0.5 },
 });

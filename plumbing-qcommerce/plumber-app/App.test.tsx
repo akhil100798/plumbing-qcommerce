@@ -28,6 +28,7 @@ vi.mock('react-native', async () => {
     TextInput: 'TextInput',
     TouchableOpacity: 'TouchableOpacity',
     View: 'View',
+    Dimensions: { get: vi.fn(() => ({ width: 375, height: 812 })) },
     Platform: { OS: 'web', select: (obj: any) => obj.web ?? obj.default },
     StatusBar: 'StatusBar',
     KeyboardAvoidingView: 'KeyboardAvoidingView',
