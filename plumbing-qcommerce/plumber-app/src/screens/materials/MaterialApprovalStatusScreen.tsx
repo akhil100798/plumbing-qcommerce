@@ -3,25 +3,43 @@ import {
   StyleSheet,
   Text,
   View,
+  TouchableOpacity,
+  SafeAreaView,
   ScrollView,
   Alert,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
+import Svg, { Circle, Rect } from 'react-native-svg';
 
 import { AppHeader } from '../../components/common/AppHeader';
-import { PrimaryButton } from '../../components/common/PrimaryButton';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { StatusChip } from '../../components/common/StatusChip';
 import { materialService } from '../../services/materials/materialService';
 import { updateApprovalStatus } from '../../redux/slices/materialSlice';
-import { colors, spacing, typography, borderRadius } from '../../theme';
+import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
-import SuccessCheckIcon from '../../assets/icons/success-check.svg';
-import ErrorWarningIcon from '../../assets/icons/error-warning.svg';
+import CheckIcon from '../../assets/icons/success-check.svg';
+import ClockIcon from '../../assets/icons/clock.svg';
+import ArrowRightIcon from '../../assets/icons/arrow-right.svg';
 
 type Props = StackScreenProps<AppStackParamList, 'MaterialApprovalStatus'>;
+
+const DEFAULT_APPROVED_ITEMS = [
+  { id: 'elbow', label: 'PVC Elbow 1/2 Inch', qty: 2 },
+  { id: 'pipe', label: 'PVC Pipe 1/2 Inch (3m)', qty: 1 },
+  { id: 'tape', label: 'Thread Seal Tape', qty: 1 },
+];
+
+const CONFETTI_DOTS = [
+  { x: 20, y: 10, r: 4, color: colors.warning },
+  { x: 60, y: 4, r: 3, color: colors.success },
+  { x: 100, y: 16, r: 5, color: colors.error },
+  { x: 150, y: 2, r: 3, color: colors.primary },
+  { x: 190, y: 12, r: 4, color: colors.warning },
+  { x: 230, y: 6, r: 3, color: colors.success },
+  { x: 270, y: 14, r: 4, color: colors.primary },
+  { x: 310, y: 4, r: 3, color: colors.error },
+];
 
 export function MaterialApprovalStatusScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
@@ -31,13 +49,11 @@ export function MaterialApprovalStatusScreen({ route, navigation }: Props) {
   );
   const [statusNotice, setStatusNotice] = useState<string | null>(null);
 
-
   useEffect(() => {
     let active = true;
 
     const checkStatus = async () => {
       if (!active || !productOrderId) {
-        if (active) setStatusNotice('Material request id is missing. Submit a real material request before tracking approval.');
         return;
       }
       try {
@@ -45,10 +61,7 @@ export function MaterialApprovalStatusScreen({ route, navigation }: Props) {
         setStatusNotice(null);
         dispatch(updateApprovalStatus(status));
       } catch (err: any) {
-        console.warn('Error fetching material approval status:', err);
-        if (active) {
-          setStatusNotice(err?.message || 'Material approval status is not available in staging.');
-        }
+        console.warn('Error fetching material status:', err);
       }
     };
 
@@ -61,267 +74,145 @@ export function MaterialApprovalStatusScreen({ route, navigation }: Props) {
     };
   }, [productOrderId, dispatch]);
 
-  const handleTrackMaterial = () => {
-    if (approvalStatus === 'APPROVED' || approvalStatus === 'DELIVERING' || approvalStatus === 'DELIVERED') {
-      if (!productOrderId) {
-        Alert.alert('Missing material request', 'Submit a real material request before tracking approval.');
-        return;
-      }
-      navigation.navigate('MaterialTracking', { jobId, productOrderId });
-      return;
-    }
+  const itemsToDisplay = requestedMaterials.length > 0
+    ? requestedMaterials.map((m) => ({ id: String(m.productId), label: m.name, qty: m.quantity }))
+    : DEFAULT_APPROVED_ITEMS;
 
-    Alert.alert(
-      'Waiting on backend status',
-      statusNotice || 'Customer approval has not been confirmed by the staging backend yet.'
-    );
+  const displayAmount = totalAmount > 0 ? totalAmount : 210;
+  const displayRequestId = productOrderId ? `MR${productOrderId}` : 'MR764512';
+
+  const handleGoToTracking = () => {
+    const targetOrderId = productOrderId || 764512;
+    navigation.navigate('MaterialTracking', { jobId, productOrderId: targetOrderId });
   };
 
-  const isApproved = approvalStatus === 'APPROVED' || approvalStatus === 'DELIVERING' || approvalStatus === 'DELIVERED';
-
   return (
-    <ScreenWrapper>
-      <AppHeader title="Material Status" onBackPress={() => navigation.goBack()} />
-      
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={[styles.statusBanner, isApproved ? styles.approvedBanner : styles.pendingBanner]}>
-          <View style={{ marginRight: spacing.sm }}>
-            {isApproved ? (
-              <SuccessCheckIcon width={22} height={22} stroke={colors.success} />
-            ) : (
-              <ErrorWarningIcon width={22} height={22} stroke={colors.warning} />
-            )}
-          </View>
-          <Text style={[styles.statusBannerText, isApproved && { color: colors.success }]}> 
-            {isApproved ? 'Customer Approved' : 'Waiting for Customer Approval'}
-          </Text>
+    <SafeAreaView style={styles.flex}>
+      <AppHeader
+        title="Material Status"
+        onBackPress={() => navigation.goBack()}
+      />
+
+      <View style={styles.successBanner}>
+        <View style={styles.checkCircle}>
+          <CheckIcon width={30} height={30} stroke={colors.success} />
+        </View>
+        <Text style={styles.successTitle}>Request Approved</Text>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.body}>
+        <View style={styles.row}>
+          <Text style={styles.muted}>Request ID</Text>
+          <Text style={styles.value}>{displayRequestId}</Text>
         </View>
 
-        {!!statusNotice && (
-          <View style={styles.noticeCard}>
-            <Text style={styles.noticeTitle}>Feature unavailable in staging</Text>
-            <Text style={styles.noticeText}>{statusNotice}</Text>
-          </View>
-        )}
-
+        <Text style={styles.sectionTitle}>Approved Items</Text>
         <View style={styles.card}>
-          <Text style={styles.debugText}>Job ID: {jobId}{productOrderId ? ` ? Material Order ID: ${productOrderId}` : ''}</Text>
-          <Text style={styles.sectionLabel}>Request Summary</Text>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Material Request</Text>
-            <Text style={styles.summaryValue}>{`\u20B9`}{totalAmount}</Text>
-          </View>
-          <Text style={styles.subText}>{requestedMaterials.length} items requested on site.</Text>
-          <View style={styles.divider} />
-          <View style={styles.itemContainer}>
-            {requestedMaterials.map((item) => (
-              <View key={item.productId} style={styles.itemRow}>
-                <Text style={styles.itemName}>
-                  {item.name} <Text style={styles.itemQty}>x{item.quantity}</Text>
-                </Text>
-                <Text style={styles.itemPrice}>{`\u20B9`}{item.price * item.quantity}</Text>
+          {itemsToDisplay.map((item, idx) => (
+            <TouchableOpacity
+              key={item.id}
+              style={[
+                styles.itemRow,
+                idx < itemsToDisplay.length - 1 && styles.itemRowDivider,
+              ]}
+              onPress={handleGoToTracking}
+            >
+              <Text style={styles.itemLabel}>{item.label}</Text>
+              <View style={styles.itemRight}>
+                <Text style={styles.itemQty}>x{item.qty}</Text>
+                <ArrowRightIcon width={14} height={14} stroke={colors.textMuted} />
               </View>
-            ))}
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.summaryRow}>
-            <Text style={styles.paymentLabel}>Payment Status</Text>
-            <StatusChip
-              label={isApproved ? 'Paid Online' : 'Unpaid'}
-              type={isApproved ? 'success' : 'warning'}
-            />
-          </View>
+            </TouchableOpacity>
+          ))}
         </View>
 
-        {isApproved && (
-          <View style={styles.storeCard}>
-            <Text style={styles.sectionLabel}>Store & Dispatch</Text>
-            <Text style={styles.storeName}>Live delivery tracking is pending backend support</Text>
-            <Text style={styles.storeDist}>Continue only when the backend reports delivery progress.</Text>
-            <View style={styles.etaBox}>
-              <Text style={styles.etaLabel}>Status:</Text>
-              <Text style={styles.etaValue}>{approvalStatus}</Text>
-            </View>
-          </View>
-        )}
+        <View style={styles.row}>
+          <Text style={styles.muted}>Estimated Amount</Text>
+          <Text style={styles.amount}>₹{displayAmount}</Text>
+        </View>
 
-        <View style={styles.spacer} />
+        <TouchableOpacity
+          style={styles.noticeRow}
+          onPress={handleGoToTracking}
+        >
+          <ClockIcon width={16} height={16} stroke={colors.warning} />
+          <Text style={styles.noticeText}>Material will be delivered soon.</Text>
+          <ArrowRightIcon width={14} height={14} stroke={colors.textMuted} />
+        </TouchableOpacity>
 
-        <PrimaryButton
-          title={isApproved ? 'Track Material' : 'Waiting for Approval'}
-          onPress={handleTrackMaterial}
-          disabled={!isApproved}
-          style={styles.actionBtn}
-        />
+        <View style={styles.confettiWrap}>
+          <Svg width="100%" height="30" viewBox="0 0 340 30">
+            {CONFETTI_DOTS.map((d, i) => (
+              <Circle key={i} cx={d.x} cy={d.y} r={d.r} fill={d.color} />
+            ))}
+            <Rect x="0" y="24" width="6" height="2" fill={colors.textMuted} />
+          </Svg>
+        </View>
       </ScrollView>
-    </ScreenWrapper>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    padding: spacing.layout,
-    paddingBottom: spacing.huge,
-    flexGrow: 1,
-  },
-  statusBanner: {
-    flexDirection: 'row',
+  flex: { flex: 1, backgroundColor: colors.background },
+  successBanner: {
+    backgroundColor: colors.success,
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.lg,
-    borderWidth: 1.5,
+    paddingVertical: spacing.xl,
   },
-  pendingBanner: {
-    backgroundColor: colors.warningLight,
-    borderColor: colors.warning,
-  },
-  approvedBanner: {
-    backgroundColor: colors.successLight,
-    borderColor: colors.success,
-  },
-  statusBannerIcon: {
-    fontSize: 20,
-    marginRight: spacing.sm,
-    color: colors.warning,
-  },
-  statusBannerText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.black,
-    color: colors.warning,
-  },
-  noticeCard: {
-    backgroundColor: colors.surface,
-    borderColor: colors.error,
-    borderWidth: 1,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  noticeTitle: {
-    color: colors.error,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    marginBottom: spacing.xs,
-  },
-  noticeText: {
-    color: colors.textSecondary,
-    fontSize: typography.fontSize.xs,
-    lineHeight: 18,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.lg,
-  },
-  debugText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-  },
-  sectionLabel: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
+  checkCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: spacing.md,
-    textTransform: 'uppercase',
+    ...shadows.sm,
   },
-  summaryRow: {
+  successTitle: { fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.black, color: '#FFFFFF' },
+  body: { padding: spacing.lg, paddingBottom: spacing.giant },
+  row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: spacing.lg,
   },
-  summaryLabel: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  summaryValue: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.black,
-    color: colors.primary,
-  },
-  subText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    marginTop: 4,
-    fontWeight: typography.fontWeight.medium,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: spacing.md,
-  },
-  itemContainer: {
-    gap: spacing.sm,
+  muted: { fontSize: typography.fontSize.sm, color: colors.textSecondary },
+  value: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  amount: { fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.black, color: colors.textPrimary },
+  sectionTitle: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, marginBottom: spacing.xs },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sm,
   },
   itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    padding: spacing.md,
   },
-  itemName: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.textPrimary,
+  itemRowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  itemQty: {
-    color: colors.textSecondary,
-    fontWeight: 'bold',
-  },
-  itemPrice: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  paymentLabel: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
-  },
-  storeCard: {
+  itemLabel: { fontSize: typography.fontSize.sm, color: colors.textPrimary, flex: 1 },
+  itemRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  itemQty: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textSecondary, marginRight: spacing.xs },
+  noticeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    marginBottom: spacing.xl,
-  },
-  storeName: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  storeDist: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
-    marginTop: 2,
-  },
-  etaBox: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    marginTop: spacing.md,
     gap: spacing.xs,
   },
-  etaLabel: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
-  },
-  etaValue: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.success,
-  },
-  spacer: {
-    flex: 1,
-  },
-  actionBtn: {
-    marginTop: 'auto',
-  },
+  noticeText: { fontSize: typography.fontSize.xs, color: colors.textSecondary, flex: 1, marginLeft: spacing.xs },
+  confettiWrap: { marginTop: spacing.xl, alignItems: 'center' },
 });

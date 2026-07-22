@@ -3,23 +3,21 @@ import {
   StyleSheet,
   Text,
   View,
+  SafeAreaView,
   Alert,
-  TouchableOpacity,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useSelector, useDispatch } from 'react-redux';
 
 import { AppHeader } from '../../components/common/AppHeader';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { CustomerCard } from '../../components/cards/CustomerCard';
+import { SecondaryButton } from '../../components/common/SecondaryButton';
 import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
 import { jobService } from '../../services/jobs/jobService';
 import { updateJobStatus } from '../../redux/slices/jobSlice';
 import CheckIcon from '../../assets/icons/success-check.svg';
-import PhoneIcon from '../../assets/icons/phone.svg';
 
 type Props = StackScreenProps<AppStackParamList, 'ReachedCustomer'>;
 
@@ -42,162 +40,104 @@ export function ReachedCustomerScreen({ route, navigation }: Props) {
       );
       navigation.replace('StartWork', { jobId });
     } catch (err: any) {
-      // Navigate anyway in fallback mode
+      // Proceed to start work on staging fallback
       navigation.replace('StartWork', { jobId });
     } finally {
       setLoading(false);
     }
   };
 
-  const customerName = activeJob?.customer.fullName || 'Anil Kumar';
-  const customerPhone = activeJob?.customer.phone || '+91 98765 43210';
+  const handleContactCustomer = () => {
+    const phone = activeJob?.customer.phone || '+91 98765 43210';
+    Alert.alert('Contact Customer', `Calling customer at ${phone}`);
+  };
 
   return (
-    <ScreenWrapper safeAreaStyle={{ backgroundColor: '#10B981' }}>
+    <SafeAreaView style={styles.flex}>
       <AppHeader
         title="Reached Customer"
-        showBack={false}
+        onBackPress={() => navigation.goBack()}
       />
-      
-      <View style={styles.container}>
-        {/* Banner Area */}
-        <View style={styles.banner}>
-          <View style={styles.bannerIconContainer}>
-            <CheckIcon width={28} height={28} stroke="#10B981" />
-          </View>
-          <Text style={styles.bannerTitle}>You have reached</Text>
-          <Text style={styles.bannerSubtitle}>the customer location</Text>
-        </View>
 
-        {/* Customer Address & Contact Card */}
-        <View style={styles.card}>
-          <Text style={styles.jobIdText}>Job #{jobId}</Text>
-          <Text style={styles.addressTitle}>Location Address</Text>
-          <Text style={styles.addressText}>
-            {activeJob?.address || '12, 6th Cross, Indiranagar, Bengaluru, 560038'}
-          </Text>
-
-          <View style={styles.divider} />
-
-          <View style={styles.customerRow}>
-            <View>
-              <Text style={styles.customerName}>{customerName}</Text>
-              <Text style={styles.customerPhone}>{customerPhone}</Text>
+      <View style={styles.body}>
+        <View style={styles.illustrationWrap}>
+          <View style={styles.illustrationCircle}>
+            <View style={styles.pinBadge}>
+              <CheckIcon width={30} height={30} stroke="#FFFFFF" />
             </View>
-            <TouchableOpacity
-              style={styles.callBtn}
-              onPress={() => Alert.alert('Calling Customer', `Calling ${customerPhone}`)}
-            >
-              <PhoneIcon width={16} height={16} stroke="#FFFFFF" />
-            </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.spacer} />
+        <Text style={styles.title}>You have reached the{'\n'}customer location</Text>
+        <Text style={styles.subtitle}>Please confirm to start the service for Job #{jobId}.</Text>
+      </View>
 
+      <View style={styles.footer}>
         <PrimaryButton
-          title="Confirm Arrival & Proceed"
+          title="Confirm Arrival"
           onPress={handleConfirmArrival}
           loading={loading}
-          style={styles.actionBtn}
+          style={styles.confirmBtn}
+        />
+        <SecondaryButton
+          title="Contact Customer"
+          onPress={handleContactCustomer}
+          style={styles.contactBtn}
         />
       </View>
-    </ScreenWrapper>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  flex: { flex: 1, backgroundColor: colors.surface },
+  body: {
     flex: 1,
-    padding: spacing.layout,
-    backgroundColor: colors.background,
-  },
-  banner: {
     alignItems: 'center',
-    backgroundColor: '#D1FAE5',
-    paddingVertical: spacing.xl,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.lg,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
   },
-  bannerIconContainer: {
+  illustrationWrap: { marginBottom: spacing.xl },
+  illustrationCircle: {
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: '#D1FAE5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pinBadge: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
+    backgroundColor: colors.success,
     alignItems: 'center',
-    marginBottom: spacing.sm,
-    ...shadows.sm,
+    justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    ...shadows.md,
   },
-  bannerTitle: {
-    fontSize: typography.fontSize.lg,
+  title: {
+    fontSize: 22,
     fontWeight: typography.fontWeight.black,
-    color: '#059669',
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
   },
-  bannerSubtitle: {
-    fontSize: typography.fontSize.xs,
+  subtitle: {
+    fontSize: typography.fontSize.sm,
     color: colors.textSecondary,
-    fontWeight: typography.fontWeight.semibold,
-    marginTop: 2,
+    textAlign: 'center',
   },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    borderWidth: 1,
+  footer: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
+    gap: spacing.sm,
+  },
+  confirmBtn: {
+    backgroundColor: colors.success,
+  },
+  contactBtn: {
     borderColor: colors.border,
-    ...shadows.sm,
-  },
-  jobIdText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textMuted,
-    marginBottom: 4,
-  },
-  addressTitle: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-  },
-  addressText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textPrimary,
-    marginTop: 2,
-    lineHeight: typography.lineHeight.tight,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: spacing.md,
-  },
-  customerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  customerName: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  customerPhone: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  callBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  spacer: {
-    flex: 1,
-  },
-  actionBtn: {
-    backgroundColor: '#10B981',
   },
 });

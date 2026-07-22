@@ -64,6 +64,14 @@ vi.mock('socket.io-client', () => ({
   }),
 }));
 
+vi.mock('react-native-svg', () => ({
+  default: 'Svg',
+  Circle: 'Circle',
+  Rect: 'Rect',
+  Path: 'Path',
+  Svg: 'Svg',
+}));
+
 vi.mock('expo-location', () => ({
   requestForegroundPermissionsAsync: vi.fn(),
   getCurrentPositionAsync: vi.fn(),
