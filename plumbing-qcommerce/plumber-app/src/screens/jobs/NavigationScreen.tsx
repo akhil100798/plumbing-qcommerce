@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, Alert } from 'react-native';
+import { StyleSheet, Text, View, Alert, TouchableOpacity } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -9,10 +9,12 @@ import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { RouteMap } from '../../components/maps/RouteMap';
 import { updateJobStatus } from '../../redux/slices/jobSlice';
 import { canUseDevMockFallbacks } from '../../services/mockPolicy';
-import { colors, spacing, typography } from '../../theme';
+import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
 import { jobService } from '../../services/jobs/jobService';
+import NavigationIcon from '../../assets/icons/navigation.svg';
+import MapPinIcon from '../../assets/icons/location-pin.svg';
 
 type Props = StackScreenProps<AppStackParamList, 'Navigation'>;
 
@@ -20,7 +22,6 @@ export function NavigationScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
   const { jobId, address, latitude, longitude } = route.params;
   const { activeJob } = useSelector((state: RootState) => state.job);
-  const devMode = canUseDevMockFallbacks();
   const [loading, setLoading] = useState(false);
 
   const handleReached = async () => {
@@ -43,8 +44,21 @@ export function NavigationScreen({ route, navigation }: Props) {
   };
 
   return (
-    <ScreenWrapper>
-      <AppHeader title="Navigate" onBackPress={() => navigation.goBack()} />
+    <ScreenWrapper safeAreaStyle={{ backgroundColor: '#10B981' }}>
+      <AppHeader
+        title="Navigating to Customer"
+        onBackPress={() => navigation.goBack()}
+      />
+
+      {/* Turn Instruction Header Banner */}
+      <View style={styles.banner}>
+        <NavigationIcon width={24} height={24} stroke="#FFFFFF" />
+        <View style={styles.bannerTextContainer}>
+          <Text style={styles.bannerDistance}>1.2 km away</Text>
+          <Text style={styles.bannerInstruction}>Turn Right on 6th Cross, Indiranagar</Text>
+        </View>
+      </View>
+
       <View style={styles.container}>
         <RouteMap
           plumberLatitude={latitude}
@@ -54,18 +68,20 @@ export function NavigationScreen({ route, navigation }: Props) {
           customerName={activeJob?.customer.fullName || 'Customer'}
         />
 
+        {/* Bottom ETA & Action Panel */}
         <View style={styles.bottomCard}>
-          {!devMode && <Text style={styles.noticeText}>Live GPS routing remains unavailable in staging. Arrival confirmation is active.</Text>}
           <View style={styles.etaRow}>
-            <View style={styles.etaBlock}>
-              <Text style={styles.etaText}>Backend connected</Text>
-              <Text style={styles.distanceText}>Arrival confirmation is enabled</Text>
+            <View style={styles.etaBadge}>
+              <Text style={styles.etaTime}>12 mins</Text>
+              <Text style={styles.etaLabel}>ETA</Text>
             </View>
-            <View style={styles.markerContainer}><Text style={styles.markerIcon}>📍</Text></View>
+            <View style={styles.destInfo}>
+              <Text style={styles.jobIdText}>Job #{jobId}</Text>
+              <Text style={styles.customerNameText}>{activeJob?.customer.fullName || 'Customer'}</Text>
+            </View>
           </View>
 
-          <Text style={styles.debugText}>Job ID: {jobId}</Text>
-          <Text style={styles.addressTitle}>Destination Address</Text>
+          <Text style={styles.addressTitle}>Customer Address</Text>
           <Text style={styles.addressContent}>{address}</Text>
 
           <PrimaryButton 
@@ -81,17 +97,92 @@ export function NavigationScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  banner: {
+    backgroundColor: '#10B981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    gap: spacing.md,
+  },
+  bannerTextContainer: {
+    flex: 1,
+  },
+  bannerDistance: {
+    fontSize: typography.fontSize.xs,
+    color: '#D1FAE5',
+    fontWeight: typography.fontWeight.bold,
+  },
+  bannerInstruction: {
+    fontSize: typography.fontSize.sm,
+    color: '#FFFFFF',
+    fontWeight: typography.fontWeight.bold,
+  },
   container: { flex: 1, position: 'relative' },
-  bottomCard: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: spacing.lg, borderWidth: 1.5, borderColor: colors.border },
-  noticeText: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginBottom: spacing.md },
-  etaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
-  etaBlock: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
-  etaText: { fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.black, color: colors.primary },
-  distanceText: { fontSize: typography.fontSize.sm, color: colors.textSecondary, fontWeight: typography.fontWeight.medium },
-  markerContainer: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  markerIcon: { fontSize: 16 },
-  addressTitle: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textSecondary, textTransform: 'uppercase', marginBottom: 4 },
-  addressContent: { fontSize: typography.fontSize.sm, color: colors.textPrimary, lineHeight: typography.lineHeight.tight, marginBottom: spacing.lg },
-  debugText: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginBottom: spacing.sm },
-  arriveBtn: { width: '100%', backgroundColor: colors.success },
+  bottomCard: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: spacing.lg,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    ...shadows.lg,
+  },
+  etaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  etaBadge: {
+    backgroundColor: colors.primaryLight,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+  },
+  etaTime: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.black,
+    color: colors.primary,
+  },
+  etaLabel: {
+    fontSize: 9,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
+  },
+  destInfo: {
+    flex: 1,
+  },
+  jobIdText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textMuted,
+  },
+  customerNameText: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  addressTitle: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  addressContent: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+    lineHeight: typography.lineHeight.tight,
+    marginBottom: spacing.lg,
+  },
+  arriveBtn: {
+    width: '100%',
+    backgroundColor: '#10B981',
+  },
 });

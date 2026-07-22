@@ -13,7 +13,7 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { OTPInput } from '../../components/forms/OTPInput';
 import { authService } from '../../services/auth/authService';
-import { colors, spacing, typography } from '../../theme';
+import { colors, spacing, typography, borderRadius } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
 import { useDispatch } from 'react-redux';
 import { authSuccess, authFailure } from '../../redux/slices/authSlice';
@@ -23,10 +23,10 @@ type Props = StackScreenProps<AuthStackParamList, 'Otp'>;
 
 export function OtpScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
-  const { phone } = route.params;
+  const phone = route.params?.phone || '+91 98765 43210';
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
-  const [timer, setTimer] = useState(30);
+  const [timer, setTimer] = useState(28);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -65,25 +65,30 @@ export function OtpScreen({ route, navigation }: Props) {
     }
   };
 
+  const mm = String(Math.floor(timer / 60)).padStart(2, '0');
+  const ss = String(timer % 60).padStart(2, '0');
+
   return (
     <ScreenWrapper safeAreaStyle={{ backgroundColor: colors.surface }}>
-      <AppHeader title="Verify OTP" onBackPress={() => navigation.goBack()} />
+      <AppHeader title="Verify Number" onBackPress={() => navigation.goBack()} />
       
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>Verify OTP</Text>
+          <Text style={styles.title}>Verify Your Number</Text>
           <Text style={styles.subtitle}>
             Enter the 6-digit code sent to
           </Text>
           <Text style={styles.phoneText}>{phone}</Text>
         </View>
 
-        <OTPInput length={6} onCodeChanged={setCode} />
+        <View style={styles.otpWrapper}>
+          <OTPInput length={6} onCodeChanged={setCode} />
+        </View>
 
         <View style={styles.resendRow}>
           {timer > 0 ? (
             <Text style={styles.timerText}>
-              Resend OTP in 00:{timer < 10 ? `0${timer}` : timer}
+              Resend OTP in <Text style={styles.timerHighlight}>{mm}:{ss}</Text>
             </Text>
           ) : (
             <TouchableOpacity onPress={handleResend}>
@@ -92,17 +97,20 @@ export function OtpScreen({ route, navigation }: Props) {
           )}
         </View>
 
+        <View style={styles.securityWrapper}>
+          <View style={styles.shieldBadge}>
+            <ShieldIcon width={40} height={40} stroke={colors.primary} />
+          </View>
+          <Text style={styles.securityText}>Your data is safe with us</Text>
+        </View>
+
         <PrimaryButton
           title="Verify & Continue"
           onPress={handleVerify}
           loading={loading}
+          disabled={code.length < 6}
           style={styles.verifyButton}
         />
-
-        <View style={styles.securityWrapper}>
-          <ShieldIcon width={64} height={64} stroke={colors.primary} />
-          <Text style={styles.securityText}>Your data is safe with us</Text>
-        </View>
       </View>
     </ScreenWrapper>
   );
@@ -116,53 +124,68 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   header: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: spacing.xl,
   },
   title: {
     fontSize: typography.fontSize.xxl,
     fontWeight: typography.fontWeight.black,
     color: colors.textPrimary,
-    marginBottom: spacing.sm,
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: typography.fontSize.sm,
     color: colors.textSecondary,
-    textAlign: 'center',
   },
   phoneText: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
-    marginTop: 4,
+    marginTop: 2,
+  },
+  otpWrapper: {
+    marginVertical: spacing.md,
+    alignItems: 'center',
   },
   resendRow: {
-    alignItems: 'center',
-    marginVertical: spacing.lg,
+    alignItems: 'flex-start',
+    marginVertical: spacing.sm,
   },
   timerText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textMuted,
-    fontWeight: typography.fontWeight.medium,
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
   },
-  resendLink: {
-    fontSize: typography.fontSize.sm,
+  timerHighlight: {
     color: colors.primary,
     fontWeight: typography.fontWeight.bold,
   },
-  verifyButton: {
-    marginTop: spacing.xl,
-    width: '100%',
+  resendLink: {
+    fontSize: typography.fontSize.xs,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.bold,
   },
   securityWrapper: {
+    flex: 1,
     alignItems: 'center',
-    marginTop: spacing.giant,
-    gap: spacing.sm,
-    opacity: 0.8,
+    justifyContent: 'center',
+    marginVertical: spacing.xl,
+    gap: spacing.xs,
+  },
+  shieldBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   securityText: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: colors.textMuted,
     fontWeight: typography.fontWeight.medium,
+  },
+  verifyButton: {
+    marginBottom: spacing.xl,
+    width: '100%',
   },
 });
