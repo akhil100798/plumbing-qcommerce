@@ -1,9 +1,10 @@
 # FixKart Plumber Mobile UI Reference Integration Report
 
 ## 1. Summary
-Successfully updated and integrated `ProfileScreen`, `JobHistoryScreen`, and supporting components (`Avatar`, `MenuRow`, `PhotoGrid`, `BarChart`, `ChecklistItem`, `JobProgressStepper`, `MaterialRow`) into the Expo React Native `plumber-app`. All UI features—including initial-based avatars with online badges, profile stats rows, styled menu rows with danger mode, and pill-filtered job history cards—have been implemented while retaining full backend API connectivity, Redux state updates, and parameter safety.
+Successfully updated `DrawerMenuScreen` along with `ProfileScreen`, `JobHistoryScreen`, and all supporting components (`Avatar`, `MenuRow`, `PhotoGrid`, `BarChart`, `ChecklistItem`, `JobProgressStepper`, `MaterialRow`) into the Expo React Native `plumber-app`. All UI features—including clean white drawer profile headers with online/offline status switches, menu lists with right chevrons, initial-based avatars with online badges, profile stats rows, styled menu rows with danger mode, and pill-filtered job history cards—have been implemented while retaining full backend API connectivity, Redux state updates, and parameter safety.
 
 ## 2. Files Modified
+- [DrawerMenuScreen.tsx](file:///d:/personal%20project/plumbing-qcommerce/plumber-app/src/screens/profile/DrawerMenuScreen.tsx)
 - [ProfileScreen.tsx](file:///d:/personal%20project/plumbing-qcommerce/plumber-app/src/screens/profile/ProfileScreen.tsx)
 - [JobHistoryScreen.tsx](file:///d:/personal%20project/plumbing-qcommerce/plumber-app/src/screens/business/JobHistoryScreen.tsx)
 - [BeforePhotosScreen.tsx](file:///d:/personal%20project/plumbing-qcommerce/plumber-app/src/screens/photos/BeforePhotosScreen.tsx)
@@ -23,13 +24,14 @@ Successfully updated and integrated `ProfileScreen`, `JobHistoryScreen`, and sup
 - [MaterialRow.tsx](file:///d:/personal%20project/plumbing-qcommerce/plumber-app/src/components/materials/MaterialRow.tsx) - Quantity adjustment component
 
 ## 4. Screens Implemented & Enhanced
-1. **Profile Screen**: Profile card with `Avatar`, plumber name, star rating with reviews count, "Edit Profile" pill button, 3-column stats row (Jobs Completed, Rating, Member Since), and `MenuRow` list items preserving Redux logout and availability state.
-2. **Job History Screen**: Header, pill tab filter switcher (All, Completed, Cancelled), job rows showing job ID, title, amount, status badge (Completed: green, Cancelled: red), and timestamp.
-3. **Before Photos Screen**: Heading, `PhotoGrid`, 3-photo min threshold check, options to request materials or finish work.
-4. **After Photos Screen**: Heading, `PhotoGrid`, 3-photo min threshold check, Next button proceeding to service completion.
-5. **Complete Service Screen**: Hero banner with confetti, checkmark circle, "Great Job!", 5-star rating display, customer feedback, billing summary, customer signature card, and "Complete & Finish" button dispatching Redux wallet/earnings state.
-6. **Earnings Screen**: Summary card with period selector pill, growth trend indicator, stats cards, `BarChart` trend card, and wallet navigation trigger.
-7. **Wallet Screen**: Balance card with green "Withdraw" button, styled transaction rows with credit/debit indicators, and recent transactions list linked to Redux wallet state.
+1. **Drawer Menu Screen**: Clean white background, profile row with `Avatar`, plumber name, "View Profile" link, online/offline status toggle switch, menu list with right chevrons (Dashboard, My Jobs, Earnings, Wallet, My Reviews, My Documents, Support, Settings), and Redux logout.
+2. **Profile Screen**: Profile card with `Avatar`, plumber name, star rating with reviews count, "Edit Profile" pill button, 3-column stats row (Jobs Completed, Rating, Member Since), and `MenuRow` list items preserving Redux logout and availability state.
+3. **Job History Screen**: Header, pill tab filter switcher (All, Completed, Cancelled), job rows showing job ID, title, amount, status badge (Completed: green, Cancelled: red), and timestamp.
+4. **Before Photos Screen**: Heading, `PhotoGrid`, 3-photo min threshold check, options to request materials or finish work.
+5. **After Photos Screen**: Heading, `PhotoGrid`, 3-photo min threshold check, Next button proceeding to service completion.
+6. **Complete Service Screen**: Hero banner with confetti, checkmark circle, "Great Job!", 5-star rating display, customer feedback, billing summary, customer signature card, and "Complete & Finish" button dispatching Redux wallet/earnings state.
+7. **Earnings Screen**: Summary card with period selector pill, growth trend indicator, stats cards, `BarChart` trend card, and wallet navigation trigger.
+8. **Wallet Screen**: Balance card with green "Withdraw" button, styled transaction rows with credit/debit indicators, and recent transactions list linked to Redux wallet state.
 
 ## 5. Navigation Changes
 - Maintained `@react-navigation` stack & tab navigators without breaking route parameters (`jobId`, `storeId`, `productOrderId`, etc.).
