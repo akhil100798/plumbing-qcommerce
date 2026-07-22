@@ -5,36 +5,50 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Switch,
+  SafeAreaView,
   Alert,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { AppHeader } from '../../components/common/AppHeader';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { ProfileMenuItem } from '../../components/cards/ProfileMenuItem';
-import { RatingBadge } from '../../components/cards/RatingBadge';
+import { Avatar } from '../../components/common/Avatar';
+import { MenuRow } from '../../components/cards/MenuRow';
 import { setAvailability, logout } from '../../redux/slices/authSlice';
 import { profileService } from '../../services/profile/profileService';
-import { colors, spacing, typography, borderRadius } from '../../theme';
+import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
+import StarIcon from '../../assets/icons/star.svg';
 
 type Props = StackScreenProps<AppStackParamList, 'Profile' | any>;
+
+const STATS = [
+  { label: 'Jobs Completed', value: '128' },
+  { label: 'Rating', value: '4.8' },
+  { label: 'Member Since', value: 'Mar 2023' },
+];
+
+const MENU_ITEMS = [
+  { icon: 'person-outline', label: 'Personal Information' },
+  { icon: 'options-outline', label: 'Availability Status' },
+  { icon: 'document-text-outline', label: 'Documents' },
+  { icon: 'card-outline', label: 'Bank Details' },
+  { icon: 'notifications-outline', label: 'Notification Settings' },
+  { icon: 'help-circle-outline', label: 'Help & Support' },
+  { icon: 'log-out-outline', label: 'Logout', danger: true, showChevron: false },
+];
 
 export function ProfileScreen({ navigation }: Props) {
   const dispatch = useDispatch();
   const { plumber } = useSelector((state: RootState) => state.auth);
 
-  const handleToggleOnline = async (value: boolean) => {
-    dispatch(setAvailability(value));
-    try {
-      await profileService.updateAvailability(value);
-    } catch (error: any) {
-      dispatch(setAvailability(!value));
-      Alert.alert('Feature unavailable', error?.message || 'Availability updates are not available in staging.');
-    }
+  const plumberName = plumber?.fullName || 'Ramesh Kumar';
+  const plumberRating = plumber?.rating ?? 4.8;
+  const plumberReviews = plumber?.ratingsCount ?? 125;
+
+  const handleEditProfile = () => {
+    Alert.alert('Edit Profile', 'Profile edit is not configured in staging.');
   };
 
   const handleLogout = () => {
@@ -52,117 +66,115 @@ export function ProfileScreen({ navigation }: Props) {
   };
 
   const handleNavigation = (menuName: string) => {
-    if (menuName === 'Support') {
+    if (menuName === 'Help & Support') {
       navigation.navigate('Chat', { name: 'Operations Support', role: 'Support' });
     } else {
-      Alert.alert('Feature unavailable', `${menuName} is not available in staging.`);
+      Alert.alert('Feature details', `${menuName} settings are not configured in staging.`);
     }
   };
 
   return (
-    <ScreenWrapper>
-      <AppHeader title="My Profile" onBackPress={() => navigation.navigate('Main')} />
-      
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.profileHeader}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {plumber?.fullName.split(' ').map((n) => n[0]).join('') || 'PP'}
-            </Text>
+    <SafeAreaView style={styles.container}>
+      <AppHeader title="Profile" onBackPress={() => navigation.navigate('Main')} />
+
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        {/* Profile Card */}
+        <View style={styles.profileCard}>
+          <View style={styles.profileTopRow}>
+            <Avatar name={plumberName} size={56} />
+            <View style={{ flex: 1, marginLeft: spacing.sm }}>
+              <Text style={styles.name}>{plumberName}</Text>
+              <View style={styles.ratingRow}>
+                <StarIcon width={14} height={14} fill={colors.warning} stroke={colors.warning} />
+                <Text style={styles.ratingText}>
+                  {plumberRating} · {plumberReviews} Reviews
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
+              <Text style={styles.editLabel}>Edit Profile</Text>
+            </TouchableOpacity>
           </View>
-          <Text style={styles.name}>{plumber?.fullName || 'Plumber Partner'}</Text>
-          <Text style={styles.plumberId}>Plumber ID: {plumber?.plumberId || 'Unavailable in staging'}</Text>
-          <RatingBadge rating={plumber?.rating ?? 0} count={plumber?.ratingsCount ?? 0} style={styles.badge} />
+
+          {/* Stats Row */}
+          <View style={styles.statsRow}>
+            {STATS.map((s, i) => (
+              <React.Fragment key={s.label}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{s.value}</Text>
+                  <Text style={styles.statLabel}>{s.label}</Text>
+                </View>
+                {i < STATS.length - 1 && <View style={styles.statDivider} />}
+              </React.Fragment>
+            ))}
+          </View>
         </View>
 
-        <View style={styles.menuContainer}>
-          <ProfileMenuItem title="Personal Details" onPress={() => handleNavigation('Personal Details')} />
-          <ProfileMenuItem title="Bank Details" onPress={() => handleNavigation('Bank Details')} />
-          <ProfileMenuItem title="Documents" onPress={() => handleNavigation('Documents')} />
-          <ProfileMenuItem title="Vehicle Details" onPress={() => handleNavigation('Vehicle Details')} />
-          <ProfileMenuItem
-            title="Availability Status"
-            rightElement={
-              <Switch
-                value={plumber?.availability ?? false}
-                onValueChange={handleToggleOnline}
-                trackColor={{ false: '#CBD5E1', true: '#86EFAC' }}
-                thumbColor={(plumber?.availability) ? '#10B981' : '#F8FAFC'}
+        {/* Menu Card */}
+        <View style={styles.menuCard}>
+          {MENU_ITEMS.map((item, i) => (
+            <React.Fragment key={item.label}>
+              <MenuRow
+                icon={item.icon}
+                label={item.label}
+                danger={item.danger}
+                showChevron={item.showChevron !== false}
+                onPress={item.danger ? handleLogout : () => handleNavigation(item.label)}
               />
-            }
-          />
-          <ProfileMenuItem title="Help & Support" onPress={() => handleNavigation('Support')} />
+              {i < MENU_ITEMS.length - 1 && <View style={styles.menuDivider} />}
+            </React.Fragment>
+          ))}
         </View>
-
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
       </ScrollView>
-    </ScreenWrapper>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    paddingBottom: spacing.huge,
-    backgroundColor: colors.background,
-  },
-  profileHeader: {
-    alignItems: 'center',
+  container: { flex: 1, backgroundColor: colors.background },
+  body: { padding: spacing.md, paddingBottom: spacing.xl },
+  profileCard: {
     backgroundColor: colors.surface,
-    paddingVertical: spacing.xl,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sm,
   },
-  avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.primaryLight,
-    justifyContent: 'center',
+  profileTopRow: { flexDirection: 'row', alignItems: 'center' },
+  name: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  ratingText: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
+  editButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.sm,
-    borderWidth: 2,
+    gap: 4,
+    borderWidth: 1,
     borderColor: colors.primary,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: borderRadius.sm,
   },
-  avatarText: {
-    fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.black,
-    color: colors.primary,
-  },
-  name: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  plumberId: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  badge: {
-    marginTop: spacing.sm,
-  },
-  menuContainer: {
+  editLabel: { fontSize: typography.fontSize.xs, color: colors.primary, fontWeight: typography.fontWeight.bold },
+  statsRow: {
+    flexDirection: 'row',
     marginTop: spacing.md,
-    backgroundColor: colors.surface,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
-  logoutBtn: {
-    marginHorizontal: spacing.layout,
-    marginTop: spacing.giant,
-    height: 52,
-    borderRadius: borderRadius.md,
-    borderWidth: 1.5,
-    borderColor: colors.error,
-    justifyContent: 'center',
-    alignItems: 'center',
+  statItem: { flex: 1, alignItems: 'center' },
+  statValue: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  statLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: 2, textAlign: 'center' },
+  statDivider: { width: 1, backgroundColor: colors.border },
+  menuCard: {
     backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sm,
   },
-  logoutText: {
-    color: colors.error,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-  },
+  menuDivider: { height: 1, backgroundColor: colors.border },
 });
