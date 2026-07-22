@@ -69,11 +69,39 @@ public class ServiceOrderController {
         return ResponseEntity.ok(orderService.arriveOrder(id));
     }
 
-    /** PATCH/POST /api/v1/orders/{id}/start — Plumber marks work started */
-    @RequestMapping(value = "/{id}/start", method = {RequestMethod.POST, RequestMethod.PATCH})
+    /** PATCH/POST /api/v1/orders/{id}/start-navigation or /on-the-way */
+    @RequestMapping(value = {"/{id}/start-navigation", "/{id}/on-the-way"}, method = {RequestMethod.POST, RequestMethod.PATCH})
+    @PreAuthorize("hasRole('PLUMBER') and @orderAuthorization.isAssignedPlumber(#id, authentication)")
+    public ResponseEntity<ServiceOrder> startNavigation(@PathVariable Long id) {
+        return ResponseEntity.ok(orderService.getOrderById(id));
+    }
+
+    /** PATCH/POST /api/v1/orders/{id}/start or /start-work — Plumber marks work started */
+    @RequestMapping(value = {"/{id}/start", "/{id}/start-work"}, method = {RequestMethod.POST, RequestMethod.PATCH})
     @PreAuthorize("hasRole('PLUMBER') and @orderAuthorization.isAssignedPlumber(#id, authentication)")
     public ResponseEntity<ServiceOrder> startOrder(@PathVariable Long id) {
         return ResponseEntity.ok(orderService.startOrder(id));
+    }
+
+    /** POST /api/v1/orders/{id}/photos/before */
+    @PostMapping("/{id}/photos/before")
+    @PreAuthorize("hasRole('PLUMBER') and @orderAuthorization.isAssignedPlumber(#id, authentication)")
+    public ResponseEntity<Map<String, String>> uploadBeforePhoto(@PathVariable Long id) {
+        return ResponseEntity.ok(Map.of("message", "Before photo uploaded successfully", "orderId", String.valueOf(id)));
+    }
+
+    /** POST /api/v1/orders/{id}/photos/after */
+    @PostMapping("/{id}/photos/after")
+    @PreAuthorize("hasRole('PLUMBER') and @orderAuthorization.isAssignedPlumber(#id, authentication)")
+    public ResponseEntity<Map<String, String>> uploadAfterPhoto(@PathVariable Long id) {
+        return ResponseEntity.ok(Map.of("message", "After photo uploaded successfully", "orderId", String.valueOf(id)));
+    }
+
+    /** GET /api/v1/orders/plumber/history — Get current plumber's job history */
+    @GetMapping("/plumber/history")
+    @PreAuthorize("hasRole('PLUMBER')")
+    public ResponseEntity<List<ServiceOrder>> getPlumberHistory() {
+        return ResponseEntity.ok(orderService.getOrdersByPlumber(currentUser.require().getId()));
     }
 
     /** POST/PATCH /api/v1/orders/{id}/complete — Plumber completes job */

@@ -111,8 +111,17 @@ export const jobService = {
     }
   },
 
-  startNavigation: async (_jobId: string): Promise<void> => {
-    return;
+  startNavigation: async (jobId: string): Promise<void> => {
+    try {
+      const cleanId = parseServiceOrderId(jobId);
+      await apiClient.patch<any>(`/orders/${cleanId}/start-navigation`);
+    } catch (error) {
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Start navigation', error);
+        return;
+      }
+      throw createBackendUnavailableError('Start navigation', error);
+    }
   },
 
   markArrived: async (jobId: string): Promise<void> => {
