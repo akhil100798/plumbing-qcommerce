@@ -1,318 +1,224 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, Alert, TouchableOpacity } from 'react-native';
-import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { AppHeader } from '../../components/common/AppHeader';
-import { OrderItemCard } from '../../components/cards/OrderCards';
-import { PrimaryButton } from '../../components/common/PrimaryButton';
-import { SecondaryButton } from '../../components/common/SecondaryButton';
-import { ordersService } from '../../services/orders/ordersService';
-import { useAppDispatch, useAppSelector } from '../../redux/store';
-import { updateOrderInSlice } from '../../redux/slices/ordersSlice';
-import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+﻿import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+  Alert,
+} from 'react-native';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
-import { Order } from '../../types';
-
+import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
+import ProfileIcon from '../../assets/icons/profile.svg';
 import PhoneIcon from '../../assets/icons/phone.svg';
-import LocationIcon from '../../assets/icons/location-pin.svg';
+import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
 
-export const OrderDetailsScreen = () => {
+const items = [
+  { name: 'CPVC Pipe 1/2 inch (3m)', qty: 'x2', price: '₹180' },
+  { name: 'Brass Angle Valve 1/2 inch', qty: 'x1', price: '₹420' },
+  { name: 'PTFE Thread Tape (10m)', qty: 'x1', price: '₹45' },
+  { name: 'PVC Elbow 1/2 inch', qty: 'x2', price: '₹120' },
+  { name: 'PVC Tee 1/2 inch', qty: 'x1', price: '₹180' },
+];
+
+export function OrderDetailsScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  const route = useRoute<RouteProp<AppStackParamList, 'OrderDetails'>>();
-  const dispatch = useAppDispatch();
-  const { orderId } = route.params;
-
-  const [order, setOrder] = useState<Order | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const loadDetails = async () => {
-    setLoading(true);
-    try {
-      const data = await ordersService.getOrderDetails(orderId);
-      setOrder(data);
-    } catch (e: any) {
-      Alert.alert('Error', 'Failed to retrieve order specifications');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadDetails();
-  }, [orderId]);
-
-  const handleAccept = async () => {
-    if (!order) return;
-    setLoading(true);
-    try {
-      const updated = await ordersService.acceptOrder(order.id);
-      setOrder(updated);
-      dispatch(updateOrderInSlice(updated));
-      Alert.alert('Order Accepted', 'Order status updated. Ready to pack!', [
-        { text: 'Go to Packing', onPress: () => navigation.navigate('Packing', { orderId: order.id }) }
-      ]);
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Operation failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleReject = async () => {
-    if (!order) return;
-    Alert.alert(
-      'Cancel Order',
-      'Are you sure you want to reject this order?',
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes, Reject',
-          style: 'destructive',
-          onPress: async () => {
-            setLoading(true);
-            try {
-              const updated = await ordersService.rejectOrder(order.id);
-              setOrder(updated);
-              dispatch(updateOrderInSlice(updated));
-              navigation.navigate('Main', { screen: 'OrdersTab' });
-            } catch (e: any) {
-              Alert.alert('Error', e.message || 'Operation failed');
-            } finally {
-              setLoading(false);
-            }
-          }
-        }
-      ]
-    );
-  };
-
-  if (!order) {
-    return (
-      <ScreenWrapper style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading details...</Text>
-      </ScreenWrapper>
-    );
-  }
 
   return (
-    <ScreenWrapper style={styles.container}>
-      <AppHeader title="Order Details" onBackPress={() => navigation.goBack()} />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>Customer Details</Text>
-          <View style={styles.customerCard}>
-            <View style={styles.customerHeader}>
-              <Text style={styles.customerName}>{order.customerName}</Text>
-              {order.customerPhone && (
-                <TouchableOpacity onPress={() => Alert.alert('Call customer', `Calling ${order.customerPhone}`)}>
-                  <PhoneIcon width={16} height={16} stroke={colors.primary} />
-                </TouchableOpacity>
-              )}
-            </View>
-            <Text style={styles.customerAddress}>{order.address || 'Address not specified'}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs, gap: spacing.xs }}>
-              <LocationIcon width={14} height={14} stroke={colors.textSecondary} />
-              <Text style={styles.distanceText}>2.4 km away</Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <ArrowLeftIcon width={24} height={24} stroke={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Order Details</Text>
+        <TouchableOpacity onPress={() => Alert.alert('Share Order', 'Order summary link copied to clipboard.')}>
+          <Text style={{ fontSize: 18 }}>🔗</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          {/* Status */}
+          <View style={styles.statusPill}>
+            <Text style={styles.statusPillText}>Processing</Text>
+          </View>
+          <Text style={styles.orderId}>#FK123456</Text>
+          <Text style={styles.orderDate}>Placed on 21 May 2025, 10:30 AM</Text>
+
+          {/* Customer card */}
+          <View style={styles.card}>
+            <View style={styles.customerRow}>
+              <View style={styles.avatar}>
+                <ProfileIcon width={18} height={18} stroke={colors.textMuted} />
+              </View>
+              <View style={{ flex: 1, marginLeft: spacing.md }}>
+                <Text style={styles.customerName}>Rahul Sharma</Text>
+                <Text style={styles.customerPhone}>98765 43210</Text>
+                <Text style={styles.customerAddress}>Kandivali West, Mumbai</Text>
+              </View>
+              <TouchableOpacity style={styles.callButton} onPress={() => Alert.alert('Calling', 'Calling customer Rahul Sharma (98765 43210)')}>
+                <PhoneIcon width={18} height={18} stroke={colors.primary} />
+              </TouchableOpacity>
             </View>
           </View>
-        </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionHeader}>Order Items</Text>
-          <View style={styles.itemsCard}>
-            {order.items.map((item, idx) => (
-              <OrderItemCard key={idx} item={item} />
+          {/* Order items */}
+          <Text style={styles.sectionTitle}>Order Items ({items.length})</Text>
+          <View style={styles.card}>
+            {items.map((item, idx) => (
+              <View
+                key={item.name}
+                style={[
+                  styles.itemRow,
+                  idx !== items.length - 1 && styles.itemRowBorder,
+                ]}
+              >
+                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemQty}>{item.qty}</Text>
+                <Text style={styles.itemPrice}>{item.price}</Text>
+              </View>
             ))}
           </View>
-        </View>
 
-        <View style={styles.billingSection}>
-          <View style={styles.billingRow}>
-            <Text style={styles.billingLabel}>Total Items</Text>
-            <Text style={styles.billingValue}>{order.items.length}</Text>
-          </View>
-          <View style={[styles.billingRow, styles.totalRow]}>
-            <Text style={styles.totalLabel}>Grand Total</Text>
-            <Text style={styles.totalValue}>₹{order.totalAmount}</Text>
+          {/* Bill summary */}
+          <View style={styles.card}>
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>Item Total</Text>
+              <Text style={styles.billValue}>₹1,025</Text>
+            </View>
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>Delivery Charge</Text>
+              <Text style={styles.billValue}>₹40</Text>
+            </View>
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>Platform Fee</Text>
+              <Text style={styles.billValue}>₹20</Text>
+            </View>
+            <View style={[styles.billRow, { marginTop: 6 }]}>
+              <Text style={styles.totalLabel}>Total Amount</Text>
+              <Text style={styles.totalValue}>₹1,245</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
 
-      {order.status === 'PENDING' && (
-        <View style={styles.buttonContainer}>
-          <SecondaryButton
-            title="Reject"
-            onPress={handleReject}
-            style={styles.actionBtn}
-          />
-          <PrimaryButton
-            title="Accept Order"
-            onPress={handleAccept}
-            style={[styles.actionBtn, { marginLeft: spacing.md }]}
-            loading={loading}
-          />
-        </View>
-      )}
-
-      {order.status === 'CONFIRMED' && (
-        <View style={styles.singleBtnContainer}>
-          <PrimaryButton
-            title="Start Packing"
-            onPress={() => navigation.navigate('Packing', { orderId: order.id })}
-            style={styles.largeBtn}
-          />
-        </View>
-      )}
-
-      {order.status === 'PACKING' && (
-        <View style={styles.singleBtnContainer}>
-          <PrimaryButton
-            title="Resume Packing"
-            onPress={() => navigation.navigate('Packing', { orderId: order.id })}
-            style={styles.largeBtn}
-          />
-        </View>
-      )}
-
-      {(order.status === 'READY_FOR_PICKUP' || order.status === 'PACKED') && (
-        <View style={styles.singleBtnContainer}>
-          <PrimaryButton
-            title="Handover Package"
-            onPress={() => navigation.navigate('ReadyForPickup', { orderId: order.id })}
-            style={styles.largeBtn}
-          />
-        </View>
-      )}
-    </ScreenWrapper>
+      {/* Bottom actions */}
+      <View style={styles.bottomBar}>
+        <TouchableOpacity style={styles.messageButton} onPress={() => Alert.alert('Customer Chat', 'Opened live chat with Rahul Sharma.')}>
+          <Text style={styles.messageButtonText}>Message</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.packingButton} onPress={() => navigation.navigate('Packing' as any)}>
+          <Text style={styles.packingButtonText}>Start Packing</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.background,
-  },
-  loadingContainer: {
-    justifyContent: 'center',
+  container: { flex: 1, backgroundColor: colors.background },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.surface,
   },
-  loadingText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+  headerTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.md },
+  statusPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#2E9AE0',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: borderRadius.round,
+    marginBottom: spacing.md,
   },
-  scroll: {
-    padding: spacing.layout,
-  },
-  section: {
+  statusPillText: { color: colors.surface, fontSize: 11, fontWeight: '700' },
+  orderId: { fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  orderDate: { fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: 2, marginBottom: spacing.lg },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.lg,
     marginBottom: spacing.lg,
-  },
-  sectionHeader: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-    textTransform: 'uppercase',
-  },
-  customerCard: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
     ...shadows.sm,
   },
-  customerHeader: {
+  customerRow: { flexDirection: 'row', alignItems: 'center' },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  customerName: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  customerPhone: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: 2 },
+  customerAddress: { fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: 1 },
+  callButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, marginBottom: spacing.md },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  itemRowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
+  itemName: { flex: 1, fontSize: 13, color: colors.textPrimary },
+  itemQty: { fontSize: typography.fontSize.xs, color: colors.textMuted, marginHorizontal: spacing.md },
+  itemPrice: { fontSize: 13, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, width: 50, textAlign: 'right' },
+  billRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: 8,
   },
-  customerName: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  phoneEmoji: {
-    fontSize: 16,
-    color: colors.primary,
-  },
-  customerAddress: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-  distanceText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.primary,
-    fontWeight: typography.fontWeight.medium,
-    marginTop: spacing.sm,
-  },
-  itemsCard: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.sm,
-  },
-  billingSection: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.sm,
-    marginBottom: spacing.giant,
-  },
-  billingRow: {
+  billLabel: { fontSize: 13, color: colors.textSecondary },
+  billValue: { fontSize: 13, color: colors.textPrimary },
+  totalLabel: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  totalValue: { fontSize: 16, fontWeight: typography.fontWeight.bold, color: colors.success },
+  bottomBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  billingLabel: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-  },
-  billingValue: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  totalRow: {
-    borderTopWidth: 1.5,
-    borderTopColor: colors.border,
-    paddingTop: spacing.sm,
-    marginBottom: 0,
-  },
-  totalLabel: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-  },
-  totalValue: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.black,
-    color: colors.primary,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    padding: spacing.layout,
-    backgroundColor: colors.card,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+    backgroundColor: colors.surface,
   },
-  actionBtn: {
+  messageButton: {
     flex: 1,
+    height: 48,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
   },
-  singleBtnContainer: {
-    padding: spacing.layout,
-    backgroundColor: colors.card,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+  messageButtonText: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  packingButton: {
+    flex: 1.4,
+    height: 48,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  largeBtn: {
-    width: '100%',
-  },
+  packingButtonText: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.surface },
 });
+
 export default OrderDetailsScreen;

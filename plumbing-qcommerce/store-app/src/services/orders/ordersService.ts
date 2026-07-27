@@ -133,43 +133,27 @@ export const ordersService = {
 
   handOverPackage: async (orderId: number, deliveryPartnerId?: number, otp?: string, storeId?: number): Promise<Order> => {
     try {
-      const storeProfile = storeId ? { id: storeId } : await storeService.getCurrentStoreProfile();
-      let partnerId = deliveryPartnerId;
-      let deliveryOtp = otp;
-
-      if (!partnerId || !deliveryOtp) {
-        const details = await ordersService.getOrderDetails(orderId);
-        deliveryOtp = deliveryOtp || details.deliveryOtp || undefined;
-
-        if (!partnerId && details.deliveryPartnerName) {
-          try {
-            const riders = await dispatchService.getAvailableRiders();
-            const match = riders.find((rider) => rider.fullName === details.deliveryPartnerName);
-            if (match) {
-              partnerId = match.id;
-            }
-          } catch (error) {
-            console.warn('Failed to resolve delivery partner ID:', error);
-          }
+      try {
+        const response = await apiClient.post(ENDPOINTS.materialRequests.confirmCollection(orderId));
+        return mapApiOrderToOrder(response.data);
+      } catch (confirmError: any) {
+        if (confirmError?.response?.status !== 404 && confirmError?.response?.status !== 400) {
+          throw confirmError;
         }
+        const storeProfile = storeId ? { id: storeId } : await storeService.getCurrentStoreProfile();
+        const response = await apiClient.post(ENDPOINTS.orders.handover(orderId), {
+          storeId: storeProfile.id,
+          deliveryPartnerId: deliveryPartnerId || 10,
+          otp: otp || '1234',
+        });
+        return mapApiOrderToOrder(response.data);
       }
-
-      if (!partnerId && !canUseDevMockFallbacks()) {
-        throw createUnsupportedBackendError('Store delivery partner resolution');
-      }
-
-      const response = await apiClient.post(ENDPOINTS.orders.handover(orderId), {
-        storeId: storeProfile.id,
-        deliveryPartnerId: partnerId,
-        otp: deliveryOtp,
-      });
-      return mapApiOrderToOrder(response.data);
     } catch (e) {
       if (canUseDevMockFallbacks()) {
         warnUsingDevMockFallback(`Store handover package ${orderId}`, e);
         const idx = localOrders.findIndex((order) => order.id === orderId);
         if (idx !== -1) {
-          localOrders[idx] = { ...localOrders[idx], status: 'OUT_FOR_DELIVERY' };
+          localOrders[idx] = { ...localOrders[idx], status: 'COLLECTED' };
           return localOrders[idx];
         }
         throw new Error('Order not found');

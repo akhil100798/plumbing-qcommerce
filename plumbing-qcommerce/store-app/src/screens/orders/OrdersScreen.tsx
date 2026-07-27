@@ -1,216 +1,254 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, Alert } from 'react-native';
-import { colors, spacing, typography } from '../../theme';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { AppHeader } from '../../components/common/AppHeader';
-import { OrderCard } from '../../components/cards/OrderCards';
-import { useAppDispatch, useAppSelector } from '../../redux/store';
-import { fetchOrdersStart, fetchOrdersSuccess, fetchOrdersFailure, updateOrderInSlice } from '../../redux/slices/ordersSlice';
-import { ordersService } from '../../services/orders/ordersService';
-import { NavigationProp, useNavigation, useIsFocused } from '@react-navigation/native';
+﻿import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+} from 'react-native';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
-import { Order } from '../../types';
-import OrderIcon from '../../assets/icons/order.svg';
+import SearchIcon from '../../assets/icons/search.svg';
+import FilterIcon from '../../assets/icons/settings.svg';
+import ProfileIcon from '../../assets/icons/profile.svg';
+import BottomTabBar from '../../components/common/BottomTabBar';
+import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
 
-export const OrdersScreen = () => {
-  const dispatch = useAppDispatch();
+const tabs = [
+  { key: 'all', label: 'All', count: 90 },
+  { key: 'new', label: 'New', count: 18 },
+  { key: 'processing', label: 'Processing', count: 32 },
+  { key: 'ready', label: 'Ready', count: 26 },
+];
+
+const mockOrders = [
+  {
+    id: '#FK123456',
+    date: '21 May, 10:30 AM',
+    status: 'New',
+    statusColor: colors.warning,
+    statusBg: colors.warningLight,
+    customer: 'Rahul Sharma',
+    location: 'Kandivali, Mumbai',
+    amount: '₹1,245',
+    items: '5 items',
+    cta: 'Accept Order',
+    ctaStyle: 'solid',
+  },
+  {
+    id: '#FK123455',
+    date: '21 May, 10:10 AM',
+    status: 'Processing',
+    statusColor: '#2E9AE0',
+    statusBg: '#E7F5FE',
+    customer: 'Priya Patel',
+    location: 'Borivali, Mumbai',
+    amount: '₹2,860',
+    items: '8 items',
+    cta: 'View Details',
+    ctaStyle: 'outline',
+  },
+  {
+    id: '#FK123454',
+    date: '21 May, 09:45 AM',
+    status: 'Ready for Pickup',
+    statusColor: colors.success,
+    statusBg: colors.successLight,
+    customer: 'Amit Verma',
+    location: 'Malad, Mumbai',
+    amount: '₹1,080',
+    items: '6 items',
+  },
+];
+
+export function OrdersScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  const isFocused = useIsFocused();
-  
-  const { newOrders, packingOrders, readyOrders, completedOrders, loading } = useAppSelector(state => state.orders);
-  
-  // Status tab selector: 'new' | 'packing' | 'ready' | 'done'
-  const [activeTab, setActiveTab] = useState<'new' | 'packing' | 'ready' | 'done'>('new');
-
-  const loadOrders = async () => {
-    dispatch(fetchOrdersStart());
-    try {
-      const orders = await ordersService.getOrders();
-      const nList = orders.filter(o => o.status === 'PENDING' || o.status === 'CONFIRMED');
-      const pList = orders.filter(o => o.status === 'PACKING');
-      const rList = orders.filter(o => o.status === 'READY_FOR_PICKUP' || o.status === 'PACKED');
-      const cList = orders.filter(o => o.status === 'DELIVERED' || o.status === 'OUT_FOR_DELIVERY' || o.status === 'CANCELLED');
-      
-      dispatch(fetchOrdersSuccess({
-        newOrders: nList,
-        packingOrders: pList,
-        readyOrders: rList,
-        completedOrders: cList,
-      }));
-    } catch (e: any) {
-      dispatch(fetchOrdersFailure(e.message || 'Failed to sync orders'));
-    }
-  };
-
-  useEffect(() => {
-    if (isFocused) {
-      loadOrders();
-    }
-  }, [isFocused]);
-
-  const handleAction = async (order: Order) => {
-    try {
-      if (order.status === 'PENDING') {
-        const updated = await ordersService.acceptOrder(order.id);
-        dispatch(updateOrderInSlice(updated));
-        Alert.alert('Order Accepted', `Order #ORD-${order.id} is accepted. Move to packing!`);
-      } else if (order.status === 'CONFIRMED') {
-        const updated = await ordersService.markPacking(order.id);
-        dispatch(updateOrderInSlice(updated));
-        navigation.navigate('Packing', { orderId: order.id });
-      } else if (order.status === 'PACKING') {
-        navigation.navigate('Packing', { orderId: order.id });
-      } else if (order.status === 'READY_FOR_PICKUP' || order.status === 'PACKED') {
-        navigation.navigate('ReadyForPickup', { orderId: order.id });
-      }
-    } catch (e: any) {
-      Alert.alert('Action Failed', e.message || 'Unable to update status');
-    }
-  };
-
-  const getActiveList = () => {
-    switch (activeTab) {
-      case 'new': return newOrders;
-      case 'packing': return packingOrders;
-      case 'ready': return readyOrders;
-      case 'done': return completedOrders;
-    }
-  };
-
-  const getActionTitle = (status: string) => {
-    if (status === 'PENDING') return 'Accept Order';
-    if (status === 'CONFIRMED') return 'Start Packing';
-    if (status === 'PACKING') return 'Pack';
-    if (status === 'READY_FOR_PICKUP' || status === 'PACKED') return 'Handover';
-    return undefined;
-  };
+  const [activeTab, setActiveTab] = useState('all');
 
   return (
-    <ScreenWrapper style={styles.container}>
-      <AppHeader title="Orders" />
-      
-      {/* Custom Tabs */}
-      <View style={styles.tabContainer}>
-        {(['new', 'packing', 'ready', 'done'] as const).map((tab) => {
-          const isActive = activeTab === tab;
-          let count = 0;
-          if (tab === 'new') count = newOrders.length;
-          else if (tab === 'packing') count = packingOrders.length;
-          else if (tab === 'ready') count = readyOrders.length;
-          else if (tab === 'done') count = completedOrders.length;
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
 
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Orders</Text>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity style={styles.iconButton}>
+            <SearchIcon width={20} height={20} stroke={colors.textPrimary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton}>
+            <FilterIcon width={20} height={20} stroke={colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Tabs */}
+      <View style={styles.tabsRow}>
+        {tabs.map((tab) => {
+          const isActive = tab.key === activeTab;
           return (
             <TouchableOpacity
-              key={tab}
-              style={[styles.tabButton, isActive && styles.activeTabButton]}
-              onPress={() => setActiveTab(tab)}
+              key={tab.key}
+              style={[styles.tabItem, isActive && styles.tabItemActive]}
+              onPress={() => setActiveTab(tab.key)}
             >
-              <Text style={[styles.tabLabel, isActive && styles.activeTabLabel]}>
-                {tab.toUpperCase()}
+              <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                {tab.label} ({tab.count})
               </Text>
-              {count > 0 && (
-                <View style={[styles.badge, isActive ? styles.activeBadge : styles.inactiveBadge]}>
-                  <Text style={[styles.badgeText, isActive && styles.activeBadgeText]}>{count}</Text>
-                </View>
-              )}
             </TouchableOpacity>
           );
         })}
       </View>
 
+      {/* Orders list */}
       <FlatList
-        data={getActiveList()}
-        keyExtractor={item => String(item.id)}
-        contentContainerStyle={styles.list}
-        refreshing={loading}
-        onRefresh={loadOrders}
+        data={mockOrders}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingBottom: 16 }}
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <OrderCard
-            order={item}
-            onPress={() => navigation.navigate('OrderDetails', { orderId: item.id })}
-            onActionPress={() => handleAction(item)}
-            actionTitle={getActionTitle(item.status)}
-          />
-        )}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <OrderIcon width={40} height={40} stroke={colors.textMuted} style={{ marginBottom: spacing.md }} />
-            <Text style={styles.emptyText}>No orders in this state</Text>
+          <View style={styles.orderCard}>
+            <View style={styles.orderTopRow}>
+              <View>
+                <Text style={styles.orderId}>{item.id}</Text>
+                <Text style={styles.orderDate}>{item.date}</Text>
+              </View>
+              <View style={[styles.statusPill, { backgroundColor: item.statusBg }]}>
+                <Text style={[styles.statusPillText, { color: item.statusColor }]}>
+                  {item.status}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.customerRow}>
+              <View style={styles.avatar}>
+                <ProfileIcon width={16} height={16} stroke={colors.textMuted} />
+              </View>
+              <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                <Text style={styles.customerName}>{item.customer}</Text>
+                <Text style={styles.customerLocation}>{item.location}</Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={styles.orderAmount}>{item.amount}</Text>
+                <Text style={styles.orderItems}>{item.items}</Text>
+              </View>
+            </View>
+
+            {item.cta && (
+              <TouchableOpacity
+                style={[
+                  styles.ctaButton,
+                  item.ctaStyle === 'outline' ? styles.ctaOutline : styles.ctaSolid,
+                ]}
+                onPress={() => navigation.navigate('OrderDetails', { orderId: item.id } as any)}
+              >
+                <Text
+                  style={[
+                    styles.ctaText,
+                    item.ctaStyle === 'outline' ? styles.ctaTextOutline : styles.ctaTextSolid,
+                  ]}
+                >
+                  {item.cta}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
-        }
+        )}
       />
-    </ScreenWrapper>
+
+      <BottomTabBar active="Orders" navigation={navigation} />
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.background,
-  },
-  tabContainer: {
+  container: { flex: 1, backgroundColor: colors.background },
+  header: {
     flexDirection: 'row',
-    backgroundColor: colors.card,
-    borderBottomWidth: 1.5,
-    borderBottomColor: colors.border,
-    height: 48,
-  },
-  tabButton: {
-    flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+  },
+  headerTitle: { fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  headerIcons: { flexDirection: 'row' },
+  iconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10,
+    ...shadows.sm,
+  },
+  tabsRow: {
     flexDirection: 'row',
-  },
-  activeTabButton: {
-    borderBottomWidth: 3,
-    borderBottomColor: colors.primary,
-  },
-  tabLabel: {
-    fontSize: 11,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
-  },
-  activeTabLabel: {
-    color: colors.primary,
-  },
-  badge: {
-    paddingHorizontal: 5,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 4,
-    minWidth: 16,
-  },
-  activeBadge: {
-    backgroundColor: colors.primary,
-  },
-  inactiveBadge: {
-    backgroundColor: colors.borderDark,
-  },
-  badgeText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-  },
-  activeBadgeText: {
-    color: colors.card,
-  },
-  list: {
-    padding: spacing.layout,
-  },
-  empty: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.giant,
-  },
-  emptyEmoji: {
-    fontSize: 48,
+    paddingHorizontal: spacing.xl,
     marginBottom: spacing.md,
   },
-  emptyText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.bold,
+  tabItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: borderRadius.round,
+    marginRight: 8,
+    backgroundColor: colors.surface,
   },
+  tabItemActive: { backgroundColor: colors.primary },
+  tabLabel: { fontSize: 12.5, fontWeight: '600', color: colors.textSecondary },
+  tabLabelActive: { color: colors.surface },
+  orderCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    ...shadows.sm,
+  },
+  orderTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
+  },
+  orderId: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  orderDate: { fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: 2 },
+  statusPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: borderRadius.round,
+  },
+  statusPillText: { fontSize: 11, fontWeight: '700' },
+  customerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  customerName: { fontSize: 13, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  customerLocation: { fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: 1 },
+  orderAmount: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  orderItems: { fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: 1 },
+  ctaButton: {
+    height: 40,
+    borderRadius: borderRadius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaSolid: { backgroundColor: colors.success },
+  ctaOutline: { borderWidth: 1, borderColor: colors.primary },
+  ctaText: { fontSize: 13, fontWeight: '700' },
+  ctaTextSolid: { color: colors.surface },
+  ctaTextOutline: { color: colors.primary },
 });
+
 export default OrdersScreen;
