@@ -37,7 +37,7 @@ export function MainTabNavigator() {
             IconComp = OrderIcon;
           } else if (route.name === 'InventoryTab') {
             IconComp = InventoryIcon;
-          } else if (route.name === 'DispatchTab') {
+          } else if (route.name === 'MaterialsTab') {
             IconComp = MaterialRequestIcon;
           } else if (route.name === 'AccountTab') {
             IconComp = ProfileIcon;
@@ -67,7 +67,7 @@ export function MainTabNavigator() {
         options={{ tabBarLabel: 'Inventory' }}
       />
       <Tab.Screen
-        name="DispatchTab"
+        name="MaterialsTab"
         component={MaterialRequestsScreen}
         options={{ tabBarLabel: 'Materials' }}
       />

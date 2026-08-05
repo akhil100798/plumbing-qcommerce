@@ -91,7 +91,7 @@ export interface MaterialRequest {
   plumberName: string;
   items: OrderItem[];
   totalAmount: number;
-  status: 'PENDING' | 'PREPARING' | 'READY' | 'COMPLETED';
+  status: 'PENDING' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
   createdAt: string;
   rawStatus?: string;
   plumberCollectedAt?: string | null;

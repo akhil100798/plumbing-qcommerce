@@ -26,9 +26,20 @@ import { AppStackParamList } from '../types/navigation';
 
 const Stack = createStackNavigator<AppStackParamList>();
 
+export const navigationRef = React.createRef<any>();
+
 export function RootNavigator() {
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => {
+        if (typeof window !== 'undefined') {
+          (window as any).navigateScreen = (name: string, params?: any) => {
+            navigationRef.current?.navigate(name, params);
+          };
+        }
+      }}
+    >
       <Stack.Navigator
         initialRouteName="Auth"
         screenOptions={{

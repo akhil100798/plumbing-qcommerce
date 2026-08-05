@@ -20,6 +20,7 @@ import { ReviewsRatingsScreen } from '../screens/reviews/ReviewsRatingsScreenNew
 import { OffersPromotionsScreen } from '../screens/offers/OffersPromotionsScreen';
 import { StoreProfileScreen } from '../screens/profile/StoreProfileScreen';
 import { AccountScreen } from '../screens/profile/AccountScreen';
+import { MaterialRequestDetailScreen } from '../screens/orders/MaterialRequestDetailScreen';
 
 import { AppStackParamList } from '../types/navigation';
 import { AuthNavigator } from './AuthNavigator';
@@ -27,9 +28,20 @@ import { MainTabNavigator } from './MainTabNavigator';
 
 const Stack = createStackNavigator<AppStackParamList>();
 
+export const navigationRef = React.createRef<any>();
+
 export function RootNavigator() {
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => {
+        if (typeof window !== 'undefined') {
+          (window as any).navigateScreen = (name: string, params?: any) => {
+            navigationRef.current?.navigate(name, params);
+          };
+        }
+      }}
+    >
       <Stack.Navigator
         id="root"
         screenOptions={{
@@ -59,6 +71,7 @@ export function RootNavigator() {
         
         {/* Material requests & riders */}
         <Stack.Screen name="MaterialRequests" component={MaterialRequestsScreen} />
+        <Stack.Screen name="MaterialRequestDetail" component={MaterialRequestDetailScreen} />
         {/* Delivery routes disabled for MVP:
         <Stack.Screen name="DispatchAssignment" component={DispatchAssignmentScreen} />
         */}

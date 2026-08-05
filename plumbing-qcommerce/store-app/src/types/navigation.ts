@@ -9,7 +9,7 @@ export type MainTabParamList = {
   HomeTab: undefined;
   OrdersTab: undefined;
   InventoryTab: undefined;
-  DispatchTab: undefined;
+  MaterialsTab: undefined;
   AccountTab: undefined;
 };
 
@@ -37,8 +37,9 @@ export type AppStackParamList = {
   
   // Materials Request Stack
   MaterialRequests: undefined;
+  MaterialRequestDetail: { requestId: number };
   
-  // Dispatch Stack
+  // Dispatch Stack (feature-flagged, not active in MVP)
   DispatchAssignment: { orderId: number };
   
   // Settings & Promos
