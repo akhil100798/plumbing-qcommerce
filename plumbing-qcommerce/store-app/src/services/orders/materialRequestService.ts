@@ -60,6 +60,19 @@ export const materialRequestService = {
     }
   },
 
+  getById: async (requestId: number): Promise<MaterialRequest> => {
+    try {
+      const response = await apiClient.get(ENDPOINTS.materialRequests.details(requestId));
+      const mapped = mapRequest(response.data);
+      const idx = localMaterialRequests.findIndex(r => r.id === mapped.id);
+      if (idx !== -1) localMaterialRequests[idx] = mapped;
+      else localMaterialRequests.push(mapped);
+      return mapped;
+    } catch (e) {
+      throw createBackendUnavailableError(`Material request #${requestId}`, e);
+    }
+  },
+
   prepareOrder: async (requestId: number): Promise<MaterialRequest> => {
     try {
       await apiClient.post(ENDPOINTS.materialRequests.approve(requestId));

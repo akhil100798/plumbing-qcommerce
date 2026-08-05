@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -22,28 +22,28 @@ export function StoreSelectionScreen({ route, navigation }: Props) {
   const { jobId } = route.params;
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await materialService.getAvailableStores();
-        if (data.length === 0) {
-          Alert.alert('No stores found', 'No active stores are available. Contact support.', [
-            { text: 'Go Back', onPress: () => navigation.goBack() },
-          ]);
-        }
-        setStores(data);
-      } catch (err: any) {
-        Alert.alert('Error', 'Failed to load stores. Please check your connection.', [
-          { text: 'Retry', onPress: () => setLoading(true) },
-          { text: 'Go Back', onPress: () => navigation.goBack() },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    })();
+  const loadStores = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await materialService.getAvailableStores();
+      // No mock fallback — show real data only
+      setStores(data || []);
+    } catch (err: any) {
+      // No mock fallback — surface real error so user can retry
+      setError(err.message || 'Unable to load stores. Please check your connection and try again.');
+      setStores([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadStores();
+  }, [loadStores]);
 
   const handleConfirm = () => {
     if (selected === null) {
@@ -65,6 +65,7 @@ export function StoreSelectionScreen({ route, navigation }: Props) {
         style={[styles.storeCard, isSelected && styles.storeCardSelected]}
         onPress={() => setSelected(item.id)}
         activeOpacity={0.85}
+        testID={`plumber-store-card-${item.id}`}
       >
         <View style={styles.storeRow}>
           <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
@@ -85,12 +86,38 @@ export function StoreSelectionScreen({ route, navigation }: Props) {
 
   return (
     <ScreenWrapper style={styles.container}>
-      <AppHeader title="Select Store" onBackPress={() => navigation.goBack()} />
+      <AppHeader
+        title="Select Store"
+        onBackPress={() => {
+          if (navigation.canGoBack()) navigation.goBack();
+          else navigation.navigate('Main', { screen: 'HomeTab' } as any);
+        }}
+      />
 
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Loading stores…</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.center}>
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={styles.errorTitle}>Could Not Load Stores</Text>
+          <Text style={styles.errorMessage}>{error}</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={loadStores}>
+            <Text style={styles.retryBtnText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : stores.length === 0 ? (
+        <View style={styles.center}>
+          <Text style={styles.errorIcon}>🏪</Text>
+          <Text style={styles.errorTitle}>No Stores Available</Text>
+          <Text style={styles.errorMessage}>
+            No stores are currently available for this job. Please try again later.
+          </Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={loadStores}>
+            <Text style={styles.retryBtnText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <>
@@ -125,11 +152,43 @@ export function StoreSelectionScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { backgroundColor: colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.md },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.layout,
+  },
   loadingText: {
     fontSize: typography.fontSize.sm,
     color: colors.textSecondary,
     marginTop: spacing.sm,
+  },
+  errorIcon: { fontSize: 40, marginBottom: spacing.sm },
+  errorTitle: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: spacing.md,
+  },
+  retryBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xl,
+  },
+  retryBtnText: {
+    color: colors.surface,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
   },
   subtitle: {
     fontSize: typography.fontSize.sm,

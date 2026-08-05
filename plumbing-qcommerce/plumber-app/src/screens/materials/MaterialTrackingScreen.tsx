@@ -113,15 +113,17 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
   const { jobId, productOrderId } = route.params;
   const [detail, setDetail] = useState<RequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
   const fetchDetail = useCallback(async () => {
     try {
+      setError(null);
       const raw = await materialService.fetchMaterialDetails(productOrderId);
       setDetail(raw as RequestDetail);
-    } catch {
-      // Silent background refresh failures are acceptable; only show error on first load
-      if (!detail) Alert.alert('Error', 'Failed to load material request status.');
+    } catch (err: any) {
+      // No mock fallback — surface real error so the user can retry.
+      setError(err.message || 'Unable to load material request details. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -186,13 +188,37 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
     navigation.replace('ActiveJob', { jobId });
   };
 
-  if (loading || !detail) {
+  if (loading) {
     return (
       <ScreenWrapper>
-        <AppHeader title="Material Pickup Status" onBackPress={() => navigation.goBack()} />
+        <AppHeader title="Material Pickup Status" onBackPress={() => {
+          if (navigation.canGoBack()) navigation.goBack();
+          else navigation.navigate('Main', { screen: 'HomeTab' } as any);
+        }} />
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Loading status…</Text>
+        </View>
+      </ScreenWrapper>
+    );
+  }
+
+  if (error || !detail) {
+    return (
+      <ScreenWrapper>
+        <AppHeader title="Material Pickup Status" onBackPress={() => {
+          if (navigation.canGoBack()) navigation.goBack();
+          else navigation.navigate('Main', { screen: 'HomeTab' } as any);
+        }} />
+        <View style={styles.center}>
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={styles.errorTitle}>Could Not Load Tracking</Text>
+          <Text style={styles.errorMessage}>
+            {error || 'Material request details are unavailable.'}
+          </Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={fetchDetail}>
+            <Text style={styles.retryBtnText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       </ScreenWrapper>
     );
@@ -330,8 +356,35 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.md },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.layout },
   loadingText: { fontSize: typography.fontSize.sm, color: colors.textSecondary, marginTop: spacing.sm },
+  errorIcon: { fontSize: 40, marginBottom: spacing.sm },
+  errorTitle: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: spacing.md,
+  },
+  retryBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xl,
+  },
+  retryBtnText: {
+    color: colors.surface,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+  },
+
   content: { padding: spacing.layout, paddingBottom: spacing.huge },
   storeCard: {
     backgroundColor: colors.surface,

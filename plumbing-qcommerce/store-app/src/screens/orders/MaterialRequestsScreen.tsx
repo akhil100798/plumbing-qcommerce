@@ -1,204 +1,256 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, Alert } from 'react-native';
-import { colors, spacing, typography } from '../../theme';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { AppHeader } from '../../components/common/AppHeader';
-import { MaterialRequestCard } from '../../components/cards/DispatchCards';
-import { materialRequestService } from '../../services/orders/materialRequestService';
+﻿import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+  ActivityIndicator,
+} from 'react-native';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
+import { materialRequestService } from '../../services/orders/materialRequestService';
 import { MaterialRequest } from '../../types';
+import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
+import PlusIcon from '../../assets/icons/plus.svg';
+import { colors, borderRadius, spacing, typography } from '../../theme';
 
-import WarehouseIcon from '../../assets/icons/warehouse.svg';
+const tabs = [
+  { key: 'all',       label: 'All' },
+  { key: 'pending',   label: 'Pending' },
+  { key: 'preparing', label: 'Preparing' },
+  { key: 'ready',     label: 'Ready' },
+  { key: 'completed', label: 'Completed' },
+];
 
-export const MaterialRequestsScreen = () => {
+const statusDisplay: Record<string, { label: string; color: string; bg: string }> = {
+  PENDING:   { label: 'Pending',   color: colors.accentOrange, bg: colors.accentOrangeLight },
+  PREPARING: { label: 'Preparing', color: '#2E9AE0',           bg: '#E7F5FE' },
+  READY:     { label: 'Ready',     color: colors.accentGreen,  bg: colors.accentGreenLight },
+  COMPLETED: { label: 'Completed', color: '#6B7280',           bg: '#F3F4F6' },
+  CANCELLED: { label: 'Cancelled', color: colors.error,        bg: colors.errorLight || '#FEE2E2' },
+};
+
+export function MaterialRequestsScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  
+  const [activeTab, setActiveTab] = useState('all');
   const [requests, setRequests] = useState<MaterialRequest[]>([]);
-  const [activeTab, setActiveTab] = useState<'new' | 'preparing' | 'completed'>('new');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const loadRequests = async () => {
+  const loadRequests = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await materialRequestService.getMaterialRequests();
-      setRequests(data);
-    } catch (e) {
-      Alert.alert('Error', 'Failed to retrieve material requests');
+      setRequests(data || []);
+    } catch (err: any) {
+      setError(err.message || 'Unable to load material requests. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadRequests();
-  }, []);
+  }, [loadRequests]);
 
-  const handleAdvance = async (req: MaterialRequest) => {
-    setLoading(true);
-    try {
-      let updated: MaterialRequest;
-      if (req.status === 'PENDING') {
-        updated = await materialRequestService.prepareOrder(req.id);
-      } else if (req.status === 'PREPARING') {
-        updated = await materialRequestService.completePreparation(req.id);
-      } else {
-        updated = await materialRequestService.confirmCollection(req.id);
-      }
-
-      setRequests(prev => prev.map(r => r.id === req.id ? updated : r));
-
-      if (updated.status === 'PREPARING') {
-        Alert.alert('Order Accepted', `Material request for plumber ${req.plumberName} is now being packed.`);
-      } else if (updated.status === 'READY') {
-        Alert.alert('Packed', `Material request for plumber ${req.plumberName} is ready for pickup.`);
-      } else if (updated.status === 'COMPLETED') {
-        Alert.alert('Collection Confirmed', `Material collection confirmed for plumber ${req.plumberName}.`);
-      }
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Operation failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getFilteredRequests = () => {
-    return requests.filter(r => {
-      if (activeTab === 'new') return r.status === 'PENDING';
-      if (activeTab === 'preparing') return r.status === 'PREPARING' || r.status === 'READY';
-      return r.status === 'COMPLETED';
-    });
-  };
-
-  const getActionTitle = (request: MaterialRequest) => {
-    if (request.status === 'PENDING') return 'Accept Request';
-    if (request.status === 'PREPARING') return 'Mark Packed';
-    if (request.status === 'READY' && request.rawStatus === 'PLUMBER_AT_STORE' && request.plumberCollectedAt) {
-      return 'Confirm Collection';
-    }
-    return undefined;
-  };
+  const filteredRequests = activeTab === 'all'
+    ? requests
+    : requests.filter(r => r.status.toLowerCase() === activeTab);
 
   return (
-    <ScreenWrapper style={styles.container}>
-      <AppHeader title="Material Requests" onBackPress={() => navigation.goBack()} />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
 
-      <View style={styles.tabBar}>
-        {(['new', 'preparing', 'completed'] as const).map(tab => {
-          const isActive = activeTab === tab;
-          const count = requests.filter(r => {
-            if (tab === 'new') return r.status === 'PENDING';
-            if (tab === 'preparing') return r.status === 'PREPARING' || r.status === 'READY';
-            return r.status === 'COMPLETED';
-          }).length;
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => {
+            if (navigation.canGoBack()) navigation.goBack();
+            else navigation.navigate('Main', { screen: 'HomeTab' } as any);
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <ArrowLeftIcon width={24} height={24} stroke={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Material Requests</Text>
+        <View style={{ width: 24 }} />
+      </View>
 
+      {/* Tabs */}
+      <View style={styles.tabsRow}>
+        {tabs.map((tab) => {
+          const isActive = tab.key === activeTab;
+          const count = tab.key === 'all' ? requests.length : requests.filter(r => r.status.toLowerCase() === tab.key).length;
           return (
             <TouchableOpacity
-              key={tab}
-              style={[styles.tabBtn, isActive && styles.activeTabBtn]}
-              onPress={() => setActiveTab(tab)}
+              key={tab.key}
+              style={[styles.tabItem, isActive && styles.tabItemActive]}
+              onPress={() => setActiveTab(tab.key)}
             >
-              <Text style={[styles.tabLabel, isActive && styles.activeTabLabel]}>
-                {tab.toUpperCase()}
+              <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                {tab.label}{count > 0 && tab.key !== 'all' ? ` (${count})` : ''}
               </Text>
-              {count > 0 && (
-                <View style={[styles.badge, isActive ? styles.activeBadge : styles.inactiveBadge]}>
-                  <Text style={[styles.badgeText, isActive && styles.activeBadgeText]}>{count}</Text>
-                </View>
-              )}
             </TouchableOpacity>
           );
         })}
       </View>
 
-      <FlatList
-        data={getFilteredRequests()}
-        keyExtractor={item => String(item.id)}
-        contentContainerStyle={styles.list}
-        refreshing={loading}
-        onRefresh={loadRequests}
-        renderItem={({ item }) => (
-          <MaterialRequestCard
-            request={item}
-            onPressAction={getActionTitle(item) ? () => handleAdvance(item) : undefined}
-            actionTitle={getActionTitle(item)}
-          />
-        )}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <WarehouseIcon width={40} height={40} stroke={colors.textMuted} style={{ marginBottom: spacing.md }} />
-            <Text style={styles.emptyText}>No material requests in this state</Text>
-          </View>
-        }
-      />
-    </ScreenWrapper>
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading requests…</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.center}>
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={styles.errorTitle}>Could Not Load Requests</Text>
+          <Text style={styles.errorMessage}>{error}</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={loadRequests}>
+            <Text style={styles.retryBtnText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredRequests}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.huge }}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.center}>
+              <Text style={styles.emptyIcon}>📋</Text>
+              <Text style={styles.emptyText}>
+                {activeTab === 'all' ? 'No material requests yet.' : `No ${activeTab} requests.`}
+              </Text>
+            </View>
+          }
+          renderItem={({ item }) => {
+            const style = statusDisplay[item.status] || statusDisplay.PENDING;
+            return (
+              <TouchableOpacity
+                testID={`store-material-request-card-${item.id}`}
+                style={styles.requestCard}
+                onPress={() => navigation.navigate('MaterialRequestDetail', { requestId: item.id as number })}
+              >
+                <View style={styles.requestTopRow}>
+                  <Text style={styles.requestId}>Request #{item.id}</Text>
+                  <View style={[styles.statusPill, { backgroundColor: style.bg }]}>
+                    <Text style={[styles.statusPillText, { color: style.color }]}>
+                      {style.label}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.requestDate}>
+                  {new Date(item.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </Text>
+                <Text style={styles.requestMeta}>
+                  Plumber: {item.plumberName}
+                </Text>
+                {item.items?.length > 0 && (
+                  <Text style={styles.requestQty}>
+                    {item.items.length} item{item.items.length > 1 ? 's' : ''} · ₹{item.totalAmount.toFixed(2)}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            );
+          }}
+          ListFooterComponent={
+            <TouchableOpacity
+              style={styles.newRequestButton}
+              onPress={() => navigation.navigate('MaterialRequests')}
+            >
+              <PlusIcon width={18} height={18} stroke={colors.surface} />
+              <Text style={styles.newRequestText}>Refresh</Text>
+            </TouchableOpacity>
+          }
+        />
+      )}
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
+  container: { flex: 1, backgroundColor: colors.background },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  headerTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  tabsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.xl,
+    backgroundColor: colors.surface,
+    paddingBottom: spacing.sm,
+    marginBottom: spacing.sm,
+    flexWrap: 'wrap',
+  },
+  tabItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: borderRadius.round,
+    marginRight: 8,
+    marginTop: 4,
     backgroundColor: colors.background,
   },
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: colors.card,
-    borderBottomWidth: 1.5,
-    borderBottomColor: colors.border,
-    height: 48,
-  },
-  tabBtn: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  activeTabBtn: {
-    borderBottomWidth: 3,
-    borderBottomColor: colors.primary,
-  },
-  tabLabel: {
-    fontSize: 11,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
-  },
-  activeTabLabel: {
-    color: colors.primary,
-  },
-  badge: {
-    paddingHorizontal: 5,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 4,
-    minWidth: 16,
-  },
-  activeBadge: {
+  tabItemActive: { backgroundColor: colors.primary },
+  tabLabel: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
+  tabLabelActive: { color: colors.surface },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.md, padding: spacing.layout, minHeight: 200 },
+  loadingText: { fontSize: typography.fontSize.sm, color: colors.textSecondary },
+  errorIcon: { fontSize: 36 },
+  errorTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, textAlign: 'center' },
+  errorMessage: { fontSize: typography.fontSize.sm, color: colors.textSecondary, textAlign: 'center', lineHeight: 20 },
+  retryBtn: {
     backgroundColor: colors.primary,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    marginTop: spacing.sm,
   },
-  inactiveBadge: {
-    backgroundColor: colors.borderDark,
+  retryBtnText: { color: colors.surface, fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold },
+  emptyIcon: { fontSize: 36 },
+  emptyText: { fontSize: typography.fontSize.sm, color: colors.textSecondary, textAlign: 'center' },
+  requestCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  badgeText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
+  requestTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
   },
-  activeBadgeText: {
-    color: colors.card,
-  },
-  list: {
-    padding: spacing.layout,
-  },
-  empty: {
+  requestId: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: borderRadius.round },
+  statusPillText: { fontSize: 11, fontWeight: '700' },
+  requestDate: { fontSize: typography.fontSize.xs, color: colors.textMuted, marginBottom: 4 },
+  requestMeta: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginBottom: 2 },
+  requestQty: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: 2 },
+  newRequestButton: {
+    flexDirection: 'row',
+    backgroundColor: colors.primary,
+    height: 52,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.giant,
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
   },
-  emptyText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.bold,
-  },
+  newRequestText: { color: colors.surface, fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, marginLeft: 6 },
 });
+
 export default MaterialRequestsScreen;
