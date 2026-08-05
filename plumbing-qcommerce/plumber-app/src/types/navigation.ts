@@ -1,3 +1,5 @@
+import { NavigatorScreenParams } from '@react-navigation/native';
+
 export type AuthStackParamList = {
   Splash: undefined;
   Login: undefined;
@@ -14,14 +16,15 @@ export type MainTabParamList = {
 
 export type AppStackParamList = {
   Auth: undefined;
-  Main: undefined; // Contains Bottom Tabs + Drawer
+  Main: NavigatorScreenParams<MainTabParamList> | undefined; // Contains Bottom Tabs + Drawer
   IncomingJobRequest: { jobId: string; customerId: string; distance: number };
   ActiveJob: { jobId: string };
   Navigation: { jobId: string; customerId: string; latitude: number; longitude: number; address: string };
   ReachedCustomer: { jobId: string };
   StartWork: { jobId: string };
   BeforePhotos: { jobId: string };
-  MaterialRequest: { jobId: string };
+  StoreSelection: { jobId: string };
+  MaterialRequest: { jobId: string; storeId: number; storeName: string };
   MaterialApprovalStatus: { jobId: string; productOrderId?: number };
   MaterialTracking: { jobId: string; productOrderId: number };
   AfterPhotos: { jobId: string };

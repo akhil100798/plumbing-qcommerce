@@ -171,6 +171,7 @@ export const ProfileMenuItem: React.FC<ProfileMenuItemProps> = ({
 }) => {
   return (
     <TouchableOpacity
+      testID={`menu-item-${label.toLowerCase().replace(/ /g, '-')}`}
       activeOpacity={0.7}
       style={styles.profileItem}
       onPress={onPress}

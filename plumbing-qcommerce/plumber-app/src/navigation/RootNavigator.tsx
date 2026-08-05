@@ -10,6 +10,7 @@ import { NavigationScreen } from '../screens/jobs/NavigationScreen';
 import { ReachedCustomerScreen } from '../screens/jobs/ReachedCustomerScreen';
 import { StartWorkScreen } from '../screens/jobs/StartWorkScreen';
 import { BeforePhotosScreen } from '../screens/photos/BeforePhotosScreen';
+import { StoreSelectionScreen } from '../screens/materials/StoreSelectionScreen';
 import { MaterialRequestScreen } from '../screens/materials/MaterialRequestScreen';
 import { MaterialApprovalStatusScreen } from '../screens/materials/MaterialApprovalStatusScreen';
 import { MaterialTrackingScreen } from '../screens/materials/MaterialTrackingScreen';
@@ -25,9 +26,20 @@ import { AppStackParamList } from '../types/navigation';
 
 const Stack = createStackNavigator<AppStackParamList>();
 
+export const navigationRef = React.createRef<any>();
+
 export function RootNavigator() {
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => {
+        if (typeof window !== 'undefined') {
+          (window as any).navigateScreen = (name: string, params?: any) => {
+            navigationRef.current?.navigate(name, params);
+          };
+        }
+      }}
+    >
       <Stack.Navigator
         initialRouteName="Auth"
         screenOptions={{
@@ -42,6 +54,7 @@ export function RootNavigator() {
         <Stack.Screen name="ReachedCustomer" component={ReachedCustomerScreen} />
         <Stack.Screen name="StartWork" component={StartWorkScreen} />
         <Stack.Screen name="BeforePhotos" component={BeforePhotosScreen} />
+        <Stack.Screen name="StoreSelection" component={StoreSelectionScreen} />
         <Stack.Screen name="MaterialRequest" component={MaterialRequestScreen} />
         <Stack.Screen name="MaterialApprovalStatus" component={MaterialApprovalStatusScreen} />
         <Stack.Screen name="MaterialTracking" component={MaterialTrackingScreen} />

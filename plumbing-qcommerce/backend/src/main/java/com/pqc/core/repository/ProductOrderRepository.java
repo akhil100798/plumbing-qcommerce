@@ -23,6 +23,7 @@ public interface ProductOrderRepository extends JpaRepository<ProductOrder, Long
     List<ProductOrder> findByServiceOrderId(Long serviceOrderId);
     List<ProductOrder> findByServiceOrderIdAndStatus(Long serviceOrderId, ProductOrderStatus status);
     List<ProductOrder> findByServiceOrder_Plumber_Id(Long plumberId);
+    List<ProductOrder> findByServiceOrderIdAndServiceOrderCustomerId(Long serviceOrderId, Long customerId);
     long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
     long countByCustomerId(Long customerId);
     long countByDeliveryPartnerId(Long deliveryPartnerId);

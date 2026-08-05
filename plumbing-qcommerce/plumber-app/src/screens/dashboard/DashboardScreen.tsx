@@ -44,11 +44,9 @@ export function DashboardScreen({ navigation }: Props) {
 
   // Local state
   const [gpsCoords, setGpsCoords] = useState<{ latitude: number; longitude: number } | null>(null);
-  const edgeUnavailable = !getConfiguredEdgeUrl();
-  const [dashboardNotice, setDashboardNotice] = useState<string | null>(null);
 
   // Availability switch mapping
-  const isOnline = plumber?.availability ?? false;
+  const isOnline = plumber?.availability ?? true;
 
   // Initial stats fetch
   useEffect(() => {
@@ -87,7 +85,6 @@ export function DashboardScreen({ navigation }: Props) {
     await profileService.updateAvailability(value);
 
     if (value) {
-      // 1. Request GPS foreground permission
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         dispatch(setAvailability(false));
@@ -96,20 +93,17 @@ export function DashboardScreen({ navigation }: Props) {
         return;
       }
       
-      // 2. Fetch current coordinates immediately
       const loc = await Location.getCurrentPositionAsync({});
       setGpsCoords({
         latitude: loc.coords.latitude,
         longitude: loc.coords.longitude,
       });
 
-      // 3. Connect Socket.io WebSockets
       if (plumber?.id) {
         websocketService.connect(
           plumber.id,
           (offer) => {
             dispatch(addIncomingJob(offer));
-            // Alert user & navigate
             Alert.alert(
               '🔔 New Job Offer!',
               `A job was broadcasted nearby! ${offer.distance.toFixed(1)} km away.`,
@@ -139,88 +133,27 @@ export function DashboardScreen({ navigation }: Props) {
     }
   };
 
-  // Keep location updated if online
-  useEffect(() => {
-    let locationInterval: ReturnType<typeof setInterval> | null = null;
-
-    if (isOnline && plumber?.id) {
-      locationInterval = setInterval(async () => {
-        try {
-          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-          setGpsCoords({
-            latitude: loc.coords.latitude,
-            longitude: loc.coords.longitude,
-          });
-
-          // Ping location to Redis via socket gateway
-          websocketService.sendLocationPing(
-            plumber.id,
-            loc.coords.longitude,
-            loc.coords.latitude
-          );
-        } catch (err) {
-          console.warn('GPS location ping failed:', err);
-        }
-      }, 5000);
-    }
-
-    return () => {
-      if (locationInterval) clearInterval(locationInterval);
+  const handleSimulateIncomingJob = () => {
+    const simJobId = `JK${Math.floor(10000 + Math.random() * 90000)}`;
+    const mockOffer = {
+      jobId: simJobId,
+      customerId: 'CUST-8821',
+      distance: 4.2,
+      latitude: 12.9716,
+      longitude: 77.5946,
+      address: '22, Green Park, Indiranagar, Bengaluru, 560038',
+      issueDescription: 'Water Heater Installation',
+      category: 'Plumbing',
+      earnings: 650,
     };
-  }, [isOnline, plumber]);
+    dispatch(addIncomingJob(mockOffer as any));
+    navigation.navigate('IncomingJobRequest', {
+      jobId: mockOffer.jobId,
+      customerId: mockOffer.customerId,
+      distance: mockOffer.distance,
+    });
+  };
 
-  // Poll for pending orders if edge/websockets are unavailable or as a fallback
-  useEffect(() => {
-    let pollInterval: ReturnType<typeof setInterval> | null = null;
-
-    if (isOnline && plumber?.id) {
-      const fetchAndDispatchPendingJobs = async () => {
-        try {
-          const pendingJobs = await jobService.fetchIncomingJobs();
-          if (pendingJobs && pendingJobs.length > 0) {
-            pendingJobs.forEach((job) => {
-              // Avoid duplicate alerts for already tracked jobs
-              const exists = incomingJobs.find((ij: any) => ij.jobId === job.jobId);
-              if (!exists) {
-                dispatch(addIncomingJob(job));
-                Alert.alert(
-                  '🔔 New Job Offer!',
-                  `A job was broadcasted nearby! ${job.distance.toFixed(1)} km away.`,
-                  [
-                    { text: 'Decline', style: 'cancel', onPress: () => dispatch(removeIncomingJob(job.jobId)) },
-                    {
-                      text: 'View Details',
-                      onPress: () => {
-                        navigation.navigate('IncomingJobRequest', {
-                          jobId: job.jobId,
-                          customerId: job.customerId,
-                          distance: job.distance,
-                        });
-                      },
-                    },
-                  ]
-                );
-              }
-            });
-          }
-        } catch (err) {
-          console.log('Failed to poll pending service requests:', err);
-        }
-      };
-
-      // Run initial check
-      fetchAndDispatchPendingJobs();
-
-      // Poll every 8 seconds
-      pollInterval = setInterval(fetchAndDispatchPendingJobs, 8000);
-    }
-
-    return () => {
-      if (pollInterval) clearInterval(pollInterval);
-    };
-  }, [isOnline, plumber, incomingJobs, dispatch, navigation]);
-
-  // Open Drawer Menu helper
   const openDrawer = () => {
     navigation.navigate('Profile' as any);
   };
@@ -235,7 +168,7 @@ export function DashboardScreen({ navigation }: Props) {
         
         <View style={styles.brandContainer}>
           <Text style={styles.brandText}>FixKart</Text>
-          <Text style={styles.brandSub}>Help. Fix. Earn. Repeat.</Text>
+          <Text style={styles.brandSub}>Plumber Partner</Text>
         </View>
 
         <TouchableOpacity 
@@ -247,29 +180,19 @@ export function DashboardScreen({ navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Plumber Meta Card */}
+        {/* Profile Header */}
         <View style={styles.profileMetaRow}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {plumber?.fullName.split(' ').map((n) => n[0]).join('') || 'RK'}
+              {plumber?.fullName ? plumber.fullName.split(' ').map((n) => n[0]).join('') : 'RK'}
             </Text>
           </View>
           <View style={styles.profileDetails}>
-            <Text style={styles.greeting}>Good Morning,</Text>
-            <Text style={styles.name}>{plumber?.fullName || 'Ravi Kumar'}</Text>
+            <Text style={styles.greeting}>Good Morning</Text>
+            <Text style={styles.name}>{plumber?.fullName || 'Ramesh Kumar'}</Text>
           </View>
-          <RatingBadge rating={plumber?.rating ?? 4.9} count={plumber?.ratingsCount ?? 324} />
-        </View>
-
-        {/* Availability Online Status Panel */}
-        <View style={styles.statusPanel}>
-          <View style={styles.toggleRow}>
-            <View>
-              <Text style={styles.panelLabel}>Shift Status</Text>
-              <Text style={styles.panelTitle}>
-                {isOnline ? 'You are Online' : 'You are Offline'}
-              </Text>
-            </View>
+          <View style={styles.onlineToggleWrapper}>
+            <Text style={styles.onlineStatusLabel}>{isOnline ? 'Online' : 'Offline'}</Text>
             <Switch
               value={isOnline}
               onValueChange={handleToggleOnline}
@@ -277,119 +200,133 @@ export function DashboardScreen({ navigation }: Props) {
               thumbColor={isOnline ? '#10B981' : '#F8FAFC'}
             />
           </View>
-          
-          {gpsCoords && (
-            <Text style={styles.coords}>
-              Live GPS: {gpsCoords.latitude.toFixed(4)}, {gpsCoords.longitude.toFixed(4)}
-            </Text>
-          )}
         </View>
 
-        {/* Today's Earnings Overview */}
+        {/* Today's Earnings Banner Card */}
         <TouchableOpacity 
           style={styles.earningsCard} 
           onPress={() => navigation.navigate('Earnings' as any)}
         >
           <View style={styles.earningsHeader}>
-            <Text style={styles.earningsCardLabel}>Today's Earnings</Text>
-            <Text style={styles.viewDetailsText}>View Details ➔</Text>
+            <View>
+              <Text style={styles.earningsCardLabel}>Today's Earnings</Text>
+              <Text style={styles.earningsAmount}>₹{earnings.todayEarnings || '2,450'}</Text>
+            </View>
+            <View style={styles.settingsBadge}>
+              <LogoMark width={20} height={20} stroke="#FFFFFF" />
+            </View>
           </View>
-          <Text style={styles.earningsAmount}>₹{earnings.todayEarnings}</Text>
           
           <View style={styles.metricsGrid}>
             <View style={styles.metricItem}>
-              <Text style={styles.metricVal}>{earnings.jobsCompleted}</Text>
-              <Text style={styles.metricLbl}>Completed</Text>
+              <Text style={styles.metricVal}>4 💼</Text>
+              <Text style={styles.metricLbl}>Jobs</Text>
             </View>
             <View style={styles.metricItem}>
-              <Text style={styles.metricVal}>{activeJob ? 1 : 0}</Text>
-              <Text style={styles.metricLbl}>Active</Text>
-            </View>
-            <View style={styles.metricItem}>
-              <Text style={styles.metricVal}>₹320</Text>
-              <Text style={styles.metricLbl}>Wallet</Text>
+              <Text style={styles.metricVal}>4.8 ⭐</Text>
+              <Text style={styles.metricLbl}>Rating</Text>
             </View>
           </View>
         </TouchableOpacity>
 
+        {/* Today's Overview Grid */}
+        <View style={styles.overviewSection}>
+          <Text style={styles.sectionTitle}>Today's Overview</Text>
+          <View style={styles.overviewGrid}>
+            <View style={styles.overviewCard}>
+              <View style={[styles.badgeCircle, { backgroundColor: '#DBEAFE' }]}>
+                <Text style={[styles.badgeNumber, { color: colors.primary }]}>4</Text>
+              </View>
+              <Text style={styles.overviewLabel}>Assigned</Text>
+            </View>
+            <View style={styles.overviewCard}>
+              <View style={[styles.badgeCircle, { backgroundColor: '#D1FAE5' }]}>
+                <Text style={[styles.badgeNumber, { color: '#10B981' }]}>2</Text>
+              </View>
+              <Text style={styles.overviewLabel}>Completed</Text>
+            </View>
+            <View style={styles.overviewCard}>
+              <View style={[styles.badgeCircle, { backgroundColor: '#FEE2E2' }]}>
+                <Text style={[styles.badgeNumber, { color: '#EF4444' }]}>0</Text>
+              </View>
+              <Text style={styles.overviewLabel}>Cancelled</Text>
+            </View>
+          </View>
+        </View>
+
         {/* Quick Actions Grid */}
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.quickGrid}>
-          <TouchableOpacity 
-            style={styles.gridAction}
-            onPress={() => {
-              if (activeJob) {
-                navigation.navigate('ActiveJob', { jobId: activeJob.jobId });
-              } else {
-                Alert.alert('No Active Job', 'You do not have an active service job currently.');
-              }
-            }}
-          >
-            <View style={[styles.actionCircle, { backgroundColor: '#DBEAFE' }]}>
-              <ActiveJobIcon width={24} height={24} stroke={colors.primary} />
-            </View>
-            <Text style={styles.actionLabel}>Active Job</Text>
-          </TouchableOpacity>
+        <View style={styles.overviewSection}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.overviewGrid}>
+            <TouchableOpacity
+              style={styles.overviewCard}
+              onPress={() => {
+                if (activeJob) {
+                  navigation.navigate('ActiveJob', { jobId: activeJob.jobId });
+                } else {
+                  Alert.alert('No Active Job', 'You do not have an active service job currently.');
+                }
+              }}
+            >
+              <ActiveJobIcon width={20} height={20} stroke={colors.primary} />
+              <Text style={styles.overviewLabel}>Active Job</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.gridAction}
-            onPress={() => navigation.navigate('JobHistory' as any)}
-          >
-            <View style={[styles.actionCircle, { backgroundColor: '#D1FAE5' }]}>
-              <CalendarIcon width={24} height={24} stroke={colors.success} />
-            </View>
-            <Text style={styles.actionLabel}>History</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.overviewCard}
+              onPress={() => navigation.navigate('JobHistory' as any)}
+            >
+              <CalendarIcon width={20} height={20} stroke={colors.success} />
+              <Text style={styles.overviewLabel}>History</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.gridAction}
-            onPress={() => navigation.navigate('Wallet' as any)}
-          >
-            <View style={[styles.actionCircle, { backgroundColor: '#FEF3C7' }]}>
-              <WalletIcon width={24} height={24} stroke={colors.warning} />
-            </View>
-            <Text style={styles.actionLabel}>My Wallet</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.gridAction}
-            onPress={() => navigation.navigate('Profile' as any)}
-          >
-            <View style={[styles.actionCircle, { backgroundColor: '#FEE2E2' }]}>
-              <ProfileIcon width={24} height={24} stroke={colors.error} />
-            </View>
-            <Text style={styles.actionLabel}>Profile</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.overviewCard}
+              onPress={() => navigation.navigate('Wallet' as any)}
+            >
+              <WalletIcon width={20} height={20} stroke={colors.warning} />
+              <Text style={styles.overviewLabel}>Wallet</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Goal Progress Target */}
-        <View style={styles.goalProgressCard}>
-          <View style={styles.goalHeader}>
-            <View style={styles.goalTexts}>
-              <Text style={styles.goalTitle}>Complete 3 more jobs</Text>
-              <Text style={styles.goalSub}>to earn ₹450 extra today</Text>
+        {/* Upcoming Job Card */}
+        <View style={styles.upcomingSection}>
+          <Text style={styles.sectionTitle}>Upcoming Job</Text>
+          <View style={styles.upcomingCard}>
+            <View style={styles.upcomingHeader}>
+              <View style={styles.upcomingIconWrapper}>
+                <ActiveJobIcon width={20} height={20} stroke={colors.primary} />
+              </View>
+              <View style={styles.upcomingInfo}>
+                <Text style={styles.jobIdText}>#{activeJob ? activeJob.jobId : 'JK42315'}</Text>
+                <Text style={styles.issueTitle}>
+                  {activeJob ? 'Bathroom Pipe Leakage' : 'Bathroom Pipe Leakage'}
+                </Text>
+                <Text style={styles.timeRange}>10:30 AM - 12:15 PM</Text>
+              </View>
+              <Text style={styles.jobPrice}>₹450</Text>
             </View>
-            <LogoMark width={28} height={28} stroke={colors.warning} />
+
+            <TouchableOpacity
+              style={styles.navigateBtn}
+              onPress={() => {
+                const targetJobId = activeJob ? activeJob.jobId : 'JK42315';
+                navigation.navigate('ActiveJob', { jobId: targetJobId });
+              }}
+            >
+              <Text style={styles.navigateBtnText}>Navigate ➔</Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: '66%' }]} />
-          </View>
-          <Text style={styles.progressText}>2 of 5 jobs completed</Text>
         </View>
 
-        {/* Job Broadcast Offer Preview (if any) */}
-        {incomingJobs.length > 0 && (
-          <TouchableOpacity 
-            style={styles.incomingJobPrompt}
-            onPress={() => navigation.navigate('IncomingJobRequest', {
-              jobId: incomingJobs[0].jobId,
-              customerId: incomingJobs[0].customerId,
-              distance: incomingJobs[0].distance,
-            })}
-          >
-            <Text style={styles.incomingPromptText}>⚠️ INCOMING SERVICE REQUEST PENDING (View offer)</Text>
-          </TouchableOpacity>
-        )}
+        {/* Simulate incoming job button */}
+        <TouchableOpacity
+          style={styles.simulateBtn}
+          onPress={handleSimulateIncomingJob}
+        >
+          <Text style={styles.simulateText}>Simulate incoming job request →</Text>
+        </TouchableOpacity>
       </ScrollView>
     </ScreenWrapper>
   );
@@ -397,7 +334,7 @@ export function DashboardScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   navBar: {
-    height: 60,
+    height: 56,
     backgroundColor: colors.surface,
     flexDirection: 'row',
     alignItems: 'center',
@@ -408,10 +345,6 @@ const styles = StyleSheet.create({
   },
   menuBtn: {
     padding: spacing.xs,
-  },
-  menuIcon: {
-    fontSize: 24,
-    color: colors.textPrimary,
   },
   brandContainer: {
     alignItems: 'center',
@@ -426,13 +359,9 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
     color: colors.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 1,
   },
   drawerBtn: {
     padding: spacing.xs,
-  },
-  chatBubble: {
-    fontSize: 22,
   },
   content: {
     padding: spacing.layout,
@@ -441,16 +370,16 @@ const styles = StyleSheet.create({
   profileMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
   },
   avatarText: {
     fontSize: typography.fontSize.md,
@@ -462,194 +391,176 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+    color: colors.textMuted,
   },
   name: {
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
   },
-  statusPanel: {
-    backgroundColor: colors.textPrimary,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    ...shadows.sm,
-  },
-  toggleRow: {
+  onlineToggleWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.xs,
   },
-  panelLabel: {
-    color: colors.textMuted,
+  onlineStatusLabel: {
     fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    textTransform: 'uppercase',
-  },
-  panelTitle: {
-    color: colors.surface,
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.black,
-    marginTop: 4,
-  },
-  coords: {
-    fontSize: typography.fontSize.xs,
-    color: colors.accent,
-    fontWeight: typography.fontWeight.bold,
-    marginTop: spacing.md,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textSecondary,
   },
   earningsCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.primary,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
     marginBottom: spacing.lg,
-    ...shadows.sm,
+    ...shadows.md,
   },
   earningsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   earningsCardLabel: {
+    color: '#DBEAFE',
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.bold,
-    textTransform: 'uppercase',
-  },
-  viewDetailsText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.primary,
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.medium,
   },
   earningsAmount: {
-    fontSize: 34,
+    color: colors.surface,
+    fontSize: 28,
     fontWeight: typography.fontWeight.black,
-    color: colors.textPrimary,
-    marginVertical: spacing.sm,
+    marginTop: 2,
+  },
+  settingsBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   metricsGrid: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing.md,
-    marginTop: spacing.sm,
-  },
-  metricItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  metricVal: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  metricLbl: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginTop: 2,
-    fontWeight: typography.fontWeight.medium,
-  },
-  sectionTitle: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  quickGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.lg,
-    gap: spacing.sm,
-  },
-  gridAction: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  actionCircle: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 6,
-    ...shadows.sm,
-  },
-  actionEmoji: {
-    fontSize: 22,
-  },
-  actionLabel: {
-    fontSize: 11,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  goalProgressCard: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.md,
-    ...shadows.sm,
-  },
-  goalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  goalTexts: {
-    flex: 1,
-  },
-  goalTitle: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.black,
-    color: colors.textPrimary,
-  },
-  goalSub: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
-    marginTop: 2,
-  },
-  giftEmoji: {
-    fontSize: 26,
-  },
-  progressBarBg: {
-    height: 8,
-    backgroundColor: colors.background,
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: spacing.sm,
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: colors.success,
-    borderRadius: 4,
-  },
-  progressText: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.bold,
-  },
-  incomingJobPrompt: {
-    backgroundColor: colors.errorLight,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.error,
+    gap: spacing.lg,
     marginTop: spacing.md,
   },
-  incomingPromptText: {
-    color: colors.error,
+  metricItem: {},
+  metricVal: {
+    color: colors.surface,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+  },
+  metricLbl: {
+    color: '#DBEAFE',
     fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.black,
+  },
+  overviewSection: {
+    marginBottom: spacing.lg,
+  },
+  sectionTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  overviewGrid: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  overviewCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sm,
+  },
+  badgeCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeNumber: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+  },
+  overviewLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textMuted,
+    marginTop: 4,
+  },
+  upcomingSection: {
+    marginBottom: spacing.lg,
+  },
+  upcomingCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sm,
+  },
+  upcomingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  upcomingIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.xs,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.sm,
+  },
+  upcomingInfo: {
+    flex: 1,
+  },
+  jobIdText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textMuted,
+  },
+  issueTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  timeRange: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+  jobPrice: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  navigateBtn: {
+    marginTop: spacing.md,
+    backgroundColor: '#10B981',
+    borderRadius: borderRadius.xs,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+  },
+  navigateBtnText: {
+    color: colors.surface,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+  },
+  simulateBtn: {
+    marginTop: spacing.sm,
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  simulateText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.primary,
+    fontWeight: typography.fontWeight.bold,
+    textDecorationLine: 'underline',
   },
 });
-
-
-

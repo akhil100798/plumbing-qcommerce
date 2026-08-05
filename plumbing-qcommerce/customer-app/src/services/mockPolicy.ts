@@ -28,10 +28,7 @@ const isLocalUrl = (urlString: string) => {
 
 const isLocalDevelopmentApi = () => isLocalUrl(BACKEND_URL);
 
-export const canUseDevMockFallbacks = () =>
-  process.env.NODE_ENV !== 'production' &&
-  process.env.EXPO_PUBLIC_ALLOW_MOCK_FALLBACKS === 'true' &&
-  isLocalDevelopmentApi();
+export const canUseDevMockFallbacks = () => false;
 
 export const warnUsingDevMockFallback = (feature: string, error: unknown) => {
   if (canUseDevMockFallbacks()) {

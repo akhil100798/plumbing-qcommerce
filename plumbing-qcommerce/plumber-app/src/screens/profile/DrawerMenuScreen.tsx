@@ -1,18 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
   View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Switch,
+  SafeAreaView,
+  ScrollView,
+  Alert,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { RatingBadge } from '../../components/cards/RatingBadge';
-import { logout } from '../../redux/slices/authSlice';
-import { colors, spacing, typography } from '../../theme';
+import { Avatar } from '../../components/common/Avatar';
+import { logout, setAvailability } from '../../redux/slices/authSlice';
+import { profileService } from '../../services/profile/profileService';
+import { colors, spacing, typography, borderRadius } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
 
@@ -25,211 +28,215 @@ import ShieldIcon from '../../assets/icons/shield-verified.svg';
 import SupportIcon from '../../assets/icons/chat.svg';
 import SettingsIcon from '../../assets/icons/settings.svg';
 import LogoutIcon from '../../assets/icons/logout.svg';
-import CloseIcon from '../../assets/icons/close.svg';
+import ArrowRightIcon from '../../assets/icons/arrow-right.svg';
 
 type Props = StackScreenProps<AppStackParamList, any>;
+
+const MENU_ITEMS = [
+  { key: 'dashboard', label: 'Dashboard', icon: HomeIcon, destination: 'Main' },
+  { key: 'myJobs', label: 'My Jobs', icon: ActiveJobIcon, destination: 'ActiveJob' },
+  { key: 'earnings', label: 'Earnings', icon: EarningsIcon, destination: 'Earnings' },
+  { key: 'wallet', label: 'Wallet', icon: WalletIcon, destination: 'Wallet' },
+  { key: 'myReviews', label: 'My Reviews', icon: RatingIcon, destination: 'Profile' },
+  { key: 'myDocuments', label: 'My Documents', icon: ShieldIcon, destination: 'Profile' },
+  { key: 'support', label: 'Support', icon: SupportIcon, destination: 'Chat', params: { name: 'Support', role: 'Support' } },
+  { key: 'settings', label: 'Settings', icon: SettingsIcon, destination: 'Profile' },
+];
 
 export function DrawerMenuScreen({ navigation }: Props) {
   const dispatch = useDispatch();
   const { plumber } = useSelector((state: RootState) => state.auth);
+  const [isOnline, setIsOnline] = useState<boolean>(plumber?.availability ?? true);
 
-  const menuItems = [
-    { label: 'Dashboard', icon: HomeIcon, destination: 'Main' },
-    { label: 'My Jobs', icon: ActiveJobIcon, destination: 'ActiveJob' },
-    { label: 'Earnings', icon: EarningsIcon, destination: 'Earnings' },
-    { label: 'My Wallet', icon: WalletIcon, destination: 'Wallet' },
-    { label: 'Reviews', icon: RatingIcon, destination: null },
-    { label: 'Documents', icon: ShieldIcon, destination: null },
-    { label: 'Support', icon: SupportIcon, destination: 'Chat', params: { name: 'Support', role: 'Support' } },
-    { label: 'Settings', icon: SettingsIcon, destination: null },
-  ];
+  const plumberName = plumber?.fullName || 'Ramesh Kumar';
 
-  const handleLogout = () => {
-    dispatch(logout());
-    navigation.replace('Auth');
+  const handleToggleOnline = async (val: boolean) => {
+    setIsOnline(val);
+    dispatch(setAvailability(val));
+    try {
+      await profileService.updateAvailability(val);
+    } catch (err: any) {
+      setIsOnline(!val);
+      dispatch(setAvailability(!val));
+      Alert.alert('Status Error', err?.message || 'Failed to update online status.');
+    }
   };
 
-  const handleItemPress = (item: any) => {
+  const handleNavigate = (item: (typeof MENU_ITEMS)[0]) => {
     if (item.destination) {
       if (item.destination === 'ActiveJob') {
-        navigation.navigate('Main'); 
+        navigation?.navigate?.('Main');
       } else {
-        navigation.navigate(item.destination, item.params);
+        navigation?.navigate?.(item.destination as any, item.params);
       }
     }
   };
 
+  const handleLogout = () => {
+    Alert.alert('Confirm Logout', 'Are you sure you want to logout of the FixKart Plumber app?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: () => {
+          dispatch(logout());
+          navigation?.replace?.('Auth');
+        },
+      },
+    ]);
+  };
+
   return (
-    <ScreenWrapper safeAreaStyle={{ backgroundColor: colors.textPrimary }}>
-      <View style={styles.container}>
-        {/* Drawer Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
-            <CloseIcon width={24} height={24} stroke={colors.surface} />
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Profile header */}
+        <View style={styles.profileRow}>
+          <TouchableOpacity
+            style={styles.profileInfo}
+            onPress={() => navigation?.navigate?.('Profile')}
+            activeOpacity={0.7}
+          >
+            <Avatar name={plumberName} size={48} />
+            <View style={styles.profileText}>
+              <Text style={styles.name}>{plumberName}</Text>
+              <Text style={styles.viewProfile}>View Profile</Text>
+            </View>
           </TouchableOpacity>
-          
-          <View style={styles.profileRow}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {plumber?.fullName.split(' ').map((n) => n[0]).join('') || 'RK'}
-              </Text>
-            </View>
-            <View style={styles.profileInfo}>
-              <Text style={styles.name}>{plumber?.fullName || 'Ravi Kumar'}</Text>
-              <Text style={styles.plumberId}>Plumber ID: {plumber?.plumberId || 'PLB12345'}</Text>
-              <RatingBadge rating={plumber?.rating ?? 4.9} style={styles.badge} />
-            </View>
+
+          <View style={styles.onlineToggle}>
+            <Text style={[styles.onlineLabel, !isOnline && styles.offlineLabel]}>
+              {isOnline ? 'Online' : 'Offline'}
+            </Text>
+            <Switch
+              value={isOnline}
+              onValueChange={handleToggleOnline}
+              trackColor={{ false: '#D1D5DB', true: colors.success }}
+              thumbColor="#FFFFFF"
+              ios_backgroundColor="#D1D5DB"
+            />
           </View>
         </View>
 
-        {/* Drawer Body (Menu Items) */}
-        <ScrollView contentContainerStyle={styles.menuContainer}>
-          {menuItems.map((item, index) => {
+        <View style={styles.divider} />
+
+        {/* Menu list */}
+        <View style={styles.menuList}>
+          {MENU_ITEMS.map((item) => {
             const IconComp = item.icon;
             return (
               <TouchableOpacity
-                key={index}
-                style={styles.menuRow}
-                onPress={() => handleItemPress(item)}
+                key={item.key}
+                style={styles.menuItem}
+                onPress={() => handleNavigate(item)}
+                activeOpacity={0.6}
               >
-                <View style={styles.rowLeft}>
-                  <IconComp width={20} height={20} stroke={colors.textMuted} />
-                  <Text style={styles.menuLabel}>{item.label}</Text>
+                <View style={styles.menuIconContainer}>
+                  <IconComp width={20} height={20} stroke="#4B5563" />
                 </View>
+                <Text style={styles.menuLabel}>{item.label}</Text>
+                <ArrowRightIcon width={18} height={18} stroke="#C4C9D0" />
               </TouchableOpacity>
             );
           })}
-        </ScrollView>
-
-        {/* Drawer Footer */}
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <LogoutIcon width={20} height={20} stroke={colors.error} />
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
         </View>
-      </View>
-    </ScreenWrapper>
+
+        <View style={styles.divider} />
+
+        {/* Logout */}
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={handleLogout}
+          activeOpacity={0.6}
+        >
+          <View style={styles.menuIconContainer}>
+            <LogoutIcon width={20} height={20} stroke={colors.error} />
+          </View>
+          <Text style={[styles.menuLabel, styles.logoutLabel]}>Logout</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
   container: {
     flex: 1,
-    backgroundColor: colors.textPrimary,
   },
-  header: {
-    paddingHorizontal: spacing.layout,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
-  },
-  closeButton: {
-    alignSelf: 'flex-end',
-    width: 36,
-    height: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeText: {
-    color: colors.surface,
-    fontSize: 20,
-    fontWeight: 'bold',
+  contentContainer: {
+    paddingTop: 16,
+    paddingBottom: 32,
   },
   profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-    borderWidth: 2,
-    borderColor: colors.surface,
-  },
-  avatarText: {
-    color: colors.surface,
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
   },
   profileInfo: {
-    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 1,
+  },
+  profileText: {
+    justifyContent: 'center',
+    marginLeft: 12,
   },
   name: {
-    color: colors.surface,
-    fontSize: typography.fontSize.md,
+    fontSize: 16,
     fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
   },
-  plumberId: {
-    color: colors.textMuted,
-    fontSize: typography.fontSize.xs,
+  viewProfile: {
+    fontSize: 13,
+    color: colors.textSecondary,
     marginTop: 2,
   },
-  badge: {
-    alignSelf: 'flex-start',
-    marginTop: 6,
-    backgroundColor: 'rgba(245, 158, 11, 0.25)',
-  },
-  menuContainer: {
-    paddingVertical: spacing.md,
-  },
-  menuRow: {
-    flexDirection: 'row',
+  onlineToggle: {
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.md + 2,
-    paddingHorizontal: spacing.layout + 4,
   },
-  rowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md + 4,
+  onlineLabel: {
+    fontSize: 12,
+    color: colors.success,
+    fontWeight: typography.fontWeight.medium,
+    marginBottom: 4,
   },
-  menuIcon: {
-    fontSize: 20,
+  offlineLabel: {
     color: colors.textMuted,
   },
-  menuLabel: {
-    color: colors.surface,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
+  divider: {
+    height: 1,
+    backgroundColor: '#F0F1F3',
+    marginVertical: 12,
   },
-  badgeContainer: {
-    backgroundColor: colors.error,
-    borderRadius: 10,
-    width: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+  menuList: {
+    paddingHorizontal: 8,
   },
-  badgeText: {
-    color: colors.surface,
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  footer: {
-    paddingHorizontal: spacing.layout,
-    paddingVertical: spacing.xl,
-    borderTopWidth: 1,
-    borderTopColor: '#1E293B',
-  },
-  logoutButton: {
+  menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
   },
-  logoutIcon: {
-    fontSize: 20,
+  menuIconContainer: {
+    width: 28,
+    alignItems: 'center',
   },
-  logoutText: {
+  menuLabel: {
+    flex: 1,
+    fontSize: 15,
+    color: colors.textPrimary,
+    fontWeight: typography.fontWeight.medium,
+  },
+  logoutLabel: {
     color: colors.error,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
   },
 });

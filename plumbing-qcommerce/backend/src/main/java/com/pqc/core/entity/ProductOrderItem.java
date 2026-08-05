@@ -33,6 +33,10 @@ public class ProductOrderItem {
     @Column(nullable = false)
     private Integer quantity;
 
+    @Column(name = "reserved_quantity", nullable = false)
+    @Builder.Default
+    private Integer reservedQuantity = 0;
+
     @Column(nullable = false)
     private BigDecimal price; // price at the time of purchase
 }

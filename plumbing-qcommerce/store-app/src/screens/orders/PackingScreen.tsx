@@ -1,207 +1,219 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TextInput, Alert } from 'react-native';
-import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { AppHeader } from '../../components/common/AppHeader';
-import { PackingItemCard } from '../../components/cards/OrderCards';
-import { PrimaryButton } from '../../components/common/PrimaryButton';
-import { ordersService } from '../../services/orders/ordersService';
-import { useAppDispatch } from '../../redux/store';
-import { updateOrderInSlice } from '../../redux/slices/ordersSlice';
-import { NavigationProp, RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+  Alert,
+} from 'react-native';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
-import { Order } from '../../types';
+import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
+import SuccessCheckIcon from '../../assets/icons/success-check.svg';
+import WarehouseIcon from '../../assets/icons/warehouse.svg';
+import { colors, borderRadius, spacing, typography } from '../../theme';
 
-export const PackingScreen = () => {
+const initialChecklist = [
+  {
+    key: 'verify',
+    title: 'Verify Items (5/5)',
+    subtitle: 'All items matched',
+    state: 'done',
+  },
+  {
+    key: 'quality',
+    title: 'Quality Check',
+    subtitle: 'Items are in good condition',
+    state: 'done',
+  },
+  {
+    key: 'packaging',
+    title: 'Secure Packaging',
+    subtitle: 'Pack items safely',
+    state: 'active',
+  },
+  {
+    key: 'invoice',
+    title: 'Add Invoice',
+    subtitle: 'Generate & attach invoice',
+    state: 'pending',
+  },
+];
+
+export function PackingScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  const route = useRoute<RouteProp<AppStackParamList, 'Packing'>>();
-  const dispatch = useAppDispatch();
-  const { orderId } = route.params;
+  const [checklist, setChecklist] = useState(initialChecklist);
 
-  const [order, setOrder] = useState<Order | null>(null);
-  const [packedItems, setPackedItems] = useState<Record<number, boolean>>({});
-  const [packingNote, setPackingNote] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const loadDetails = async () => {
-    try {
-      const data = await ordersService.getOrderDetails(orderId);
-      setOrder(data);
-      // Initialize check state
-      const initialMap: Record<number, boolean> = {};
-      data.items.forEach(item => {
-        initialMap[item.productId] = false;
-      });
-      setPackedItems(initialMap);
-    } catch (e: any) {
-      Alert.alert('Error', 'Failed to retrieve order items');
-    }
-  };
-
-  useEffect(() => {
-    loadDetails();
-  }, [orderId]);
-
-  const togglePacked = (productId: number) => {
-    setPackedItems(prev => ({
-      ...prev,
-      [productId]: !prev[productId]
-    }));
-  };
-
-  const getPackedCount = () => {
-    return Object.values(packedItems).filter(v => v).length;
-  };
-
-  const handleMarkAsPacked = async () => {
-    if (!order) return;
-    
-    const allPacked = order.items.every(item => packedItems[item.productId]);
-    if (!allPacked) {
-      return Alert.alert(
-        'Incomplete Packing',
-        'Please verify and pack all order items before marking complete.'
-      );
-    }
-
-    setLoading(true);
-    try {
-      const updated = await ordersService.markPacked(order.id, packingNote);
-      dispatch(updateOrderInSlice(updated));
-      Alert.alert('Order Packed!', 'Rider notified and waiting for pickup.', [
-        { text: 'View Rider Status', onPress: () => navigation.navigate('ReadyForPickup', { orderId: order.id }) }
-      ]);
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Operation failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!order) {
-    return (
-      <ScreenWrapper style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading details...</Text>
-      </ScreenWrapper>
+  const toggleItem = (key: string) => {
+    setChecklist((prev) =>
+      prev.map((item) => {
+        if (item.key === key) {
+          const nextState = item.state === 'done' ? 'pending' : 'done';
+          return { ...item, state: nextState };
+        }
+        return item;
+      })
     );
-  }
+  };
 
-  const packedCount = getPackedCount();
-  const totalCount = order.items.length;
+  const handleMarkPacked = () => {
+    Alert.alert('Order Marked Packed', 'Order #FK123456 has been marked as packed.', [
+      { text: 'View Pickup Status', onPress: () => navigation.navigate('ReadyForPickup', { orderId: '123456' } as any) },
+    ]);
+  };
 
   return (
-    <ScreenWrapper style={styles.container}>
-      <AppHeader title="Packing Order" subtitle={`#ORD-${order.id}`} onBackPress={() => navigation.goBack()} />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.checklistHeader}>
-          <Text style={styles.title}>Item Checklist</Text>
-          <Text style={styles.countText}>{packedCount} / {totalCount} Packed</Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <ArrowLeftIcon width={24} height={24} stroke={colors.textPrimary} />
+        </TouchableOpacity>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={styles.headerTitle}>Packing Checklist</Text>
+          <Text style={styles.headerSubtitle}>#FK123456</Text>
         </View>
+        <View style={{ width: 24 }} />
+      </View>
 
-        <View style={styles.listContainer}>
-          {order.items.map((item, idx) => (
-            <PackingItemCard
-              key={idx}
-              item={item}
-              isPacked={!!packedItems[item.productId]}
-              onTogglePack={() => togglePacked(item.productId)}
-            />
+      <ScrollView contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          <Text style={styles.stepLabel}>Step 3 of 3</Text>
+
+          {checklist.map((item, idx) => (
+            <TouchableOpacity key={item.key} style={styles.checklistRow} onPress={() => toggleItem(item.key)}>
+              <View style={styles.checklistLeft}>
+                <View
+                  style={[
+                    styles.statusCircle,
+                    item.state === 'done' && styles.statusCircleDone,
+                    item.state === 'active' && styles.statusCircleActive,
+                  ]}
+                >
+                  {item.state === 'done' && (
+                    <SuccessCheckIcon width={12} height={12} stroke={colors.surface} />
+                  )}
+                </View>
+                {idx !== checklist.length - 1 && <View style={styles.connector} />}
+              </View>
+
+              <View
+                style={[
+                  styles.checklistCard,
+                  item.state === 'active' && styles.checklistCardActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.checklistTitle,
+                    item.state === 'active' && { color: colors.primary },
+                    item.state === 'pending' && { color: colors.textMuted },
+                  ]}
+                >
+                  {item.title}
+                </Text>
+                <Text style={styles.checklistSubtitle}>{item.subtitle}</Text>
+              </View>
+            </TouchableOpacity>
           ))}
-        </View>
 
-        <View style={styles.noteSection}>
-          <Text style={styles.noteLabel}>Add Packing Note (Optional)</Text>
-          <TextInput
-            style={styles.noteInput}
-            value={packingNote}
-            onChangeText={setPackingNote}
-            placeholder="Write details e.g., Box 2 contains small parts..."
-            placeholderTextColor={colors.textMuted}
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
-          />
+          <TouchableOpacity style={styles.primaryButton} onPress={handleMarkPacked}>
+            <Text style={styles.primaryButtonText}>Mark as Packed</Text>
+          </TouchableOpacity>
+
+          <View style={styles.tipCard}>
+            <WarehouseIcon width={22} height={22} stroke={colors.accentGreen} />
+            <Text style={styles.tipText}>
+              Tip: Use strong packaging to avoid{'\n'}damage during transit.
+            </Text>
+          </View>
         </View>
       </ScrollView>
-
-      <View style={styles.footer}>
-        <PrimaryButton
-          title="Mark as Packed"
-          onPress={handleMarkAsPacked}
-          loading={loading}
-          disabled={packedCount !== totalCount}
-        />
-      </View>
-    </ScreenWrapper>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.background,
-  },
-  loadingContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-  },
-  scroll: {
-    padding: spacing.layout,
-  },
-  checklistHeader: {
+  container: { flex: 1, backgroundColor: colors.background },
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.surface,
   },
-  title: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-  },
-  countText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.primary,
-  },
-  listContainer: {
+  headerTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, textAlign: 'center' },
+  headerSubtitle: { fontSize: typography.fontSize.xs, color: colors.textMuted, textAlign: 'center', marginTop: 2 },
+  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.md },
+  stepLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textMuted,
+    textAlign: 'right',
     marginBottom: spacing.lg,
   },
-  noteSection: {
-    backgroundColor: colors.card,
+  checklistRow: { flexDirection: 'row' },
+  checklistLeft: { alignItems: 'center', width: 28 },
+  statusCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusCircleDone: { backgroundColor: colors.accentGreen, borderColor: colors.accentGreen },
+  statusCircleActive: { borderColor: colors.primary, backgroundColor: colors.surface },
+  connector: { flex: 1, width: 2, backgroundColor: colors.border, marginVertical: 2, minHeight: 24 },
+  checklistCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     padding: spacing.md,
+    marginLeft: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    ...shadows.sm,
-    marginBottom: spacing.giant,
   },
-  noteLabel: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
+  checklistCardActive: {
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
   },
-  noteInput: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: borderRadius.sm,
+  checklistTitle: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  checklistSubtitle: { fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: 2 },
+  primaryButton: {
+    backgroundColor: colors.primary,
+    height: 52,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  primaryButtonText: { color: colors.surface, fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold },
+  tipCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.accentGreenLight,
+    borderRadius: borderRadius.md,
     padding: spacing.md,
-    fontSize: typography.fontSize.sm,
-    color: colors.textPrimary,
-    backgroundColor: colors.background,
-    height: 80,
   },
-  footer: {
-    padding: spacing.layout,
-    backgroundColor: colors.card,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+  tipText: {
+    flex: 1,
+    marginLeft: spacing.md,
+    fontSize: typography.fontSize.xs,
+    color: colors.textPrimary,
+    lineHeight: 17,
   },
 });
+
 export default PackingScreen;

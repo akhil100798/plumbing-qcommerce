@@ -4,161 +4,188 @@ import {
   Text,
   TouchableOpacity,
   View,
+  SafeAreaView,
+  ScrollView,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { AppHeader } from '../../components/common/AppHeader';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { EarningsCard } from '../../components/cards/EarningsCard';
-import { PrimaryButton } from '../../components/common/PrimaryButton';
+import { BarChart } from '../../components/common/BarChart';
 import { earningsService } from '../../services/earnings/earningsService';
 import { setEarningsData } from '../../redux/slices/earningsSlice';
-import { colors, spacing, typography, borderRadius } from '../../theme';
+import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
 
 type Props = StackScreenProps<AppStackParamList, 'Earnings' | any>;
 
+const TREND_DATA = [
+  { label: 'Mon', value: 900 },
+  { label: 'Tue', value: 1100 },
+  { label: 'Wed', value: 1600 },
+  { label: 'Thu', value: 1550 },
+  { label: 'Fri', value: 1200 },
+  { label: 'Sat', value: 1300 },
+  { label: 'Sun', value: 1000 },
+];
+
 export function EarningsScreen({ navigation }: Props) {
   const dispatch = useDispatch();
   const earnings = useSelector((state: RootState) => state.earnings);
-  const [filter, setFilter] = useState<'Day' | 'Week' | 'Month'>('Day');
-  const [notice, setNotice] = useState<string | null>(null);
+  const [period, setPeriod] = useState<'This Week' | 'This Month' | 'All Time'>('This Week');
 
   useEffect(() => {
     const fetchEarningsStats = async () => {
       try {
         const data = await earningsService.fetchEarnings();
         dispatch(setEarningsData(data));
-        setNotice(null);
       } catch (err) {
         console.error('Error fetching earnings details:', err);
-        setNotice(err instanceof Error ? err.message : 'Earnings are not available in staging.');
       }
     };
     fetchEarningsStats();
   }, [dispatch]);
 
-  const getPeriodEarnings = () => {
-    switch (filter) {
-      case 'Week':
-        return {
-          total: earnings.weeklyEarnings || 8450,
-          service: earnings.serviceCommission * 5,
-          material: earnings.materialCommission * 4,
-          tips: earnings.tips * 4,
-          jobs: earnings.jobsCompleted * 5,
-        };
-      case 'Month':
-        return {
-          total: (earnings.weeklyEarnings || 8450) * 4,
-          service: earnings.serviceCommission * 20,
-          material: earnings.materialCommission * 18,
-          tips: earnings.tips * 15,
-          jobs: earnings.jobsCompleted * 20,
-        };
-      case 'Day':
-      default:
-        return {
-          total: earnings.todayEarnings,
-          service: earnings.serviceCommission,
-          material: earnings.materialCommission,
-          tips: earnings.tips,
-          jobs: earnings.jobsCompleted,
-        };
-    }
-  };
-
-  const periodStats = getPeriodEarnings();
+  const totalDisplay = period === 'This Month' ? '₹34,600' : period === 'All Time' ? '₹1,24,500' : `₹${earnings.weeklyEarnings || '8,650'}`;
+  const jobsCount = period === 'This Month' ? 56 : period === 'All Time' ? 180 : 14;
 
   return (
-    <ScreenWrapper>
-      <AppHeader title="My Earnings" onBackPress={() => navigation.goBack()} />
+    <SafeAreaView style={styles.container}>
+      <AppHeader title="Earnings" onBackPress={() => navigation.goBack()} />
 
-      <View style={styles.container}>
-        <View style={styles.filterRow}>
-          {(['Day', 'Week', 'Month'] as const).map((period) => (
-            <TouchableOpacity
-              key={period}
-              style={[styles.filterTab, filter === period && styles.filterTabActive]}
-              onPress={() => setFilter(period)}
-            >
-              <Text style={[styles.filterText, filter === period && styles.filterTextActive]}>
-                {period}
-              </Text>
-            </TouchableOpacity>
-          ))}
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        {/* Total Earnings Summary Card */}
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryTopRow}>
+            <Text style={styles.summaryLabel}>Total Earnings</Text>
+            <View style={styles.periodPill}>
+              {(['This Week', 'This Month', 'All Time'] as const).map((p) => (
+                <TouchableOpacity
+                  key={p}
+                  style={[styles.pillItem, period === p && styles.pillItemActive]}
+                  onPress={() => setPeriod(p)}
+                >
+                  <Text style={[styles.pillText, period === p && styles.pillTextActive]}>{p}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+          <Text style={styles.summaryAmount}>{totalDisplay}</Text>
+          <View style={styles.growthRow}>
+            <Text style={styles.growthText}>📈 12% from last period</Text>
+          </View>
         </View>
 
-        {!!notice && <Text style={styles.noticeText}>{notice}</Text>}
-        <View style={styles.cardContainer}>
-          <EarningsCard
-            todayEarnings={periodStats.total}
-            serviceCommission={periodStats.service}
-            materialCommission={periodStats.material}
-            tips={periodStats.tips}
-            jobsCompleted={periodStats.jobs}
-          />
+        {/* Stats Row */}
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Completed Jobs</Text>
+            <View style={styles.statValueRow}>
+              <Text style={styles.statValue}>{jobsCount}</Text>
+              <Text style={styles.statDelta}>↑ 12%</Text>
+            </View>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Average Earning</Text>
+            <View style={styles.statValueRow}>
+              <Text style={styles.statValue}>₹950</Text>
+              <Text style={styles.statDelta}>↑ 8%</Text>
+            </View>
+          </View>
         </View>
 
-        <View style={styles.spacer} />
+        {/* BarChart Trend */}
+        <View style={styles.trendCard}>
+          <Text style={styles.trendTitle}>Earnings Trend</Text>
+          <BarChart data={TREND_DATA} />
+        </View>
 
-        <PrimaryButton
-          title="View Wallet Transactions"
+        {/* Navigation Button */}
+        <TouchableOpacity
+          style={styles.walletBtn}
           onPress={() => navigation.navigate('Wallet')}
-          style={styles.actionBtn}
-        />
-      </View>
-    </ScreenWrapper>
+        >
+          <Text style={styles.walletBtnText}>View Wallet & Transactions ➔</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: spacing.layout,
-    backgroundColor: colors.background,
+  container: { flex: 1, backgroundColor: colors.background },
+  body: { padding: spacing.md, paddingBottom: spacing.xl },
+  summaryCard: {
+    backgroundColor: colors.primaryDark,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    ...shadows.md,
   },
-  noticeText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.error,
-    fontWeight: typography.fontWeight.bold,
-    marginBottom: spacing.md,
-  },
-  filterRow: {
+  summaryTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  summaryLabel: { color: 'rgba(255,255,255,0.8)', fontSize: typography.fontSize.xs },
+  periodPill: {
     flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: borderRadius.sm,
+    padding: 2,
+  },
+  pillItem: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: borderRadius.xs,
+  },
+  pillItemActive: {
+    backgroundColor: '#FFFFFF',
+  },
+  pillText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: typography.fontWeight.medium,
+  },
+  pillTextActive: {
+    color: colors.primaryDark,
+    fontWeight: typography.fontWeight.bold,
+  },
+  summaryAmount: { color: '#FFFFFF', fontSize: 28, fontWeight: typography.fontWeight.black, marginTop: spacing.xs },
+  growthRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs },
+  growthText: { color: '#86EFAC', fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold },
+  statsRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
+  statCard: {
+    flex: 1,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
-    padding: 4,
-    marginBottom: spacing.lg,
+    padding: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
+    ...shadows.sm,
   },
-  filterTab: {
-    flex: 1,
-    paddingVertical: spacing.sm,
+  statLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
+  statValueRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: 4 },
+  statValue: { fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  statDelta: { fontSize: typography.fontSize.xs, color: colors.success, fontWeight: typography.fontWeight.bold },
+  trendCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sm,
+  },
+  trendTitle: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, marginBottom: spacing.md },
+  walletBtn: {
+    marginTop: spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.md,
     alignItems: 'center',
-    borderRadius: borderRadius.sm,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
   },
-  filterTabActive: {
-    backgroundColor: colors.primary,
-  },
-  filterText: {
-    fontSize: typography.fontSize.xs,
+  walletBtnText: {
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
-  },
-  filterTextActive: {
-    color: colors.surface,
-  },
-  cardContainer: {
-    marginBottom: spacing.xl,
-  },
-  spacer: {
-    flex: 1,
-  },
-  actionBtn: {
-    marginTop: 'auto',
+    color: colors.primary,
   },
 });

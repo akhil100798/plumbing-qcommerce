@@ -1,242 +1,178 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { AppHeader } from '../../components/common/AppHeader';
-import { AnalyticsMetricCard, LineChartCard } from '../../components/charts/AnalyticsCharts';
-import { analyticsService } from '../../services/analytics/analyticsService';
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+} from 'react-native';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
-import { Product } from '../../types';
+import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
+import SuccessCheckIcon from '../../assets/icons/success-check.svg';
+import { colors, borderRadius, spacing, typography } from '../../theme';
 
-export const SalesAnalyticsScreen = () => {
+const categories = [
+  { name: 'Plumbing', pct: 48, color: colors.primary },
+  { name: 'Electrical', pct: 26, color: colors.accentOrange },
+  { name: 'Hardware', pct: 16, color: colors.accentGreen },
+  { name: 'Other', pct: 10, color: colors.textMuted },
+];
+
+export function SalesAnalyticsScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  
-  const [revenue, setRevenue] = useState(0);
-  const [orders, setOrders] = useState(0);
-  const [aov, setAov] = useState(0);
-  const [trendData, setTrendData] = useState<{ label: string; value: number }[]>([]);
-  const [topProducts, setTopProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<'week' | 'month'>('week');
-
-  const loadAnalytics = async () => {
-    setLoading(true);
-    try {
-      const sales = await analyticsService.getSalesAnalytics();
-      setRevenue(sales.revenue);
-      setOrders(sales.orders);
-      setAov(sales.averageOrderValue);
-      
-      const formattedTrend = sales.trend.map((t: any) => ({
-        label: t.date.split('-')[2] || t.date, // extract day or use as is
-        value: Number(t.orders)
-      }));
-      setTrendData(formattedTrend.length > 0 ? formattedTrend : [
-        { label: 'Mon', value: 8 },
-        { label: 'Tue', value: 15 },
-        { label: 'Wed', value: 12 },
-        { label: 'Thu', value: 10 },
-        { label: 'Fri', value: 14 },
-        { label: 'Sat', value: 20 },
-        { label: 'Sun', value: 12 }
-      ]);
-
-      const top = await analyticsService.getTopProducts();
-      setTopProducts(top);
-    } catch (e) {
-      Alert.alert('Error', 'Failed to retrieve analytics details');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadAnalytics();
-  }, []);
 
   return (
-    <ScreenWrapper style={styles.container}>
-      <AppHeader
-        title="Sales Analytics"
-        onBackPress={() => navigation.goBack()}
-        rightAction={
-          <View style={styles.filterToggle}>
-            <TouchableOpacity
-              style={[styles.filterBtn, activeFilter === 'week' && styles.activeFilterBtn]}
-              onPress={() => setActiveFilter('week')}
-            >
-              <Text style={[styles.filterLabel, activeFilter === 'week' && styles.activeFilterLabel]}>W</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.filterBtn, activeFilter === 'month' && styles.activeFilterBtn]}
-              onPress={() => setActiveFilter('month')}
-            >
-              <Text style={[styles.filterLabel, activeFilter === 'month' && styles.activeFilterLabel]}>M</Text>
-            </TouchableOpacity>
-          </View>
-        }
-      />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Main Graph */}
-        <LineChartCard
-          title={activeFilter === 'week' ? 'Weekly Orders Volume' : 'Monthly Orders Volume'}
-          dataPoints={trendData}
-        />
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <ArrowLeftIcon width={24} height={24} stroke={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Sales Analytics</Text>
+        <View style={{ width: 24 }} />
+      </View>
 
-        {/* Metrics Row */}
-        <View style={styles.metricsRow}>
-          <AnalyticsMetricCard
-            label="Total Revenue"
-            value="₹2,42,450"
-            change="+18%"
-            isPositive
-          />
-          <AnalyticsMetricCard
-            label="Average Order"
-            value={`₹${aov > 0 ? Math.round(aov) : 576}`}
-            change="+8%"
-            isPositive
-          />
-        </View>
+      <ScrollView contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          {/* Month selector */}
+          <TouchableOpacity style={styles.monthSelector}>
+            <Text style={styles.monthSelectorText}>This Month (May 1 – May 21)</Text>
+            <Text style={{ fontSize: 12, color: colors.textMuted }}>▼</Text>
+          </TouchableOpacity>
 
-        <View style={styles.metricsRow}>
-          <AnalyticsMetricCard
-            label="Total Orders"
-            value={String(orders > 0 ? orders : 420)}
-            change="+13%"
-            isPositive
-          />
-          <AnalyticsMetricCard
-            label="Conversions"
-            value="3.2%"
-            change="-2%"
-            isPositive={false}
-          />
-        </View>
-
-        {/* Top Products */}
-        <Text style={styles.sectionHeader}>Top Selling Products</Text>
-        <View style={styles.topProductsCard}>
-          {topProducts.map((prod, index) => (
-            <View key={prod.id} style={[styles.rankRow, index === topProducts.length - 1 && styles.noBorder]}>
-              <View style={styles.rankLeft}>
-                <View style={styles.rankBadge}>
-                  <Text style={styles.rankNum}>{index + 1}</Text>
-                </View>
-                <View>
-                  <Text style={styles.rankName}>{prod.name}</Text>
-                  <Text style={styles.rankSku}>{prod.sku}</Text>
-                </View>
+          {/* Stat cards */}
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Total Sales</Text>
+              <Text style={styles.statValue}>₹3,48,680</Text>
+              <View style={styles.trendRow}>
+                <Text style={styles.trendText}>↑ 8% <Text style={styles.trendMuted}>vs last month</Text></Text>
               </View>
-              <Text style={styles.rankCount}>320 units</Text>
             </View>
-          ))}
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Orders</Text>
+              <Text style={styles.statValue}>236</Text>
+              <View style={styles.trendRow}>
+                <Text style={styles.trendText}>↑ 12% <Text style={styles.trendMuted}>vs last month</Text></Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Sales Overview */}
+          <Text style={styles.sectionTitle}>Sales Overview</Text>
+          <View style={styles.chartCard}>
+            <View style={styles.salesBarChart}>
+              {[42, 55, 48, 60, 52, 68, 63].map((val, idx) => (
+                <View key={idx} style={styles.barColumn}>
+                  <View style={[styles.barFill, { height: `${val}%` }]} />
+                  <Text style={styles.barLabel}>{['1M', '3M', '7M', '10M', '14M', '18M', '21M'][idx]}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Top Selling Categories */}
+          <Text style={styles.sectionTitle}>Top Selling Categories</Text>
+          <View style={styles.chartCard}>
+            <View style={styles.legendList}>
+              {categories.map((c) => (
+                <View key={c.name} style={styles.legendRow}>
+                  <View style={[styles.legendDot, { backgroundColor: c.color }]} />
+                  <Text style={styles.legendLabel}>{c.name}</Text>
+                  <Text style={styles.legendPct}>{c.pct}%</Text>
+                </View>
+              ))}
+            </View>
+          </View>
         </View>
       </ScrollView>
-    </ScreenWrapper>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.background,
-  },
-  filterToggle: {
-    flexDirection: 'row',
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.sm,
-    padding: 2,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  filterBtn: {
-    width: 28,
-    height: 24,
-    borderRadius: borderRadius.xs,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  activeFilterBtn: {
-    backgroundColor: colors.primary,
-  },
-  filterLabel: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: colors.textSecondary,
-  },
-  activeFilterLabel: {
-    color: colors.card,
-  },
-  scroll: {
-    padding: spacing.layout,
-  },
-  metricsRow: {
+  container: { flex: 1, backgroundColor: colors.background },
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.surface,
   },
-  sectionHeader: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-    marginTop: spacing.md,
-    textTransform: 'uppercase',
-  },
-  topProductsCard: {
-    backgroundColor: colors.card,
+  headerTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.md },
+  monthSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
+    height: 46,
+    marginBottom: spacing.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    ...shadows.sm,
-    marginBottom: spacing.xl,
   },
-  rankRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  noBorder: {
-    borderBottomWidth: 0,
-  },
-  rankLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rankBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: borderRadius.round,
-    backgroundColor: 'rgba(37, 99, 235, 0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  monthSelectorText: { fontSize: 13, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  statsRow: { flexDirection: 'row', marginBottom: spacing.xl },
+  statCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.lg,
     marginRight: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  rankNum: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: 'bold',
-    color: colors.primary,
+  statLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
+  statValue: { fontSize: 19, fontWeight: typography.fontWeight.black, color: colors.textPrimary, marginVertical: 6 },
+  trendRow: { flexDirection: 'row', alignItems: 'center' },
+  trendText: { fontSize: 11, fontWeight: '700', color: colors.accentGreen },
+  trendMuted: { color: colors.textMuted, fontWeight: '400' },
+  sectionTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, marginBottom: spacing.md },
+  chartCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  rankName: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
+  salesBarChart: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    height: 160,
+    paddingTop: 20,
   },
-  rankSku: {
-    fontSize: 9,
+  barColumn: {
+    alignItems: 'center',
+    flex: 1,
+    height: '100%',
+    justifyContent: 'flex-end',
+  },
+  barFill: {
+    width: 14,
+    backgroundColor: colors.primary,
+    borderRadius: 4,
+  },
+  barLabel: {
+    fontSize: 10,
     color: colors.textMuted,
-    marginTop: 2,
+    marginTop: 6,
   },
-  rankCount: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-  },
+  legendList: { width: '100%' },
+  legendRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  legendDot: { width: 10, height: 10, borderRadius: 5, marginRight: 10 },
+  legendLabel: { flex: 1, fontSize: typography.fontSize.xs, color: colors.textPrimary },
+  legendPct: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
 });
+
 export default SalesAnalyticsScreen;

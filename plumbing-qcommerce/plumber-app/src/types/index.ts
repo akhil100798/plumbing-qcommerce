@@ -56,6 +56,7 @@ export interface MaterialItem {
   price: number;
   quantity: number;
   image?: string;
+  availableQuantity?: number;
 }
 
 export interface MaterialRequest {
@@ -89,4 +90,12 @@ export interface Transaction {
   description: string;
   createdAt: string;
   referenceId?: string;
+}
+
+export interface Store {
+  id: number;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
 }

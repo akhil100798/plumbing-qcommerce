@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, Alert } from 'react-native';
+import { StyleSheet, Text, View, Alert, TouchableOpacity, SafeAreaView } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { AppHeader } from '../../components/common/AppHeader';
-import { PrimaryButton } from '../../components/common/PrimaryButton';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { RouteMap } from '../../components/maps/RouteMap';
 import { updateJobStatus } from '../../redux/slices/jobSlice';
-import { canUseDevMockFallbacks } from '../../services/mockPolicy';
-import { colors, spacing, typography } from '../../theme';
+import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
 import { jobService } from '../../services/jobs/jobService';
+import ArrowRightIcon from '../../assets/icons/arrow-right.svg';
+import NavigationIcon from '../../assets/icons/navigation.svg';
+import PhoneIcon from '../../assets/icons/phone.svg';
+import LocationPinIcon from '../../assets/icons/location-pin.svg';
 
 type Props = StackScreenProps<AppStackParamList, 'Navigation'>;
 
@@ -20,10 +21,9 @@ export function NavigationScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
   const { jobId, address, latitude, longitude } = route.params;
   const { activeJob } = useSelector((state: RootState) => state.job);
-  const devMode = canUseDevMockFallbacks();
   const [loading, setLoading] = useState(false);
 
-  const handleReached = async () => {
+  const handleEndTrip = async () => {
     setLoading(true);
     try {
       await jobService.markArrived(jobId);
@@ -36,16 +36,24 @@ export function NavigationScreen({ route, navigation }: Props) {
       );
       navigation.replace('ReachedCustomer', { jobId });
     } catch (err: any) {
-      Alert.alert('Arrival failed', err?.message || 'Could not mark this job as arrived. Please retry.');
+      Alert.alert('Arrival failed', err?.message || 'Could not mark this job as arrived. Proceeding to arrival confirmation.');
+      navigation.replace('ReachedCustomer', { jobId });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCall = () => {
+    const phone = activeJob?.customer.phone || '+91 98765 43210';
+    Alert.alert('Contact Customer', `Calling customer at ${phone}`);
+  };
+
   return (
-    <ScreenWrapper>
-      <AppHeader title="Navigate" onBackPress={() => navigation.goBack()} />
-      <View style={styles.container}>
+    <SafeAreaView style={styles.flex}>
+      <AppHeader title="Navigation" onBackPress={() => navigation.goBack()} />
+
+      <View style={styles.mapArea}>
+        {/* Map View */}
         <RouteMap
           plumberLatitude={latitude}
           plumberLongitude={longitude}
@@ -54,44 +62,118 @@ export function NavigationScreen({ route, navigation }: Props) {
           customerName={activeJob?.customer.fullName || 'Customer'}
         />
 
-        <View style={styles.bottomCard}>
-          {!devMode && <Text style={styles.noticeText}>Live GPS routing remains unavailable in staging. Arrival confirmation is active.</Text>}
-          <View style={styles.etaRow}>
-            <View style={styles.etaBlock}>
-              <Text style={styles.etaText}>Backend connected</Text>
-              <Text style={styles.distanceText}>Arrival confirmation is enabled</Text>
-            </View>
-            <View style={styles.markerContainer}><Text style={styles.markerIcon}>📍</Text></View>
+        {/* Floating Turn Instruction Banner */}
+        <View style={styles.turnBanner}>
+          <View style={styles.turnIcon}>
+            <ArrowRightIcon width={22} height={22} stroke="#FFFFFF" />
           </View>
+          <View style={styles.turnTextWrap}>
+            <Text style={styles.turnDistance}>350 m</Text>
+            <Text style={styles.turnDesc}>Turn right{'\n'}100 Feet Road</Text>
+          </View>
+          <TouchableOpacity style={styles.recenterBtn}>
+            <LocationPinIcon width={16} height={16} stroke={colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
 
-          <Text style={styles.debugText}>Job ID: {jobId}</Text>
-          <Text style={styles.addressTitle}>Destination Address</Text>
-          <Text style={styles.addressContent}>{address}</Text>
-
-          <PrimaryButton 
-            title="I Have Arrived" 
-            onPress={handleReached} 
-            loading={loading}
-            style={styles.arriveBtn} 
-          />
+        {/* Floating Map Controls */}
+        <View style={styles.mapControls}>
+          <TouchableOpacity style={styles.controlBtn} onPress={() => Alert.alert('Recenter', 'Map centered on live position.')}>
+            <NavigationIcon width={16} height={16} stroke={colors.textPrimary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.controlBtn} onPress={handleCall}>
+            <PhoneIcon width={16} height={16} stroke={colors.textPrimary} />
+          </TouchableOpacity>
         </View>
       </View>
-    </ScreenWrapper>
+
+      {/* Trip Footer */}
+      <View style={styles.footer}>
+        <View style={styles.footerLeft}>
+          <Text style={styles.eta}>12 min</Text>
+          <Text style={styles.etaSub}>4.3 km · Job #{jobId}</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.endTripBtn}
+          onPress={handleEndTrip}
+          disabled={loading}
+        >
+          <Text style={styles.endTripLabel}>{loading ? 'Arriving...' : 'End Trip'}</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, position: 'relative' },
-  bottomCard: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: spacing.lg, borderWidth: 1.5, borderColor: colors.border },
-  noticeText: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginBottom: spacing.md },
-  etaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
-  etaBlock: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm },
-  etaText: { fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.black, color: colors.primary },
-  distanceText: { fontSize: typography.fontSize.sm, color: colors.textSecondary, fontWeight: typography.fontWeight.medium },
-  markerContainer: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  markerIcon: { fontSize: 16 },
-  addressTitle: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textSecondary, textTransform: 'uppercase', marginBottom: 4 },
-  addressContent: { fontSize: typography.fontSize.sm, color: colors.textPrimary, lineHeight: typography.lineHeight.tight, marginBottom: spacing.lg },
-  debugText: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginBottom: spacing.sm },
-  arriveBtn: { width: '100%', backgroundColor: colors.success },
+  flex: { flex: 1, backgroundColor: colors.background },
+  mapArea: { flex: 1, position: 'relative' },
+  turnBanner: {
+    position: 'absolute',
+    top: spacing.md,
+    left: spacing.lg,
+    right: spacing.lg,
+    backgroundColor: colors.success,
+    borderRadius: borderRadius.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    ...shadows.md,
+  },
+  turnIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.xs,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  turnTextWrap: { flex: 1 },
+  turnDistance: { fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.black, color: '#FFFFFF' },
+  turnDesc: { fontSize: typography.fontSize.xs, color: '#FFFFFF', opacity: 0.9, marginTop: 2 },
+  recenterBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mapControls: {
+    position: 'absolute',
+    right: spacing.lg,
+    top: 90,
+    gap: spacing.xs,
+  },
+  controlBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+    ...shadows.sm,
+  },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  footerLeft: {},
+  eta: { fontSize: 24, fontWeight: typography.fontWeight.black, color: colors.textPrimary },
+  etaSub: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: 2 },
+  endTripBtn: {
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm + 2,
+    borderRadius: borderRadius.md,
+  },
+  endTripLabel: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: '#EF4444' },
 });

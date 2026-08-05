@@ -7,7 +7,7 @@ interface CartState {
 
 const initialState: CartState = {
   items: {},
-  storeId: 1, // Default storeId
+  storeId: null,
 };
 
 const cartSlice = createSlice({

@@ -60,7 +60,7 @@ export interface Order {
   storeId: number;
   storeName: string;
   totalAmount: number;
-  status: 'PENDING' | 'CONFIRMED' | 'PACKING' | 'PACKED' | 'READY_FOR_PICKUP' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
+  status: 'PENDING' | 'CONFIRMED' | 'PACKING' | 'PACKED' | 'READY_FOR_PICKUP' | 'COLLECTED' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
   deliveryPartnerName?: string | null;
   deliveryPartnerPhone?: string | null;
   deliveryOtp?: string | null;
@@ -91,8 +91,10 @@ export interface MaterialRequest {
   plumberName: string;
   items: OrderItem[];
   totalAmount: number;
-  status: 'PENDING' | 'PREPARING' | 'READY' | 'COMPLETED';
+  status: 'PENDING' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
   createdAt: string;
+  rawStatus?: string;
+  plumberCollectedAt?: string | null;
 }
 
 export interface Transaction {

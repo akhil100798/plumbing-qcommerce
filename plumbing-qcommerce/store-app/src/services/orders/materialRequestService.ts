@@ -1,27 +1,21 @@
 import { apiClient } from '../api/axiosClient';
 import { ENDPOINTS } from '../api/endpoints';
 import { MaterialRequest } from '../../types';
-import { mockMaterialRequests } from '../../mocks';
-import {
-  canUseDevMockFallbacks,
-  createBackendUnavailableError,
-  createUnsupportedBackendError,
-  warnUsingDevMockFallback,
-} from '../mockPolicy';
-import { storeService } from '../store/storeService';
+import { createBackendUnavailableError } from '../mockPolicy';
 
-let localMaterialRequests = [...mockMaterialRequests];
+let localMaterialRequests: MaterialRequest[] = [];
 
 const mapBackendStatus = (status: string): MaterialRequest['status'] => {
   switch (status) {
-    case 'CONFIRMED':
+    case 'REQUESTED':
+    case 'STORE_REVIEWING':
       return 'PENDING';
-    case 'PACKING':
+    case 'RESERVED':
+    case 'PREPARING':
       return 'PREPARING';
     case 'READY_FOR_PICKUP':
       return 'READY';
-    case 'OUT_FOR_DELIVERY':
-    case 'DELIVERED':
+    case 'COLLECTED':
       return 'COMPLETED';
     default:
       return 'PENDING';
@@ -32,17 +26,19 @@ const mapRequest = (request: any): MaterialRequest => ({
   id: request.id,
   serviceOrderId: Number(request.serviceOrderId || 0),
   storeId: Number(request.storeId || 0),
-  plumberId: 0,
-  plumberName: request.assignedPlumberName || 'Assigned plumber',
+  plumberId: Number(request.plumberId || 0),
+  plumberName: request.plumberName || request.assignedPlumberName || 'Assigned plumber',
   items: (request.items || []).map((item: any) => ({
     productId: item.productId,
     productName: item.productName || 'Item',
-    quantity: item.quantity,
-    price: Number(item.price || 0),
+    quantity: item.quantity || item.requestedQuantity || 0,
+    price: Number(item.price || item.unitPrice || 0),
   })),
   totalAmount: Number(request.totalAmount || 0),
   status: mapBackendStatus(request.status),
   createdAt: request.createdAt || new Date().toISOString(),
+  rawStatus: request.status,
+  plumberCollectedAt: request.plumberCollectedAt,
 });
 
 const updateLocalRequest = (updated: MaterialRequest) => {
@@ -60,53 +56,55 @@ export const materialRequestService = {
       localMaterialRequests = mapped;
       return mapped;
     } catch (e) {
-      if (canUseDevMockFallbacks()) {
-        warnUsingDevMockFallback('Store material request list', e);
-        return localMaterialRequests;
-      }
       throw createBackendUnavailableError('Store material requests', e);
+    }
+  },
+
+  getById: async (requestId: number): Promise<MaterialRequest> => {
+    try {
+      const response = await apiClient.get(ENDPOINTS.materialRequests.details(requestId));
+      const mapped = mapRequest(response.data);
+      const idx = localMaterialRequests.findIndex(r => r.id === mapped.id);
+      if (idx !== -1) localMaterialRequests[idx] = mapped;
+      else localMaterialRequests.push(mapped);
+      return mapped;
+    } catch (e) {
+      throw createBackendUnavailableError(`Material request #${requestId}`, e);
     }
   },
 
   prepareOrder: async (requestId: number): Promise<MaterialRequest> => {
     try {
-      const storeProfile = await storeService.getCurrentStoreProfile();
-      const response = await apiClient.patch(ENDPOINTS.orders.accept(requestId), { storeId: storeProfile.id });
+      await apiClient.post(ENDPOINTS.materialRequests.approve(requestId));
+      await apiClient.post(ENDPOINTS.materialRequests.reserve(requestId));
+      const response = await apiClient.post(ENDPOINTS.materialRequests.prepare(requestId));
       const mapped = mapRequest(response.data);
       updateLocalRequest(mapped);
       return mapped;
     } catch (e) {
-      if (canUseDevMockFallbacks()) {
-        warnUsingDevMockFallback('Store material request prepare', new Error(String(requestId)));
-        const idx = localMaterialRequests.findIndex((request) => request.id === requestId);
-        if (idx !== -1) {
-          localMaterialRequests[idx] = { ...localMaterialRequests[idx], status: 'PREPARING' };
-          return localMaterialRequests[idx];
-        }
-        throw new Error('Request not found');
-      }
       throw createBackendUnavailableError('Store material request preparation', e);
     }
   },
 
   completePreparation: async (requestId: number): Promise<MaterialRequest> => {
     try {
-      const storeProfile = await storeService.getCurrentStoreProfile();
-      const response = await apiClient.patch(ENDPOINTS.orders.pack(requestId), { storeId: storeProfile.id });
+      const response = await apiClient.post(ENDPOINTS.materialRequests.ready(requestId));
       const mapped = mapRequest(response.data);
       updateLocalRequest(mapped);
       return mapped;
     } catch (e) {
-      if (canUseDevMockFallbacks()) {
-        warnUsingDevMockFallback('Store material request complete preparation', new Error(String(requestId)));
-        const idx = localMaterialRequests.findIndex((request) => request.id === requestId);
-        if (idx !== -1) {
-          localMaterialRequests[idx] = { ...localMaterialRequests[idx], status: 'READY' };
-          return localMaterialRequests[idx];
-        }
-        throw new Error('Request not found');
-      }
-      throw createUnsupportedBackendError('Store material request pack transition');
+      throw createBackendUnavailableError('Store material request pickup readiness', e);
+    }
+  },
+
+  confirmCollection: async (requestId: number): Promise<MaterialRequest> => {
+    try {
+      const response = await apiClient.post(ENDPOINTS.materialRequests.confirmCollection(requestId));
+      const mapped = mapRequest(response.data);
+      updateLocalRequest(mapped);
+      return mapped;
+    } catch (e) {
+      throw createBackendUnavailableError('Store material request collection confirmation', e);
     }
   }
 };

@@ -25,73 +25,67 @@ type Props = StackScreenProps<AppStackParamList, 'MaterialRequest'>;
 
 export function MaterialRequestScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
-  const routeJobId = route.params?.jobId;
+  const { jobId, storeId, storeName } = route.params;
   const { loading } = useSelector((state: RootState) => state.material);
-  const activeJob = useSelector((state: RootState) => state.job.activeJob);
 
   const [query, setQuery] = useState('');
-  const [catalog, setCatalog] = useState<MaterialItem[]>([]);
+  const [inventory, setInventory] = useState<MaterialItem[]>([]);
   const [draft, setDraft] = useState<{ [productId: number]: number }>({});
 
-  const resolvedJobId = routeJobId || activeJob?.jobId || null;
-
+  // Load store inventory on mount — real backend call, no hardcoded IDs
   useEffect(() => {
-    const fetchCatalog = async () => {
-      const results = await materialService.searchMaterials(query);
-      setCatalog(results);
-    };
-    fetchCatalog();
-  }, [query]);
+    (async () => {
+      try {
+        const items = await materialService.getStoreInventory(storeId);
+        setInventory(items);
+      } catch {
+        Alert.alert('Error', 'Failed to load store inventory. Go back and try again.');
+      }
+    })();
+  }, [storeId]);
+
+  const filtered = query.trim()
+    ? inventory.filter(i => i.name.toLowerCase().includes(query.toLowerCase()))
+    : inventory;
 
   const handleIncrement = (productId: number) => {
-    setDraft((prev) => ({
-      ...prev,
-      [productId]: (prev[productId] || 0) + 1,
-    }));
+    setDraft(prev => ({ ...prev, [productId]: (prev[productId] || 0) + 1 }));
   };
 
   const handleDecrement = (productId: number) => {
-    setDraft((prev) => {
+    setDraft(prev => {
       const current = prev[productId] || 0;
       if (current <= 1) {
         const next = { ...prev };
         delete next[productId];
         return next;
       }
-      return {
-        ...prev,
-        [productId]: current - 1,
-      };
+      return { ...prev, [productId]: current - 1 };
     });
   };
 
-  const selectedItems = catalog.filter((item) => draft[item.productId] > 0);
+  const selectedItems = inventory.filter(item => draft[item.productId] > 0);
   const totalCount = Object.values(draft).reduce((acc, qty) => acc + qty, 0);
   const totalAmount = selectedItems.reduce(
     (acc, item) => acc + item.price * draft[item.productId],
     0
   );
 
-  const handleSendToCustomer = async () => {
-    if (!resolvedJobId) {
-      Alert.alert('No active job', 'Open an active job first so materials are linked to the correct service order.');
-      return;
-    }
-
-    const itemsPayload = selectedItems.map((item) => ({
+  const handleSubmit = async () => {
+    const itemsPayload = selectedItems.map(item => ({
       productId: item.productId,
       quantity: draft[item.productId],
     }));
 
     if (itemsPayload.length === 0) {
-      Alert.alert('No items', 'Please select at least one material to request.');
+      Alert.alert('No items selected', 'Please select at least one material to request.');
       return;
     }
 
     dispatch(setMaterialLoading(true));
     try {
-      const response = await materialService.createMaterialRequest(resolvedJobId, itemsPayload);
-      const itemsWithQty = selectedItems.map((item) => ({
+      const response = await materialService.createMaterialRequest(jobId, storeId, itemsPayload);
+      const itemsWithQty = selectedItems.map(item => ({
         ...item,
         quantity: draft[item.productId],
       }));
@@ -106,16 +100,15 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
 
       Alert.alert(
         'Request Sent!',
-        'Material request raised. Waiting for customer approval.',
+        `Material request raised with ${storeName}. Waiting for store approval.`,
         [
           {
-            text: 'OK',
-            onPress: () => {
+            text: 'Track Status',
+            onPress: () =>
               navigation.replace('MaterialApprovalStatus', {
-                jobId: resolvedJobId,
+                jobId,
                 productOrderId: response.id,
-              });
-            },
+              }),
           },
         ]
       );
@@ -127,55 +120,58 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
 
   return (
     <ScreenWrapper>
-      <AppHeader title="Request Material" onBackPress={() => navigation.goBack()} />
-      
+      <AppHeader
+        title="Select Materials"
+        subtitle={`From: ${storeName}`}
+        onBackPress={() => navigation.goBack()}
+      />
+
       <View style={styles.container}>
-        <Text style={styles.debugText}>Job ID: {resolvedJobId ?? 'Unavailable'}</Text>
-        {!resolvedJobId && (
-          <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>No active service order selected</Text>
-            <Text style={styles.infoText}>
-              Return to the active job screen and open materials from that job so the request uses the real backend service order ID.
+        <SearchInput value={query} onChangeText={setQuery} placeholder="Search inventory…" />
+
+        {filtered.length === 0 && !query ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyTitle}>No inventory available</Text>
+            <Text style={styles.emptyText}>
+              This store currently has no items in stock. Go back and select a different store.
             </Text>
           </View>
+        ) : (
+          <FlatList
+            data={filtered}
+            keyExtractor={item => String(item.productId)}
+            renderItem={({ item }) => (
+              <MaterialCard
+                name={item.name}
+                price={item.price}
+                quantity={draft[item.productId] || 0}
+                onIncrement={() => handleIncrement(item.productId)}
+                onDecrement={() => handleDecrement(item.productId)}
+              />
+            )}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          />
         )}
-
-        <SearchInput value={query} onChangeText={setQuery} />
-
-        <FlatList
-          data={catalog}
-          keyExtractor={(item) => String(item.productId)}
-          renderItem={({ item }) => (
-            <MaterialCard
-              name={item.name}
-              price={item.price}
-              quantity={draft[item.productId] || 0}
-              onIncrement={() => handleIncrement(item.productId)}
-              onDecrement={() => handleDecrement(item.productId)}
-            />
-          )}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
 
         <View style={styles.footer}>
           <View style={styles.totalsRow}>
             <View>
-              <Text style={styles.totalsLabel}>Total items</Text>
+              <Text style={styles.totalsLabel}>Items selected</Text>
               <Text style={styles.totalsValue}>{totalCount}</Text>
             </View>
             <View style={styles.alignRight}>
               <Text style={styles.totalsLabel}>Total Amount</Text>
-              <Text style={styles.totalPrice}>Rs {totalAmount}</Text>
+              <Text style={styles.totalPrice}>₹{totalAmount.toFixed(2)}</Text>
             </View>
           </View>
 
           <PrimaryButton
-            title="Send to Customer"
-            onPress={handleSendToCustomer}
+            title="Submit Request"
+            onPress={handleSubmit}
             loading={loading}
             style={styles.actionBtn}
-            disabled={!resolvedJobId}
+            disabled={totalCount === 0}
           />
         </View>
       </View>
@@ -189,26 +185,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.layout,
     backgroundColor: colors.background,
   },
-  debugText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-  },
-  infoCard: {
+  emptyCard: {
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
     padding: spacing.md,
-    marginBottom: spacing.md,
+    marginTop: spacing.md,
   },
-  infoTitle: {
+  emptyTitle: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
-  infoText: {
+  emptyText: {
     fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
     lineHeight: 18,
@@ -246,16 +237,12 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginTop: 2,
   },
-  alignRight: {
-    alignItems: 'flex-end',
-  },
+  alignRight: { alignItems: 'flex-end' },
   totalPrice: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.black,
     color: colors.primary,
     marginTop: 2,
   },
-  actionBtn: {
-    width: '100%',
-  },
+  actionBtn: { width: '100%' },
 });

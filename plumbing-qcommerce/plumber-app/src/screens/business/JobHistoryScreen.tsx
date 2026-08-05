@@ -1,162 +1,164 @@
-import React, { useState } from 'react';
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, FlatList } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 
 import { AppHeader } from '../../components/common/AppHeader';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { JobHistoryCard } from '../../components/cards/JobHistoryCard';
-import { colors, spacing, typography, borderRadius } from '../../theme';
+import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
+import ActiveJobIcon from '../../assets/icons/active-job.svg';
 
 type Props = StackScreenProps<AppStackParamList, 'JobHistory' | any>;
 
-interface HistoryJobItem {
-  jobId: string;
-  customerName: string;
-  dateTime: string;
-  status: 'Completed' | 'Cancelled';
-  rating?: number;
-  amount: number;
-}
+const FILTERS = ['All', 'Completed', 'Cancelled'] as const;
 
-const HISTORICAL_JOBS: HistoryJobItem[] = [
+const JOBS = [
   {
-    jobId: 'PC123456',
-    customerName: 'Akhil Verma',
-    dateTime: 'Today, 11:30 AM',
+    id: '#JKA2315',
+    title: 'Bathroom Pipe Leakage',
+    amount: 450,
     status: 'Completed',
-    rating: 5.0,
-    amount: 554,
+    time: 'Today, 12:30 PM',
   },
   {
-    jobId: 'PC123455',
-    customerName: 'Mahesh Reddy',
-    dateTime: 'Today, 09:20 AM',
+    id: '#JKA2110',
+    title: 'Tap Installation',
+    amount: 300,
     status: 'Completed',
-    rating: 4.8,
-    amount: 299,
+    time: 'Yesterday',
   },
   {
-    jobId: 'PC123454',
-    customerName: 'Sneha Patel',
-    dateTime: 'Yesterday, 05:30 PM',
+    id: '#JKA3006',
+    title: 'Drain Cleaning',
+    amount: 350,
     status: 'Completed',
-    rating: 5.0,
-    amount: 349,
+    time: '2 days ago',
   },
   {
-    jobId: 'PC123453',
-    customerName: 'Ramesh Kumar',
-    dateTime: 'Yesterday, 04:10 PM',
+    id: '#JKA0681',
+    title: 'Water Tank Repair',
+    amount: 900,
     status: 'Cancelled',
-    amount: 199,
+    time: '3 days ago',
   },
 ];
 
-type FilterType = 'Completed' | 'Cancelled' | 'All';
-
-export function JobHistoryScreen({ navigation }: Props) {
-  const [filter, setFilter] = useState<FilterType>('Completed');
-
-  const filteredJobs = HISTORICAL_JOBS.filter((job) => {
-    if (filter === 'All') return true;
-    return job.status === filter;
-  });
-
+function StatusBadge({ status }: { status: string }) {
+  const isCompleted = status === 'Completed';
   return (
-    <ScreenWrapper>
-      <AppHeader title="Job History" onBackPress={() => navigation.goBack()} />
-      
-      <View style={styles.container}>
-        {/* Toggle Filters */}
-        <View style={styles.filterRow}>
-          {(['Completed', 'Cancelled', 'All'] as const).map((type) => (
-            <TouchableOpacity
-              key={type}
-              style={[styles.filterTab, filter === type && styles.filterTabActive]}
-              onPress={() => setFilter(type)}
-            >
-              <Text style={[styles.filterText, filter === type && styles.filterTextActive]}>
-                {type}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+    <Text style={[styles.badge, { color: isCompleted ? colors.success : colors.error }]}>{status}</Text>
+  );
+}
 
-        <FlatList
-          data={filteredJobs}
-          keyExtractor={(item) => item.jobId}
-          renderItem={({ item }) => (
-            <JobHistoryCard
-              jobId={item.jobId}
-              customerName={item.customerName}
-              dateTime={item.dateTime}
-              status={item.status}
-              rating={item.rating}
-              amount={item.amount}
-            />
-          )}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No historical jobs found.</Text>
-            </View>
-          }
+function JobRow({ job }: { job: (typeof JOBS)[0] }) {
+  const isCancelled = job.status === 'Cancelled';
+  return (
+    <TouchableOpacity style={styles.row} activeOpacity={0.6}>
+      <View style={[styles.iconCircle, isCancelled && { backgroundColor: '#FEE2E2' }]}>
+        <ActiveJobIcon
+          width={16}
+          height={16}
+          stroke={isCancelled ? colors.error : colors.primary}
         />
       </View>
-    </ScreenWrapper>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.jobId}>{job.id}</Text>
+        <Text style={styles.jobTitle}>{job.title}</Text>
+        <Text style={styles.jobAmount}>₹{job.amount}</Text>
+      </View>
+      <View style={{ alignItems: 'flex-end' }}>
+        <StatusBadge status={job.status} />
+        <Text style={styles.jobTime}>{job.time}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+export function JobHistoryScreen({ navigation }: Props) {
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All');
+
+  const filteredJobs = useMemo(
+    () => (filter === 'All' ? JOBS : JOBS.filter((j) => j.status === filter)),
+    [filter]
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <AppHeader title="Job History" onBackPress={() => navigation?.goBack()} />
+
+      <View style={styles.tabRow}>
+        {FILTERS.map((f) => {
+          const active = f === filter;
+          return (
+            <TouchableOpacity
+              key={f}
+              style={[styles.tab, active && styles.tabActive]}
+              onPress={() => setFilter(f)}
+            >
+              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{f}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      <FlatList
+        data={filteredJobs}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <JobRow job={item} />}
+        contentContainerStyle={styles.list}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListEmptyComponent={<Text style={styles.empty}>No jobs in this category yet.</Text>}
+        showsVerticalScrollIndicator={false}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: spacing.layout,
-    paddingTop: spacing.md,
-    backgroundColor: colors.background,
-  },
-  filterRow: {
+  container: { flex: 1, backgroundColor: colors.background },
+  tabRow: {
     flexDirection: 'row',
+    marginHorizontal: spacing.md,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     padding: 4,
-    marginBottom: spacing.lg,
+    marginTop: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  filterTab: {
+  tab: {
     flex: 1,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
+    paddingVertical: 8,
     borderRadius: borderRadius.sm,
-  },
-  filterTabActive: {
-    backgroundColor: colors.primary,
-  },
-  filterText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
-  },
-  filterTextActive: {
-    color: colors.surface,
-  },
-  listContent: {
-    paddingBottom: spacing.xl,
-  },
-  emptyContainer: {
     alignItems: 'center',
-    paddingVertical: spacing.giant,
   },
-  emptyText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textMuted,
+  tabActive: { backgroundColor: colors.primary },
+  tabLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary, fontWeight: typography.fontWeight.medium },
+  tabLabelActive: { color: '#FFFFFF', fontWeight: typography.fontWeight.bold },
+  list: { padding: spacing.md, paddingBottom: spacing.xl },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sm,
   },
+  iconCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#DBEAFE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+  },
+  jobId: { fontSize: typography.fontSize.xs, color: colors.textMuted },
+  jobTitle: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, marginTop: 2 },
+  jobAmount: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: 2 },
+  jobTime: { fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: 4 },
+  badge: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold },
+  separator: { height: spacing.sm },
+  empty: { fontSize: typography.fontSize.sm, color: colors.textMuted, textAlign: 'center', marginTop: spacing.xl },
 });

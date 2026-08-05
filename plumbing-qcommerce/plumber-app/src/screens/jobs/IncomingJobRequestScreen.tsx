@@ -3,36 +3,34 @@ import {
   Alert,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch } from 'react-redux';
 
-import { AppHeader } from '../../components/common/AppHeader';
-import { PrimaryButton } from '../../components/common/PrimaryButton';
-import { SecondaryButton } from '../../components/common/SecondaryButton';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { JobRequestCard } from '../../components/cards/JobRequestCard';
-import { CustomerCard } from '../../components/cards/CustomerCard';
 import { jobService } from '../../services/jobs/jobService';
 import { setActiveJob, removeIncomingJob } from '../../redux/slices/jobSlice';
-import { colors, spacing, typography } from '../../theme';
+import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
+import MapPinIcon from '../../assets/icons/location-pin.svg';
+import StarIcon from '../../assets/icons/star.svg';
+import WrenchIcon from '../../assets/icons/active-job.svg';
 
 type Props = StackScreenProps<AppStackParamList, 'IncomingJobRequest'>;
 
 export function IncomingJobRequestScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
   const { jobId, customerId, distance } = route.params;
-  const [timer, setTimer] = useState(60);
+  const [seconds, setSeconds] = useState(21);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setTimer((prev) => {
+      setSeconds((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          // Auto decline and exit
           handleDecline();
           return 0;
         }
@@ -54,11 +52,7 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
       const activeJobDetails = await jobService.acceptJob(jobId);
       dispatch(setActiveJob(activeJobDetails));
       setLoading(false);
-      
-      // Clean up offer
       dispatch(removeIncomingJob(jobId));
-      
-      // Navigate to Active Job
       navigation.replace('ActiveJob', { jobId });
     } catch (error: any) {
       setLoading(false);
@@ -67,46 +61,83 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
   };
 
   return (
-    <ScreenWrapper>
-      <AppHeader title="New Job Request" onBackPress={handleDecline} />
-      
-      <View style={styles.content}>
-        <View style={styles.cardWrapper}>
-          <Text style={styles.debugText}>Job ID: {jobId}</Text>
-          <JobRequestCard
-            issueDescription="Pipe Leakage in Bathroom"
-            category="Bathroom"
-            address="H.No 12-5-45, Street 3, Miyapur, Hyderabad - 500049"
-            distance={distance}
-            earnings={299}
-            timeRemaining={timer}
-          />
+    <ScreenWrapper safeAreaStyle={{ backgroundColor: '#0F172A' }}>
+      <View style={styles.container}>
+        {/* Top Status Row */}
+        <View style={styles.topRow}>
+          <Text style={styles.onlineDot}>●</Text>
+          <View style={styles.onlineBadge}>
+            <Text style={styles.onlineText}>Online</Text>
+          </View>
         </View>
 
-        <Text style={styles.sectionLabel}>Customer Information</Text>
-        <View style={styles.customerCardContainer}>
-          <CustomerCard
-            name="Akhil Verma"
-            rating={4.8}
-            showActions={false}
-          />
-        </View>
+        {/* Center Modal Card */}
+        <View style={styles.cardContainer}>
+          <View style={styles.card}>
+            <Text style={styles.title}>New Job Request!</Text>
 
-        <View style={styles.spacer} />
+            <View style={styles.serviceRow}>
+              <View style={styles.iconBg}>
+                <WrenchIcon width={20} height={20} stroke={colors.primary} />
+              </View>
+              <View style={styles.serviceInfo}>
+                <View style={styles.idRow}>
+                  <Text style={styles.jobId}>#{jobId}</Text>
+                  <MapPinIcon width={14} height={14} stroke={colors.textMuted} />
+                </View>
+                <Text style={styles.serviceName}>Water Heater Installation</Text>
+              </View>
+            </View>
 
-        <View style={styles.actionRow}>
-          <SecondaryButton
-            title="Decline"
-            onPress={handleDecline}
-            style={styles.declineBtn}
-            textColor={colors.error}
-          />
-          <PrimaryButton
-            title="Accept Job"
-            onPress={handleAccept}
-            loading={loading}
-            style={styles.acceptBtn}
-          />
+            <View style={styles.locationBlock}>
+              <Text style={styles.distanceText}>📍 {distance || 4.2} km away</Text>
+              <Text style={styles.addressText}>
+                22, Green Park, Indiranagar, Bengaluru, 560038
+              </Text>
+            </View>
+
+            <View style={styles.detailsGrid}>
+              <View>
+                <Text style={styles.priceText}>₹650</Text>
+                <Text style={styles.subText}>Estimated</Text>
+              </View>
+
+              <View style={styles.ratingBox}>
+                <View style={styles.ratingRow}>
+                  <Text style={styles.ratingVal}>4.7</Text>
+                  <StarIcon width={14} height={14} fill="#F59E0B" stroke="#F59E0B" />
+                </View>
+                <Text style={styles.subText}>Customer Rating</Text>
+              </View>
+
+              {/* Countdown Timer Badge */}
+              <View style={styles.timerCircle}>
+                <Text style={styles.timerNumber}>{seconds}</Text>
+                <Text style={styles.secLabel}>sec</Text>
+              </View>
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                style={styles.rejectBtn}
+                onPress={handleDecline}
+                disabled={loading}
+              >
+                <Text style={styles.rejectBtnText}>Reject</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.acceptBtn}
+                onPress={handleAccept}
+                disabled={loading}
+              >
+                <Text style={styles.acceptBtnText}>
+                  {loading ? 'Accepting...' : 'Accept'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </View>
     </ScreenWrapper>
@@ -114,46 +145,172 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  content: {
+  container: {
     flex: 1,
+    backgroundColor: '#0F172A',
     padding: spacing.layout,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.lg,
+  },
+  onlineDot: {
+    color: '#10B981',
+    fontSize: 18,
+  },
+  onlineBadge: {
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.xs,
+  },
+  onlineText: {
+    color: '#059669',
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+  },
+  cardContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    ...shadows.lg,
+  },
+  title: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.black,
+    color: colors.textPrimary,
+    marginBottom: spacing.md,
+  },
+  serviceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  iconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.xs,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  serviceInfo: {
+    flex: 1,
+  },
+  idRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  jobId: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textMuted,
+  },
+  serviceName: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    marginTop: 2,
+  },
+  locationBlock: {
     backgroundColor: colors.background,
+    padding: spacing.md,
+    borderRadius: borderRadius.xs,
+    marginBottom: spacing.md,
   },
-  cardWrapper: {
-    marginBottom: spacing.xl,
+  distanceText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
   },
-  debugText: {
+  addressText: {
     fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
-    marginBottom: spacing.sm,
+    marginTop: 4,
+    lineHeight: typography.lineHeight.tight,
   },
-  sectionLabel: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-    textTransform: 'uppercase',
-  },
-  customerCardContainer: {
+  detailsGrid: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: spacing.xl,
   },
-  spacer: {
-    flex: 1,
+  priceText: {
+    fontSize: 22,
+    fontWeight: typography.fontWeight.black,
+    color: '#059669',
+  },
+  subText: {
+    fontSize: 10,
+    color: colors.textMuted,
+  },
+  ratingBox: {
+    alignItems: 'center',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ratingVal: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  timerCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 3,
+    borderColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  timerNumber: {
+    fontSize: 14,
+    fontWeight: typography.fontWeight.black,
+    color: colors.textPrimary,
+  },
+  secLabel: {
+    fontSize: 8,
+    color: colors.textMuted,
   },
   actionRow: {
     flexDirection: 'row',
     gap: spacing.md,
-    marginTop: 'auto',
   },
-  declineBtn: {
+  rejectBtn: {
     flex: 1,
-    borderColor: colors.error,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
   },
-  declineText: {
-    color: colors.error,
+  rejectBtnText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textSecondary,
   },
   acceptBtn: {
-    flex: 2,
-    backgroundColor: colors.success,
+    flex: 1,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    ...shadows.md,
+  },
+  acceptBtnText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.surface,
   },
 });

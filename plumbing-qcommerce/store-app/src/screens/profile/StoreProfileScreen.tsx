@@ -78,7 +78,7 @@ export const StoreProfileScreen = () => {
 
   return (
     <ScreenWrapper style={styles.container}>
-      <AppHeader title="Store Profile" onBackPress={() => navigation.goBack()} />
+      <AppHeader title="Store Profile" onBackPress={() => { if (navigation.canGoBack()) navigation.goBack(); else navigation.navigate('Main', { screen: 'AccountTab' }); }} />
 
       <ScrollView contentContainerStyle={styles.scroll}>
         {notice && <Text style={styles.noticeText}>{notice}</Text>}

@@ -30,7 +30,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(properties = {
         "spring.task.scheduling.enabled=false",
-        "app.scheduling.enabled=false"
+        "app.scheduling.enabled=false",
+        "features.delivery-enabled=true"
 })
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)

@@ -25,7 +25,7 @@ import { OrderRepository } from '../services/orders/orderRepository';
 import { PlumberRepository } from '../services/plumbers/plumberRepository';
 import { getConfiguredEdgeUrl } from '../services/mockPolicy';
 import { RootState } from '../redux/store';
-import { addToCart as addToCartAction, clearCart as clearCartAction } from '../redux/slices/cartSlice';
+import { addToCart as addToCartAction, clearCart as clearCartAction, setStoreId as setStoreIdAction } from '../redux/slices/cartSlice';
 import { loginStart, loginSuccess, loginFailure, logout } from '../redux/slices/authSlice';
 import { startSearching, stopSearching, setActiveJob, setBookingConfig } from '../redux/slices/plumbersSlice';
 import { setActiveProductOrder, updateProductOrderStatus } from '../redux/slices/ordersSlice';
@@ -127,10 +127,6 @@ const getCategoryIcon = (iconName: string) => {
   }
 };
 
-const nearbyStores = [
-  { id: 1, name: 'Sri Pipes', distance: '0.8 km', duration: '15-20 min' },
-  { id: 2, name: 'Sri Supply Co.', distance: '1.2 km', duration: '20-25 min' },
-];
 
 interface Product {
   id: number;
@@ -157,8 +153,10 @@ export function HomeScreen({ navigation }: any) {
   // Product Catalog State
   const [products, setProducts] = useState<Product[]>([]);
   const cart = useSelector((state: RootState) => state.cart.items);
+  const cartStoreId = useSelector((state: RootState) => state.cart.storeId);
   const token = useSelector((state: RootState) => state.auth.token);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [nearbyStores, setNearbyStores] = useState<{ id: number; name: string; address: string }[]>([]);
 
   // Delivery Tracking State from Redux
   const activeProductOrder = useSelector((state: RootState) => state.orders.activeProductOrder);
@@ -180,6 +178,13 @@ export function HomeScreen({ navigation }: any) {
         setProducts(data);
       })
       .catch(err => console.log('Failed to fetch products:', err));
+  }, []);
+
+  // Load nearby stores from backend
+  useEffect(() => {
+    StoreRepository.getAllStores()
+      .then(data => setNearbyStores(data.filter(s => s.active)))
+      .catch(err => console.log('Failed to fetch stores:', err));
   }, []);
 
   // WebSockets Setup
@@ -306,10 +311,15 @@ export function HomeScreen({ navigation }: any) {
       return;
     }
 
+    if (!cartStoreId) {
+      Alert.alert('No store selected', 'Please select a store and add items to your cart before checking out.');
+      return;
+    }
+
     setIsCheckingOut(true);
     try {
       const result = await CartRepository.reserveStock({
-        storeId: 1,
+        storeId: cartStoreId,
         items: items
       });
 
@@ -705,14 +715,15 @@ export function HomeScreen({ navigation }: any) {
                 key={store.id}
                 id={store.id}
                 name={store.name}
-                distance={store.distance}
-                duration={store.duration}
-                onPress={() =>
+                distance={''}
+                duration={''}
+                onPress={() => {
+                  dispatch(setStoreIdAction(store.id));
                   navigation.navigate('StoreDetails', {
                     storeId: store.id,
                     storeName: store.name,
-                  })
-                }
+                  });
+                }}
               />
             ))}
           </View>

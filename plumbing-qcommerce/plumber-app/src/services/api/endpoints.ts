@@ -17,8 +17,18 @@ export const ENDPOINTS = {
     PLUMBER_ASSIGNED: '/orders/plumber',
   },
   DELIVERY: {
-    MATERIAL_REQUEST: '/delivery/material-request',
-    STATUS: (id: string | number) => `/delivery/${id}/status`,
+    MATERIAL_REQUEST: (jobId: string | number) => `/service-orders/${jobId}/material-requests`,
+    SUBMIT: (id: string | number) => `/material-requests/${id}/submit`,
+    STATUS: (id: string | number) => `/plumber/material-requests/${id}`,
+    ARRIVED: (id: string | number) => `/plumber/material-requests/${id}/arrived-at-store`,
+    COLLECT: (id: string | number) => `/plumber/material-requests/${id}/collect`,
+    CANCEL: (id: string | number) => `/material-requests/${id}/cancel`,
+    HISTORY: (id: string | number) => `/material-requests/${id}/history`,
+  },
+  STORES: {
+    LIST: '/stores',
+    DETAILS: (id: string | number) => `/stores/${id}`,
+    INVENTORY: (id: string | number) => `/stores/${id}/inventory`,
   },
   WALLET: {
     GET_WALLET: '/wallet',
@@ -32,3 +42,4 @@ export const ENDPOINTS = {
     SEARCH: '/catalog/products', // Assume catalog search route
   },
 };
+export default ENDPOINTS;

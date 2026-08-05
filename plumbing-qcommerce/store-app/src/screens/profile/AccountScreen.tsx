@@ -42,6 +42,9 @@ export const AccountScreen = () => {
       case 'profile':
         navigation.navigate('StoreProfile');
         break;
+      case 'materials':
+        navigation.navigate('MaterialRequests');
+        break;
       case 'notifications':
         navigation.navigate('Notifications');
         break;
@@ -91,6 +94,7 @@ export const AccountScreen = () => {
 
         <View style={styles.menuCard}>
           <ProfileMenuItem icon={ProfileIcon} label="Profile Settings" onPress={() => handleItemPress('profile')} />
+          <ProfileMenuItem icon={WarehouseIcon} label="Material Requests" onPress={() => handleItemPress('materials')} />
           <ProfileMenuItem icon={NotificationIcon} label="Notification Settings" onPress={() => handleItemPress('notifications')} />
           <ProfileMenuItem icon={SettingsIcon} label="App Language" onPress={() => handleItemPress('language')} />
         </View>

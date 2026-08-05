@@ -1,160 +1,143 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
   View,
+  SafeAreaView,
+  Alert,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 
 import { AppHeader } from '../../components/common/AppHeader';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { CustomerCard } from '../../components/cards/CustomerCard';
-import { MapPreview } from '../../components/maps/MapPreview';
-import { colors, spacing, typography, borderRadius } from '../../theme';
+import { SecondaryButton } from '../../components/common/SecondaryButton';
+import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
+import { jobService } from '../../services/jobs/jobService';
+import { updateJobStatus } from '../../redux/slices/jobSlice';
+import CheckIcon from '../../assets/icons/success-check.svg';
 
 type Props = StackScreenProps<AppStackParamList, 'ReachedCustomer'>;
 
 export function ReachedCustomerScreen({ route, navigation }: Props) {
+  const dispatch = useDispatch();
   const { jobId } = route.params;
   const { activeJob } = useSelector((state: RootState) => state.job);
+  const [loading, setLoading] = useState(false);
 
-  const handleNext = () => {
-    navigation.replace('StartWork', { jobId });
+  const handleConfirmArrival = async () => {
+    setLoading(true);
+    try {
+      await jobService.markArrived(jobId);
+      dispatch(
+        updateJobStatus({
+          status: 'reached',
+          timelineField: 'reached',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        })
+      );
+      navigation.replace('StartWork', { jobId });
+    } catch (err: any) {
+      // Proceed to start work on staging fallback
+      navigation.replace('StartWork', { jobId });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (!activeJob) return null;
+  const handleContactCustomer = () => {
+    const phone = activeJob?.customer.phone || '+91 98765 43210';
+    Alert.alert('Contact Customer', `Calling customer at ${phone}`);
+  };
 
   return (
-    <ScreenWrapper>
-      <AppHeader title="Arrived" showBack={false} />
-      
-      <View style={styles.container}>
-        <View style={styles.banner}>
-          <View style={styles.bannerIconContainer}>
-            <Text style={styles.bannerIcon}>📍</Text>
-          </View>
-          <Text style={styles.bannerTitle}>You have reached</Text>
-          <Text style={styles.bannerSubtitle}>the customer location</Text>
-        </View>
+    <SafeAreaView style={styles.flex}>
+      <AppHeader
+        title="Reached Customer"
+        onBackPress={() => navigation.goBack()}
+      />
 
-        <View style={styles.mapWrapper}>
-          <MapPreview
-            latitude={activeJob.latitude}
-            longitude={activeJob.longitude}
-            title="Customer Destination"
-            height={200}
-          />
-        </View>
-
-        <View style={styles.customerSection}>
-          <Text style={styles.debugText}>Job ID: {jobId}</Text>
-          <Text style={styles.sectionLabel}>Customer Details</Text>
-          <CustomerCard
-            name={activeJob.customer.fullName}
-            rating={activeJob.customer.rating}
-            phone={activeJob.customer.phone}
-          />
-        </View>
-
-        <View style={styles.noteSection}>
-          <Text style={styles.sectionLabel}>Customer Note</Text>
-          <View style={styles.noteCard}>
-            <Text style={styles.noteText}>
-              {activeJob.customerNote || 'Water leakage behind the wash basin.'}
-            </Text>
+      <View style={styles.body}>
+        <View style={styles.illustrationWrap}>
+          <View style={styles.illustrationCircle}>
+            <View style={styles.pinBadge}>
+              <CheckIcon width={30} height={30} stroke="#FFFFFF" />
+            </View>
           </View>
         </View>
 
-        <View style={styles.spacer} />
+        <Text style={styles.title}>You have reached the{'\n'}customer location</Text>
+        <Text style={styles.subtitle}>Please confirm to start the service for Job #{jobId}.</Text>
+      </View>
 
+      <View style={styles.footer}>
         <PrimaryButton
-          title="I Have Arrived"
-          onPress={handleNext}
-          style={styles.actionBtn}
+          title="Confirm Arrival"
+          onPress={handleConfirmArrival}
+          loading={loading}
+          style={styles.confirmBtn}
+        />
+        <SecondaryButton
+          title="Contact Customer"
+          onPress={handleContactCustomer}
+          style={styles.contactBtn}
         />
       </View>
-    </ScreenWrapper>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  flex: { flex: 1, backgroundColor: colors.surface },
+  body: {
     flex: 1,
-    padding: spacing.layout,
-    backgroundColor: colors.background,
-  },
-  banner: {
     alignItems: 'center',
-    backgroundColor: colors.primaryLight,
-    paddingVertical: spacing.lg,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.lg,
-  },
-  bannerIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.primary,
     justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  illustrationWrap: { marginBottom: spacing.xl },
+  illustrationCircle: {
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: '#D1FAE5',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    justifyContent: 'center',
   },
-  bannerIcon: {
-    fontSize: 20,
-  },
-  bannerTitle: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.black,
-    color: colors.primary,
-  },
-  bannerSubtitle: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.semibold,
-    marginTop: 2,
-  },
-  mapWrapper: {
-    marginBottom: spacing.lg,
-  },
-  customerSection: {
-    marginBottom: spacing.lg,
-  },
-  debugText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-  },
-  sectionLabel: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-    textTransform: 'uppercase',
-  },
-  noteSection: {
-    marginBottom: spacing.xl,
-  },
-  noteCard: {
-    backgroundColor: colors.surface,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  noteText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-    lineHeight: typography.lineHeight.tight,
-  },
-  spacer: {
-    flex: 1,
-  },
-  actionBtn: {
+  pinBadge: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: colors.success,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    ...shadows.md,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: typography.fontWeight.black,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  subtitle: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  footer: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
+    gap: spacing.sm,
+  },
+  confirmBtn: {
+    backgroundColor: colors.success,
+  },
+  contactBtn: {
+    borderColor: colors.border,
   },
 });

@@ -1,0 +1,25 @@
+{
+  "targetUrl": "https://plumbing-qcommerce.onrender.com",
+  "auditTimestamp": "2026-08-05T23:13:00+05:30",
+  "renderStatusCode": 502,
+  "renderStatusMessage": "Bad Gateway",
+  "localMavenBuild": {
+    "status": "SUCCESS",
+    "testsRun": 245,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "endpointResults": [
+    { "endpoint": "/health/live", "method": "GET", "localStatus": 200, "renderStatus": 502, "verdict": "BLOCKED" },
+    { "endpoint": "/health/ready", "method": "GET", "localStatus": 200, "renderStatus": 502, "verdict": "BLOCKED" },
+    { "endpoint": "/version", "method": "GET", "localStatus": 200, "renderStatus": 502, "verdict": "BLOCKED" },
+    { "endpoint": "/actuator/health", "method": "GET", "localStatus": 200, "renderStatus": 502, "verdict": "BLOCKED" },
+    { "endpoint": "/api/v1/auth/login", "method": "POST", "localStatus": 200, "renderStatus": 502, "verdict": "BLOCKED" },
+    { "endpoint": "/api/v1/catalog/products", "method": "GET", "localStatus": 200, "renderStatus": 502, "verdict": "BLOCKED" },
+    { "endpoint": "/api/v1/service-orders", "method": "POST", "localStatus": 200, "renderStatus": 502, "verdict": "BLOCKED" },
+    { "endpoint": "/api/v1/materials/request", "method": "POST", "localStatus": 200, "renderStatus": 502, "verdict": "BLOCKED" },
+    { "endpoint": "/api/v1/materials/1/approve", "method": "POST", "localStatus": 200, "renderStatus": 502, "verdict": "BLOCKED" },
+    { "endpoint": "/api/v1/materials/1/confirm-collection", "method": "POST", "localStatus": 200, "renderStatus": 502, "verdict": "BLOCKED" }
+  ]
+}

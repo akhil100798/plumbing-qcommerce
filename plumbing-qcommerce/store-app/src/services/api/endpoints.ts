@@ -33,7 +33,13 @@ export const ENDPOINTS = {
     partners: '/delivery/partners',
   },
   materialRequests: {
-    store: '/checkout/material-requests/store',
+    store: '/store/material-requests',
+    details: (id: number) => `/store/material-requests/${id}`,
+    approve: (id: number) => `/store/material-requests/${id}/approve`,
+    reserve: (id: number) => `/store/material-requests/${id}/reserve`,
+    prepare: (id: number) => `/store/material-requests/${id}/prepare`,
+    ready: (id: number) => `/store/material-requests/${id}/ready-for-pickup`,
+    confirmCollection: (id: number) => `/store/material-requests/${id}/confirm-collection`,
   },
   wallet: {
     balance: '/wallet',

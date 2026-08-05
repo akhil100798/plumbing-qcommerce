@@ -1,349 +1,243 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, Alert, TouchableOpacity } from 'react-native';
-import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { AppHeader } from '../../components/common/AppHeader';
-import { PrimaryButton } from '../../components/common/PrimaryButton';
-import { ordersService } from '../../services/orders/ordersService';
-import { dispatchService } from '../../services/dispatch/dispatchService';
-import { useAppDispatch } from '../../redux/store';
-import { updateOrderInSlice } from '../../redux/slices/ordersSlice';
-import { NavigationProp, RouteProp, useNavigation, useRoute, useIsFocused } from '@react-navigation/native';
+﻿import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { StackScreenProps } from '@react-navigation/stack';
 import { AppStackParamList } from '../../types/navigation';
-import { Order, Rider } from '../../types';
+import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
+import WarehouseIcon from '../../assets/icons/warehouse.svg';
+import { ordersService } from '../../services/orders/ordersService';
+import { colors, borderRadius, spacing, typography } from '../../theme';
 
-import ReadyPickupIllustration from '../../assets/illustrations/ready-pickup-illustration.svg';
-import RiderIcon from '../../assets/icons/rider.svg';
-import PhoneIcon from '../../assets/icons/phone.svg';
-import StarIcon from '../../assets/icons/star.svg';
+type Props = StackScreenProps<AppStackParamList, 'ReadyForPickup'>;
 
-export const ReadyForPickupScreen = () => {
-  const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  const route = useRoute<RouteProp<AppStackParamList, 'ReadyForPickup'>>();
-  const dispatch = useAppDispatch();
-  const isFocused = useIsFocused();
+export function ReadyForPickupScreen({ route, navigation }: Props) {
   const { orderId } = route.params;
+  const [order, setOrder] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
-  const [order, setOrder] = useState<Order | null>(null);
-  const [rider, setRider] = useState<Rider | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const loadDetails = async () => {
-    try {
-      const o = await ordersService.getOrderDetails(orderId);
-      setOrder(o);
-      
-      if (o.deliveryPartnerName) {
-        // Find matching rider details
-        const riders = await dispatchService.getAvailableRiders();
-        const found = riders.find(r => r.fullName === o.deliveryPartnerName);
-        if (found) setRider(found);
-      } else {
-        setRider(null);
-      }
-    } catch (e: any) {
-      Alert.alert('Error', 'Failed to retrieve pickup status');
-    }
-  };
-
-  useEffect(() => {
-    if (isFocused) {
-      loadDetails();
-    }
-  }, [orderId, isFocused]);
-
-  const handleHandover = async () => {
-    if (!order) return;
+  const loadOrder = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const updated = await ordersService.handOverPackage(order.id);
-      dispatch(updateOrderInSlice(updated));
-      Alert.alert('Package Handed Over', 'Order is now out for delivery!', [
-        { text: 'OK', onPress: () => navigation.navigate('Main', { screen: 'HomeTab' }) }
-      ]);
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Handover failed');
+      const data = await ordersService.getOrderById(orderId);
+      setOrder(data);
+    } catch (err: any) {
+      setError(err.message || 'Unable to load order details.');
     } finally {
       setLoading(false);
     }
+  }, [orderId]);
+
+  useEffect(() => {
+    loadOrder();
+  }, [loadOrder]);
+
+  const handleConfirmCollection = async () => {
+    setConfirming(true);
+    try {
+      await ordersService.confirmPickup(orderId);
+      Alert.alert(
+        'Collection Confirmed',
+        'Plumber has collected all materials. Order complete.',
+        [{ text: 'OK', onPress: () => {
+          if (navigation.canGoBack()) navigation.goBack();
+          else navigation.navigate('Main', { screen: 'OrdersTab' } as any);
+        }}]
+      );
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Could not confirm collection. Please try again.');
+    } finally {
+      setConfirming(false);
+    }
   };
 
-  if (!order) {
-    return (
-      <ScreenWrapper style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading details...</Text>
-      </ScreenWrapper>
-    );
-  }
-
   return (
-    <ScreenWrapper style={styles.container}>
-      <AppHeader title="Ready for Pickup" onBackPress={() => navigation.goBack()} />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.accentGreen} />
 
-      <View style={styles.content}>
-        <View style={styles.boxCard}>
-          <ReadyPickupIllustration width={120} height={80} style={{ marginBottom: spacing.md }} />
-          <Text style={styles.boxTitle}>Order Packed Successfully!</Text>
-          <Text style={styles.boxSub}>Waiting for rider to pick up the package.</Text>
+      <ScrollView contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+        {/* Green hero panel */}
+        <View style={styles.heroPanel}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => {
+              if (navigation.canGoBack()) navigation.goBack();
+              else navigation.navigate('Main', { screen: 'OrdersTab' } as any);
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <ArrowLeftIcon width={22} height={22} stroke={colors.surface} />
+          </TouchableOpacity>
+
+          <View style={styles.heroIconRow}>
+            <WarehouseIcon width={44} height={44} stroke={colors.surface} />
+          </View>
+
+          <Text style={styles.heroTitle}>Order Packed & Ready</Text>
+          <Text style={styles.heroSubtitle}>Awaiting plumber pickup</Text>
         </View>
 
-        <Text style={styles.sectionHeader}>Assigned Rider</Text>
+        <View style={styles.content}>
 
-        {rider ? (
-          <View style={styles.riderCard}>
-            <View style={styles.riderHeader}>
-              <View style={styles.riderInfo}>
-                <View style={styles.riderAvatar}>
-                  <RiderIcon width={20} height={20} stroke={colors.primary} />
-                </View>
-                <View>
-                  <Text style={styles.riderName}>{rider.fullName}</Text>
-                  <View style={styles.ratingRow}>
-                    <StarIcon width={10} height={10} fill={colors.warning} stroke={colors.warning} style={{ marginRight: 2 }} />
-                    <Text style={styles.ratingVal}>{rider.rating}</Text>
-                  </View>
-                </View>
-              </View>
-              <TouchableOpacity
-                style={styles.phoneBtn}
-                onPress={() => Alert.alert('Call Rider', `Calling ${rider.phone}`)}
-              >
-                <PhoneIcon width={16} height={16} stroke={colors.primary} />
+          {loading ? (
+            <View style={styles.center}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={styles.loadingText}>Loading order details…</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.card}>
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity style={styles.retryLink} onPress={loadOrder}>
+                <Text style={styles.retryLinkText}>Retry</Text>
               </TouchableOpacity>
             </View>
-
-            <View style={styles.riderFooter}>
-              <View>
-                <Text style={styles.footerLabel}>Vehicle Number</Text>
-                <Text style={styles.footerVal}>{rider.vehicleNumber}</Text>
+          ) : (
+            <>
+              {/* Order info */}
+              <View style={styles.card}>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Order ID</Text>
+                  <Text style={styles.infoValueBold}>#{order?.id || orderId}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Status</Text>
+                  <View style={styles.statusChip}>
+                    <Text style={styles.statusChipText}>READY FOR PICKUP</Text>
+                  </View>
+                </View>
+                {order?.items?.length > 0 && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Items</Text>
+                    <Text style={styles.infoValue}>{order.items.length} item{order.items.length > 1 ? 's' : ''}</Text>
+                  </View>
+                )}
+                {order?.totalAmount != null && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Amount</Text>
+                    <Text style={styles.infoValueBold}>₹{Number(order.totalAmount).toFixed(2)}</Text>
+                  </View>
+                )}
               </View>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={styles.footerLabel}>Status</Text>
-                <Text style={styles.footerVal}>{rider.eta || 'Nearby'}</Text>
-              </View>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.noRiderCard}>
-            <Text style={styles.noRiderText}>No rider assigned yet</Text>
-            <TouchableOpacity
-              style={styles.assignLink}
-              onPress={() => navigation.navigate('DispatchAssignment', { orderId: order.id })}
-            >
-              <Text style={styles.assignLinkText}>Assign Delivery Rider Now</Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
-        <View style={styles.instructionCard}>
-          <Text style={styles.instructionTitle}>Pickup Instruction</Text>
-          <Text style={styles.instructionText}>
-            1. Verify the order items count and matching packaging labels before handing over.{'\n'}
-            2. Share OTP: <Text style={styles.otpHighlight}>#{order.deliveryOtp || '7234'}</Text> with the rider to verify dispatch.
-          </Text>
+              {/* Plumber pickup status note */}
+              <View style={styles.statusCard}>
+                <Text style={styles.statusCardTitle}>🔧 Plumber Pickup Workflow</Text>
+                <Text style={styles.statusCardBody}>
+                  The assigned plumber will arrive at the store to collect the packed materials.
+                  Once the plumber has collected, confirm collection below.
+                </Text>
+              </View>
+
+              {/* Confirm collection CTA */}
+              <TouchableOpacity
+                style={[styles.confirmBtn, confirming && styles.confirmBtnDisabled]}
+                onPress={handleConfirmCollection}
+                disabled={confirming}
+              >
+                {confirming ? (
+                  <ActivityIndicator size="small" color={colors.surface} />
+                ) : (
+                  <Text style={styles.confirmBtnText}>Confirm Plumber Collected</Text>
+                )}
+              </TouchableOpacity>
+
+              {/* Print invoice secondary action */}
+              <TouchableOpacity
+                style={styles.outlineButton}
+                onPress={() => Alert.alert('Print Invoice', 'Invoice sent to thermal printer.')}
+              >
+                <Text style={styles.outlineButtonText}>Print Invoice</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
-      </View>
-
-      <View style={styles.footer}>
-        <PrimaryButton
-          title="Hand Over Package"
-          onPress={handleHandover}
-          loading={loading}
-          disabled={!rider}
-        />
-      </View>
-    </ScreenWrapper>
+      </ScrollView>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.background,
-  },
-  loadingContainer: {
-    justifyContent: 'center',
+  container: { flex: 1, backgroundColor: colors.background },
+  heroPanel: {
+    backgroundColor: colors.accentGreen,
+    paddingTop: spacing.lg,
+    paddingBottom: 32,
+    paddingHorizontal: spacing.xl,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
     alignItems: 'center',
   },
-  loadingText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-  },
-  content: {
-    flex: 1,
-    padding: spacing.layout,
-  },
-  boxCard: {
-    backgroundColor: colors.card,
+  backButton: { alignSelf: 'flex-start', marginBottom: spacing.lg },
+  heroIconRow: { alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md },
+  heroTitle: { color: colors.surface, fontSize: 20, fontWeight: '700', marginBottom: 4 },
+  heroSubtitle: { color: 'rgba(255,255,255,0.85)', fontSize: 13 },
+  content: { paddingHorizontal: spacing.xl, marginTop: -20 },
+  center: { justifyContent: 'center', alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.md },
+  loadingText: { fontSize: typography.fontSize.sm, color: colors.textSecondary },
+  card: {
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
-    padding: spacing.xl,
-    alignItems: 'center',
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    ...shadows.sm,
-    marginBottom: spacing.lg,
   },
-  boxEmoji: {
-    fontSize: 48,
-    marginBottom: spacing.sm,
-  },
-  boxTitle: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.success,
-  },
-  boxSub: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    marginTop: 2,
-    textAlign: 'center',
-  },
-  sectionHeader: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-    textTransform: 'uppercase',
-  },
-  riderCard: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.sm,
-    marginBottom: spacing.lg,
-  },
-  riderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    paddingBottom: spacing.sm,
-  },
-  riderInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  riderAvatar: {
-    width: 40,
-    height: 40,
+  errorText: { fontSize: typography.fontSize.sm, color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.sm },
+  retryLink: { alignSelf: 'center' },
+  retryLinkText: { color: colors.primary, fontWeight: typography.fontWeight.bold, fontSize: typography.fontSize.sm },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  infoLabel: { fontSize: 13, color: colors.textSecondary },
+  infoValue: { fontSize: 13, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  infoValueBold: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  statusChip: {
+    backgroundColor: colors.accentGreenLight,
     borderRadius: borderRadius.round,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
-  avatarText: {
-    fontSize: 18,
-  },
-  riderName: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  star: {
-    color: colors.warning,
-    fontSize: 12,
-    marginRight: 2,
-  },
-  ratingVal: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-  },
-  phoneBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.round,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  phoneEmoji: {
-    fontSize: 14,
-    color: colors.primary,
-  },
-  riderFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: spacing.sm,
-  },
-  footerLabel: {
-    fontSize: 9,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-  },
-  footerVal: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-    marginTop: 2,
-  },
-  noRiderCard: {
-    backgroundColor: colors.card,
+  statusChipText: { fontSize: 11, fontWeight: '700', color: colors.accentGreen },
+  statusCard: {
+    backgroundColor: '#EFF6FF',
     borderRadius: borderRadius.md,
-    padding: spacing.xl,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.sm,
+    padding: spacing.lg,
     marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
   },
-  noRiderText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.bold,
+  statusCardTitle: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: '#1D4ED8', marginBottom: spacing.xs },
+  statusCardBody: { fontSize: typography.fontSize.xs, color: '#1E40AF', lineHeight: 18 },
+  confirmBtn: {
+    backgroundColor: colors.accentGreen,
+    borderRadius: borderRadius.md,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: spacing.md,
   },
-  assignLink: {
-    backgroundColor: colors.primaryLight,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.xs,
-  },
-  assignLinkText: {
-    color: colors.primary,
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-  },
-  instructionCard: {
-    backgroundColor: colors.card,
+  confirmBtnDisabled: { opacity: 0.6 },
+  confirmBtnText: { color: colors.surface, fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold },
+  outlineButton: {
+    height: 50,
     borderRadius: borderRadius.md,
-    padding: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    ...shadows.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    marginBottom: spacing.lg,
   },
-  instructionTitle: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-    textTransform: 'uppercase',
-  },
-  instructionText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-  otpHighlight: {
-    fontWeight: 'bold',
-    color: colors.primary,
-  },
-  footer: {
-    padding: spacing.layout,
-    backgroundColor: colors.card,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
+  outlineButtonText: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
 });
+
 export default ReadyForPickupScreen;

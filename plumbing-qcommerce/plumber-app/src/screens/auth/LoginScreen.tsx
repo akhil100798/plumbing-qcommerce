@@ -20,17 +20,31 @@ import { borderRadius, colors, shadows, spacing, typography } from '../../theme'
 import { AuthStackParamList } from '../../types/navigation';
 import { authStart, authSuccess, authFailure } from '../../redux/slices/authSlice';
 import GoogleIcon from '../../assets/icons/google.svg';
+import MailIcon from '../../assets/icons/chat.svg';
+import PhoneIcon from '../../assets/icons/phone.svg';
 
 type Props = StackScreenProps<AuthStackParamList, 'Login'>;
 
 export function LoginScreen({ navigation }: Props) {
   const dispatch = useDispatch();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [activeTab, setActiveTab] = useState<'mobile' | 'email'>('mobile');
+  const [phone, setPhone] = useState('9876543210');
+  const [email, setEmail] = useState('plumber@plumbcommerce.com');
+  const [password, setPassword] = useState('password');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleContinue = async () => {
+    if (activeTab === 'mobile') {
+      if (phone.length !== 10) {
+        Alert.alert('Invalid Mobile Number', 'Please enter a valid 10-digit mobile number');
+        return;
+      }
+      // Navigate to OTP Screen
+      navigation.navigate('Otp', { phone: `+91 ${phone}` });
+      return;
+    }
+
     if (!email.trim() || !password.trim()) {
       dispatch(authFailure('Please fill in all credentials fields'));
       Alert.alert('Invalid Input', 'Please fill in all credentials fields');
@@ -61,35 +75,80 @@ export function LoginScreen({ navigation }: Props) {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
             <Text style={styles.title}>Welcome Back!</Text>
-            <Text style={styles.subtitle}>Login with your plumber account credentials</Text>
+            <Text style={styles.subtitle}>Login to continue</Text>
+          </View>
+
+          {/* Tab Switcher */}
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
+              style={[styles.tabButton, activeTab === 'mobile' && styles.tabButtonActive]}
+              onPress={() => setActiveTab('mobile')}
+            >
+              <Text style={[styles.tabText, activeTab === 'mobile' && styles.tabTextActive]}>
+                Mobile
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tabButton, activeTab === 'email' && styles.tabButtonActive]}
+              onPress={() => setActiveTab('email')}
+            >
+              <Text style={[styles.tabText, activeTab === 'email' && styles.tabTextActive]}>
+                Email
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.form}>
-            <Text style={styles.inputLabel}>Email Address</Text>
-            <View style={styles.passwordInputContainer}>
-              <TextInput
-                style={styles.textInput}
-                placeholder="plumber@plumbcommerce.com"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                value={email}
-                onChangeText={setEmail}
-              />
-            </View>
+            {activeTab === 'mobile' ? (
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Mobile Number</Text>
+                <View style={styles.phoneInputContainer}>
+                  <Text style={styles.countryCode}>+91</Text>
+                  <View style={styles.inputDivider} />
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Enter mobile number"
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType="number-pad"
+                    maxLength={10}
+                    value={phone}
+                    onChangeText={(val) => setPhone(val.replace(/\D/g, ''))}
+                  />
+                </View>
+              </View>
+            ) : (
+              <>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Email Address</Text>
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="plumber@plumbcommerce.com"
+                      placeholderTextColor={colors.textMuted}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      value={email}
+                      onChangeText={setEmail}
+                    />
+                  </View>
+                </View>
 
-            <Text style={styles.inputLabel}>Password</Text>
-            <View style={styles.passwordInputContainer}>
-              <TextInput
-                style={styles.textInput}
-                placeholder="********"
-                placeholderTextColor={colors.textMuted}
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
-            </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Password</Text>
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="********"
+                      placeholderTextColor={colors.textMuted}
+                      secureTextEntry
+                      value={password}
+                      onChangeText={setPassword}
+                    />
+                  </View>
+                </View>
+              </>
+            )}
 
             <View style={styles.rememberForgotRow}>
               <TouchableOpacity
@@ -108,34 +167,40 @@ export function LoginScreen({ navigation }: Props) {
             </View>
 
             <PrimaryButton
-              title="Login"
+              title="Continue"
               onPress={handleContinue}
               loading={loading}
               style={styles.continueButton}
             />
 
-            <View style={styles.futureCard}>
-              <Text style={styles.futureTitle}>Public plumber signup is disabled</Text>
-              <Text style={styles.futureText}>
-                Plumber accounts are created and managed by admin or staging seed data.
-              </Text>
-            </View>
-
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>other options</Text>
+              <Text style={styles.dividerText}>or continue with</Text>
               <View style={styles.dividerLine} />
             </View>
 
-            <TouchableOpacity style={styles.socialCard} onPress={() => Alert.alert('Google login', 'Google sign-in is not configured for the plumber app staging build yet.')}>
-              <GoogleIcon width={20} height={20} />
-              <Text style={styles.socialLabel}>Google sign-in coming later</Text>
-            </TouchableOpacity>
+            <View style={styles.socialRow}>
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={() => Alert.alert('Google login', 'Google sign-in is not configured for the plumber app staging build yet.')}
+              >
+                <Text style={styles.googleBadge}>G</Text>
+                <Text style={styles.socialLabel}>Google</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={() => Alert.alert('Facebook login', 'Facebook sign-in is not configured for the plumber app staging build yet.')}
+              >
+                <Text style={styles.fbBadge}>f</Text>
+                <Text style={styles.socialLabel}>Facebook</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>
-              Need a plumber account?{' '}
+              New here?{' '}
               <Text
                 style={styles.signUpLink}
                 onPress={() => {
@@ -145,7 +210,7 @@ export function LoginScreen({ navigation }: Props) {
                   );
                 }}
               >
-                Contact operations
+                Sign up
               </Text>
             </Text>
           </View>
@@ -166,39 +231,90 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   header: {
-    marginTop: spacing.giant,
-    marginBottom: spacing.huge,
+    marginTop: spacing.xl,
+    marginBottom: spacing.lg,
   },
   title: {
     fontSize: typography.fontSize.xxl,
     fontWeight: typography.fontWeight.black,
     color: colors.textPrimary,
-    marginBottom: spacing.xs,
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: typography.fontSize.md,
     color: colors.textSecondary,
     fontWeight: typography.fontWeight.medium,
   },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.md,
+    padding: 4,
+    marginBottom: spacing.xl,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+    borderRadius: borderRadius.xs,
+  },
+  tabButtonActive: {
+    backgroundColor: colors.surface,
+    ...shadows.sm,
+  },
+  tabText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
+  },
+  tabTextActive: {
+    color: colors.primary,
+    fontWeight: typography.fontWeight.bold,
+  },
   form: {
     flex: 1,
+  },
+  inputGroup: {
+    marginBottom: spacing.md,
   },
   inputLabel: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.textSecondary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  passwordInputContainer: {
-    height: 56,
+  inputContainer: {
+    height: 52,
     borderRadius: borderRadius.md,
     borderWidth: 1.5,
     borderColor: colors.border,
-    marginBottom: spacing.md,
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+  },
+  phoneInputContainer: {
+    height: 52,
+    borderRadius: borderRadius.md,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.surface,
+  },
+  countryCode: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  inputDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: colors.border,
+    marginHorizontal: spacing.md,
   },
   textInput: {
     flex: 1,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.medium,
     color: colors.textPrimary,
@@ -207,7 +323,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginVertical: spacing.md,
   },
   rememberMe: {
     flexDirection: 'row',
@@ -244,31 +360,12 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     width: '100%',
-    marginBottom: spacing.lg,
-  },
-  futureCard: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    backgroundColor: '#EFF6FF',
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-    marginBottom: spacing.xl,
-  },
-  futureTitle: {
-    color: '#1D4ED8',
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-  },
-  futureText: {
-    marginTop: spacing.xs,
-    color: colors.textSecondary,
-    fontSize: typography.fontSize.xs,
-    lineHeight: typography.lineHeight.tight,
+    marginVertical: spacing.md,
   },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    marginVertical: spacing.lg,
   },
   dividerLine: {
     flex: 1,
@@ -280,19 +377,32 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
     color: colors.textMuted,
-    textTransform: 'uppercase',
   },
-  socialCard: {
+  socialRow: {
     flexDirection: 'row',
-    height: 52,
+    gap: spacing.md,
+  },
+  socialButton: {
+    flex: 1,
+    flexDirection: 'row',
+    height: 48,
     borderWidth: 1.5,
     borderColor: colors.border,
     borderRadius: borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs,
     backgroundColor: colors.surface,
-    ...shadows.sm,
+  },
+  googleBadge: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#EF4444',
+  },
+  fbBadge: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2563EB',
   },
   socialLabel: {
     fontSize: typography.fontSize.sm,
@@ -302,7 +412,7 @@ const styles = StyleSheet.create({
   footer: {
     alignItems: 'center',
     marginTop: 'auto',
-    paddingTop: spacing.huge,
+    paddingTop: spacing.xl,
   },
   footerText: {
     fontSize: typography.fontSize.sm,
