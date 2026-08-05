@@ -94,7 +94,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/ai/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "OPERATIONS_ADMIN", "FINANCE_ADMIN", "MARKETING_ADMIN", "STORE_MANAGER")
                 .requestMatchers(HttpMethod.GET, "/api/v1/admin/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
                 .requestMatchers("/api-docs/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/health/**", "/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
+                .requestMatchers("/version", "/health/**", "/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
             )

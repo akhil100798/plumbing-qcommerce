@@ -40,6 +40,17 @@ class HealthAndActuatorTest {
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 
+    @Test
+    void version_noAuth_returnsBuildMetadata() throws Exception {
+        mvc.perform(get("/version"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.application").value("FixKart Backend"))
+                .andExpect(jsonPath("$.version").value("1.0.0"))
+                .andExpect(jsonPath("$.branch").exists())
+                .andExpect(jsonPath("$.commit").exists())
+                .andExpect(jsonPath("$.buildTime").exists());
+    }
+
     // ========== Spring Actuator ==========
 
     @Test
