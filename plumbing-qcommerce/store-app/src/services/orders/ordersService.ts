@@ -160,5 +160,35 @@ export const ordersService = {
       }
       throw createBackendUnavailableError(`handover package for order ${orderId}`, e);
     }
-  }
+  },
+
+  // Fetch a single order by ID (for ReadyForPickupScreen).
+  getOrderById: async (orderId: number): Promise<Order> => {
+    try {
+      const response = await apiClient.get(ENDPOINTS.orders.details(orderId));
+      return mapApiOrderToOrder(response.data);
+    } catch (e) {
+      throw createBackendUnavailableError(`order details for ${orderId}`, e);
+    }
+  },
+
+  // Confirm that the plumber has physically collected the packed materials.
+  confirmPickup: async (orderId: number): Promise<void> => {
+    try {
+      await apiClient.post(ENDPOINTS.materialRequests.confirmCollection(orderId));
+    } catch (confirmErr: any) {
+      // Also try the order handover endpoint as fallback for checkout orders.
+      if (confirmErr?.response?.status === 404 || confirmErr?.response?.status === 400) {
+        try {
+          const storeProfile = await storeService.getCurrentStoreProfile();
+          await apiClient.post(ENDPOINTS.orders.handover(orderId), {
+            storeId: storeProfile.id,
+          });
+          return;
+        } catch {}
+      }
+      throw createBackendUnavailableError(`confirm pickup for order ${orderId}`, confirmErr);
+    }
+  },
 };
+
