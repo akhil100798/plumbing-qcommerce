@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -90,7 +90,7 @@ export function StoreSelectionScreen({ route, navigation }: Props) {
         title="Select Store"
         onBackPress={() => {
           if (navigation.canGoBack()) navigation.goBack();
-          else navigation.navigate('Main', { screen: 'HomeTab' } as any);
+          else navigation.navigate('Main', { screen: 'Home' });
         }}
       />
 

@@ -193,7 +193,7 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
       <ScreenWrapper>
         <AppHeader title="Material Pickup Status" onBackPress={() => {
           if (navigation.canGoBack()) navigation.goBack();
-          else navigation.navigate('Main', { screen: 'HomeTab' } as any);
+          else navigation.navigate('Main', { screen: 'Home' });
         }} />
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -208,7 +208,7 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
       <ScreenWrapper>
         <AppHeader title="Material Pickup Status" onBackPress={() => {
           if (navigation.canGoBack()) navigation.goBack();
-          else navigation.navigate('Main', { screen: 'HomeTab' } as any);
+          else navigation.navigate('Main', { screen: 'Home' });
         }} />
         <View style={styles.center}>
           <Text style={styles.errorIcon}>⚠️</Text>
