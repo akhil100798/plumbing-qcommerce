@@ -1,171 +1,147 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, FlatList, Alert } from 'react-native';
-import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { AppHeader } from '../../components/common/AppHeader';
-import { ProductCard } from '../../components/cards/InventoryCards';
-import { inventoryService } from '../../services/inventory/inventoryService';
-import { useAppDispatch } from '../../redux/store';
-import { updateProductInSlice } from '../../redux/slices/inventorySlice';
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+  Alert,
+} from 'react-native';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
-import { Product } from '../../types';
+import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
+import WarehouseIcon from '../../assets/icons/warehouse.svg';
+import { colors, borderRadius, spacing, typography } from '../../theme';
 
-import LowStockIcon from '../../assets/icons/low-stock.svg';
-import SuccessCheckIcon from '../../assets/icons/success-check.svg';
+const lowStockItems = [
+  {
+    id: '1',
+    name: 'PVC Elbow 1/2 inch',
+    left: 'Only 2 left',
+    reorderLevel: 'Reorder Level: 10',
+  },
+  {
+    id: '2',
+    name: 'Brass Angle Valve 1/2 inch',
+    left: 'Only 4 left',
+    reorderLevel: 'Reorder Level: 10',
+  },
+  {
+    id: '3',
+    name: 'CPVC Pipe 1/2 inch (3m)',
+    left: 'Only 6 left',
+    reorderLevel: 'Reorder Level: 15',
+  },
+  {
+    id: '4',
+    name: 'PTFE Thread Tape (10m)',
+    left: 'Only 5 left',
+    reorderLevel: 'Reorder Level: 10',
+  },
+];
 
-export const LowStockAlertScreen = () => {
+export function LowStockAlertScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  const dispatch = useAppDispatch();
 
-  const [lowStockItems, setLowStockItems] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const loadLowStock = async () => {
-    setLoading(true);
-    try {
-      const data = await inventoryService.getLowStock();
-      setLowStockItems(data);
-    } catch (e) {
-      Alert.alert('Error', 'Failed to retrieve low stock catalog list');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadLowStock();
-  }, []);
-
-  const handleRestock = (product: Product) => {
-    Alert.prompt(
-      'Restock Item',
-      `Enter restock quantity for ${product.name} (Current: ${product.stock}):`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Restock',
-          onPress: async (val) => {
-            const addQty = Number(val);
-            if (isNaN(addQty) || addQty <= 0) {
-              return Alert.alert('Invalid Input', 'Please enter a valid count');
-            }
-            
-            setLoading(true);
-            try {
-              const newTotal = product.stock + addQty;
-              const updated = await inventoryService.updateStock(product.id, newTotal);
-              dispatch(updateProductInSlice(updated));
-              // Update local state list
-              setLowStockItems(prev => prev.filter(p => p.id !== product.id));
-              Alert.alert('Restock Successful', `${product.name} restocked to ${newTotal} units.`);
-            } catch (e: any) {
-              Alert.alert('Restock Failed', e.message || 'Operation failed');
-            } finally {
-              setLoading(false);
-            }
-          }
-        }
-      ],
-      'plain-text',
-      '50'
-    );
+  const handleReorder = (itemName: string) => {
+    Alert.alert('Reorder Submitted', `Purchase request generated for ${itemName}.`);
   };
 
   return (
-    <ScreenWrapper style={styles.container}>
-      <AppHeader title="Low Stock Alerts" onBackPress={() => navigation.goBack()} />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
 
-      <View style={styles.alertHeader}>
-        <View style={styles.alertIconBox}>
-          <LowStockIcon width={18} height={18} stroke={colors.danger} />
-        </View>
-        <View style={styles.alertTextWrapper}>
-          <Text style={styles.alertTitle}>{lowStockItems.length} Products are low in stock</Text>
-          <Text style={styles.alertSub}>Immediate restock required to prevent purchase cancellations.</Text>
-        </View>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <ArrowLeftIcon width={24} height={24} stroke={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Low Stock Alert</Text>
+        <View style={{ width: 24 }} />
       </View>
 
       <FlatList
         data={lowStockItems}
-        keyExtractor={item => String(item.id)}
-        contentContainerStyle={styles.list}
-        refreshing={loading}
-        onRefresh={loadLowStock}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingTop: spacing.md }}
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <ProductCard
-            product={item}
-            onPress={() => navigation.navigate('ProductDetails', { productId: item.id })}
-            onEditPress={() => handleRestock(item)}
-          />
-        )}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <SuccessCheckIcon width={40} height={40} stroke={colors.success} style={{ marginBottom: spacing.md }} />
-            <Text style={styles.emptyText}>All products are sufficiently stocked!</Text>
+          <View style={styles.itemCard}>
+            <View style={styles.itemImage}>
+              <WarehouseIcon width={24} height={24} stroke={colors.textMuted} />
+            </View>
+            <View style={{ flex: 1, marginLeft: spacing.md }}>
+              <Text style={styles.itemName}>{item.name}</Text>
+              <Text style={styles.itemLeft}>{item.left}</Text>
+              <Text style={styles.itemReorder}>{item.reorderLevel}</Text>
+            </View>
+            <TouchableOpacity style={styles.reorderButton} onPress={() => handleReorder(item.name)}>
+              <Text style={styles.reorderButtonText}>Reorder</Text>
+            </TouchableOpacity>
           </View>
+        )}
+        ListFooterComponent={
+          <TouchableOpacity
+            style={styles.viewAllButton}
+            onPress={() => navigation.navigate('Main', { screen: 'InventoryTab' })}
+          >
+            <Text style={styles.viewAllText}>View All Inventory</Text>
+          </TouchableOpacity>
         }
       />
-    </ScreenWrapper>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.background,
+  container: { flex: 1, backgroundColor: colors.background },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.surface,
   },
-  alertHeader: {
-    backgroundColor: 'rgba(239, 68, 68, 0.08)',
-    borderWidth: 1,
-    borderColor: colors.danger,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
+  headerTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  itemCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    margin: spacing.layout,
-  },
-  alertIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.round,
-    backgroundColor: colors.dangerLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: spacing.md,
-  },
-  alertEmoji: {
-    fontSize: 16,
-  },
-  alertTextWrapper: {
-    flex: 1,
-  },
-  alertTitle: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.danger,
-  },
-  alertSub: {
-    fontSize: 10,
-    color: colors.textSecondary,
-    marginTop: 2,
-    lineHeight: 14,
-  },
-  list: {
-    paddingHorizontal: spacing.layout,
-  },
-  empty: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.giant,
-  },
-  emptyEmoji: {
-    fontSize: 48,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
     marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  emptyText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.bold,
+  itemImage: {
+    width: 50,
+    height: 50,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  itemName: { fontSize: 13.5, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  itemLeft: { fontSize: typography.fontSize.xs, color: colors.accentRed, marginTop: 3, fontWeight: '600' },
+  itemReorder: { fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: 2 },
+  reorderButton: {
+    borderWidth: 1,
+    borderColor: colors.accentRed,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  reorderButtonText: { color: colors.accentRed, fontSize: 12, fontWeight: '700' },
+  viewAllButton: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  viewAllText: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.primary },
 });
+
 export default LowStockAlertScreen;

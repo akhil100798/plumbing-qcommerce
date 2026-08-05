@@ -1,20 +1,22 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors, spacing, typography, borderRadius } from '../../theme';
 import CheckIcon from '../../assets/icons/success-check.svg';
+import { colors, spacing, typography, borderRadius } from '../../theme';
 
 interface ChecklistItemProps {
   label: string;
   checked: boolean;
   onToggle: () => void;
+  disabled?: boolean;
 }
 
-export function ChecklistItem({ label, checked, onToggle }: ChecklistItemProps) {
+export function ChecklistItem({ label, checked, onToggle, disabled = false }: ChecklistItemProps) {
   return (
     <TouchableOpacity
       activeOpacity={0.7}
       style={styles.container}
       onPress={onToggle}
+      disabled={disabled}
     >
       <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
         {checked && <CheckIcon width={12} height={12} stroke="#FFFFFF" />}

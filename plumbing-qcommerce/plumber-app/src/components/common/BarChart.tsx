@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, typography, borderRadius } from '../../theme';
+import Svg, { Rect } from 'react-native-svg';
+import { colors, spacing, typography } from '../../theme';
 
-interface BarData {
+export interface BarData {
   label: string;
   value: number;
+  highlight?: boolean;
 }
 
 interface BarChartProps {
@@ -12,24 +14,36 @@ interface BarChartProps {
   height?: number;
 }
 
-export function BarChart({ data, height = 110 }: BarChartProps) {
+export function BarChart({ data, height = 120 }: BarChartProps) {
   const max = Math.max(...data.map((d) => d.value), 1);
+  const barWidth = 24;
+  const gap = 12;
+  const chartWidth = Math.max(data.length * (barWidth + gap), 280);
+  const chartHeight = height - 24;
 
   return (
-    <View style={styles.wrapper}>
-      <View style={[styles.chartArea, { height }]}>
+    <View style={styles.container}>
+      <Svg width="100%" height={height} viewBox={`0 0 ${chartWidth} ${height}`}>
         {data.map((d, i) => {
-          const barHeight = Math.max((d.value / max) * height, 4);
+          const barHeight = Math.max((d.value / max) * chartHeight, 4);
+          const x = i * (barWidth + gap) + gap / 2;
+          const y = chartHeight - barHeight;
           return (
-            <View key={i} style={styles.barColumn}>
-              <View style={[styles.bar, { height: barHeight }]} />
-            </View>
+            <Rect
+              key={`${d.label}-${i}`}
+              x={x}
+              y={y}
+              width={barWidth}
+              height={barHeight}
+              rx={6}
+              fill={d.highlight ? colors.primary : colors.primaryLight}
+            />
           );
         })}
-      </View>
+      </Svg>
       <View style={styles.labelRow}>
         {data.map((d, i) => (
-          <Text key={i} style={styles.label}>
+          <Text key={`${d.label}-${i}`} style={styles.label}>
             {d.label}
           </Text>
         ))}
@@ -39,29 +53,19 @@ export function BarChart({ data, height = 110 }: BarChartProps) {
 }
 
 const styles = StyleSheet.create({
-  wrapper: { width: '100%' },
-  chartArea: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.xs,
-  },
-  barColumn: { flex: 1, alignItems: 'center' },
-  bar: {
-    width: 14,
-    borderRadius: borderRadius.xs,
-    backgroundColor: colors.primary,
+  container: {
+    width: '100%',
   },
   labelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: spacing.xs,
     paddingHorizontal: spacing.xs,
+    marginTop: spacing.xs,
   },
   label: {
     fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
-    flex: 1,
+    width: 28,
     textAlign: 'center',
   },
 });

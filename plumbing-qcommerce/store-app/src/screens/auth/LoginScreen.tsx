@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -72,7 +72,7 @@ export function LoginScreen() {
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>Welcome Back!</Text>
           <Text style={styles.subtitle}>
-            Sign in to your FixKart`nStore Partner account
+            Sign in to your FixKart{'\n'}Store Partner account
           </Text>
 
           <View style={styles.inputWrapper}>

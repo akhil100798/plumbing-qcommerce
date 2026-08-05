@@ -1,30 +1,43 @@
 export const colors = {
   // Brand colors
-  primary: '#0B6BFF',        // FixKart Primary Blue
-  primaryDark: '#0F172A',    // Dark Blue
-  primaryLight: '#DBEAFE',
+  primary: '#1E4FD8',        // FixKart Royal Blue
+  primaryDark: '#173FB0',    // FixKart Dark Royal Blue
+  primaryLight: '#EAF0FF',   // FixKart Light Royal Blue
 
-  // Status indicators
-  success: '#20C45A',        // FixKart Success Green
-  successLight: '#D1FAE5',
-  warning: '#F59E0B',        // Warning Orange
-  warningLight: '#FEF3C7',
-  danger: '#EF4444',         // Danger Red
-  dangerLight: '#FEE2E2',
-  error: '#EF4444',          // Alias for danger
-  errorLight: '#FEE2E2',     // Alias for dangerLight
+  // Accents & Status indicators
+  accentGreen: '#1EA34A',
+  accentGreenLight: '#E7F7EC',
+  accentOrange: '#FF9F1C',
+  accentOrangeLight: '#FFF3E0',
+  accentRed: '#E5484D',
+  accentRedLight: '#FDEBEC',
+  accentBlueLight: '#E8F1FF',
+
+  // Status aliases
+  success: '#1EA34A',        // FixKart Success Green
+  successLight: '#E7F7EC',
+  warning: '#FF9F1C',        // Warning Orange
+  warningLight: '#FFF3E0',
+  danger: '#E5484D',         // Danger Red
+  dangerLight: '#FDEBEC',
+  error: '#E5484D',          // Alias for danger
+  errorLight: '#FDEBEC',     // Alias for dangerLight
 
   // Neutrals
-  background: '#F8FAFC',     // Background
+  white: '#FFFFFF',
+  black: '#0B0B0F',
+  background: '#F5F6F8',     // FixKart App Background
   surface: '#FFFFFF',        // Card / button surface
   card: '#FFFFFF',           // Card Surface
-  textPrimary: '#0F172A',    // Text Primary
-  textSecondary: '#64748B',  // Text Secondary
-  textMuted: '#94A3B8',      // Muted slate
-  border: '#E2E8F0',         // Slate 200
-  borderDark: '#CBD5E1',     // Slate 300
+  text: '#12141A',           // FixKart primary text
+  textPrimary: '#12141A',    // Text Primary
+  textSecondary: '#6B7280',  // Text Secondary
+  textMuted: '#9CA3AF',      // Muted gray
+  border: '#EAECEF',         // FixKart Border
+  borderDark: '#CBD5E1',
 
   // Decorative
-  accent: '#7DD3BC',         // Soft teal
-  darkOverlay: 'rgba(15, 23, 42, 0.4)',
+  accent: '#1EA34A',
+  darkOverlay: 'rgba(11, 11, 15, 0.4)',
 };
+
