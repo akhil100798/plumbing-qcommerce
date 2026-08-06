@@ -1,7 +1,0 @@
-{
-  "totalScreenshots": 20,
-  "loginSimilarityViolation": false,
-  "blankScreenViolation": false,
-  "headingMissingViolation": false,
-  "verdict": "PASS"
-}

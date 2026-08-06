@@ -106,8 +106,11 @@ test_run.txt
 
 
 # Generated evidence artifacts
-evidence/admin-runtime-smoke/
-evidence/final-demo/admin-portal/*.png
-evidence/final-demo/admin-portal/screenshot-index__*.json
+qa-evidence/
+evidence/
+docs/
+reports/
+playwright-report/
+test-results/
 store-app/.expo/
 
