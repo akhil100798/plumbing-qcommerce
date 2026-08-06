@@ -28,6 +28,8 @@ spring:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:localhost}
       port: ${SPRING_DATA_REDIS_PORT:6379}
+      repositories:
+        enabled: false
   mongodb:
     uri: ${SPRING_MONGODB_URI:mongodb://admin:local-mongo-password@localhost:27017/plumbing_commerce?authSource=admin}
 
