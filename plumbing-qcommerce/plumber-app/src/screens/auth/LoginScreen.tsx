@@ -204,10 +204,7 @@ export function LoginScreen({ navigation }: Props) {
               <Text
                 style={styles.signUpLink}
                 onPress={() => {
-                  Alert.alert(
-                    'Account Management',
-                    'Plumber account creation is managed by operations admin. Please contact support.'
-                  );
+                  navigation.navigate('Register');
                 }}
               >
                 Sign up

@@ -23,7 +23,27 @@ export interface CredentialLoginResponse {
   refreshToken: string;
 }
 
+export interface PlumberRegistrationRequest {
+  fullName: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirmPassword: string;
+}
+
 export const authService = {
+  register: async (request: PlumberRegistrationRequest): Promise<CredentialLoginResponse> => {
+    const response = await apiClient.post<{ token: string; refreshToken: string }>(
+      ENDPOINTS.AUTH.REGISTER,
+      request
+    );
+    const { token, refreshToken } = response.data;
+    setAuthToken(token);
+    setRefreshToken(refreshToken);
+    const plumber = await profileService.fetchProfile();
+    return { plumber, token, refreshToken };
+  },
+
   loginWithCredentials: async (
     email: string,
     password: string

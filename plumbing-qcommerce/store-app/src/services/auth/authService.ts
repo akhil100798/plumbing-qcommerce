@@ -2,7 +2,28 @@ import { apiClient, setAuthToken, setRefreshToken } from '../api/axiosClient';
 import { ENDPOINTS } from '../api/endpoints';
 import { User } from '../../types';
 
+export interface StoreRegistrationRequest {
+  fullName: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirmPassword: string;
+  storeName: string;
+  storeAddress: string;
+  latitude: number;
+  longitude: number;
+}
+
 export const authService = {
+  register: async (request: StoreRegistrationRequest): Promise<{ user: User; token: string; refreshToken: string }> => {
+    const response = await apiClient.post(ENDPOINTS.auth.register, request);
+    const { token, refreshToken, userId, role, email, phone, fullName } = response.data;
+    const user: User = { id: userId, email, fullName, role, phone };
+    setAuthToken(token);
+    setRefreshToken(refreshToken);
+    return { user, token, refreshToken };
+  },
+
   login: async (email: string, password: string): Promise<{ user: User; token: string; refreshToken: string }> => {
     const response = await apiClient.post(ENDPOINTS.auth.login, { email, password });
     const { token, refreshToken, userId, role, phone, fullName } = response.data;

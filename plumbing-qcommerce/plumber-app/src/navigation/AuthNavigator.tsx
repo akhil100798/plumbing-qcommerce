@@ -2,6 +2,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
 
 import { LoginScreen } from '../screens/auth/LoginScreen';
+import { RegisterScreen } from '../screens/auth/RegisterScreen';
 import { OtpScreen } from '../screens/auth/OtpScreen';
 import { SplashScreen } from '../screens/auth/SplashScreen';
 import { AuthStackParamList } from '../types/navigation';
@@ -18,6 +19,7 @@ export function AuthNavigator() {
     >
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="Otp" component={OtpScreen} />
     </Stack.Navigator>
   );

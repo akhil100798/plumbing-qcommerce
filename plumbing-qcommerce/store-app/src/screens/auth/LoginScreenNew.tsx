@@ -125,8 +125,8 @@ export function LoginScreen({ navigation }: Props) {
 
             <View style={styles.footerLinkRow}>
               <Text style={styles.footerText}>Want to register a store? </Text>
-              <TouchableOpacity onPress={() => Alert.alert('Register Store', 'Store registration is managed by operations admin. Please contact support.')}>
-                <Text style={styles.registerLink}>Contact Support</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Register' as any)}>
+                <Text style={styles.registerLink}>Register Store</Text>
               </TouchableOpacity>
             </View>
           </View>

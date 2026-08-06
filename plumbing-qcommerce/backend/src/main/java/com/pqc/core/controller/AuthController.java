@@ -2,16 +2,20 @@ package com.pqc.core.controller;
 
 import com.pqc.core.dto.AuthResponse;
 import com.pqc.core.dto.CustomerRegistrationRequest;
+import com.pqc.core.dto.StoreRegistrationRequest;
 import com.pqc.core.entity.Role;
+import com.pqc.core.entity.Store;
 import com.pqc.core.entity.User;
 import com.pqc.core.entity.UserStatus;
 import com.pqc.core.repository.UserRepository;
+import com.pqc.core.repository.StoreRepository;
 import com.pqc.core.security.JwtService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import com.pqc.core.dto.GoogleCustomerAuthRequest;
 import com.pqc.core.dto.GoogleCustomerAuthResponse;
@@ -27,6 +31,7 @@ import java.util.Map;
 public class AuthController {
 
     private final UserRepository userRepository;
+    private final StoreRepository storeRepository;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final com.pqc.core.service.RefreshTokenService refreshTokenService;
@@ -34,7 +39,39 @@ public class AuthController {
     private final UserAddressRepository userAddressRepository;
 
     @PostMapping("/register")
+    @Transactional
     public ResponseEntity<?> register(@Valid @RequestBody CustomerRegistrationRequest request) {
+        return registerUser(request, Role.CUSTOMER);
+    }
+
+    @PostMapping("/register/plumber")
+    @Transactional
+    public ResponseEntity<?> registerPlumber(@Valid @RequestBody CustomerRegistrationRequest request) {
+        return registerUser(request, Role.PLUMBER);
+    }
+
+    @PostMapping("/register/store")
+    @Transactional
+    public ResponseEntity<?> registerStore(@Valid @RequestBody StoreRegistrationRequest request) {
+        ResponseEntity<?> registration = registerUser(request, Role.STORE_MANAGER);
+        if (!registration.getStatusCode().is2xxSuccessful()) {
+            return registration;
+        }
+
+        AuthResponse authResponse = (AuthResponse) registration.getBody();
+        User manager = userRepository.findById(authResponse.getUserId())
+                .orElseThrow(() -> new IllegalStateException("Registered Store manager was not found"));
+        storeRepository.save(Store.builder()
+                .name(request.getStoreName().trim())
+                .address(request.getStoreAddress().trim())
+                .latitude(request.getLatitude())
+                .longitude(request.getLongitude())
+                .manager(manager)
+                .build());
+        return registration;
+    }
+
+    private ResponseEntity<?> registerUser(CustomerRegistrationRequest request, Role role) {
         String email = request.getEmail().trim().toLowerCase();
         String phone = request.getPhone().trim();
 
@@ -55,7 +92,7 @@ public class AuthController {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullName().trim())
                 .phone(phone)
-                .role(Role.CUSTOMER)
+                .role(role)
                 .status(UserStatus.ACTIVE)
                 .authProvider("LOCAL")
                 .phoneVerified(false)
