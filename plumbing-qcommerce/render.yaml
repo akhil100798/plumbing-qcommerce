@@ -7,7 +7,7 @@ services:
     healthCheckPath: /actuator/health
     envVars:
       - key: SPRING_PROFILES_ACTIVE
-        value: prod
+        value: prod,staging
       - key: APP_SCHEDULING_ENABLED
         value: false
       - key: APP_DEMO_SEED_ENABLED
