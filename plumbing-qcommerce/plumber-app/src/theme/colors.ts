@@ -10,6 +10,7 @@ export const colors = {
   warning: '#F59E0B',      // Amber Yellow
   warningLight: '#FEF3C7',
   error: '#EF4444',        // Red
+  danger: '#EF4444',
   errorLight: '#FEE2E2',
 
   // Neutrals

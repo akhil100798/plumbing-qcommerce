@@ -3,6 +3,14 @@ import { ENDPOINTS } from '../api/endpoints';
 import { createBackendUnavailableError } from '../mockPolicy';
 import { MaterialItem, MaterialRequest, Store } from '../../types';
 
+export interface MaterialRequestSummary {
+  id: number;
+  serviceOrderId: number;
+  storeName: string | null;
+  status: string;
+  totalAmount: number | null;
+}
+
 const parseServiceOrderId = (serviceOrderId: string): number => {
   const digits = String(serviceOrderId || '').match(/\d+/)?.[0];
   const orderId = digits ? Number(digits) : NaN;
@@ -13,6 +21,14 @@ const parseServiceOrderId = (serviceOrderId: string): number => {
 };
 
 export const materialService = {
+  listMyRequests: async (): Promise<MaterialRequestSummary[]> => {
+    try {
+      const response = await apiClient.get<MaterialRequestSummary[]>('/plumber/material-requests');
+      return response.data;
+    } catch (error) {
+      throw createBackendUnavailableError('Material requests', error);
+    }
+  },
   // ── Store Discovery ──────────────────────────────────────────────────────
 
   getAvailableStores: async (): Promise<Store[]> => {

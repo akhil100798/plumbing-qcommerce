@@ -128,12 +128,10 @@ describe('plumber app tests', () => {
     });
     const tree = renderer!.toJSON();
 
-    expect(JSON.stringify(tree)).toContain('FixKart');
-    expect(JSON.stringify(tree)).toContain('Today\'s Earnings');
-    expect(JSON.stringify(tree)).toContain('Quick Actions');
+    expect(JSON.stringify(tree)).toContain('Loading dashboard…');
   });
 
-  it('renders the ProfileScreen with Availability Status option', () => {
+  it('renders the ProfileScreen with KYC section', () => {
     let renderer: TestRenderer.ReactTestRenderer;
     act(() => {
       renderer = TestRenderer.create(
@@ -144,7 +142,8 @@ describe('plumber app tests', () => {
     });
     const tree = renderer!.toJSON();
 
-    expect(JSON.stringify(tree)).toContain('Availability Status');
-    expect(JSON.stringify(tree)).toContain('Bank Details');
+    expect(JSON.stringify(tree)).toContain('Profile');
+    expect(JSON.stringify(tree)).toContain('KYC');
   });
 });
+

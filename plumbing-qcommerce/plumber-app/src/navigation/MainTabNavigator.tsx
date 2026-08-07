@@ -3,9 +3,9 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { DashboardScreen } from '../screens/dashboard/DashboardScreen';
-import { ActiveJobScreen } from '../screens/jobs/ActiveJobScreen';
+import { JobsScreen } from '../screens/jobs/JobsScreen';
 import { EarningsScreen } from '../screens/business/EarningsScreen';
-import { MaterialRequestScreen } from '../screens/materials/MaterialRequestScreen';
+import { MaterialsScreen } from '../screens/materials/MaterialsScreen';
 import { ProfileScreen } from '../screens/profile/ProfileScreen';
 import { colors, spacing, typography } from '../theme';
 import { MainTabParamList } from '../types/navigation';
@@ -62,7 +62,7 @@ export function MainTabNavigator() {
       />
       <Tab.Screen
         name="Jobs"
-        component={ActiveJobScreen as any}
+        component={JobsScreen}
         options={{ tabBarLabel: 'Jobs' }}
       />
       <Tab.Screen
@@ -72,7 +72,7 @@ export function MainTabNavigator() {
       />
       <Tab.Screen
         name="Materials"
-        component={MaterialRequestScreen as any}
+        component={MaterialsScreen}
         options={{ tabBarLabel: 'Materials' }}
       />
       <Tab.Screen

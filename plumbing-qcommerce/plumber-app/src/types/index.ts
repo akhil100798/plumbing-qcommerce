@@ -38,6 +38,7 @@ export interface ActiveJob {
   latitude: number;
   longitude: number;
   customerNote?: string;
+  issueDescription?: string;
   estimatedEarnings: number;
   partsCharge?: number;
   timeline: {

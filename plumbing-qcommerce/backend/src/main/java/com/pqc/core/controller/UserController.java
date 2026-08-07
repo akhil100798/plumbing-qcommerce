@@ -38,7 +38,7 @@ public class UserController {
         com.pqc.core.entity.PlumberKyc kyc = plumberKycRepository.findByPlumberId(user.getId())
                 .orElseGet(() -> com.pqc.core.entity.PlumberKyc.builder()
                         .plumberId(user.getId())
-                        .status(com.pqc.core.entity.PlumberKycStatus.APPROVED)
+                        .status(com.pqc.core.entity.PlumberKycStatus.NOT_SUBMITTED)
                         .build());
         kyc.setAvailabilityStatus(request.availability()
                 ? com.pqc.core.entity.PlumberAvailabilityStatus.ONLINE

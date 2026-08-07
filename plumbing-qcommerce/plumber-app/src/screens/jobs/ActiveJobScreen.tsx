@@ -20,6 +20,7 @@ import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
 import { setActiveJob, updateJobStatus } from '../../redux/slices/jobSlice';
 import { jobService } from '../../services/jobs/jobService';
+import { ActiveJob } from '../../types';
 import PhoneIcon from '../../assets/icons/phone.svg';
 import ChatIcon from '../../assets/icons/chat.svg';
 import MapPinIcon from '../../assets/icons/location-pin.svg';
@@ -33,8 +34,10 @@ export function ActiveJobScreen({ route, navigation }: Props) {
   const { activeJob } = useSelector((state: RootState) => state.job);
 
   const [syncLoading, setSyncLoading] = useState(false);
+  const [loadedJob, setLoadedJob] = useState<ActiveJob | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const currentJobId = routeJobId || activeJob?.jobId || 'JK42315';
+  const currentJobId = routeJobId || activeJob?.jobId;
 
   useEffect(() => {
     async function syncJob() {
@@ -43,8 +46,9 @@ export function ActiveJobScreen({ route, navigation }: Props) {
         try {
           const job = await jobService.fetchJobById(String(currentJobId));
           dispatch(setActiveJob(job));
+          setLoadedJob(job);
         } catch (err) {
-          console.error('Failed to sync job:', err);
+          setLoadError(err instanceof Error ? err.message : 'Unable to load this job.');
         } finally {
           setSyncLoading(false);
         }
@@ -53,15 +57,11 @@ export function ActiveJobScreen({ route, navigation }: Props) {
     syncJob();
   }, [currentJobId, activeJob?.jobId]);
 
-  const displayJob = activeJob || {
-    jobId: currentJobId,
-    status: 'accepted',
-    customer: { fullName: 'Anil Kumar', phone: '+91 98765 43210', id: 'CUST-1001', rating: 4.8 },
-    address: '12, 6th Cross, Indiranagar, Bengaluru, 560038',
-    latitude: 12.9716,
-    longitude: 77.5946,
-    issueDescription: 'Bathroom Pipe Leakage',
-  };
+  const displayJob = activeJob && activeJob.jobId === currentJobId ? activeJob : loadedJob;
+
+  if (!currentJobId) return <ScreenWrapper><View style={styles.empty}><Text>No active job selected.</Text><PrimaryButton title="Back to jobs" onPress={() => navigation.navigate('Main')} /></View></ScreenWrapper>;
+  if (syncLoading && !displayJob) return <ScreenWrapper><View style={styles.empty}><ActivityIndicator color={colors.primary} /><Text>Loading job…</Text></View></ScreenWrapper>;
+  if (!displayJob) return <ScreenWrapper><View style={styles.empty}><Text>{loadError || 'This job is unavailable.'}</Text><PrimaryButton title="Back to jobs" onPress={() => navigation.navigate('Main')} /></View></ScreenWrapper>;
 
   const getStepIndex = (status: string) => {
     switch (status) {
@@ -82,7 +82,7 @@ export function ActiveJobScreen({ route, navigation }: Props) {
   };
 
   const handleCall = () => {
-    Alert.alert('Phone Call', `Calling customer at ${displayJob.customer.phone || '+91 98765 43210'}`);
+    Alert.alert('Phone Call', displayJob.customer.phone ? `Calling customer at ${displayJob.customer.phone}` : 'Customer phone is unavailable.');
   };
 
   const handleChat = () => {
@@ -145,7 +145,7 @@ export function ActiveJobScreen({ route, navigation }: Props) {
               <Text style={styles.statusText}>{displayJob.status.toUpperCase()}</Text>
             </View>
           </View>
-          <Text style={styles.titleText}>{(displayJob as any).issueDescription || 'Bathroom Pipe Leakage'}</Text>
+          <Text style={styles.titleText}>{displayJob.issueDescription || 'Service job'}</Text>
           <View style={styles.addressRow}>
             <MapPinIcon width={14} height={14} stroke={colors.textMuted} />
             <Text style={styles.addressText}>{displayJob.address}</Text>
@@ -177,7 +177,7 @@ export function ActiveJobScreen({ route, navigation }: Props) {
         {/* Job Details Card */}
         <View style={[styles.card, { marginTop: spacing.md }]}>
           <Text style={styles.cardSubtitle}>Job Details</Text>
-          <Text style={styles.detailDescription}>Leakage in bathroom inlet pipe.</Text>
+          <Text style={styles.detailDescription}>{displayJob.customerNote || displayJob.issueDescription || 'No job description provided.'}</Text>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Work Type</Text>
             <Text style={styles.detailVal}>Repair</Text>
@@ -314,6 +314,13 @@ const styles = StyleSheet.create({
   },
   actionContainer: {
     marginTop: spacing.md,
+  },
+  empty: {
+    flex: 1,
+    padding: spacing.layout,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.md,
   },
   navButton: {
     backgroundColor: colors.primary,

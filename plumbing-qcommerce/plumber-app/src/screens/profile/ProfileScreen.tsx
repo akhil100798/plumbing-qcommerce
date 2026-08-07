@@ -1,180 +1,40 @@
-import React from 'react';
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  SafeAreaView,
-  Alert,
-} from 'react-native';
-import { StackScreenProps } from '@react-navigation/stack';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { AppHeader } from '../../components/common/AppHeader';
-import { Avatar } from '../../components/common/Avatar';
-import { MenuRow } from '../../components/cards/MenuRow';
-import { setAvailability, logout } from '../../redux/slices/authSlice';
-import { profileService } from '../../services/profile/profileService';
-import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
-import { AppStackParamList } from '../../types/navigation';
+import { logout } from '../../redux/slices/authSlice';
 import { RootState } from '../../redux/store';
-import StarIcon from '../../assets/icons/star.svg';
+import { kycService, PlumberKyc } from '../../services/kyc/kycService';
+import { AppStackParamList, MainTabParamList } from '../../types/navigation';
+import { borderRadius, colors, spacing, typography } from '../../theme';
 
-type Props = StackScreenProps<AppStackParamList, 'Profile' | any>;
-
-const STATS = [
-  { label: 'Jobs Completed', value: '128' },
-  { label: 'Rating', value: '4.8' },
-  { label: 'Member Since', value: 'Mar 2023' },
-];
-
-const MENU_ITEMS = [
-  { icon: 'person-outline', label: 'Personal Information' },
-  { icon: 'options-outline', label: 'Availability Status' },
-  { icon: 'document-text-outline', label: 'Documents' },
-  { icon: 'card-outline', label: 'Bank Details' },
-  { icon: 'notifications-outline', label: 'Notification Settings' },
-  { icon: 'help-circle-outline', label: 'Help & Support' },
-  { icon: 'log-out-outline', label: 'Logout', danger: true, showChevron: false },
-];
-
-export function ProfileScreen({ navigation }: Props) {
+type Props = BottomTabScreenProps<MainTabParamList, 'Profile'>;
+type RootNavigation = StackNavigationProp<AppStackParamList>;
+export function ProfileScreen(_: Props) {
   const dispatch = useDispatch();
-  const { plumber } = useSelector((state: RootState) => state.auth);
-
-  const plumberName = plumber?.fullName || 'Ramesh Kumar';
-  const plumberRating = plumber?.rating ?? 4.8;
-  const plumberReviews = plumber?.ratingsCount ?? 125;
-
-  const handleEditProfile = () => {
-    Alert.alert('Edit Profile', 'Profile edit is not configured in staging.');
+  const navigation = useNavigation<RootNavigation>();
+  const plumber = useSelector((state: RootState) => state.auth.plumber) ?? { fullName: '', email: '', phone: '', rating: 0 };
+  const [kyc, setKyc] = useState<PlumberKyc | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [aadhaarNumber, setAadhaarNumber] = useState('');
+  const [panNumber, setPanNumber] = useState('');
+  const [bankAccountNumber, setBankAccountNumber] = useState('');
+  const [experienceYears, setExperienceYears] = useState('');
+  const [serviceAreas, setServiceAreas] = useState('');
+  const load = useCallback(async () => { setLoading(true); try { setKyc(await kycService.get()); } catch (error) { Alert.alert('KYC unavailable', error instanceof Error ? error.message : 'Please retry.'); } finally { setLoading(false); } }, []);
+  useEffect(() => { load(); }, [load]);
+  const submit = async () => {
+    if (!/^\d{12}$/.test(aadhaarNumber) || !/^[A-Za-z]{5}\d{4}[A-Za-z]$/.test(panNumber) || !/^\d{6,18}$/.test(bankAccountNumber) || !serviceAreas.trim()) { Alert.alert('Validation error', 'Enter a valid Aadhaar, PAN, bank account number, and service area.'); return; }
+    const years = Number(experienceYears);
+    if (!Number.isInteger(years) || years < 0 || years > 60) { Alert.alert('Validation error', 'Experience must be between 0 and 60 years.'); return; }
+    setSubmitting(true); try { const result = await kycService.submit({ aadhaarNumber, panNumber: panNumber.toUpperCase(), bankAccountNumber, experienceYears: years, serviceAreas: serviceAreas.trim() }); setKyc(result); setShowForm(false); } catch (error) { Alert.alert('KYC submission failed', error instanceof Error ? error.message : 'Please retry.'); } finally { setSubmitting(false); }
   };
-
-  const handleLogout = () => {
-    Alert.alert('Confirm Logout', 'Are you sure you want to logout of the FixKart Plumber app?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: () => {
-          dispatch(logout());
-          navigation.replace('Auth');
-        },
-      },
-    ]);
-  };
-
-  const handleNavigation = (menuName: string) => {
-    if (menuName === 'Help & Support') {
-      navigation.navigate('Chat', { name: 'Operations Support', role: 'Support' });
-    } else {
-      Alert.alert('Feature details', `${menuName} settings are not configured in staging.`);
-    }
-  };
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <AppHeader title="Profile" onBackPress={() => navigation.navigate('Main')} />
-
-      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
-          <View style={styles.profileTopRow}>
-            <Avatar name={plumberName} size={56} />
-            <View style={{ flex: 1, marginLeft: spacing.sm }}>
-              <Text style={styles.name}>{plumberName}</Text>
-              <View style={styles.ratingRow}>
-                <StarIcon width={14} height={14} fill={colors.warning} stroke={colors.warning} />
-                <Text style={styles.ratingText}>
-                  {plumberRating} · {plumberReviews} Reviews
-                </Text>
-              </View>
-            </View>
-            <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
-              <Text style={styles.editLabel}>Edit Profile</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Stats Row */}
-          <View style={styles.statsRow}>
-            {STATS.map((s, i) => (
-              <React.Fragment key={s.label}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{s.value}</Text>
-                  <Text style={styles.statLabel}>{s.label}</Text>
-                </View>
-                {i < STATS.length - 1 && <View style={styles.statDivider} />}
-              </React.Fragment>
-            ))}
-          </View>
-        </View>
-
-        {/* Menu Card */}
-        <View style={styles.menuCard}>
-          {MENU_ITEMS.map((item, i) => (
-            <React.Fragment key={item.label}>
-              <MenuRow
-                icon={item.icon}
-                label={item.label}
-                danger={item.danger}
-                showChevron={item.showChevron !== false}
-                onPress={item.danger ? handleLogout : () => handleNavigation(item.label)}
-              />
-              {i < MENU_ITEMS.length - 1 && <View style={styles.menuDivider} />}
-            </React.Fragment>
-          ))}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
+  const statusText = kyc?.status === 'PENDING' ? 'KYC under review' : kyc?.status === 'APPROVED' ? 'Verified' : kyc?.status === 'REJECTED' ? 'KYC rejected' : 'KYC not submitted';
+  return <ScrollView contentContainerStyle={styles.container}><Text style={styles.title}>Profile</Text><View style={styles.card}><Text style={styles.name}>{plumber?.fullName || 'Plumber'}</Text><Text>{plumber?.email || 'Email unavailable'}</Text><Text>{plumber?.phone || 'Phone unavailable'}</Text><Text>{plumber?.rating > 0 ? `Rating: ${plumber.rating.toFixed(1)}` : 'No reviews yet'}</Text></View><View style={styles.card}><Text style={styles.section}>KYC</Text>{loading ? <ActivityIndicator color={colors.primary} /> : <><Text>{statusText}</Text>{kyc?.status === 'REJECTED' && kyc.rejectionReason ? <Text style={styles.error}>{kyc.rejectionReason}</Text> : null}{(kyc?.status === 'NOT_SUBMITTED' || kyc?.status === 'REJECTED') && <TouchableOpacity onPress={() => setShowForm(!showForm)}><Text style={styles.link}>{showForm ? 'Cancel' : kyc?.status === 'REJECTED' ? 'Resubmit KYC' : 'Complete KYC'}</Text></TouchableOpacity>}</>}</View>{showForm && <View style={styles.card}><TextInput style={styles.input} value={aadhaarNumber} onChangeText={setAadhaarNumber} placeholder="12-digit Aadhaar number" keyboardType="number-pad" maxLength={12} /><TextInput style={styles.input} value={panNumber} onChangeText={setPanNumber} placeholder="PAN number" autoCapitalize="characters" maxLength={10} /><TextInput style={styles.input} value={bankAccountNumber} onChangeText={setBankAccountNumber} placeholder="Bank account number" keyboardType="number-pad" /><TextInput style={styles.input} value={experienceYears} onChangeText={setExperienceYears} placeholder="Experience in years" keyboardType="number-pad" /><TextInput style={styles.input} value={serviceAreas} onChangeText={setServiceAreas} placeholder="Service areas" /><TouchableOpacity style={styles.button} onPress={submit} disabled={submitting}><Text style={styles.buttonText}>{submitting ? 'Submitting…' : 'Submit KYC'}</Text></TouchableOpacity></View>}<TouchableOpacity style={styles.logout} onPress={() => { dispatch(logout()); navigation.replace('Auth'); }}><Text style={styles.logoutText}>Logout</Text></TouchableOpacity></ScrollView>;
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  body: { padding: spacing.md, paddingBottom: spacing.xl },
-  profileCard: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.sm,
-  },
-  profileTopRow: { flexDirection: 'row', alignItems: 'center' },
-  name: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  ratingText: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
-  editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    borderRadius: borderRadius.sm,
-  },
-  editLabel: { fontSize: typography.fontSize.xs, color: colors.primary, fontWeight: typography.fontWeight.bold },
-  statsRow: {
-    flexDirection: 'row',
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  statItem: { flex: 1, alignItems: 'center' },
-  statValue: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  statLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: 2, textAlign: 'center' },
-  statDivider: { width: 1, backgroundColor: colors.border },
-  menuCard: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
-    marginTop: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.sm,
-  },
-  menuDivider: { height: 1, backgroundColor: colors.border },
-});
+const styles = StyleSheet.create({ container: { flexGrow: 1, padding: spacing.md, gap: spacing.md, backgroundColor: colors.background }, title: { fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, color: colors.textPrimary }, card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: borderRadius.md, padding: spacing.md, gap: spacing.sm }, name: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary }, section: { fontWeight: typography.fontWeight.bold, color: colors.textPrimary }, input: { borderWidth: 1, borderColor: colors.border, borderRadius: borderRadius.sm, padding: spacing.sm, color: colors.textPrimary }, link: { color: colors.primary, fontWeight: typography.fontWeight.bold }, error: { color: colors.danger }, button: { backgroundColor: colors.primary, padding: spacing.md, alignItems: 'center', borderRadius: borderRadius.sm }, buttonText: { color: '#fff', fontWeight: typography.fontWeight.bold }, logout: { alignItems: 'center', padding: spacing.md }, logoutText: { color: colors.danger, fontWeight: typography.fontWeight.bold } });
