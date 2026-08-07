@@ -95,13 +95,14 @@ public class StoreService {
         if (updateRequest.getAddress() != null && !updateRequest.getAddress().isBlank()) {
             current.setAddress(updateRequest.getAddress());
         }
-        if (updateRequest.getPhone() != null && !updateRequest.getPhone().isBlank()) {
-            current.setPhone(updateRequest.getPhone());
+        if (updateRequest.getLatitude() != null) {
+            current.setLatitude(updateRequest.getLatitude());
         }
-        if (updateRequest.getImageUrl() != null) {
-            current.setImageUrl(updateRequest.getImageUrl());
+        if (updateRequest.getLongitude() != null) {
+            current.setLongitude(updateRequest.getLongitude());
         }
         return storeRepository.save(current);
     }
 }
+
 
