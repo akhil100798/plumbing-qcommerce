@@ -46,13 +46,20 @@ export const storeService = {
     return storeService.getStoreProfile();
   },
 
-  updateStoreProfile: async (store: Store): Promise<Store> => {
-    if (!canUseDevMockFallbacks()) {
-      throw createUnsupportedBackendError('Store profile updates');
+  updateStoreProfile: async (store: Partial<Store>): Promise<Store> => {
+    try {
+      const response = await apiClient.put(ENDPOINTS.store.me, store);
+      const mapped = mapStore(response.data);
+      cachedStoreProfile = mapped;
+      return mapped;
+    } catch (e) {
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Store profile update', e);
+        cachedStoreProfile = { ...(cachedStoreProfile || mockStore), ...store };
+        return cachedStoreProfile;
+      }
+      throw createBackendUnavailableError('store profile update', e);
     }
-
-    warnUsingDevMockFallback('Store profile update', new Error('Store profile updates'));
-    cachedStoreProfile = { ...(cachedStoreProfile || mockStore), ...store };
-    return cachedStoreProfile;
   }
 };
+

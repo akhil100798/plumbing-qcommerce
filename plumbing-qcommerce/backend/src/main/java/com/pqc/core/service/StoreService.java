@@ -85,4 +85,23 @@ public class StoreService {
         stock.setAvailableQuantity(request.getQuantity());
         return stockRepository.save(stock);
     }
+
+    @Transactional
+    public Store updateCurrentStoreProfile(Store updateRequest) {
+        Store current = getCurrentStoreForManager();
+        if (updateRequest.getName() != null && !updateRequest.getName().isBlank()) {
+            current.setName(updateRequest.getName());
+        }
+        if (updateRequest.getAddress() != null && !updateRequest.getAddress().isBlank()) {
+            current.setAddress(updateRequest.getAddress());
+        }
+        if (updateRequest.getPhone() != null && !updateRequest.getPhone().isBlank()) {
+            current.setPhone(updateRequest.getPhone());
+        }
+        if (updateRequest.getImageUrl() != null) {
+            current.setImageUrl(updateRequest.getImageUrl());
+        }
+        return storeRepository.save(current);
+    }
 }
+

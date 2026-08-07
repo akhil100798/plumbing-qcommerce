@@ -54,6 +54,13 @@ public class StoreController {
         return ResponseEntity.ok(storeService.getCurrentStoreForManager());
     }
 
+    @PutMapping("/me")
+    @PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
+    public ResponseEntity<Store> updateCurrentStore(@RequestBody Store request) {
+        return ResponseEntity.ok(storeService.updateCurrentStoreProfile(request));
+    }
+
+
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Store> getStoreById(@PathVariable Long id) {
