@@ -108,8 +108,8 @@ test_run.txt
 # Generated evidence artifacts
 qa-evidence/
 evidence/
-docs/
-reports/
+!docs/
+!reports/
 playwright-report/
 test-results/
 store-app/.expo/
