@@ -1,26 +1,34 @@
 package com.pqc.core.controller;
 
 import com.pqc.core.dto.AuthResponse;
+import com.pqc.core.dto.AuthUserDto;
 import com.pqc.core.dto.CustomerRegistrationRequest;
+import com.pqc.core.dto.GoogleCustomerAuthRequest;
+import com.pqc.core.dto.GoogleCustomerAuthResponse;
 import com.pqc.core.dto.StoreRegistrationRequest;
+import com.pqc.core.entity.PlumberAvailabilityStatus;
+import com.pqc.core.entity.PlumberKyc;
+import com.pqc.core.entity.PlumberKycStatus;
 import com.pqc.core.entity.Role;
 import com.pqc.core.entity.Store;
 import com.pqc.core.entity.User;
 import com.pqc.core.entity.UserStatus;
-import com.pqc.core.repository.UserRepository;
+import com.pqc.core.repository.PlumberKycRepository;
 import com.pqc.core.repository.StoreRepository;
+import com.pqc.core.repository.UserAddressRepository;
+import com.pqc.core.repository.UserRepository;
+import com.pqc.core.security.CurrentUser;
 import com.pqc.core.security.JwtService;
+import com.pqc.core.service.GoogleTokenVerifierService;
+import com.pqc.core.service.RefreshTokenService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import com.pqc.core.dto.GoogleCustomerAuthRequest;
-import com.pqc.core.dto.GoogleCustomerAuthResponse;
-import com.pqc.core.service.GoogleTokenVerifierService;
-import com.pqc.core.repository.UserAddressRepository;
 
 import java.util.Map;
 
@@ -32,11 +40,24 @@ public class AuthController {
 
     private final UserRepository userRepository;
     private final StoreRepository storeRepository;
-    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final com.pqc.core.service.RefreshTokenService refreshTokenService;
+    private final RefreshTokenService refreshTokenService;
     private final GoogleTokenVerifierService googleTokenVerifierService;
     private final UserAddressRepository userAddressRepository;
+    private final CurrentUser currentUser;
+    private final PlumberKycRepository plumberKycRepository;
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getAuthenticatedUser() {
+        User user = currentUser.require();
+        if (user.getRole() == Role.PLUMBER) {
+            plumberKycRepository.findByPlumberId(user.getId()).ifPresent(kyc -> {
+                user.setAvailability(kyc.getAvailabilityStatus() == PlumberAvailabilityStatus.ONLINE);
+            });
+        }
+        return ResponseEntity.ok(AuthUserDto.from(user));
+    }
 
     @PostMapping("/register")
     @Transactional
@@ -71,7 +92,7 @@ public class AuthController {
         return registration;
     }
 
-    private ResponseEntity<?> registerUser(CustomerRegistrationRequest request, Role role) {
+    private ResponseEntity<?> registerUser(CustomerRegistrationRequest request, Role defaultRole) {
         String email = request.getEmail().trim().toLowerCase();
         String phone = request.getPhone().trim();
 
@@ -92,7 +113,7 @@ public class AuthController {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullName().trim())
                 .phone(phone)
-                .role(role)
+                .role(defaultRole)
                 .status(UserStatus.ACTIVE)
                 .authProvider("LOCAL")
                 .phoneVerified(false)
@@ -100,6 +121,16 @@ public class AuthController {
                 .build();
 
         User saved = userRepository.save(user);
+
+        if (saved.getRole() == Role.PLUMBER) {
+            plumberKycRepository.findByPlumberId(saved.getId())
+                    .orElseGet(() -> plumberKycRepository.save(PlumberKyc.builder()
+                            .plumberId(saved.getId())
+                            .status(PlumberKycStatus.NOT_SUBMITTED)
+                            .availabilityStatus(PlumberAvailabilityStatus.OFFLINE)
+                            .build()));
+        }
+
         String token = jwtService.generateToken(saved.getEmail(), saved.getRole().name());
         com.pqc.core.entity.RefreshToken refreshToken = refreshTokenService.createRefreshToken(saved);
 

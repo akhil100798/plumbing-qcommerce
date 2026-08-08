@@ -87,6 +87,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/admin/seed-user").hasAnyRole("SUPER_ADMIN", "ADMIN")
                 .requestMatchers("/api/v1/delivery/**").denyAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/service-orders/*/material-requests").hasRole("PLUMBER")
+                .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/users/me/availability").hasRole("PLUMBER")
                 .requestMatchers("/api/v1/users/me/addresses", "/api/v1/users/me/addresses/**").authenticated()

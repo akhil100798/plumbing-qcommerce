@@ -407,4 +407,126 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Missing refresh token"));
     }
+
+    @Test
+    void getAuthMe_unauthenticated_returns401() throws Exception {
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/auth/me"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void getAuthMe_customer_returns200AndCustomerRole() throws Exception {
+        User user = userRepository.save(User.builder()
+                .email("me-customer@example.com")
+                .password(passwordEncoder.encode("Password123!"))
+                .fullName("Me Customer")
+                .phone("9800000001")
+                .role(Role.CUSTOMER)
+                .build());
+
+        MvcResult loginResult = mvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", "me-customer@example.com",
+                                "password", "Password123!"
+                        ))))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String token = (String) objectMapper.readValue(loginResult.getResponse().getContentAsString(), Map.class).get("token");
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/auth/me")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(user.getId()))
+                .andExpect(jsonPath("$.email").value("me-customer@example.com"))
+                .andExpect(jsonPath("$.role").value("CUSTOMER"));
+    }
+
+    @Test
+    void getAuthMe_plumber_returns200AndPlumberRole() throws Exception {
+        User user = userRepository.save(User.builder()
+                .email("me-plumber@example.com")
+                .password(passwordEncoder.encode("Password123!"))
+                .fullName("Me Plumber")
+                .phone("9800000002")
+                .role(Role.PLUMBER)
+                .build());
+
+        MvcResult loginResult = mvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", "me-plumber@example.com",
+                                "password", "Password123!"
+                        ))))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String token = (String) objectMapper.readValue(loginResult.getResponse().getContentAsString(), Map.class).get("token");
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/auth/me")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(user.getId()))
+                .andExpect(jsonPath("$.email").value("me-plumber@example.com"))
+                .andExpect(jsonPath("$.role").value("PLUMBER"));
+    }
+
+    @Test
+    void getAuthMe_storeManager_returns200AndStoreRole() throws Exception {
+        User user = userRepository.save(User.builder()
+                .email("me-store@example.com")
+                .password(passwordEncoder.encode("Password123!"))
+                .fullName("Me Store")
+                .phone("9800000003")
+                .role(Role.STORE_MANAGER)
+                .build());
+
+        MvcResult loginResult = mvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", "me-store@example.com",
+                                "password", "Password123!"
+                        ))))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String token = (String) objectMapper.readValue(loginResult.getResponse().getContentAsString(), Map.class).get("token");
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/auth/me")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(user.getId()))
+                .andExpect(jsonPath("$.email").value("me-store@example.com"))
+                .andExpect(jsonPath("$.role").value("STORE_MANAGER"));
+    }
+
+    @Test
+    void getAuthMe_admin_returns200AndAdminRole() throws Exception {
+        User user = userRepository.save(User.builder()
+                .email("me-admin@example.com")
+                .password(passwordEncoder.encode("Password123!"))
+                .fullName("Me Admin")
+                .phone("9800000004")
+                .role(Role.ADMIN)
+                .build());
+
+        MvcResult loginResult = mvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "email", "me-admin@example.com",
+                                "password", "Password123!"
+                        ))))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String token = (String) objectMapper.readValue(loginResult.getResponse().getContentAsString(), Map.class).get("token");
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/auth/me")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(user.getId()))
+                .andExpect(jsonPath("$.email").value("me-admin@example.com"))
+                .andExpect(jsonPath("$.role").value("ADMIN"));
+    }
 }

@@ -20,6 +20,7 @@ public class AuthUserDto {
     private Boolean profileComplete;
     private String authProvider;
     private String profileImageUrl;
+    private Boolean availability;
 
     public static AuthUserDto from(User user) {
         return AuthUserDto.builder()
@@ -32,6 +33,7 @@ public class AuthUserDto {
                 .profileComplete(user.getProfileComplete())
                 .authProvider(user.getAuthProvider())
                 .profileImageUrl(user.getProfileImageUrl())
+                .availability(user.getAvailability())
                 .build();
     }
 }

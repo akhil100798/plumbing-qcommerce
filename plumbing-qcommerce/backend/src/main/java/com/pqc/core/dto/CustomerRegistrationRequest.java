@@ -31,4 +31,6 @@ public class CustomerRegistrationRequest {
 
     @NotBlank(message = "confirmPassword is required")
     private String confirmPassword;
+
+    private com.pqc.core.entity.Role role;
 }
