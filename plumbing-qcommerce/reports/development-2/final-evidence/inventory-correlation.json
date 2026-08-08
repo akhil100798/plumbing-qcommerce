@@ -1,0 +1,18 @@
+{
+  "productId": 404,
+  "storeId": 303,
+  "productName": "CP Brass Bib Cock 15mm",
+  "stockTransitions": {
+    "availableBefore": 50,
+    "reservedBefore": 0,
+    "availableAfterApproval": 45,
+    "reservedAfterApproval": 5,
+    "availableAfterCollection": 45,
+    "reservedAfterCollection": 0
+  },
+  "invariants": {
+    "nonNegativeStock": true,
+    "noDoubleDeduction": true,
+    "noReservationLeak": true
+  }
+}
