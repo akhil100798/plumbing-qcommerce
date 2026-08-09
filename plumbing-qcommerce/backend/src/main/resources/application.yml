@@ -95,6 +95,8 @@ app:
     demo-enabled: ${APP_SEED_DEMO_ENABLED:false}
     catalog-enabled: ${APP_SEED_CATALOG_ENABLED:false}
     admin-demo-enabled: ${APP_SEED_ADMIN_DEMO_ENABLED:false}
+    mobile-qa-enabled: ${APP_SEED_MOBILE_QA_ENABLED:false}
+    staging-admin-enabled: ${APP_SEED_STAGING_ADMIN_ENABLED:false}
     fail-if-prod-demo-enabled: ${APP_SEED_FAIL_IF_PROD_DEMO_ENABLED:true}
     demo-password: ${APP_SEED_DEMO_PASSWORD:password}
 
