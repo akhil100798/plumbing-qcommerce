@@ -32,6 +32,12 @@ spring:
         max.block.ms: 50
         request.timeout.ms: 50
 
+app:
+  scheduling:
+    enabled: false
+  demo-seed:
+    enabled: false
+
 # Disable Zipkin/tracing in tests to avoid connection errors
 management:
   health:

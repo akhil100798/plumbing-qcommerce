@@ -8,7 +8,9 @@ import org.springframework.kafka.core.KafkaTemplate;
 
 import java.util.concurrent.CompletableFuture;
 
-@TestConfiguration
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
 public class TestKafkaConfig {
 
     @Bean
