@@ -18,10 +18,10 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
-      - name: Build and Test Backend
+      - name: Build, Test and Package Backend
         run: |
           cd backend
-          ./mvnw test-compile
+          ./mvnw test package -DskipTests=false
 
   customer-app-gate:
     name: Customer App Typecheck & Test
