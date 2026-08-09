@@ -49,6 +49,9 @@ public class DataSourceConfig {
                     int port = uri.getPort() > 0 ? uri.getPort() : 5432;
                     String path = uri.getPath();
                     if (host != null && !host.isBlank()) {
+                        if (!host.contains(".") && host.startsWith("dpg-")) {
+                            host = host + ".oregon-postgres.render.com";
+                        }
                         url = "jdbc:postgresql://" + host + ":" + port + (path != null ? path : "");
                     }
                     String userInfo = uri.getUserInfo();
