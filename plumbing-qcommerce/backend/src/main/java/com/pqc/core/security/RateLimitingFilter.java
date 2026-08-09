@@ -74,7 +74,14 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     private String getClientIp(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            return xForwardedFor.split(",")[0].trim();
+            String clientIp = xForwardedFor.split(",")[0].trim();
+            if (!clientIp.equalsIgnoreCase("unknown") && !clientIp.isEmpty()) {
+                return clientIp;
+            }
+        }
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank() && !realIp.equalsIgnoreCase("unknown")) {
+            return realIp.trim();
         }
         return request.getRemoteAddr() != null ? request.getRemoteAddr() : "127.0.0.1";
     }

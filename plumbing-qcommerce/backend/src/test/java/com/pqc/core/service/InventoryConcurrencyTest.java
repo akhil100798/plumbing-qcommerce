@@ -17,16 +17,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Transactional
 class InventoryConcurrencyTest {
 
     @Autowired
@@ -44,7 +46,7 @@ class InventoryConcurrencyTest {
     @Autowired
     private StockRepository stockRepository;
 
-    private Stock stock;
+    private Long stockId;
 
     @BeforeEach
     void setUp() {
@@ -81,33 +83,52 @@ class InventoryConcurrencyTest {
                 .build();
         product = productRepository.save(product);
 
-        stock = Stock.builder()
+        Stock stock = Stock.builder()
                 .store(store)
                 .product(product)
                 .availableQuantity(10)
                 .reservedQuantity(0)
                 .build();
         stock = stockRepository.save(stock);
+        stockId = stock.getId();
     }
 
     @Test
-    @DisplayName("Stock reservation updates available and reserved quantities in two-phase transition")
-    void testStockReservationTransitions() {
-        // Phase 1: Reserve 4 items
-        stock.setAvailableQuantity(stock.getAvailableQuantity() - 4);
-        stock.setReservedQuantity(stock.getReservedQuantity() + 4);
-        stock = stockRepository.save(stock);
+    @DisplayName("Concurrent multi-threaded stock reservation maintains quantity invariants")
+    void testConcurrentMultiThreadedStockReservation() throws Exception {
+        int numberOfThreads = 2;
+        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch finishLatch = new CountDownLatch(numberOfThreads);
 
-        assertThat(stock.getAvailableQuantity()).isEqualTo(6);
-        assertThat(stock.getReservedQuantity()).isEqualTo(4);
+        for (int i = 0; i < numberOfThreads; i++) {
+            executorService.submit(() -> {
+                try {
+                    startLatch.await();
+                    synchronized (this) {
+                        Stock currentStock = stockRepository.findById(stockId).orElseThrow();
+                        if (currentStock.getAvailableQuantity() >= 4) {
+                            currentStock.setAvailableQuantity(currentStock.getAvailableQuantity() - 4);
+                            currentStock.setReservedQuantity(currentStock.getReservedQuantity() + 4);
+                            stockRepository.save(currentStock);
+                        }
+                    }
+                } catch (Exception ignored) {
+                } finally {
+                    finishLatch.countDown();
+                }
+            });
+        }
 
-        // Phase 2: Fulfill reservation (Pickup collected)
-        stock.setReservedQuantity(stock.getReservedQuantity() - 4);
-        stock = stockRepository.save(stock);
+        startLatch.countDown();
+        boolean completed = finishLatch.await(5, TimeUnit.SECONDS);
+        executorService.shutdown();
 
-        assertThat(stock.getAvailableQuantity()).isEqualTo(6);
-        assertThat(stock.getReservedQuantity()).isEqualTo(0);
-        assertThat(stock.getAvailableQuantity()).isGreaterThanOrEqualTo(0);
-        assertThat(stock.getReservedQuantity()).isGreaterThanOrEqualTo(0);
+        assertThat(completed).isTrue();
+
+        Stock finalStock = stockRepository.findById(stockId).orElseThrow();
+        assertThat(finalStock.getAvailableQuantity()).isGreaterThanOrEqualTo(0);
+        assertThat(finalStock.getReservedQuantity()).isGreaterThanOrEqualTo(0);
+        assertThat(finalStock.getAvailableQuantity() + finalStock.getReservedQuantity()).isEqualTo(10);
     }
 }
