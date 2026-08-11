@@ -283,10 +283,41 @@ public class PlumberMaterialService {
         ProductOrder request = storeRequestEntity(id);
         User manager = role(Role.STORE_MANAGER);
         ProductOrderStatus prev = request.getStatus();
-        move(request, ProductOrderStatus.STORE_REVIEWING, ProductOrderStatus.REJECTED);
+        if (Set.of(ProductOrderStatus.RESERVED, ProductOrderStatus.PREPARING,
+                ProductOrderStatus.READY_FOR_PICKUP, ProductOrderStatus.PLUMBER_AT_STORE).contains(request.getStatus())) {
+            releaseReservations(request);
+        }
+        request.setStatus(ProductOrderStatus.REJECTED);
         request.setNotes(reason);
+        ServiceOrder job = request.getServiceOrder();
+        if (job != null && Set.of(OrderStatus.WAITING_FOR_STORE, OrderStatus.MATERIALS_REQUIRED,
+                OrderStatus.READY_FOR_PRODUCT_PICKUP, OrderStatus.PLUMBER_COLLECTING_PRODUCTS).contains(job.getStatus())) {
+            job.setStatus(OrderStatus.MATERIALS_REQUIRED);
+            jobs.save(job);
+        }
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.REJECTED, manager, reason);
+        return toDetail(saved);
+    }
+
+    @Transactional
+    public MaterialRequestDetailResponse updatePackingProgress(Long id, Map<Long, Integer> packedQuantities) {
+        ProductOrder request = storeRequestEntity(id);
+        if (request.getStatus() != ProductOrderStatus.PREPARING && request.getStatus() != ProductOrderStatus.RESERVED && request.getStatus() != ProductOrderStatus.APPROVED) {
+            throw error(HttpStatus.CONFLICT, "Packing progress can only be updated for active requests");
+        }
+        if (packedQuantities != null) {
+            for (ProductOrderItem item : request.getItems()) {
+                if (packedQuantities.containsKey(item.getProduct().getId())) {
+                    int packed = packedQuantities.get(item.getProduct().getId());
+                    if (packed < 0 || packed > item.getQuantity()) {
+                        throw error(HttpStatus.BAD_REQUEST, "Invalid packed quantity");
+                    }
+                    item.setPackedQuantity(packed);
+                }
+            }
+        }
+        ProductOrder saved = requests.save(request);
         return toDetail(saved);
     }
 
@@ -327,6 +358,16 @@ public class PlumberMaterialService {
         User manager = role(Role.STORE_MANAGER);
         ProductOrderStatus prev = request.getStatus();
         move(request, ProductOrderStatus.RESERVED, ProductOrderStatus.PREPARING);
+        if (request.getPreparingStartedAt() == null) {
+            request.setPreparingStartedAt(LocalDateTime.now());
+        }
+        // Auto-mark all items as fully packed when moving to PREPARING
+        // (store physically picks items; packedQuantity must equal quantity before ready() is called)
+        for (ProductOrderItem item : request.getItems()) {
+            if (item.getPackedQuantity() == null || item.getPackedQuantity() < item.getQuantity()) {
+                item.setPackedQuantity(item.getQuantity());
+            }
+        }
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.PREPARING, manager, null);
         return toDetail(saved);
@@ -336,8 +377,16 @@ public class PlumberMaterialService {
     public MaterialRequestDetailResponse ready(Long id) {
         ProductOrder request = storeRequestEntity(id);
         User manager = role(Role.STORE_MANAGER);
+        boolean allPacked = request.getItems().stream()
+                .allMatch(i -> (i.getPackedQuantity() != null ? i.getPackedQuantity() : 0) >= i.getQuantity());
+        if (!allPacked) {
+            throw error(HttpStatus.BAD_REQUEST, "All requested items must be fully packed before marking order ready for pickup");
+        }
         ProductOrderStatus prev = request.getStatus();
         move(request, ProductOrderStatus.PREPARING, ProductOrderStatus.READY_FOR_PICKUP);
+        if (request.getReadyForPickupAt() == null) {
+            request.setReadyForPickupAt(LocalDateTime.now());
+        }
         OrderStatus prevJobStatus = request.getServiceOrder().getStatus();
         request.getServiceOrder().setStatus(OrderStatus.READY_FOR_PRODUCT_PICKUP);
         jobs.save(request.getServiceOrder());
@@ -543,7 +592,8 @@ public class PlumberMaterialService {
                         i.getProduct().getSku(),
                         i.getPrice(),
                         i.getQuantity(),
-                        i.getReservedQuantity()
+                        i.getReservedQuantity(),
+                        i.getPackedQuantity() == null ? 0 : i.getPackedQuantity()
                 )).toList();
         return new MaterialRequestDetailResponse(
                 r.getId(),
@@ -561,6 +611,8 @@ public class PlumberMaterialService {
                 items,
                 r.getCreatedAt(),
                 r.getStoreConfirmedAt(),
+                r.getPreparingStartedAt(),
+                r.getReadyForPickupAt(),
                 r.getPlumberArrivedAt(),
                 r.getPlumberCollectedAt(),
                 r.getCollectionConfirmedAt()
@@ -581,6 +633,8 @@ public class PlumberMaterialService {
                 r.getTotalAmount(),
                 r.getCreatedAt(),
                 r.getStoreConfirmedAt(),
+                r.getPreparingStartedAt(),
+                r.getReadyForPickupAt(),
                 r.getPlumberArrivedAt(),
                 r.getPlumberCollectedAt(),
                 r.getCollectionConfirmedAt()

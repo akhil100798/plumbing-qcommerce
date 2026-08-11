@@ -67,9 +67,9 @@ export function RatingCard({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
     borderRadius: borderRadius.md,
     padding: spacing.md,
     alignItems: 'center',
@@ -78,6 +78,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.heading,
     color: colors.textPrimary,
     marginBottom: spacing.md,
   },
@@ -96,10 +97,12 @@ const styles = StyleSheet.create({
     opacity: 0.25,
   },
   tipTitle: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textSecondary,
     marginBottom: spacing.sm,
+    letterSpacing: 0.5,
   },
   tipsRow: {
     flexDirection: 'row',
@@ -109,24 +112,26 @@ const styles = StyleSheet.create({
   },
   tipChip: {
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.sm,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.background,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     minWidth: 64,
     alignItems: 'center',
   },
   tipChipSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
+    borderColor: colors.primaryContainer || colors.primary,
+    backgroundColor: colors.surfaceContainerLow || '#EFF4FF',
   },
   tipChipText: {
     fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.textSecondary,
   },
   tipChipTextSelected: {
-    color: colors.primary,
+    color: colors.primaryContainer || colors.primary,
+    fontWeight: typography.fontWeight.bold,
   },
 });

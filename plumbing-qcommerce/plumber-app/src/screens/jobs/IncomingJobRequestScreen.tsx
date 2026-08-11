@@ -56,7 +56,32 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
       navigation.replace('ActiveJob', { jobId });
     } catch (error: any) {
       setLoading(false);
-      Alert.alert('Accept job failed', error?.message || 'Could not accept this service request. Please retry.');
+      const isConflict =
+        error?.status === 409 ||
+        error?.status === 400 ||
+        error?.message?.toLowerCase().includes('assigned') ||
+        error?.message?.toLowerCase().includes('accepted');
+
+      if (isConflict) {
+        Alert.alert(
+          'Offer No Longer Available',
+          'This service request was accepted by another plumber in your service area.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                dispatch(removeIncomingJob(jobId));
+                navigation.goBack();
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Accept Job Failed',
+          error?.message || 'Could not accept this service request. Please retry.'
+        );
+      }
     }
   };
 

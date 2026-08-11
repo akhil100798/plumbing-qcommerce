@@ -1,5 +1,5 @@
 import { StackScreenProps } from '@react-navigation/stack';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -12,6 +12,7 @@ import {
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { borderRadius, colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
+import { tokenStorage } from '../../services/tokenStorage';
 import SplashHero from '../../assets/illustrations/customer-splash-hero.svg';
 import PlumberHero from '../../assets/illustrations/plumber-service-hero.svg';
 import ServicesBanner from '../../assets/illustrations/home-services-banner.svg';
@@ -27,18 +28,18 @@ interface Slide {
 const slides: Slide[] = [
   {
     title: 'Plumbing Help\nIn Minutes',
-    subtitle: 'Book plumbers, order materials or get expert solutions at your doorstep.',
-    accent: '#E6F4FE',
+    subtitle: 'Book expert plumbers, order materials, or get emergency solutions at your doorstep.',
+    accent: colors.surfaceContainerLow || '#EFF4FF',
   },
   {
     title: 'Quality You Can\nTrust',
-    subtitle: 'Verified plumbers, genuine materials and secure payments.',
-    accent: '#ECFDF5',
+    subtitle: 'KYC verified plumbers, genuine Q-commerce parts, and instant dispatch.',
+    accent: colors.secondaryContainer || '#D5E0F8',
   },
   {
-    title: 'Fast Delivery\n& Service',
-    subtitle: 'From quick deliveries to emergency repairs, we are always here.',
-    accent: '#FFFBEB',
+    title: 'Direct Store\nPickup & Service',
+    subtitle: 'Plumbers collect required materials directly from local stores for fast repairs.',
+    accent: colors.surfaceContainer || '#E5EEFF',
   },
 ];
 
@@ -47,28 +48,35 @@ export function OnboardingScreen({ navigation }: Props) {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
 
+  const completeOnboarding = async () => {
+    try {
+      await tokenStorage.setItem('hasCompletedOnboarding', 'true');
+    } catch (err) {
+      console.error('Failed to set onboarding flag:', err);
+    }
+    navigation.replace('Login');
+  };
+
   const handleNext = () => {
     if (currentSlideIndex < slides.length - 1) {
-      // Transition out
       Animated.parallel([
         Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
-        Animated.timing(slideAnim, { toValue: -20, duration: 150, useNativeDriver: true })
+        Animated.timing(slideAnim, { toValue: -20, duration: 150, useNativeDriver: true }),
       ]).start(() => {
         setCurrentSlideIndex(currentSlideIndex + 1);
         slideAnim.setValue(20);
-        // Transition in
         Animated.parallel([
           Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
-          Animated.spring(slideAnim, { toValue: 0, tension: 40, friction: 6, useNativeDriver: true })
+          Animated.spring(slideAnim, { toValue: 0, tension: 40, friction: 6, useNativeDriver: true }),
         ]).start();
       });
     } else {
-      navigation.replace('Login');
+      completeOnboarding();
     }
   };
 
   const handleSkip = () => {
-    navigation.replace('Login');
+    completeOnboarding();
   };
 
   const currentSlide = slides[currentSlideIndex];
@@ -90,7 +98,7 @@ export function OnboardingScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleSkip}>
+        <TouchableOpacity onPress={handleSkip} accessibilityRole="button" accessibilityLabel="Skip onboarding">
           <Text style={styles.skipText}>{isLastSlide ? '' : 'Skip'}</Text>
         </TouchableOpacity>
       </View>
@@ -129,7 +137,7 @@ export function OnboardingScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background || '#F8F9FF',
   },
   header: {
     paddingHorizontal: spacing.layout,
@@ -137,9 +145,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   skipText: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.sm,
     color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+    fontWeight: typography.fontWeight.semibold,
+    fontFamily: typography.fontFamily.body,
   },
   slideContainer: {
     flex: 1,
@@ -155,22 +164,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.huge,
   },
-  illustrationIcon: {
-    fontSize: 90,
-  },
   title: {
     fontSize: typography.fontSize.xxl,
-    fontWeight: typography.fontWeight.black,
+    fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.heading,
     color: colors.textPrimary,
     textAlign: 'center',
-    lineHeight: typography.lineHeight.relaxed,
+    lineHeight: typography.lineHeight.headingLg,
     marginBottom: spacing.md,
   },
   subtitle: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.sm,
     color: colors.textSecondary,
+    fontFamily: typography.fontFamily.body,
     textAlign: 'center',
-    lineHeight: typography.lineHeight.normal,
+    lineHeight: typography.lineHeight.relaxed,
     paddingHorizontal: spacing.sm,
   },
   footer: {
@@ -184,18 +192,19 @@ const styles = StyleSheet.create({
   },
   dot: {
     height: 8,
-    borderRadius: borderRadius.round,
+    borderRadius: borderRadius.full,
     marginHorizontal: 4,
   },
   activeDot: {
     width: 24,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryContainer || colors.primary,
   },
   inactiveDot: {
     width: 8,
-    backgroundColor: colors.borderDark,
+    backgroundColor: colors.borderDark || '#727785',
   },
   nextButton: {
     width: '100%',
   },
 });
+

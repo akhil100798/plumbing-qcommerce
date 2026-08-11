@@ -11,7 +11,7 @@ import {
 import { useDispatch } from 'react-redux';
 
 import { loginSuccess, logout } from '../../redux/slices/authSlice';
-import { colors, spacing, typography } from '../../theme';
+import { colors, spacing, typography, borderRadius } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
 import { tokenStorage } from '../../services/tokenStorage';
 import { ProfileRepository } from '../../services/profile/profileRepository';
@@ -28,7 +28,6 @@ export function SplashScreen({ navigation }: Props) {
   const textOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Run premium entrance animation
     Animated.sequence([
       Animated.parallel([
         Animated.spring(logoScale, {
@@ -39,21 +38,23 @@ export function SplashScreen({ navigation }: Props) {
         }),
         Animated.timing(logoOpacity, {
           toValue: 1,
-          duration: 600,
+          duration: 400,
           useNativeDriver: true,
         }),
       ]),
       Animated.timing(textOpacity, {
         toValue: 1,
-        duration: 500,
+        duration: 300,
         useNativeDriver: true,
       }),
     ]).start();
 
     const checkAuth = async () => {
       try {
+        const hasCompletedOnboarding = await tokenStorage.getItem('hasCompletedOnboarding');
         const token = await tokenStorage.getItem('authToken');
         const refreshToken = await tokenStorage.getItem('refreshToken');
+
         if (token && refreshToken) {
           const user = await ProfileRepository.getUserProfile();
           dispatch(
@@ -81,17 +82,22 @@ export function SplashScreen({ navigation }: Props) {
           }
           return;
         }
+
+        if (hasCompletedOnboarding === 'true') {
+          navigation.replace('Login');
+        } else {
+          navigation.replace('Onboarding');
+        }
       } catch (err) {
         console.error('Session restoration failed:', err);
         dispatch(logout());
+        navigation.replace('Login');
       }
-
-      navigation.replace('Onboarding');
     };
 
     const timer = setTimeout(() => {
       checkAuth();
-    }, 2500);
+    }, 1200);
 
     return () => clearTimeout(timer);
   }, [navigation, dispatch, logoScale, logoOpacity, textOpacity]);
@@ -99,29 +105,29 @@ export function SplashScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Animated.View 
+        <Animated.View
           style={[
-            styles.logoContainer, 
-            { 
+            styles.logoContainer,
+            {
               opacity: logoOpacity,
-              transform: [{ scale: logoScale }] 
-            }
+              transform: [{ scale: logoScale }],
+            },
           ]}
         >
-          <AppIcon icon={LogoMark} size={70} color={colors.primary} />
+          <AppIcon icon={LogoMark} size={70} color={colors.primaryContainer || colors.primary} />
         </Animated.View>
-        
+
         <Animated.View style={{ opacity: textOpacity, alignItems: 'center' }}>
           <Text style={styles.brandTitle}>FixKart</Text>
           <Text style={styles.brandSub}>Fix It. Fast. Fixed.</Text>
-          <Text style={styles.slogan}>Plumbing today. Every home solution tomorrow.</Text>
+          <Text style={styles.slogan}>Plumbing quick-commerce & trusted home services.</Text>
         </Animated.View>
 
         <View style={styles.heroContainer}>
           <SplashHero width={180} height={120} />
         </View>
       </View>
-      
+
       <View style={styles.footer}>
         <View style={styles.tag}>
           <Text style={styles.tagText}>CUSTOMER APP</Text>
@@ -134,7 +140,7 @@ export function SplashScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background || '#F8F9FF',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
@@ -148,33 +154,36 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 4,
   },
   brandTitle: {
     fontSize: 32,
-    fontWeight: typography.fontWeight.black,
-    color: colors.primary,
+    fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.heading,
+    color: colors.primaryContainer || colors.primary,
     marginBottom: spacing.xxs,
   },
   brandSub: {
     fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.semibold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textPrimary,
     marginBottom: spacing.sm,
   },
   slogan: {
     fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.medium,
+    fontWeight: typography.fontWeight.regular,
+    fontFamily: typography.fontFamily.body,
     color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: spacing.xl,
@@ -187,15 +196,17 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.huge,
   },
   tag: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryContainer || colors.primary,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    borderRadius: 9999,
+    borderRadius: borderRadius.full,
   },
   tagText: {
-    color: colors.surface,
+    color: colors.onPrimary || '#FFFFFF',
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     letterSpacing: 1,
   },
 });
+

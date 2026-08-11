@@ -167,16 +167,16 @@ export function SearchScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background || '#F8F9FF',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.layout,
     paddingVertical: spacing.md,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.border || '#C1C6D6',
     gap: spacing.md,
   },
   backButton: {
@@ -185,10 +185,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
   },
   backButtonText: {
-    fontSize: 22,
+    fontSize: 20,
     color: colors.textPrimary,
     fontWeight: 'bold',
   },
@@ -199,13 +201,14 @@ const styles = StyleSheet.create({
     padding: spacing.layout,
   },
   section: {
-    marginBottom: spacing.huge,
+    marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.heading,
     color: colors.textPrimary,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   chipRow: {
     flexDirection: 'row',
@@ -213,23 +216,24 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   chip: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
     borderRadius: 9999,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
   },
   chipText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
+    fontSize: typography.fontSize.xs,
+    fontFamily: typography.fontFamily.body,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.textSecondary,
   },
   trendingList: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     borderRadius: spacing.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
     overflow: 'hidden',
   },
   trendingItem: {
@@ -238,14 +242,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.border || '#C1C6D6',
   },
   trendingIcon: {
     fontSize: 18,
   },
   trendingText: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textPrimary,
   },
   centerContainer: {
@@ -255,6 +260,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.body,
     color: colors.textMuted,
   },
 });

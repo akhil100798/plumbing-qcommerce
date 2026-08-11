@@ -44,14 +44,19 @@ export function BookPlumberScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.canGoBack() && navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Book a Plumber</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.sectionTitle}>What's the issue?</Text>
+        <Text style={styles.sectionTitle}>SELECT ISSUE TYPE</Text>
         <View style={styles.grid}>
           {issues.map((item) => {
             const selected = selectedIssueId === item.id;
@@ -72,7 +77,7 @@ export function BookPlumberScreen({ navigation }: Props) {
         </View>
 
         <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>
-          When do you need help?
+          SERVICE TIMING
         </Text>
         <View style={styles.scheduleOptions}>
           <TouchableOpacity
@@ -84,11 +89,11 @@ export function BookPlumberScreen({ navigation }: Props) {
                 {scheduleOption === 'now' && <View style={styles.radioInner} />}
               </View>
               <View>
-                <Text style={styles.radioTitle}>Now</Text>
-                <Text style={styles.radioSub}>Within 15 mins</Text>
+                <Text style={styles.radioTitle}>Instant Dispatch</Text>
+                <Text style={styles.radioSub}>Nearest available plumber within 15 mins</Text>
               </View>
             </View>
-            <Text style={styles.accentText}>⚡ Fast</Text>
+            <Text style={styles.accentText}>⚡ Instant</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -100,18 +105,18 @@ export function BookPlumberScreen({ navigation }: Props) {
                 {scheduleOption === 'schedule' && <View style={styles.radioInner} />}
               </View>
               <View>
-                <Text style={styles.radioTitle}>Schedule</Text>
-                <Text style={styles.radioSub}>Choose specific date & time</Text>
+                <Text style={styles.radioTitle}>Schedule Visit</Text>
+                <Text style={styles.radioSub}>Select specific time slot for technician</Text>
               </View>
             </View>
-            <Text style={styles.accentText}>📅 Plan</Text>
+            <Text style={styles.accentText}>📅 Scheduled</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
         <PrimaryButton
-          title="Continue"
+          title="Continue to Summary"
           onPress={handleContinue}
           style={styles.continueBtn}
         />
@@ -123,34 +128,37 @@ export function BookPlumberScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background || '#F8F9FF',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.layout,
     paddingVertical: spacing.md,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.border || '#C1C6D6',
     gap: spacing.md,
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: borderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
   },
   backButtonText: {
-    fontSize: 22,
+    fontSize: 20,
     color: colors.textPrimary,
     fontWeight: 'bold',
   },
   title: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.heading,
     color: colors.textPrimary,
   },
   scrollContent: {
@@ -158,10 +166,12 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.huge,
   },
   sectionTitle: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
+    fontFamily: typography.fontFamily.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+    letterSpacing: 0.5,
   },
   grid: {
     flexDirection: 'row',
@@ -170,9 +180,9 @@ const styles = StyleSheet.create({
   },
   gridCard: {
     width: '48%',
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
     borderRadius: borderRadius.md,
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.sm,
@@ -180,13 +190,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   gridCardSelected: {
-    borderColor: colors.primary,
+    borderColor: colors.primaryContainer || colors.primary,
+    borderWidth: 2,
   },
   iconCircle: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceContainerLow || '#EFF4FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.sm,
@@ -196,7 +207,8 @@ const styles = StyleSheet.create({
   },
   cardLabel: {
     fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.semibold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textPrimary,
     textAlign: 'center',
   },
@@ -205,16 +217,17 @@ const styles = StyleSheet.create({
   },
   radioCard: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
     borderRadius: borderRadius.md,
     padding: spacing.md,
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   radioCardSelected: {
-    borderColor: colors.primary,
+    borderColor: colors.primaryContainer || colors.primary,
+    borderWidth: 2,
   },
   radioLeft: {
     flexDirection: 'row',
@@ -226,40 +239,42 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: colors.borderDark,
+    borderColor: colors.borderDark || '#727785',
     alignItems: 'center',
     justifyContent: 'center',
   },
   radioOuterSelected: {
-    borderColor: colors.primary,
+    borderColor: colors.primaryContainer || colors.primary,
   },
   radioInner: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryContainer || colors.primary,
   },
   radioTitle: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textPrimary,
   },
   radioSub: {
     fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: typography.fontFamily.body,
     marginTop: 2,
   },
   accentText: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
-    color: colors.primary,
+    fontFamily: typography.fontFamily.body,
+    color: colors.primaryContainer || colors.primary,
   },
   footer: {
     padding: spacing.layout,
-    borderTopWidth: 1.5,
-    borderTopColor: colors.border,
-    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border || '#C1C6D6',
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
   },
   continueBtn: {
     width: '100%',

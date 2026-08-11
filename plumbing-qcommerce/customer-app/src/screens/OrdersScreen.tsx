@@ -34,7 +34,7 @@ export function OrdersScreen({ navigation }: any) {
   const user = useSelector((state: RootState) => state.auth.user);
   const productOrders = useSelector((state: RootState) => state.orders.productOrders);
   const serviceOrders = useSelector((state: RootState) => state.orders.serviceOrders);
-  const [activeTab, setActiveTab] = useState<'all' | 'products' | 'services'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'completed' | 'cancelled'>('all');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -82,20 +82,21 @@ export function OrdersScreen({ navigation }: any) {
     })),
   ];
 
-  // Sort by date desc
   combinedOrders.sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime());
 
+  const isTerminalStatus = (status: string) =>
+    status === 'COMPLETED' || status === 'CANCELLED' || status === 'DELIVERED';
+
   const filteredOrders = combinedOrders.filter((order) => {
-    if (activeTab === 'products') return order.type === 'product';
-    if (activeTab === 'services') return order.type === 'service';
+    if (activeTab === 'active') return !isTerminalStatus(order.status);
+    if (activeTab === 'completed') return order.status === 'COMPLETED' || order.status === 'DELIVERED';
+    if (activeTab === 'cancelled') return order.status === 'CANCELLED';
     return true;
   });
 
   const handleOrderPress = (order: DisplayOrderItem) => {
-    if (order.type === 'service' && (order.status === 'ACCEPTED' || order.status === 'IN_PROGRESS' || order.status === 'COMBINED_ORDER')) {
-      navigation.navigate('OrderTracking', { orderId: order.id, type: 'service' });
-    } else if (order.type === 'product' && (order.status === 'PENDING' || order.status === 'CONFIRMED' || order.status === 'OUT_FOR_DELIVERY')) {
-      navigation.navigate('OrderTracking', { orderId: order.id, type: 'product' });
+    if (order.type === 'service' && !isTerminalStatus(order.status)) {
+      navigation.navigate('PlumberTracking', { orderId: order.id });
     } else {
       navigation.navigate('OrderDetails', { orderId: order.id, type: order.type });
     }
@@ -104,11 +105,11 @@ export function OrdersScreen({ navigation }: any) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Your Orders</Text>
+        <Text style={styles.title}>My Orders & Services</Text>
       </View>
 
       <View style={styles.tabContainer}>
-        {(['all', 'products', 'services'] as const).map((tab) => {
+        {(['all', 'active', 'completed', 'cancelled'] as const).map((tab) => {
           const active = activeTab === tab;
           return (
             <TouchableOpacity
@@ -117,7 +118,7 @@ export function OrdersScreen({ navigation }: any) {
               onPress={() => setActiveTab(tab)}
             >
               <Text style={[styles.tabText, active && styles.tabTextActive]}>
-                {tab === 'all' ? 'All' : tab === 'products' ? 'Products' : 'Services'}
+                {tab === 'all' ? 'All' : tab === 'active' ? 'Active' : tab === 'completed' ? 'Completed' : 'Cancelled'}
               </Text>
             </TouchableOpacity>
           );
@@ -126,7 +127,7 @@ export function OrdersScreen({ navigation }: any) {
 
       {loading && filteredOrders.length === 0 ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={colors.primaryContainer || colors.primary} />
         </View>
       ) : (
         <FlatList
@@ -135,7 +136,7 @@ export function OrdersScreen({ navigation }: any) {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No orders found.</Text>
+              <Text style={styles.emptyText}>No {activeTab} orders found.</Text>
             </View>
           }
           renderItem={({ item }) => (
@@ -158,44 +159,47 @@ export function OrdersScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background || '#F8F9FF',
   },
   header: {
     paddingHorizontal: spacing.layout,
     paddingVertical: spacing.md,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.border || '#C1C6D6',
   },
   title: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.heading,
     color: colors.textPrimary,
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1.5,
-    borderBottomColor: colors.border,
-    paddingHorizontal: spacing.layout,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border || '#C1C6D6',
+    paddingHorizontal: spacing.sm,
   },
   tab: {
     flex: 1,
     paddingVertical: spacing.md,
     alignItems: 'center',
-    borderBottomWidth: 3,
+    borderBottomWidth: 2,
     borderBottomColor: 'transparent',
   },
   tabActive: {
-    borderBottomColor: colors.primary,
+    borderBottomColor: colors.primaryContainer || colors.primary,
   },
   tabText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textMuted,
   },
   tabTextActive: {
-    color: colors.primary,
+    color: colors.primaryContainer || colors.primary,
+    fontWeight: typography.fontWeight.bold,
   },
   listContent: {
     padding: spacing.layout,
@@ -211,6 +215,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: colors.textMuted,
+    fontFamily: typography.fontFamily.body,
     fontSize: typography.fontSize.sm,
   },
 });

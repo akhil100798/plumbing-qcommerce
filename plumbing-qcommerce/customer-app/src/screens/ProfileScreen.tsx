@@ -29,6 +29,9 @@ type Props = CompositeScreenProps<
   StackScreenProps<AppStackParamList>
 >;
 
+import { tokenStorage } from '../services/tokenStorage';
+import { clearCart } from '../redux/slices/cartSlice';
+
 export function ProfileScreen({ navigation }: Props) {
   const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.auth.user);
@@ -60,7 +63,14 @@ export function ProfileScreen({ navigation }: Props) {
     fetchProfileData();
   }, [user, dispatch]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await tokenStorage.deleteItem('token');
+      await tokenStorage.deleteItem('refreshToken');
+    } catch (err) {
+      console.warn('Error clearing tokens during logout', err);
+    }
+    dispatch(clearCart());
     dispatch(logout());
     const rootNav = navigation as unknown as StackNavigationProp<AppStackParamList>;
     rootNav.reset({
@@ -92,64 +102,64 @@ export function ProfileScreen({ navigation }: Props) {
             <Text style={styles.avatarText}>{getInitials(user?.fullName || 'User')}</Text>
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user?.fullName || 'Guest User'}</Text>
-            <Text style={styles.userEmail}>{user?.email || 'guest@plumbcommerce.com'}</Text>
-            <Text style={styles.userPhone}>{user?.phone || 'No phone number'}</Text>
+            <Text style={styles.userName}>{user?.fullName || 'FixKart Customer'}</Text>
+            <Text style={styles.userEmail}>{user?.email || 'customer@fixkart.com'}</Text>
+            <Text style={styles.userPhone}>{user?.phone || '+91 9876543210'}</Text>
           </View>
         </View>
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
-          <TouchableOpacity style={styles.statBox} onPress={() => navigation.navigate('Wallet')}>
-            <Text style={styles.statVal}>₹{walletBalance}</Text>
-            <Text style={styles.statLabel}>Wallet</Text>
-          </TouchableOpacity>
-          <View style={styles.statBoxDivider} />
           <View style={styles.statBox}>
             <Text style={styles.statVal}>{totalOrders}</Text>
             <Text style={styles.statLabel}>Orders</Text>
           </View>
           <View style={styles.statBoxDivider} />
           <View style={styles.statBox}>
-            <Text style={styles.statVal}>4.8 ★</Text>
-            <Text style={styles.statLabel}>Rating</Text>
+            <Text style={styles.statVal}>Active</Text>
+            <Text style={styles.statLabel}>Account</Text>
+          </View>
+          <View style={styles.statBoxDivider} />
+          <View style={styles.statBox}>
+            <Text style={styles.statVal}>5.0 ★</Text>
+            <Text style={styles.statLabel}>Member</Text>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Account & Services</Text>
-
-        <ProfileMenuItem
-          icon="👛"
-          title="Wallet & Offers"
-          subtitle="View balance, add money, and browse active promos"
-          onPress={() => navigation.navigate('Wallet')}
-        />
+        <Text style={styles.sectionTitle}>Account Settings & Preferences</Text>
 
         <ProfileMenuItem
           icon="📍"
-          title="Address Management"
-          subtitle="Manage your home, office, and other saved addresses"
+          title="Saved Addresses"
+          subtitle="Manage home, office, and job site locations"
           onPress={() => navigation.navigate('AddressManagement')}
         />
 
         <ProfileMenuItem
-          icon="💳"
-          title="Payment Methods"
-          subtitle="Saved UPIs, debit cards, and wallets"
-          onPress={() => navigation.navigate('PaymentMethods')}
+          icon="📦"
+          title="Service & Order History"
+          subtitle="View active, completed, and past bookings"
+          onPress={() => navigation.navigate('OrdersTab')}
+        />
+
+        <ProfileMenuItem
+          icon="🔔"
+          title="Notification Center"
+          subtitle="Track active plumber updates and material alerts"
+          onPress={() => navigation.navigate('Notifications')}
         />
 
         <ProfileMenuItem
           icon="⚙️"
-          title="Settings"
-          subtitle="Notifications, permissions, and app preferences"
+          title="App Settings"
+          subtitle="Notification preferences, security, and app info"
           onPress={() => navigation.navigate('Settings')}
         />
 
         <ProfileMenuItem
           icon="❓"
           title="Help & Support"
-          subtitle="Frequently asked questions and support chats"
+          subtitle="FAQs, report an issue, and customer support"
           onPress={() => navigation.navigate('Support')}
         />
 
@@ -159,7 +169,7 @@ export function ProfileScreen({ navigation }: Props) {
             title="Log Out"
             onPress={handleLogout}
             showArrow={false}
-            textColor={colors.error}
+            textColor={colors.error || '#BA1A1A'}
           />
         </View>
       </ScrollView>
@@ -170,18 +180,19 @@ export function ProfileScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background || '#F8F9FF',
   },
   header: {
     paddingHorizontal: spacing.layout,
     paddingVertical: spacing.md,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.border || '#C1C6D6',
   },
   headerTitle: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.heading,
     color: colors.textPrimary,
   },
   scrollContent: {
@@ -191,26 +202,29 @@ const styles = StyleSheet.create({
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: colors.primaryLight,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.surfaceContainerLow || '#EFF4FF',
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,
   },
   avatarText: {
-    fontSize: 22,
-    fontWeight: typography.fontWeight.black,
-    color: colors.primary,
+    fontSize: 20,
+    fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.heading,
+    color: colors.primaryContainer || colors.primary,
   },
   userInfo: {
     flex: 1,
@@ -218,25 +232,27 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.heading,
     color: colors.textPrimary,
   },
   userEmail: {
     fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: typography.fontFamily.body,
     marginTop: 2,
   },
   userPhone: {
     fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
+    fontFamily: typography.fontFamily.body,
     fontWeight: typography.fontWeight.bold,
     marginTop: 2,
   },
   statsRow: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
     borderRadius: borderRadius.md,
     paddingVertical: spacing.md,
     marginBottom: spacing.lg,
@@ -247,26 +263,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   statBoxDivider: {
-    width: 1.5,
-    backgroundColor: colors.border,
+    width: 1,
+    backgroundColor: colors.border || '#C1C6D6',
     marginVertical: spacing.xs,
   },
   statVal: {
     fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.black,
-    color: colors.primary,
+    fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.heading,
+    color: colors.primaryContainer || colors.primary,
   },
   statLabel: {
     fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: typography.fontFamily.body,
     marginTop: 2,
   },
   sectionTitle: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textSecondary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },

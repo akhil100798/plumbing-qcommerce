@@ -344,6 +344,13 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
               style={styles.actionBtn}
             />
           )}
+          {isRejected && (
+            <PrimaryButton
+              title="Select Alternative Hardware Store"
+              onPress={() => navigation.navigate('StoreSelection', { jobId })}
+              style={styles.actionBtn}
+            />
+          )}
           {!isCollected && !isCancelled && !isRejected && (
             <TouchableOpacity style={styles.cancelLink} onPress={handleCancel}>
               <Text style={styles.cancelText}>Cancel Request</Text>

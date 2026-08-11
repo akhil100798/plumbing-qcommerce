@@ -92,8 +92,8 @@ export function SecondaryButton({
 
 const styles = StyleSheet.create({
   button: {
-    borderWidth: 1.5,
-    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderRadius: borderRadius.md,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     alignItems: 'center',
@@ -106,8 +106,9 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   text: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    fontFamily: typography.fontFamily.body,
   },
   contentRow: {
     flexDirection: 'row',

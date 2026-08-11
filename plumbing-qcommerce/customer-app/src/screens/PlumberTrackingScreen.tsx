@@ -42,18 +42,30 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
 
   const [materialRequest, setMaterialRequest] = useState<MaterialPaymentRequest | null>(null);
   const [isApproving, setIsApproving] = useState(false);
+  const [orderStatus, setOrderStatus] = useState<string>('IN_PROGRESS');
 
-  // Poll for pending material requests every 10 seconds
+  // Poll for order status updates & pending material requests
   useEffect(() => {
-    if (devMode) return; // skip in mock mode
+    if (devMode) return;
 
     let cancelled = false;
 
     const poll = async () => {
       try {
+        if (orderId) {
+          const currentOrder = await OrderRepository.getServiceOrderById(orderId);
+          if (cancelled) return;
+          if (currentOrder && currentOrder.status) {
+            setOrderStatus(currentOrder.status);
+            if (currentOrder.status === 'WORK_COMPLETED' || currentOrder.status === 'COMPLETED') {
+              navigation.replace('ServiceCompletion', { plumberName: plumberName || 'Plumber', orderId });
+              return;
+            }
+          }
+        }
+
         const requests = await OrderRepository.getCustomerMaterialRequests();
         if (cancelled) return;
-        // Find a PENDING request for this service order
         const pending = (requests || []).find(
           (r: any) =>
             r.status === 'PENDING' &&
@@ -70,17 +82,18 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
           setMaterialRequest(null);
         }
       } catch (err) {
-        // silently fail â€” show nothing if network unavailable
+        // Silently fail on transient network errors
       }
     };
 
     poll();
     const interval = setInterval(poll, 10000);
+
     return () => {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [orderId, plumberName, devMode]);
+  }, [orderId, plumberName, devMode, navigation]);
 
   const handleApproveMaterial = async () => {
     if (!materialRequest) return;

@@ -15,6 +15,7 @@ import {
 import { useDispatch } from 'react-redux';
 
 import { PrimaryButton } from '../../components/common/PrimaryButton';
+import { OutlinedInput } from '../../components/common/OutlinedInput';
 import { AuthRepository } from '../../services/auth/authRepository';
 import { ProfileRepository } from '../../services/profile/profileRepository';
 import { isRenderStagingBackend } from '../../services/mockPolicy';
@@ -92,42 +93,38 @@ export function LoginScreen({ navigation }: Props) {
         style={styles.keyboardView}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonText}>?</Text>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => navigation.canGoBack() && navigation.goBack()}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
 
           <View style={styles.header}>
-            <Text style={styles.title}>Welcome Back!</Text>
-            <Text style={styles.subtitle}>Login to continue</Text>
+            <Text style={styles.title}>Welcome to FixKart</Text>
+            <Text style={styles.subtitle}>Enter your mobile number to receive an OTP</Text>
           </View>
 
           <View style={styles.form}>
             {usePasswordLogin ? (
               <>
-                <Text style={styles.inputLabel}>Email Address</Text>
-                <View style={styles.singleInputRow}>
-                  <TextInput
-                    style={styles.textInput}
-                    placeholder="customer@plumbcommerce.com"
-                    placeholderTextColor={colors.textMuted}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    value={email}
-                    onChangeText={setEmail}
-                  />
-                </View>
-
-                <Text style={styles.inputLabel}>Password</Text>
-                <View style={styles.singleInputRow}>
-                  <TextInput
-                    style={styles.textInput}
-                placeholder="********"
-                    placeholderTextColor={colors.textMuted}
-                    secureTextEntry
-                    value={password}
-                    onChangeText={setPassword}
-                  />
-                </View>
+                <OutlinedInput
+                  label="Email Address"
+                  placeholder="customer.qa@fixkart.com"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={setEmail}
+                />
+                <OutlinedInput
+                  label="Password"
+                  placeholder="••••••••"
+                  isPassword
+                  value={password}
+                  onChangeText={setPassword}
+                />
               </>
             ) : (
               <>
@@ -164,12 +161,20 @@ export function LoginScreen({ navigation }: Props) {
             </View>
 
             <View style={styles.socialRow}>
-              <TouchableOpacity style={styles.socialCard} onPress={() => Alert.alert('Google login', 'Use the main Google login screen for OAuth sign-in.')}>
-                <Text style={styles.socialIcon}>??</Text>
+              <TouchableOpacity
+                style={styles.socialCard}
+                onPress={() => Alert.alert('Google Sign-In', 'Google sign-in uses standard OAuth.')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.socialIcon}>🔍</Text>
                 <Text style={styles.socialLabel}>Google</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.socialCard} onPress={() => Alert.alert('Apple login', 'Apple sign-in is not configured for staging yet.')}>
-                <Text style={styles.socialIcon}>??</Text>
+              <TouchableOpacity
+                style={styles.socialCard}
+                onPress={() => Alert.alert('Apple Sign-In', 'Apple sign-in is not configured for staging.')}
+                accessibilityRole="button"
+              >
+                <Text style={styles.socialIcon}>🍎</Text>
                 <Text style={styles.socialLabel}>Apple</Text>
               </TouchableOpacity>
             </View>
@@ -177,7 +182,7 @@ export function LoginScreen({ navigation }: Props) {
             {supportsStagingCredentialLogin ? (
               <TouchableOpacity style={styles.modeSwitch} onPress={() => setUsePasswordLogin((prev) => !prev)}>
                 <Text style={styles.modeSwitchText}>
-                  {usePasswordLogin ? 'Use OTP Login' : 'Use Staging Email / Password'}
+                  {usePasswordLogin ? 'Use OTP Mobile Login' : 'Use Staging Email / Password'}
                 </Text>
               </TouchableOpacity>
             ) : null}
@@ -185,18 +190,14 @@ export function LoginScreen({ navigation }: Props) {
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>
-              New here?{' '}
+              New to FixKart?{' '}
               <Text
                 style={styles.signUpLink}
                 onPress={() => {
-                  Alert.alert(
-                    'Quick Registration',
-                    'No separate registration form is required! Simply enter your 10-digit mobile number above and press "Continue". We will verify your number via OTP and set up your account instantly.'
-                  );
                   phoneInputRef.current?.focus();
                 }}
               >
-                Create an account
+                Instant OTP Sign-Up
               </Text>
             </Text>
           </View>
@@ -209,7 +210,7 @@ export function LoginScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background || '#F8F9FF',
   },
   keyboardView: {
     flex: 1,
@@ -222,96 +223,95 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: borderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
     marginTop: spacing.md,
     marginBottom: spacing.xl,
   },
   backButtonText: {
-    fontSize: 24,
+    fontSize: 20,
     color: colors.textPrimary,
     fontWeight: 'bold',
   },
   header: {
-    marginBottom: spacing.huge,
+    marginBottom: spacing.xl,
   },
   title: {
     fontSize: typography.fontSize.xxl,
-    fontWeight: typography.fontWeight.black,
+    fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.heading,
     color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
   subtitle: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.sm,
     color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: typography.fontFamily.body,
   },
   form: {
     flex: 1,
   },
   inputLabel: {
     fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.semibold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textSecondary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   phoneInputRow: {
     flexDirection: 'row',
-    height: 56,
+    height: 52,
     borderRadius: borderRadius.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    overflow: 'hidden',
-    marginBottom: spacing.xl,
-  },
-  singleInputRow: {
-    height: 56,
-    borderRadius: borderRadius.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     overflow: 'hidden',
     marginBottom: spacing.xl,
   },
   countryCode: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceContainerLow || '#EFF4FF',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    borderRightWidth: 1.5,
-    borderRightColor: colors.border,
+    borderRightWidth: 1,
+    borderRightColor: colors.border || '#C1C6D6',
   },
   countryCodeText: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textPrimary,
   },
   textInput: {
     flex: 1,
     paddingHorizontal: spacing.md,
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.medium,
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.body,
     color: colors.textPrimary,
   },
   continueButton: {
     width: '100%',
-    marginBottom: spacing.huge,
+    marginBottom: spacing.xl,
   },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: colors.border || '#C1C6D6',
   },
   dividerText: {
     marginHorizontal: spacing.md,
     fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.semibold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textMuted,
     textTransform: 'uppercase',
   },
@@ -323,21 +323,21 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     height: 52,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
     borderRadius: borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.surface,
-    ...shadows.sm,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
   },
   socialIcon: {
-    fontSize: 20,
+    fontSize: 18,
   },
   socialLabel: {
     fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.semibold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textPrimary,
   },
   modeSwitch: {
@@ -345,9 +345,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modeSwitchText: {
-    color: colors.primary,
+    color: colors.primaryContainer || colors.primary,
     fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.semibold,
+    fontFamily: typography.fontFamily.body,
   },
   footer: {
     alignItems: 'center',
@@ -357,10 +358,12 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: typography.fontSize.sm,
     color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: typography.fontFamily.body,
   },
   signUpLink: {
-    color: colors.primary,
-    fontWeight: typography.fontWeight.bold,
+    color: colors.primaryContainer || colors.primary,
+    fontWeight: typography.fontWeight.semibold,
+    fontFamily: typography.fontFamily.body,
   },
 });
+

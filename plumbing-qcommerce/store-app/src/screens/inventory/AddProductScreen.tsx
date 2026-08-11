@@ -1,225 +1,261 @@
-import React, { useState } from 'react';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   TextInput,
-  StyleSheet,
-  ScrollView,
   TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
+  View,
 } from 'react-native';
-import { NavigationProp, useNavigation } from '@react-navigation/native';
-import { AppStackParamList } from '../../types/navigation';
+
 import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
-import SuccessCheckIcon from '../../assets/icons/success-check.svg';
 import WarehouseIcon from '../../assets/icons/warehouse.svg';
-import PlusIcon from '../../assets/icons/plus.svg';
-import { colors, borderRadius, spacing, typography } from '../../theme';
+import { inventoryService } from '../../services/inventory/inventoryService';
+import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
+import { Product } from '../../types';
+import { AppStackParamList } from '../../types/navigation';
 
 export function AddProductScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  const [productName, setProductName] = useState('Brass Ball Valve 1/2 inch');
-  const [sellingPrice, setSellingPrice] = useState('245');
-  const [mrp, setMrp] = useState('290');
-  const [stockQty, setStockQty] = useState('25');
-  const [reorderLevel, setReorderLevel] = useState('10');
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [initialStock, setInitialStock] = useState('20');
+  const [lowStockThreshold, setLowStockThreshold] = useState('5');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const handleSave = () => {
-    Alert.alert('Product Saved', 'Product has been saved successfully to store inventory.', [
-      { text: 'OK', onPress: () => navigation.navigate('Main', { screen: 'InventoryTab' }) },
-    ]);
+  useEffect(() => {
+    const fetchCatalog = async () => {
+      try {
+        const products = await inventoryService.getCatalogProducts();
+        setCatalogProducts(products);
+        if (products.length > 0) {
+          setSelectedProductId(products[0].id);
+        }
+      } catch {
+        // fetch fallback
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCatalog();
+  }, []);
+
+  const handleAttachProduct = async () => {
+    if (!selectedProductId) {
+      Alert.alert('Selection Error', 'Please select a catalog product first.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await inventoryService.addCatalogProductToInventory(
+        selectedProductId,
+        Number(initialStock) || 10,
+        Number(lowStockThreshold) || 5
+      );
+      Alert.alert(
+        'Product Attached!',
+        'Catalog product successfully added to your store inventory.',
+        [{ text: 'View Inventory', onPress: () => navigation.navigate('Main', { screen: 'InventoryTab' } as any) }]
+      );
+    } catch (err: any) {
+      Alert.alert('Failed to Add', err?.message || 'Could not attach product to store inventory.');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const filteredCatalog = catalogProducts.filter((p) =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.categoryName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => { if (navigation.canGoBack()) navigation.goBack(); else navigation.navigate('Main', { screen: 'InventoryTab' }); }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <ArrowLeftIcon width={24} height={24} stroke={colors.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Add Product</Text>
-          <TouchableOpacity onPress={handleSave}>
-            <SuccessCheckIcon width={22} height={22} stroke={colors.textPrimary} />
-          </TouchableOpacity>
+
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => {
+            if (navigation.canGoBack()) navigation.goBack();
+            else navigation.navigate('Main', { screen: 'InventoryTab' } as any);
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <ArrowLeftIcon width={24} height={24} stroke={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Attach Product to Inventory</Text>
+        <View style={{ width: 24 }} />
+      </View>
+
+      {loading ? (
+        <View style={styles.centerLoading}>
+          <ActivityIndicator color={colors.primary} />
+          <Text style={styles.loadingText}>Fetching Product Catalog...</Text>
         </View>
-
-        <ScrollView contentContainerStyle={{ paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
-          <View style={styles.content}>
-            {/* Image picker */}
-            <Text style={styles.sectionLabel}>Add Product Images</Text>
-            <View style={styles.imageRow}>
-              <TouchableOpacity style={[styles.imageSlot, styles.imageSlotActive]} onPress={() => Alert.alert('Add Photo', 'Camera or Gallery picker opened.')}>
-                <PlusIcon width={20} height={20} stroke={colors.primary} />
-              </TouchableOpacity>
-              <View style={styles.imageSlot}>
-                <WarehouseIcon width={22} height={22} stroke={colors.textMuted} />
-              </View>
-              <View style={styles.imageSlot}>
-                <WarehouseIcon width={22} height={22} stroke={colors.textMuted} />
-              </View>
-              <View style={styles.imageSlot}>
-                <WarehouseIcon width={22} height={22} stroke={colors.textMuted} />
-              </View>
-            </View>
-
-            {/* Product Name */}
-            <Text style={styles.fieldLabel}>Product Name *</Text>
-            <TextInput
-              style={styles.input}
-              value={productName}
-              onChangeText={setProductName}
-              placeholder="Enter product name"
-              placeholderTextColor={colors.textMuted}
-            />
-
-            {/* Category / Brand */}
-            <View style={styles.rowTwo}>
-              <View style={styles.halfField}>
-                <Text style={styles.fieldLabel}>Category *</Text>
-                <TouchableOpacity style={styles.dropdown} onPress={() => Alert.alert('Select Category', 'Plumbing Fittings selected.')}>
-                  <Text style={styles.dropdownText}>Plumbing Fittings</Text>
-                  <Text style={{ fontSize: 12, color: colors.textMuted }}>▼</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.halfField}>
-                <Text style={styles.fieldLabel}>Brand</Text>
-                <TouchableOpacity style={styles.dropdown} onPress={() => Alert.alert('Select Brand', 'FixKart selected.')}>
-                  <Text style={styles.dropdownText}>FixKart</Text>
-                  <Text style={{ fontSize: 12, color: colors.textMuted }}>▼</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Selling Price / MRP */}
-            <View style={styles.rowTwo}>
-              <View style={styles.halfField}>
-                <Text style={styles.fieldLabel}>Selling Price (₹) *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={sellingPrice}
-                  onChangeText={setSellingPrice}
-                  keyboardType="numeric"
-                />
-              </View>
-              <View style={styles.halfField}>
-                <Text style={styles.fieldLabel}>MRP (₹)</Text>
-                <TextInput
-                  style={styles.input}
-                  value={mrp}
-                  onChangeText={setMrp}
-                  keyboardType="numeric"
-                />
-              </View>
-            </View>
-
-            {/* Stock Qty / Reorder Level */}
-            <View style={styles.rowTwo}>
-              <View style={styles.halfField}>
-                <Text style={styles.fieldLabel}>Stock Quantity *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={stockQty}
-                  onChangeText={setStockQty}
-                  keyboardType="numeric"
-                />
-              </View>
-              <View style={styles.halfField}>
-                <Text style={styles.fieldLabel}>Reorder Level *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={reorderLevel}
-                  onChangeText={setReorderLevel}
-                  keyboardType="numeric"
-                />
-              </View>
-            </View>
-
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-              <Text style={styles.saveButtonText}>Save Product</Text>
-            </TouchableOpacity>
+      ) : (
+        <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
+          <View style={styles.noticeCard}>
+            <WarehouseIcon width={20} height={20} stroke={colors.primaryContainer || colors.primary} />
+            <Text style={styles.noticeText}>
+              Select an existing product from the global FixKart catalog to attach to your hardware store inventory.
+            </Text>
           </View>
+
+          {/* Search Filter */}
+          <Text style={styles.fieldLabel}>Search Catalog</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Search by product or category name..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+
+          {/* Product Selection List */}
+          <Text style={styles.fieldLabel}>Select Catalog Product *</Text>
+          <View style={styles.catalogList}>
+            {filteredCatalog.map((product) => {
+              const isSelected = selectedProductId === product.id;
+              return (
+                <TouchableOpacity
+                  key={product.id}
+                  style={[styles.productOption, isSelected && styles.productOptionSelected]}
+                  onPress={() => setSelectedProductId(product.id)}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.productName, isSelected && styles.productNameSelected]}>
+                      {product.name}
+                    </Text>
+                    <Text style={styles.productMeta}>
+                      Category: {product.categoryName} | MRP: ₹{product.price}
+                    </Text>
+                  </View>
+                  {isSelected && <Text style={styles.selectedBadge}>✓ Selected</Text>}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Stock Configuration Inputs */}
+          <View style={styles.rowTwo}>
+            <View style={styles.halfField}>
+              <Text style={styles.fieldLabel}>Initial Stock Qty *</Text>
+              <TextInput
+                style={styles.input}
+                value={initialStock}
+                onChangeText={setInitialStock}
+                keyboardType="numeric"
+              />
+            </View>
+            <View style={styles.halfField}>
+              <Text style={styles.fieldLabel}>Low Stock Alert Threshold *</Text>
+              <TextInput
+                style={styles.input}
+                value={lowStockThreshold}
+                onChangeText={setLowStockThreshold}
+                keyboardType="numeric"
+              />
+            </View>
+          </View>
+
+          {/* Action CTA */}
+          <TouchableOpacity
+            style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+            onPress={handleAttachProduct}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.saveBtnText}>Attach to Store Inventory</Text>
+            )}
+          </TouchableOpacity>
         </ScrollView>
-      </KeyboardAvoidingView>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surface },
+  container: { flex: 1, backgroundColor: colors.background || '#F9F9F9' },
+  centerLoading: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.xs },
+  loadingText: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.layout,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surface,
+    borderBottomColor: colors.border || '#C6C5D4',
   },
   headerTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg },
-  sectionLabel: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, marginBottom: spacing.md },
-  imageRow: { flexDirection: 'row', marginBottom: spacing.xl },
-  imageSlot: {
-    width: 64,
-    height: 64,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  imageSlotActive: {
-    borderColor: colors.primary,
-    borderStyle: 'dashed',
-    backgroundColor: colors.primaryLight,
-  },
-  fieldLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginBottom: 6, marginTop: spacing.lg },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: borderRadius.md,
-    height: 48,
-    paddingHorizontal: spacing.md,
-    fontSize: typography.fontSize.sm,
-    color: colors.textPrimary,
-    backgroundColor: colors.surface,
-  },
-  rowTwo: { flexDirection: 'row', justifyContent: 'space-between' },
-  halfField: { width: '48%' },
-  dropdown: {
+  scrollBody: { padding: spacing.layout, paddingBottom: spacing.giant },
+  noticeCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.surfaceContainerLow || '#F4F3F7',
     borderRadius: borderRadius.md,
-    height: 48,
-    paddingHorizontal: spacing.md,
-    backgroundColor: colors.surface,
+    padding: spacing.md,
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border || '#C6C5D4',
   },
-  dropdownText: { fontSize: typography.fontSize.sm, color: colors.textPrimary },
-  saveButton: {
-    backgroundColor: colors.primary,
-    height: 52,
+  noticeText: { flex: 1, fontSize: 11, color: colors.textSecondary, lineHeight: 16 },
+  fieldLabel: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, marginBottom: 4, marginTop: spacing.xs },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border || '#C6C5D4',
+    borderRadius: borderRadius.sm,
+    padding: spacing.sm,
+    fontSize: typography.fontSize.xs,
+    color: colors.textPrimary,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    marginBottom: spacing.xs,
+  },
+  catalogList: { marginBottom: spacing.md },
+  productOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: colors.border || '#C6C5D4',
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    marginBottom: 6,
+    ...shadows.sm,
+  },
+  productOptionSelected: {
+    borderColor: colors.primaryContainer || colors.primary,
+    backgroundColor: colors.surfaceContainerLow || '#F4F3F7',
+  },
+  productName: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  productNameSelected: { color: colors.primaryContainer || colors.primary },
+  productMeta: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
+  selectedBadge: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.primaryContainer || colors.primary },
+  rowTwo: { flexDirection: 'row', gap: spacing.md },
+  halfField: { flex: 1 },
+  saveBtn: {
+    backgroundColor: colors.primaryContainer || colors.primary,
+    height: 48,
     borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.xl,
+    marginTop: spacing.md,
   },
-  saveButtonText: { color: colors.surface, fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold },
+  saveBtnDisabled: { opacity: 0.6 },
+  saveBtnText: { color: '#FFFFFF', fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold },
 });
 
 export default AddProductScreen;

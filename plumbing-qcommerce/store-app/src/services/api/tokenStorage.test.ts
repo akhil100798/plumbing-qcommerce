@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const secureStore = {
   getItemAsync: vi.fn(),
@@ -25,7 +25,10 @@ async function loadTokenStorage(platform: 'web' | 'ios') {
   secureStore.getItemAsync.mockReset();
   secureStore.setItemAsync.mockReset();
   secureStore.deleteItemAsync.mockReset();
-  vi.doMock('react-native', () => ({ Platform: { OS: platform } }));
+  vi.doMock('react-native', () => ({
+    Platform: { OS: platform },
+    RefreshControl: 'RefreshControl',
+  }));
   vi.doMock('expo-secure-store', () => secureStore);
   return import('./tokenStorage');
 }
@@ -33,6 +36,11 @@ async function loadTokenStorage(platform: 'web' | 'ios') {
 describe('store tokenStorage', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    vi.doUnmock('react-native');
+    vi.doUnmock('expo-secure-store');
   });
 
   it('uses web storage without calling SecureStore on web', async () => {

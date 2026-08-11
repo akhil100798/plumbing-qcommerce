@@ -5,7 +5,6 @@ import { mockProducts, mockCategories } from '../../mocks';
 import {
   canUseDevMockFallbacks,
   createBackendUnavailableError,
-  createUnsupportedBackendError,
   warnUsingDevMockFallback,
 } from '../mockPolicy';
 import { storeService } from '../store/storeService';
@@ -25,6 +24,7 @@ const mapStockToProduct = (stock: any): Product => {
     categoryId: product.category?.id || product.categoryId || 1,
     categoryName: product.category?.name || product.categoryName || 'General',
     stock: Number(stock.availableQuantity ?? stock.stock ?? 0),
+    lowStockThreshold: Number(stock.lowStockThreshold ?? 5),
   };
 };
 
@@ -50,6 +50,42 @@ export const inventoryService = {
     }
   },
 
+  getCatalogProducts: async (): Promise<Product[]> => {
+    try {
+      const response = await apiClient.get(ENDPOINTS.catalog.products);
+      return (response.data || []).map((p: any) => ({
+        id: p.id,
+        sku: p.sku,
+        name: p.name,
+        description: p.description,
+        price: Number(p.price),
+        mrp: Number(p.price) * 1.15,
+        imageUrl: p.imageUrl,
+        categoryId: p.category?.id || p.categoryId || 1,
+        categoryName: p.category?.name || p.categoryName || 'General',
+        stock: Number(p.stock ?? 0),
+        lowStockThreshold: 5,
+      }));
+    } catch {
+      return localProducts;
+    }
+  },
+
+  addCatalogProductToInventory: async (productId: number, initialQuantity: number = 10, lowStockThreshold: number = 5): Promise<Product> => {
+    try {
+      const response = await apiClient.post('/stores/me/inventory', {
+        productId,
+        initialQuantity,
+        lowStockThreshold,
+      });
+      const mapped = mapStockToProduct(response.data);
+      localProducts.push(mapped);
+      return mapped;
+    } catch (e) {
+      throw createBackendUnavailableError('adding catalog product to store inventory', e);
+    }
+  },
+
   getProductDetails: async (productId: number): Promise<Product> => {
     try {
       const response = await apiClient.get(ENDPOINTS.catalog.productDetails(productId));
@@ -65,6 +101,7 @@ export const inventoryService = {
         categoryId: product.category?.id || product.categoryId || 1,
         categoryName: product.category?.name || product.categoryName || 'General',
         stock: Number(product.stock ?? 0),
+        lowStockThreshold: Number(product.lowStockThreshold ?? 5),
       };
     } catch (e) {
       if (canUseDevMockFallbacks()) {
@@ -75,45 +112,6 @@ export const inventoryService = {
       }
       throw createBackendUnavailableError(`product details for ${productId}`, e);
     }
-  },
-
-  addProduct: async (product: Partial<Product>): Promise<Product> => {
-    if (!canUseDevMockFallbacks()) {
-      throw createUnsupportedBackendError('Catalog product creation');
-    }
-
-    warnUsingDevMockFallback('Store add product', new Error('Catalog product creation'));
-    const newProduct: Product = {
-      id: Date.now(),
-      sku: product.sku || `SKU-${Math.floor(Math.random() * 1000)}`,
-      name: product.name || 'New Product',
-      description: product.description || '',
-      price: product.price || 0,
-      mrp: product.mrp || 0,
-      discount: product.discount || 0,
-      imageUrl: product.imageUrl || 'https://images.unsplash.com/photo-1595206133361-b1fe343e5e23?q=80&w=200',
-      categoryId: product.categoryId || 1,
-      categoryName: product.categoryName || 'Pipes',
-      stock: product.stock || 0,
-      brand: product.brand || 'General',
-      gst: product.gst || 18,
-    };
-    localProducts.push(newProduct);
-    return newProduct;
-  },
-
-  updateProduct: async (productId: number, product: Partial<Product>): Promise<Product> => {
-    if (!canUseDevMockFallbacks()) {
-      throw createUnsupportedBackendError('Catalog product updates');
-    }
-
-    warnUsingDevMockFallback(`Store update product ${productId}`, new Error('Catalog product updates'));
-    const idx = localProducts.findIndex((existing) => existing.id === productId);
-    if (idx !== -1) {
-      localProducts[idx] = { ...localProducts[idx], ...product };
-      return localProducts[idx];
-    }
-    throw new Error('Product not found');
   },
 
   updateStock: async (productId: number, stockCount: number, storeId?: number): Promise<Product> => {
@@ -143,13 +141,29 @@ export const inventoryService = {
     }
   },
 
+  updateLowStockThreshold: async (productId: number, threshold: number, storeId?: number): Promise<Product> => {
+    try {
+      const storeProfile = storeId ? { id: storeId } : await storeService.getCurrentStoreProfile();
+      const response = await apiClient.patch(`/stores/${storeProfile.id}/inventory/${productId}/threshold`, {
+        lowStockThreshold: threshold,
+      });
+      return mapStockToProduct(response.data);
+    } catch (e) {
+      throw createBackendUnavailableError(`low stock threshold update for ${productId}`, e);
+    }
+  },
+
   getLowStock: async (): Promise<Product[]> => {
     try {
       const inventory = await inventoryService.getInventory();
-      return inventory.products.filter((product) => product.stock <= 5);
+      return inventory.products.filter((product) => product.stock <= (product.lowStockThreshold ?? 5));
     } catch (e) {
-      console.warn('Inventory low-stock lookup failed:', e);
-      return localProducts.filter((product) => product.stock <= 5);
+      return localProducts.filter((product) => product.stock <= (product.lowStockThreshold ?? 5));
     }
+  },
+
+  getStoreInventory: async (storeId?: number): Promise<Product[]> => {
+    const inventory = await inventoryService.getInventory(storeId);
+    return inventory.products;
   }
 };

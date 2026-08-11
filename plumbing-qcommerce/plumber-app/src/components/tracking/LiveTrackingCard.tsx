@@ -23,7 +23,7 @@ export function LiveTrackingCard({
   eta,
   name,
   role,
-  rating = '4.8',
+  rating,
   statusText,
   onCallPress,
   onChatPress,

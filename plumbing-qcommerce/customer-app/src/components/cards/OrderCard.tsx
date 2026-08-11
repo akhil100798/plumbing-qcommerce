@@ -75,9 +75,9 @@ export function OrderCard({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.surfaceContainerLow || '#EFF4FF',
     paddingBottom: spacing.sm,
     marginBottom: spacing.sm,
   },
@@ -101,13 +101,15 @@ const styles = StyleSheet.create({
   },
   orderId: {
     fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.semibold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textPrimary,
   },
   date: {
     fontSize: typography.fontSize.xs,
     color: colors.textMuted,
-    fontWeight: typography.fontWeight.medium,
+    fontWeight: typography.fontWeight.regular,
+    fontFamily: typography.fontFamily.body,
     marginTop: 2,
   },
   statusPill: {
@@ -118,6 +120,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 10,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     textTransform: 'uppercase',
   },
   body: {
@@ -126,15 +129,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textPrimary,
     flex: 1,
     marginRight: spacing.md,
   },
   price: {
     fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.black,
-    color: colors.primary,
+    fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
+    color: colors.primaryContainer || colors.primary,
   },
 });

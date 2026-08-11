@@ -69,31 +69,31 @@ const styles = StyleSheet.create({
   },
   stepRow: {
     flexDirection: 'row',
-    minHeight: 60,
+    minHeight: 52,
   },
   indicatorCol: {
     alignItems: 'center',
-    width: 30,
-    marginRight: spacing.sm,
+    width: 28,
+    marginRight: spacing.md,
   },
   circle: {
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: colors.borderDark,
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.border || '#C1C6D6',
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 2,
   },
   completedCircle: {
-    borderColor: colors.success,
-    backgroundColor: colors.success,
+    borderColor: colors.success || '#006E1C',
+    backgroundColor: colors.success || '#006E1C',
   },
   activeCircle: {
-    borderColor: colors.primary,
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.primaryContainer || colors.primary,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
   },
   checkText: {
     color: '#FFFFFF',
@@ -104,22 +104,22 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.borderDark,
+    backgroundColor: colors.borderDark || '#727785',
   },
   activeInnerDot: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryContainer || colors.primary,
   },
   line: {
     width: 2,
     flex: 1,
-    backgroundColor: colors.border,
+    backgroundColor: colors.border || '#C1C6D6',
     position: 'absolute',
     top: 20,
     bottom: 0,
     zIndex: 1,
   },
   completedLine: {
-    backgroundColor: colors.success,
+    backgroundColor: colors.success || '#006E1C',
   },
   contentCol: {
     flex: 1,
@@ -128,14 +128,16 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: typography.fontFamily.body,
     color: colors.textMuted,
   },
   activeLabel: {
     color: colors.textPrimary,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
   },
   completedLabel: {
     color: colors.textSecondary,
+    fontFamily: typography.fontFamily.body,
   },
 });

@@ -38,19 +38,22 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
       setErrorMsg(null);
       try {
         const requests = await OrderRepository.getCustomerMaterialRequests();
-        const pendingRequest = requests.find(
-          (req: any) =>
-            String(req.serviceOrderId) === String(serviceOrderId) && req.status === 'PENDING'
+        const activeReq = requests.find(
+          (req: any) => String(req.serviceOrderId) === String(serviceOrderId)
         );
-        if (pendingRequest) {
-          setProductOrderId(pendingRequest.id);
-          setTotal(Number(pendingRequest.totalAmount));
-          const mappedItems = (pendingRequest.items || []).map((i: any) => ({
-            name: i.productName,
-            qty: i.quantity,
-            price: Number(i.price),
-          }));
-          setItems(mappedItems);
+        if (activeReq) {
+          if (activeReq.status === 'REJECTED') {
+            setErrorMsg('Selected hardware store was unable to fulfill this material request. Your plumber will select an alternative store.');
+          } else {
+            setProductOrderId(activeReq.id);
+            setTotal(Number(activeReq.totalAmount));
+            const mappedItems = (activeReq.items || []).map((i: any) => ({
+              name: i.productName,
+              qty: i.quantity,
+              price: Number(i.price),
+            }));
+            setItems(mappedItems);
+          }
         } else {
           setErrorMsg('No pending material requests found for this service order.');
         }
@@ -167,11 +170,9 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
           </View>
         )}
         <View style={styles.noticeCard}>
-          <Text style={styles.noticeEmoji}>Truck</Text>
+          <Text style={styles.noticeEmoji}>🏪</Text>
           <Text style={styles.noticeText}>
-            {mockFallbackEnabled
-              ? 'These materials will be delivered to your house via our instant 15-minute delivery partner.'
-              : 'These materials will be dispatched from our nearest store and delivered directly to the job site.'}
+            These materials will be prepared by our local partner hardware store and collected directly by your plumber.
           </Text>
         </View>
       </ScrollView>
@@ -180,7 +181,7 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
           title="Decline"
           onPress={handleDecline}
           textColor={colors.textSecondary}
-          outlineColor={colors.borderDark}
+          outlineColor={colors.border || '#C1C6D6'}
           style={styles.actionBtn}
           disabled={loading || (!mockFallbackEnabled && !productOrderId)}
         />
@@ -201,37 +202,41 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background || '#F8F9FF',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.layout,
     paddingVertical: spacing.md,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.border || '#C1C6D6',
     gap: spacing.md,
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: borderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
   },
   backButtonText: {
-    fontSize: 22,
+    fontSize: 20,
     color: colors.textPrimary,
     fontWeight: 'bold',
   },
   title: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.heading,
     color: colors.textPrimary,
   },
   scrollContent: {
@@ -240,17 +245,17 @@ const styles = StyleSheet.create({
   },
   requestBanner: {
     flexDirection: 'row',
-    backgroundColor: colors.warningLight,
+    backgroundColor: colors.surfaceContainerLow || '#EFF4FF',
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.lg,
     alignItems: 'center',
     gap: spacing.md,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: colors.border || '#C1C6D6',
   },
   bannerEmoji: {
-    fontSize: 28,
+    fontSize: 24,
   },
   bannerTextContainer: {
     flex: 1,
@@ -258,37 +263,42 @@ const styles = StyleSheet.create({
   bannerTitle: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
-    color: '#92400E',
+    fontFamily: typography.fontFamily.body,
+    color: colors.primaryContainer || colors.primary,
   },
   bannerSub: {
     fontSize: typography.fontSize.xs,
-    color: '#B45309',
-    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
+    fontFamily: typography.fontFamily.body,
     marginTop: 2,
     lineHeight: 16,
   },
   sectionTitle: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
+    fontFamily: typography.fontFamily.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+    letterSpacing: 0.5,
   },
   unavailableCard: {
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    borderColor: colors.border || '#C1C6D6',
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     borderRadius: borderRadius.md,
     padding: spacing.md,
   },
   unavailableTitle: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
   unavailableText: {
     fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
+    fontFamily: typography.fontFamily.body,
     lineHeight: 18,
   },
   loadingContainer: {
@@ -299,16 +309,19 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: typography.fontSize.xs,
+    fontFamily: typography.fontFamily.body,
     color: colors.textSecondary,
   },
   noticeCard: {
     flexDirection: 'row',
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.surfaceContainerLow || '#EFF4FF',
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginTop: spacing.lg,
     alignItems: 'center',
     gap: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
   },
   noticeEmoji: {
     fontSize: 20,
@@ -316,16 +329,17 @@ const styles = StyleSheet.create({
   noticeText: {
     flex: 1,
     fontSize: typography.fontSize.xs,
-    color: colors.primary,
-    fontWeight: typography.fontWeight.bold,
+    color: colors.primaryContainer || colors.primary,
+    fontFamily: typography.fontFamily.body,
+    fontWeight: typography.fontWeight.semibold,
     lineHeight: 16,
   },
   footer: {
     flexDirection: 'row',
     padding: spacing.layout,
-    borderTopWidth: 1.5,
-    borderTopColor: colors.border,
-    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border || '#C1C6D6',
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     gap: spacing.md,
   },
   actionBtn: {

@@ -94,8 +94,8 @@ export function PrimaryButton({
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.lg,
+    backgroundColor: colors.primaryContainer || colors.primary,
+    borderRadius: borderRadius.md,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     alignItems: 'center',
@@ -114,9 +114,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryDark,
   },
   text: {
-    color: colors.surface,
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
+    color: colors.onPrimary || colors.surfaceContainerLowest || '#FFFFFF',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    fontFamily: typography.fontFamily.body,
   },
   contentRow: {
     flexDirection: 'row',

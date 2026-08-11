@@ -168,7 +168,7 @@ export function OtpScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background || '#F8F9FF',
   },
   keyboardView: {
     flex: 1,
@@ -177,15 +177,17 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: borderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
     marginTop: spacing.md,
     marginBottom: spacing.xl,
   },
   backButtonText: {
-    fontSize: 24,
+    fontSize: 20,
     color: colors.textPrimary,
     fontWeight: 'bold',
   },
@@ -194,20 +196,22 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.fontSize.xxl,
-    fontWeight: typography.fontWeight.black,
+    fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.heading,
     color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
   subtitle: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.sm,
     color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
-    lineHeight: typography.lineHeight.normal,
+    fontFamily: typography.fontFamily.body,
+    lineHeight: typography.lineHeight.relaxed,
     marginBottom: spacing.giant,
   },
   phoneText: {
     color: colors.textPrimary,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
   },
   otpContainer: {
     flexDirection: 'row',
@@ -218,24 +222,25 @@ const styles = StyleSheet.create({
     width: 48,
     height: 56,
     borderRadius: borderRadius.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
   },
   otpBoxFilled: {
-    borderColor: colors.borderDark,
-    backgroundColor: colors.surface,
+    borderColor: colors.borderDark || '#727785',
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
   },
   otpBoxFocused: {
-    borderColor: colors.primary,
+    borderColor: colors.primaryContainer || colors.primary,
     borderWidth: 2,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
   },
   otpBoxText: {
     fontSize: typography.fontSize.xxl,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textPrimary,
   },
   hiddenInput: {
@@ -251,16 +256,18 @@ const styles = StyleSheet.create({
   timerText: {
     fontSize: typography.fontSize.sm,
     color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: typography.fontFamily.body,
   },
   countdownText: {
-    color: colors.primary,
+    color: colors.primaryContainer || colors.primary,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
   },
   resendLink: {
     fontSize: typography.fontSize.sm,
-    color: colors.primary,
+    color: colors.primaryContainer || colors.primary,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     textDecorationLine: 'underline',
   },
   verifyButton: {

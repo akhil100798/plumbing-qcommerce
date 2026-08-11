@@ -87,8 +87,8 @@ export function SplashScreen({ navigation }: Props) {
       }
     };
 
-    const timer = setTimeout(checkAuth, 3000);
-    return () => clearTimeout(timer);
+    // Check authentication immediately without artificial delay
+    checkAuth();
   }, [navigation, dispatch, fadeAnim, scaleAnim, floatAnim]);
 
   return (

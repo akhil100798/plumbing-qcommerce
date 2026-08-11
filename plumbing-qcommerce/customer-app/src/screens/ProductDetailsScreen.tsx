@@ -72,19 +72,20 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
   }, [productId]);
 
   const handleBuyNow = () => {
+    Array.from({ length: quantity }).forEach(() => dispatch(addToCart(productId)));
     navigation.navigate('Cart');
   };
 
   const handleAddToCart = () => {
     Array.from({ length: quantity }).forEach(() => dispatch(addToCart(productId)));
-    Alert.alert('Added to Cart', `${quantity} x ${product?.name} added to your cart.`);
+    Alert.alert('Added to Cart', `${quantity} x ${product?.name || 'Item'} added to your product cart.`);
   };
 
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loader}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={colors.primaryContainer || colors.primary} />
         </View>
       </SafeAreaView>
     );
@@ -109,64 +110,67 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>?</Text>
+          <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Cart')}>
-            <Text style={styles.iconEmoji}>Cart</Text>
+            <Text style={styles.iconEmoji}>🛒</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => Alert.alert('Share product', `${product.name} - Rs.${product.price}`)}>
-            <Text style={styles.iconEmoji}>Share</Text>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() => Alert.alert('Share Product', `${product.name} - ₹${product.price}`)}
+          >
+            <Text style={styles.iconEmoji}>🔗</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.imageGallery}>
-          <Text style={styles.largeEmoji}>??</Text>
+          <Text style={styles.largeEmoji}>🔧</Text>
         </View>
 
         <View style={styles.detailsBlock}>
-          <Text style={styles.categoryName}>{product.categoryName}</Text>
+          <Text style={styles.categoryName}>{product.categoryName || 'Hardware Category'}</Text>
           <Text style={styles.title}>{product.name}</Text>
-          <Text style={styles.subtitle}>(20mm) 3 Meter</Text>
+          <Text style={styles.subtitle}>SKU: {product.sku || `PROD-${product.id}`}</Text>
 
           <View style={styles.ratingRow}>
-            <Text style={styles.star}>?</Text>
-            <Text style={styles.ratingValue}>4.5</Text>
-            <Text style={styles.reviewsCount}>(120 Reviews)</Text>
+            <Text style={styles.star}>⭐</Text>
+            <Text style={styles.ratingValue}>4.8</Text>
+            <Text style={styles.reviewsCount}>(Verified Store Inventory)</Text>
             <View style={styles.dividerDot} />
-            <Text style={styles.brandLabel}>Brand: Ashirvad</Text>
+            <Text style={styles.brandLabel}>In Stock</Text>
           </View>
 
           <View style={styles.priceRow}>
-            <Text style={styles.price}>?{product.price}</Text>
-            <Text style={styles.originalPrice}>?{product.price + 30}</Text>
-            <View style={styles.discountBadge}>
-              <Text style={styles.discountText}>12% OFF</Text>
-            </View>
+            <Text style={styles.price}>₹{product.price}</Text>
           </View>
 
-          <View style={styles.deliveryWidget}>
-            <Text style={styles.deliveryIcon}>??</Text>
-            <Text style={styles.deliveryText}>
-              Delivery in <Text style={styles.deliveryBold}>20 mins</Text> from Sai Pipes (0.8 km)
-            </Text>
+          {/* Store Availability & Hardware Fulfillment Widget */}
+          <View style={styles.storeWidget}>
+            <Text style={styles.storeIcon}>🏪</Text>
+            <View style={styles.storeTextCol}>
+              <Text style={styles.storeTitle}>Partner Hardware Store Availability</Text>
+              <Text style={styles.storeSub}>
+                Available for local store collection & plumber self-pickup.
+              </Text>
+            </View>
           </View>
 
           <View style={styles.badgesRow}>
             <View style={styles.badge}>
-              <Text style={styles.badgeIcon}>???</Text>
-              <Text style={styles.badgeText}>Genuine Product</Text>
+              <Text style={styles.badgeIcon}>🛡️</Text>
+              <Text style={styles.badgeText}>Genuine Hardware</Text>
             </View>
             <View style={styles.badge}>
-              <Text style={styles.badgeIcon}>??</Text>
-              <Text style={styles.badgeText}>GST Bill</Text>
+              <Text style={styles.badgeIcon}>📄</Text>
+              <Text style={styles.badgeText}>Store Bill</Text>
             </View>
           </View>
 
           <Text style={styles.descriptionHeader}>Product Description</Text>
-          <Text style={styles.description}>{product.description}</Text>
+          <Text style={styles.description}>{product.description || 'No description provided.'}</Text>
 
           <View style={styles.quantitySection}>
             <Text style={styles.quantityLabel}>Select Quantity</Text>
@@ -208,7 +212,7 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background || '#F8F9FF',
   },
   header: {
     flexDirection: 'row',
@@ -216,20 +220,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.layout,
     paddingVertical: spacing.md,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.border || '#C1C6D6',
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: borderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
   },
   backButtonText: {
-    fontSize: 22,
+    fontSize: 20,
     color: colors.textPrimary,
     fontWeight: 'bold',
   },
@@ -240,10 +246,12 @@ const styles = StyleSheet.create({
   iconBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: borderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
   },
   iconEmoji: {
     fontSize: 18,
@@ -252,33 +260,35 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.huge,
   },
   imageGallery: {
-    height: 240,
-    backgroundColor: colors.background,
+    height: 200,
+    backgroundColor: colors.surfaceContainerLow || '#EFF4FF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   largeEmoji: {
-    fontSize: 120,
+    fontSize: 80,
   },
   detailsBlock: {
     padding: spacing.layout,
   },
   categoryName: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textMuted,
     textTransform: 'uppercase',
     marginBottom: 4,
   },
   title: {
     fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.black,
+    fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.heading,
     color: colors.textPrimary,
   },
   subtitle: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: typography.fontFamily.body,
     marginTop: 2,
   },
   ratingRow: {
@@ -292,27 +302,29 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   ratingValue: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textPrimary,
     marginRight: 4,
   },
   reviewsCount: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: typography.fontFamily.body,
   },
   dividerDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.borderDark,
+    backgroundColor: colors.borderDark || '#727785',
     marginHorizontal: spacing.sm,
   },
   brandLabel: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
-    color: colors.primary,
+    fontFamily: typography.fontFamily.body,
+    color: colors.success || '#006E1C',
   },
   priceRow: {
     flexDirection: 'row',
@@ -322,48 +334,38 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: typography.fontSize.xxl,
-    fontWeight: typography.fontWeight.black,
-    color: colors.textPrimary,
-  },
-  originalPrice: {
-    fontSize: typography.fontSize.md,
-    color: colors.textMuted,
-    textDecorationLine: 'line-through',
-    fontWeight: typography.fontWeight.medium,
-  },
-  discountBadge: {
-    backgroundColor: colors.successLight,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  discountText: {
-    color: colors.success,
-    fontSize: 11,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.heading,
+    color: colors.primaryContainer || colors.primary,
   },
-  deliveryWidget: {
+  storeWidget: {
     flexDirection: 'row',
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceContainerLow || '#EFF4FF',
     padding: spacing.md,
     borderRadius: borderRadius.md,
     alignItems: 'center',
     gap: spacing.sm,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.border || '#C1C6D6',
   },
-  deliveryIcon: {
+  storeIcon: {
     fontSize: 20,
   },
-  deliveryText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+  storeTextCol: {
+    flex: 1,
   },
-  deliveryBold: {
+  storeTitle: {
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
-    color: colors.primary,
+    fontFamily: typography.fontFamily.body,
+    color: colors.textPrimary,
+  },
+  storeSub: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    fontFamily: typography.fontFamily.body,
+    marginTop: 2,
   },
   badgesRow: {
     flexDirection: 'row',
@@ -381,58 +383,62 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
+    fontFamily: typography.fontFamily.body,
     fontWeight: typography.fontWeight.bold,
   },
   descriptionHeader: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textPrimary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   description: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
-    lineHeight: 20,
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: typography.fontFamily.body,
+    lineHeight: 18,
     marginBottom: spacing.lg,
   },
   quantitySection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderTopWidth: 1.5,
-    borderTopColor: colors.border,
+    borderTopWidth: 1,
+    borderTopColor: colors.border || '#C1C6D6',
     paddingTop: spacing.md,
   },
   quantityLabel: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textPrimary,
   },
   quantitySelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.borderDark,
-    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
+    borderRadius: borderRadius.sm,
     overflow: 'hidden',
   },
   qtyBtn: {
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
   },
   qtyBtnText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: colors.textPrimary,
   },
   qtyNumber: {
     paddingHorizontal: spacing.md,
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textPrimary,
   },
   loader: {
@@ -440,31 +446,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing.layout,
+    backgroundColor: colors.background || '#F8F9FF',
   },
   errorText: {
-    fontSize: typography.fontSize.md,
-    color: colors.error,
+    fontSize: typography.fontSize.sm,
+    color: colors.error || '#BA1A1A',
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     textAlign: 'center',
   },
   retryButton: {
     marginTop: spacing.md,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryContainer || colors.primary,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    borderRadius: 9999,
+    borderRadius: borderRadius.full,
   },
   retryButtonText: {
-    color: colors.surface,
+    color: '#FFFFFF',
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
   },
   footer: {
     flexDirection: 'row',
     padding: spacing.layout,
-    borderTopWidth: 1.5,
-    borderTopColor: colors.border,
+    borderTopWidth: 1,
+    borderTopColor: colors.border || '#C1C6D6',
     gap: spacing.md,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
   },
   cartButton: {
     flex: 1,

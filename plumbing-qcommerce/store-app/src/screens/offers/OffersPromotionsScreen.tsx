@@ -1,106 +1,105 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, FlatList, Modal, Alert, TouchableOpacity } from 'react-native';
-import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { AppHeader } from '../../components/common/AppHeader';
-import { OfferCard } from '../../components/cards/WalletReviewsPromoCards';
-import { OfferForm } from '../../components/forms/ProductOfferStockForms';
-import { mockOffers } from '../../mocks';
-import { canUseDevMockFallbacks } from '../../services/mockPolicy';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
+import React from 'react';
+import {
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
+import WarehouseIcon from '../../assets/icons/warehouse.svg';
+import { borderRadius, colors, spacing, typography } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
-import { Offer } from '../../types';
 
-export const OffersPromotionsScreen = () => {
+export function OffersPromotionsScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  const [offers, setOffers] = useState<Offer[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const devMode = canUseDevMockFallbacks();
-
-  const loadOffers = async () => {
-    setLoading(true);
-    try {
-      setOffers(devMode ? mockOffers : []);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { loadOffers(); }, [devMode]);
-
-  const handleToggle = (offerId: number, val: boolean) => {
-    if (!devMode) {
-      Alert.alert('Feature unavailable', 'Offer activation is not available in staging.');
-      return;
-    }
-    setOffers(prev => prev.map(o => o.id === offerId ? { ...o, active: val } : o));
-  };
-
-  const handleCreateOffer = (values: Partial<Offer>) => {
-    if (!devMode) {
-      Alert.alert('Feature unavailable', 'Offer creation is not available in staging.');
-      return;
-    }
-    const newOffer: Offer = { id: Date.now(), code: values.code || 'COUPON', description: values.description || '', type: values.type || 'FLAT', value: values.value || 0, minOrderAmount: values.minOrderAmount || 0, active: true, expiryDate: values.expiryDate || new Date().toISOString() };
-    setOffers(prev => [...prev, newOffer]);
-    setShowModal(false);
-    Alert.alert('Coupon Created', `Offer code ${newOffer.code} is now active.`);
-  };
 
   return (
-    <ScreenWrapper style={styles.container}>
-      <AppHeader
-        title="Offers & Promotions"
-        onBackPress={() => navigation.goBack()}
-        rightAction={
-          <TouchableOpacity style={styles.addBtn} onPress={() => devMode ? setShowModal(true) : Alert.alert('Feature unavailable', 'Offer creation is not available in staging.')}>
-            <Text style={styles.addBtnText}>{devMode ? '? New' : 'Unavailable'}</Text>
-          </TouchableOpacity>
-        }
-      />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
 
-      {!devMode && <Text style={styles.noticeText}>Promotions remain disabled in staging until the live offers API is available.</Text>}
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => {
+            if (navigation.canGoBack()) navigation.goBack();
+            else navigation.navigate('Main', { screen: 'AccountTab' } as any);
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <ArrowLeftIcon width={24} height={24} stroke={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Offers & Promotions</Text>
+        <View style={{ width: 24 }} />
+      </View>
 
-      <FlatList
-        data={offers}
-        keyExtractor={item => String(item.id)}
-        contentContainerStyle={styles.list}
-        refreshing={loading}
-        onRefresh={loadOffers}
-        renderItem={({ item }) => <OfferCard offer={item} onToggleActive={(val) => handleToggle(item.id, val)} />}
-        ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyEmoji}>??</Text><Text style={styles.emptyText}>{devMode ? 'No demo promotions currently active' : 'Offers are not available in staging.'}</Text></View>}
-      />
-
-      <Modal visible={showModal} transparent animationType="slide" onRequestClose={() => setShowModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Create New Offer</Text>
-              <TouchableOpacity onPress={() => setShowModal(false)} style={styles.closeBtn}><Text style={styles.closeEmoji}>?</Text></TouchableOpacity>
-            </View>
-            <OfferForm onSubmit={handleCreateOffer} />
-          </View>
+      <View style={styles.centerContent}>
+        <View style={styles.iconCircle}>
+          <WarehouseIcon width={40} height={40} stroke={colors.primaryContainer || colors.primary} />
         </View>
-      </Modal>
-    </ScreenWrapper>
+        <Text style={styles.title}>Marketing Campaigns Deferred</Text>
+        <Text style={styles.description}>
+          Store marketing campaigns, promotional coupons, and discount management features are deferred across all FixKart apps.
+        </Text>
+        <View style={styles.pill}>
+          <Text style={styles.pillText}>FEATURE_MARKETING_ENABLED = false</Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={() => navigation.navigate('Main', { screen: 'HomeTab' } as any)}
+        >
+          <Text style={styles.actionBtnText}>Return to Dashboard</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: colors.background },
-  addBtn: { backgroundColor: colors.primary, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: borderRadius.xs },
-  addBtnText: { color: colors.card, fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold },
-  noticeText: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginHorizontal: spacing.layout, marginTop: spacing.md },
-  list: { padding: spacing.layout },
-  empty: { alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.giant },
-  emptyEmoji: { fontSize: 48, marginBottom: spacing.md },
-  emptyText: { fontSize: typography.fontSize.sm, color: colors.textSecondary, fontWeight: typography.fontWeight.bold, textAlign: 'center' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: colors.card, borderTopLeftRadius: borderRadius.lg, borderTopRightRadius: borderRadius.lg, padding: spacing.layout, paddingBottom: spacing.giant, ...shadows.lg },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: spacing.sm },
-  modalTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  closeBtn: { padding: spacing.xs },
-  closeEmoji: { fontSize: 12, color: colors.textMuted },
+  container: { flex: 1, backgroundColor: colors.background || '#F9F9F9' },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.layout,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border || '#C6C5D4',
+  },
+  headerTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  centerContent: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.layout, gap: spacing.sm },
+  iconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: colors.surfaceContainerLow || '#F4F3F7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  description: { fontSize: typography.fontSize.xs, color: colors.textSecondary, textAlign: 'center', lineHeight: 18 },
+  pill: {
+    backgroundColor: colors.surfaceContainerLow || '#F4F3F7',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: colors.border || '#C6C5D4',
+  },
+  pillText: { fontSize: 10, fontWeight: '700', color: colors.textMuted },
+  actionBtn: {
+    backgroundColor: colors.primaryContainer || colors.primary,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.sm,
+    marginTop: spacing.md,
+  },
+  actionBtnText: { color: '#FFFFFF', fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold },
 });
+
 export default OffersPromotionsScreen;

@@ -1,43 +1,45 @@
 export const colors = {
-  // Brand colors
-  primary: '#1E4FD8',        // FixKart Royal Blue
-  primaryDark: '#173FB0',    // FixKart Dark Royal Blue
-  primaryLight: '#EAF0FF',   // FixKart Light Royal Blue
+  // Brand colors (Stitch Operations System)
+  primary: '#1A237E', // FixKart Industrial Navy
+  primaryDark: '#000666',
+  primaryLight: '#E0E0FF',
+  primaryContainer: '#1A237E',
 
-  // Accents & Status indicators
-  accentGreen: '#1EA34A',
-  accentGreenLight: '#E7F7EC',
-  accentOrange: '#FF9F1C',
-  accentOrangeLight: '#FFF3E0',
-  accentRed: '#E5484D',
-  accentRedLight: '#FDEBEC',
-  accentBlueLight: '#E8F1FF',
+  // Secondary Accents
+  secondary: '#FD6C00', // Safety Orange
+  secondaryLight: '#FFDBCB',
+  secondaryContainer: '#FD6C00',
 
-  // Status aliases
-  success: '#1EA34A',        // FixKart Success Green
+  // Status semantic colors
+  success: '#1B6D24', // FixKart Success Green
   successLight: '#E7F7EC',
-  warning: '#FF9F1C',        // Warning Orange
+  warning: '#FD6C00', // Warning Orange
   warningLight: '#FFF3E0',
-  danger: '#E5484D',         // Danger Red
-  dangerLight: '#FDEBEC',
-  error: '#E5484D',          // Alias for danger
-  errorLight: '#FDEBEC',     // Alias for dangerLight
+  danger: '#BA1A1A', // Danger Red
+  dangerLight: '#FFDAD6',
+  error: '#BA1A1A',
+  errorLight: '#FFDAD6',
+  accentRed: '#BA1A1A',
 
-  // Neutrals
+  // Neutrals & Surfaces
   white: '#FFFFFF',
-  black: '#0B0B0F',
-  background: '#F5F6F8',     // FixKart App Background
-  surface: '#FFFFFF',        // Card / button surface
-  card: '#FFFFFF',           // Card Surface
-  text: '#12141A',           // FixKart primary text
-  textPrimary: '#12141A',    // Text Primary
-  textSecondary: '#6B7280',  // Text Secondary
-  textMuted: '#9CA3AF',      // Muted gray
-  border: '#EAECEF',         // FixKart Border
-  borderDark: '#CBD5E1',
+  black: '#1A1C1C',
+  background: '#F9F9F9',
+  surface: '#FFFFFF',
+  card: '#FFFFFF',
+  surfaceContainerLowest: '#FFFFFF',
+  surfaceContainerLow: '#F3F3F7',
+  surfaceContainer: '#EEEEEE',
+  surfaceContainerHigh: '#E8E8E8',
 
-  // Decorative
-  accent: '#1EA34A',
-  darkOverlay: 'rgba(11, 11, 15, 0.4)',
+  // Typography & Borders
+  text: '#1A1C1C',
+  textPrimary: '#1A1C1C',
+  textSecondary: '#454652',
+  textMuted: '#767683',
+  border: '#C6C5D4',
+  borderDark: '#767683',
+
+  // Overlays
+  darkOverlay: 'rgba(26, 28, 28, 0.5)',
 };
-

@@ -70,41 +70,42 @@ export function SettingsScreen({ navigation }: Props) {
             active={locationPerms}
             onToggle={() => setLocationPerms(!locationPerms)}
           />
-          <View style={styles.divider} />
-          <SettingToggle
-            label="Biometric Verification"
-            sublabel="Require Face ID / Touch ID when booking plumbers"
-            active={biometrics}
-            onToggle={() => setBiometrics(!biometrics)}
-          />
-          <View style={styles.divider} />
-          <SettingToggle
-            label="Promotions & Offers"
-            sublabel="Receive coupons, flash sales, and discount codes"
-            active={promos}
-            onToggle={() => setPromos(!promos)}
-          />
         </View>
 
-        <Text style={[styles.sectionTitle, { marginTop: spacing.lg }]}>About PlumbCommerce</Text>
+        <Text style={[styles.sectionTitle, { marginTop: spacing.lg }]}>About FixKart</Text>
         <View style={styles.cardContainer}>
-          <TouchableOpacity style={styles.infoRow} onPress={() => alert('Opening Terms of Service...')}>
-            <Text style={styles.infoLabel}>Terms of Service</Text>
+          <TouchableOpacity style={styles.infoRow} onPress={() => navigation.navigate('Support')}>
+            <Text style={styles.infoLabel}>Help & Support Center</Text>
             <Text style={styles.infoValue}>→</Text>
           </TouchableOpacity>
           <View style={styles.divider} />
-          <TouchableOpacity style={styles.infoRow} onPress={() => alert('Opening Privacy Policy...')}>
+          <TouchableOpacity
+            style={styles.infoRow}
+            onPress={() =>
+              alert('Privacy Policy: Approved production legal documentation pending deployment.')
+            }
+          >
             <Text style={styles.infoLabel}>Privacy Policy</Text>
-            <Text style={styles.infoValue}>→</Text>
+            <Text style={styles.infoValue}>Pending</Text>
+          </TouchableOpacity>
+          <View style={styles.divider} />
+          <TouchableOpacity
+            style={styles.infoRow}
+            onPress={() =>
+              alert('Terms & Conditions: Approved production legal documentation pending deployment.')
+            }
+          >
+            <Text style={styles.infoLabel}>Terms & Conditions</Text>
+            <Text style={styles.infoValue}>Pending</Text>
           </TouchableOpacity>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>App Version</Text>
-            <Text style={styles.versionValue}>1.0.0 (Build 42)</Text>
+            <Text style={styles.versionValue}>1.0.0 (Production QA Build)</Text>
           </View>
         </View>
 
-        <Text style={styles.footerBrand}>PlumbCommerce © 2026</Text>
+        <Text style={styles.footerBrand}>FixKart Q-Commerce © 2026</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -113,34 +114,37 @@ export function SettingsScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background || '#F8F9FF',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.layout,
     paddingVertical: spacing.md,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.border || '#C1C6D6',
     gap: spacing.md,
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: borderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
   },
   backButtonText: {
-    fontSize: 22,
+    fontSize: 20,
     color: colors.textPrimary,
     fontWeight: 'bold',
   },
   title: {
     fontSize: typography.fontSize.lg,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.heading,
     color: colors.textPrimary,
   },
   scrollContent: {
@@ -148,17 +152,18 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.huge,
   },
   sectionTitle: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textSecondary,
-    marginBottom: spacing.md,
+    marginBottom: spacing.xs,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   cardContainer: {
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
     borderRadius: borderRadius.md,
     overflow: 'hidden',
   },
@@ -175,12 +180,13 @@ const styles = StyleSheet.create({
   toggleLabel: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textPrimary,
   },
   toggleSublabel: {
     fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+    fontFamily: typography.fontFamily.body,
     marginTop: 2,
     lineHeight: 16,
   },
@@ -188,18 +194,18 @@ const styles = StyleSheet.create({
     width: 50,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.borderDark,
+    backgroundColor: colors.borderDark || '#727785',
     padding: 2,
     justifyContent: 'center',
   },
   switchOuterActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryContainer || colors.primary,
   },
   switchInner: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     transform: [{ translateX: 0 }],
   },
   switchInnerActive: {
@@ -207,7 +213,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: colors.border || '#C1C6D6',
   },
   infoRow: {
     flexDirection: 'row',
@@ -218,6 +224,7 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textPrimary,
   },
   infoValue: {
@@ -228,13 +235,14 @@ const styles = StyleSheet.create({
   versionValue: {
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
+    fontFamily: typography.fontFamily.body,
     color: colors.textSecondary,
   },
   footerBrand: {
     textAlign: 'center',
     color: colors.textMuted,
     fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.medium,
-    marginTop: spacing.huge,
+    fontFamily: typography.fontFamily.body,
+    marginTop: spacing.xl,
   },
 });

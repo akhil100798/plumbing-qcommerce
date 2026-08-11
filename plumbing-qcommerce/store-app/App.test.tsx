@@ -25,6 +25,7 @@ vi.mock('react-native', async () => {
     Pressable: 'Pressable',
     SafeAreaView: 'SafeAreaView',
     ScrollView: 'ScrollView',
+    RefreshControl: 'RefreshControl',
     StyleSheet: { create: (styles: unknown) => styles, flatten: (s: unknown) => s },
     Switch: 'Switch',
     Text: 'Text',

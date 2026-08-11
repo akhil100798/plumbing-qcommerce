@@ -1,6 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { HomeScreen } from '../screens/HomeScreen';
 import { OrdersScreen } from '../screens/OrdersScreen';
@@ -23,8 +23,8 @@ export function MainTabNavigator() {
       initialRouteName="HomeTab"
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarActiveTintColor: colors.primaryContainer || colors.primary,
+        tabBarInactiveTintColor: colors.textMuted || '#727785',
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarButton: (props) => <AnimatedBottomTabButton {...props} />,
@@ -72,16 +72,17 @@ export function MainTabNavigator() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: colors.surface,
-    borderTopWidth: 1.5,
-    borderTopColor: colors.border,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: colors.border || '#C1C6D6',
     height: 64,
     paddingBottom: spacing.xs,
     paddingTop: spacing.xs,
   },
   tabBarLabel: {
     fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.semibold,
+    fontFamily: typography.fontFamily.body,
   },
   iconWrapper: {
     alignItems: 'center',

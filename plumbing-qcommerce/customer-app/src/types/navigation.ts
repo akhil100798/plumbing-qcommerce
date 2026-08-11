@@ -32,7 +32,7 @@ export type AppStackParamList = {
   PlumberConfirmation: { issueType: string };
   PlumberTracking: { orderId: number; plumberId: string; plumberName: string };
   MaterialApproval: { serviceOrderId: number; plumberName: string };
-  ServiceCompletion: { plumberName: string };
+  ServiceCompletion: { plumberName: string; orderId?: number };
   AddressManagement: undefined;
   PaymentMethods: undefined;
   Settings: undefined;

@@ -1,81 +1,29 @@
-import React, { useState } from 'react';
+import { StackScreenProps } from '@react-navigation/stack';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
-  View,
-  ScrollView,
-  Alert,
   TouchableOpacity,
-  SafeAreaView,
-  Platform,
+  View,
 } from 'react-native';
-import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
 
+import CheckIcon from '../../assets/icons/success-check.svg';
 import { AppHeader } from '../../components/common/AppHeader';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
-import { jobService } from '../../services/jobs/jobService';
 import { clearJobState } from '../../redux/slices/jobSlice';
 import { clearMaterialState } from '../../redux/slices/materialSlice';
-import { addCompletedJobEarnings } from '../../redux/slices/earningsSlice';
-import { addTransaction } from '../../redux/slices/walletSlice';
-import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
-import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
-import CheckIcon from '../../assets/icons/success-check.svg';
-import StarIcon from '../../assets/icons/star.svg';
-import SignatureIcon from '../../assets/icons/signature.svg';
+import { jobService } from '../../services/jobs/jobService';
+import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
+import { ActiveJob } from '../../types';
+import { AppStackParamList } from '../../types/navigation';
 
 type Props = StackScreenProps<AppStackParamList, 'CompleteService'>;
-
-const CONFETTI_COLORS = [colors.warning, colors.primary, colors.error, colors.success, '#8E5CE8'];
-
-function Confetti() {
-  const pieces = Array.from({ length: 14 });
-  return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {pieces.map((_, i) => {
-        const left = `${(i * 37) % 100}%` as any;
-        const top = `${(i * 23) % 70}%` as any;
-        const size = 6 + (i % 3) * 3;
-        const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
-        const shape = i % 2 === 0 ? size / 2 : 2;
-        return (
-          <View
-            key={i}
-            style={{
-              position: 'absolute',
-              left,
-              top,
-              width: size,
-              height: size,
-              borderRadius: shape,
-              backgroundColor: color,
-              opacity: 0.9,
-              transform: [{ rotate: `${i * 25}deg` }],
-            }}
-          />
-        );
-      })}
-    </View>
-  );
-}
-
-function StarRating({ rating = 5, max = 5 }: { rating?: number; max?: number }) {
-  return (
-    <View style={{ flexDirection: 'row', gap: 4 }}>
-      {Array.from({ length: max }).map((_, i) => (
-        <StarIcon
-          key={i}
-          width={22}
-          height={22}
-          fill={i < rating ? colors.warning : 'none'}
-          stroke={colors.warning}
-        />
-      ))}
-    </View>
-  );
-}
 
 export function CompleteServiceScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
@@ -84,134 +32,181 @@ export function CompleteServiceScreen({ route, navigation }: Props) {
   const { activeJob } = useSelector((state: RootState) => state.job);
   const { totalAmount: materialCost } = useSelector((state: RootState) => state.material);
 
-  const [signed, setSigned] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [currentJob, setCurrentJob] = useState<ActiveJob | null>(activeJob);
+  const [status, setStatus] = useState<string>(activeJob?.status || 'started');
 
-  const serviceCharge = activeJob?.estimatedEarnings || 299;
-  const partsCharge = materialCost || 0;
+  const serviceCharge = currentJob?.estimatedEarnings || activeJob?.estimatedEarnings || 299;
+  const partsCharge = activeJob?.partsCharge || materialCost || 0;
   const totalAmount = serviceCharge + partsCharge;
-  const customerFeedback = 'Excellent work, very professional!';
 
-  const handleCompleteJob = async () => {
-    if (!signed) {
-      Alert.alert('Signature Required', 'Please ask customer to sign to approve completion.');
-      return;
+  useEffect(() => {
+    // Poll job status while waiting for customer confirmation
+    if (status === 'completed' || status === 'WORK_COMPLETED') {
+      const timer = setInterval(async () => {
+        try {
+          const freshJob = await jobService.fetchJobById(String(jobId));
+          setCurrentJob(freshJob);
+          if (freshJob.status === 'completed') {
+            setStatus('completed');
+            clearInterval(timer);
+          }
+        } catch {
+          // ignore transient poll error
+        }
+      }, 5000);
+      return () => clearInterval(timer);
     }
+  }, [jobId, status]);
 
+  const handleCompleteWork = async () => {
     setLoading(true);
     try {
-      await jobService.completeJob(jobId, partsCharge);
-    } catch (error) {
-      console.warn('Staging backend completeJob failed, falling back to local dispatch:', error);
+      const resJob = await jobService.completeJob(jobId, partsCharge);
+      setCurrentJob(resJob);
+      setStatus('WORK_COMPLETED');
+      Alert.alert(
+        'Work Completed!',
+        'Your completion summary has been submitted. Waiting for customer confirmation.'
+      );
+    } catch (error: any) {
+      Alert.alert(
+        'Completion Submission Failed',
+        error?.message || 'Unable to submit work completion. Please try again.'
+      );
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const serviceCom = Math.round(serviceCharge * 0.85);
-    const materialCom = Math.round(partsCharge * 0.10);
-    const tip = 50;
-    
-    dispatch(
-      addCompletedJobEarnings({
-        service: serviceCom,
-        material: materialCom,
-        tip: tip,
-      })
-    );
-
-    dispatch(
-      addTransaction({
-        id: `TXN${Math.floor(Math.random() * 100000)}`,
-        type: 'CREDIT',
-        amount: serviceCom + materialCom + tip,
-        description: `Job Payment for #${jobId}`,
-        createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        referenceId: jobId,
-      })
-    );
-
+  const handleDone = () => {
     dispatch(clearJobState());
     dispatch(clearMaterialState());
-
-    setLoading(false);
-
-    Alert.alert(
-      'Job Completed!',
-      `Service completed successfully. Total amount of ₹${totalAmount} collected.`,
-      [
-        {
-          text: 'View Earnings',
-          onPress: () => {
-            navigation.replace('Earnings');
-          },
-        },
-      ]
-    );
+    navigation.replace('Main', { screen: 'Jobs' } as any);
   };
+
+  if (status === 'completed') {
+    // Stitch Screen: Job Completed Successfully (01ab4f6f695547878ebcccdcf48290c3)
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.heroSuccess}>
+          <View style={styles.checkCircle}>
+            <CheckIcon width={44} height={44} stroke="#FFFFFF" />
+          </View>
+          <Text style={styles.greatJob}>Job Completed Successfully!</Text>
+          <Text style={styles.heroSubtitle}>Customer has confirmed work completion.</Text>
+        </View>
+
+        <ScrollView contentContainerStyle={styles.scrollBody}>
+          <View style={styles.card}>
+            <Text style={styles.sectionLabel}>Service Summary</Text>
+            <View style={styles.billingRow}>
+              <Text style={styles.billingLabel}>Job ID</Text>
+              <Text style={styles.billingVal}>#{jobId}</Text>
+            </View>
+            <View style={styles.billingRow}>
+              <Text style={styles.billingLabel}>Customer Name</Text>
+              <Text style={styles.billingVal}>{currentJob?.customer.fullName || 'Customer'}</Text>
+            </View>
+            <View style={styles.billingRow}>
+              <Text style={styles.billingLabel}>Service Fee</Text>
+              <Text style={styles.billingVal}>₹{serviceCharge}</Text>
+            </View>
+            {partsCharge > 0 && (
+              <View style={styles.billingRow}>
+                <Text style={styles.billingLabel}>Materials Charge</Text>
+                <Text style={styles.billingVal}>₹{partsCharge}</Text>
+              </View>
+            )}
+
+            <View style={styles.divider} />
+
+            <View style={styles.amountRow}>
+              <Text style={styles.totalLabel}>Total Job Value</Text>
+              <Text style={styles.amountValue}>₹{totalAmount}</Text>
+            </View>
+          </View>
+        </ScrollView>
+
+        <View style={styles.footer}>
+          <PrimaryButton title="Back to Job History" onPress={handleDone} style={styles.completeButton} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (status === 'WORK_COMPLETED') {
+    // Waiting for Customer Confirmation State
+    return (
+      <SafeAreaView style={styles.container}>
+        <AppHeader title="Awaiting Customer Confirmation" onBackPress={() => navigation.goBack()} />
+
+        <View style={styles.waitingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.waitingTitle}>Work Completed — Waiting for Customer</Text>
+          <Text style={styles.waitingSub}>
+            The customer has been notified to review and confirm completion on their app.
+          </Text>
+
+          <View style={styles.card}>
+            <Text style={styles.sectionLabel}>Summary Submitted</Text>
+            <View style={styles.billingRow}>
+              <Text style={styles.billingLabel}>Service Order</Text>
+              <Text style={styles.billingVal}>#{jobId}</Text>
+            </View>
+            <View style={styles.billingRow}>
+              <Text style={styles.billingLabel}>Total Fee</Text>
+              <Text style={styles.billingVal}>₹{totalAmount}</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.refreshBtn} onPress={handleDone}>
+            <Text style={styles.refreshBtnText}>Return to Dashboard</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.hero}>
-        <Confetti />
-        <AppHeader
-          title="Job Completed"
-          onBackPress={() => navigation.goBack()}
-        />
-        <View style={styles.checkCircle}>
-          <CheckIcon width={40} height={40} stroke="#FFFFFF" />
-        </View>
-        <Text style={styles.greatJob}>Great Job!</Text>
-        <Text style={styles.heroSubtitle}>Service completed successfully.</Text>
-      </View>
+      <AppHeader title="Work Completion Summary" onBackPress={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.scrollBody}>
+        {/* Stitch Screen: Work Completion Summary (c1131d05df8a49aea0d56261270a0c9b) */}
         <View style={styles.card}>
-          <Text style={styles.sectionLabel}>Customer Feedback</Text>
-          <StarRating rating={5} />
-          <Text style={styles.feedbackText}>{customerFeedback}</Text>
+          <Text style={styles.sectionLabel}>Service & Customer</Text>
+          <Text style={styles.jobTitle}>{activeJob?.issueDescription || 'Plumbing Service Repair'}</Text>
+          <Text style={styles.customerName}>Customer: {activeJob?.customer.fullName || 'Customer'}</Text>
+          <Text style={styles.addressText}>📍 {activeJob?.address || 'Customer Location'}</Text>
+        </View>
 
-          <View style={styles.divider} />
-
+        <View style={styles.card}>
+          <Text style={styles.sectionLabel}>Cost & Charges Summary</Text>
           <View style={styles.billingRow}>
             <Text style={styles.billingLabel}>Service Charge</Text>
             <Text style={styles.billingVal}>₹{serviceCharge}</Text>
           </View>
-          <View style={styles.billingRow}>
-            <Text style={styles.billingLabel}>Material Charge</Text>
-            <Text style={styles.billingVal}>₹{partsCharge}</Text>
-          </View>
+          {partsCharge > 0 && (
+            <View style={styles.billingRow}>
+              <Text style={styles.billingLabel}>Hardware Materials</Text>
+              <Text style={styles.billingVal}>₹{partsCharge}</Text>
+            </View>
+          )}
 
           <View style={styles.divider} />
 
           <View style={styles.amountRow}>
-            <Text style={styles.totalLabel}>Amount Collected</Text>
+            <Text style={styles.totalLabel}>Total Service Cost</Text>
             <Text style={styles.amountValue}>₹{totalAmount}</Text>
           </View>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.sectionLabel}>Customer Signature</Text>
-          <TouchableOpacity
-            style={styles.signatureCard}
-            onPress={() => setSigned(true)}
-          >
-            {signed ? (
-              <View style={styles.signedContainer}>
-                <Text style={styles.signatureText}>Akhil Verma</Text>
-                <Text style={styles.signatureSub}>Signed on phone screen</Text>
-              </View>
-            ) : (
-              <View style={styles.unsignedContainer}>
-                <SignatureIcon width={24} height={24} stroke={colors.primary} />
-                <Text style={styles.signPrompt}>Tap to sign</Text>
-              </View>
-            )}
-          </TouchableOpacity>
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
         <PrimaryButton
-          title="Complete & Finish"
-          onPress={handleCompleteJob}
+          title={loading ? 'Submitting...' : 'Complete Work & Submit'}
+          onPress={handleCompleteWork}
           loading={loading}
           style={styles.completeButton}
         />
@@ -221,14 +216,14 @@ export function CompleteServiceScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  hero: {
-    backgroundColor: colors.success,
-    paddingBottom: spacing.xl,
+  container: { flex: 1, backgroundColor: colors.background || '#FAF9FD' },
+  heroSuccess: {
+    backgroundColor: colors.secondary || '#1B6D24',
+    paddingVertical: spacing.xl,
     alignItems: 'center',
     borderBottomLeftRadius: borderRadius.lg,
     borderBottomRightRadius: borderRadius.lg,
-    overflow: 'hidden',
+    paddingHorizontal: spacing.md,
   },
   checkCircle: {
     width: 72,
@@ -237,46 +232,95 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  greatJob: { fontSize: 22, fontWeight: typography.fontWeight.black, color: '#FFFFFF', marginTop: spacing.sm },
-  heroSubtitle: { fontSize: typography.fontSize.sm, color: 'rgba(255,255,255,0.9)', marginTop: 2 },
-  scrollBody: { padding: spacing.md, paddingBottom: spacing.xl },
+  greatJob: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  heroSubtitle: {
+    fontSize: typography.fontSize.xs,
+    color: 'rgba(255,255,255,0.9)',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  scrollBody: { padding: spacing.md, paddingBottom: spacing.giant },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.border || '#C1C6D6',
     ...shadows.sm,
   },
-  sectionLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginBottom: spacing.xs, fontWeight: typography.fontWeight.bold, textTransform: 'uppercase' },
-  feedbackText: { fontSize: typography.fontSize.sm, color: colors.textPrimary, marginTop: spacing.xs },
-  divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.md },
-  billingRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 2 },
+  jobTitle: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    marginBottom: 4,
+  },
+  customerName: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textSecondary,
+  },
+  addressText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  sectionLabel: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textMuted,
+    marginBottom: spacing.xs,
+    fontWeight: typography.fontWeight.bold,
+    textTransform: 'uppercase',
+  },
+  divider: { height: 1, backgroundColor: colors.border || '#C1C6D6', marginVertical: spacing.md },
+  billingRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 4 },
   billingLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
   billingVal: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
   amountRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   totalLabel: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  amountValue: { fontSize: 24, fontWeight: typography.fontWeight.black, color: colors.textPrimary },
-  signatureCard: {
-    height: 100,
-    borderRadius: borderRadius.md,
-    borderWidth: 1.5,
-    borderColor: colors.borderDark,
-    borderStyle: 'dashed',
+  amountValue: { fontSize: 24, fontWeight: typography.fontWeight.bold, color: colors.secondary || '#1B6D24' },
+  waitingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: spacing.xs,
+    padding: spacing.layout,
+    gap: spacing.md,
   },
-  signedContainer: { alignItems: 'center' },
-  signatureText: { fontSize: 26, fontStyle: 'italic', fontWeight: 'bold', color: colors.textPrimary },
-  signatureSub: { fontSize: 10, color: colors.textMuted, marginTop: 2 },
-  unsignedContainer: { alignItems: 'center', gap: 4 },
-  signPrompt: { fontSize: typography.fontSize.xs, color: colors.primary, fontWeight: typography.fontWeight.bold },
-  footer: { padding: spacing.md, marginTop: 'auto' },
+  waitingTitle: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  waitingSub: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  refreshBtn: {
+    backgroundColor: colors.surfaceContainerLow || '#F4F3F7',
+    borderWidth: 1,
+    borderColor: colors.border || '#C1C6D6',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    marginTop: spacing.md,
+  },
+  refreshBtnText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  footer: { padding: spacing.md, backgroundColor: colors.surfaceContainerLowest || '#FFFFFF', borderTopWidth: 1, borderTopColor: colors.border || '#C1C6D6' },
   completeButton: {
-    backgroundColor: colors.success,
+    backgroundColor: colors.secondary || '#1B6D24',
   },
 });
