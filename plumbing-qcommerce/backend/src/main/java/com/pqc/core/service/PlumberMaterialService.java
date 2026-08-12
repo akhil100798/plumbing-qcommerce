@@ -336,7 +336,6 @@ public class PlumberMaterialService {
             stock.setAvailableQuantity(stock.getAvailableQuantity() - quantity);
             stock.setReservedQuantity(stock.getReservedQuantity() + quantity);
             stocks.save(stock);
-            // Prevent duplicate reservation
             boolean alreadyReserved = reservations.findByOrderId(id).stream()
                     .anyMatch(r -> r.getStatus() == ReservationStatus.CONFIRMED
                             && Objects.equals(r.getStock().getId(), stock.getId()));
@@ -361,13 +360,6 @@ public class PlumberMaterialService {
         if (request.getPreparingStartedAt() == null) {
             request.setPreparingStartedAt(LocalDateTime.now());
         }
-        // Auto-mark all items as fully packed when moving to PREPARING
-        // (store physically picks items; packedQuantity must equal quantity before ready() is called)
-        for (ProductOrderItem item : request.getItems()) {
-            if (item.getPackedQuantity() == null || item.getPackedQuantity() < item.getQuantity()) {
-                item.setPackedQuantity(item.getQuantity());
-            }
-        }
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.PREPARING, manager, null);
         return toDetail(saved);
@@ -387,10 +379,12 @@ public class PlumberMaterialService {
         if (request.getReadyForPickupAt() == null) {
             request.setReadyForPickupAt(LocalDateTime.now());
         }
-        OrderStatus prevJobStatus = request.getServiceOrder().getStatus();
-        request.getServiceOrder().setStatus(OrderStatus.READY_FOR_PRODUCT_PICKUP);
-        jobs.save(request.getServiceOrder());
-        recordServiceOrderHistory(request.getServiceOrder().getId(), prevJobStatus, OrderStatus.READY_FOR_PRODUCT_PICKUP, manager, "Products ready for plumber pickup");
+        if (request.getServiceOrder() != null) {
+            OrderStatus prevJobStatus = request.getServiceOrder().getStatus();
+            request.getServiceOrder().setStatus(OrderStatus.READY_FOR_PRODUCT_PICKUP);
+            jobs.save(request.getServiceOrder());
+            recordServiceOrderHistory(request.getServiceOrder().getId(), prevJobStatus, OrderStatus.READY_FOR_PRODUCT_PICKUP, manager, "Products ready for plumber pickup");
+        }
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.READY_FOR_PICKUP, manager, null);
         return toDetail(saved);
@@ -403,10 +397,12 @@ public class PlumberMaterialService {
         ProductOrderStatus prev = request.getStatus();
         move(request, ProductOrderStatus.READY_FOR_PICKUP, ProductOrderStatus.PLUMBER_AT_STORE);
         request.setPlumberArrivedAt(LocalDateTime.now());
-        OrderStatus prevJobStatus = request.getServiceOrder().getStatus();
-        request.getServiceOrder().setStatus(OrderStatus.PLUMBER_COLLECTING_PRODUCTS);
-        jobs.save(request.getServiceOrder());
-        recordServiceOrderHistory(request.getServiceOrder().getId(), prevJobStatus, OrderStatus.PLUMBER_COLLECTING_PRODUCTS, plumber, "Plumber collecting products at store");
+        if (request.getServiceOrder() != null) {
+            OrderStatus prevJobStatus = request.getServiceOrder().getStatus();
+            request.getServiceOrder().setStatus(OrderStatus.PLUMBER_COLLECTING_PRODUCTS);
+            jobs.save(request.getServiceOrder());
+            recordServiceOrderHistory(request.getServiceOrder().getId(), prevJobStatus, OrderStatus.PLUMBER_COLLECTING_PRODUCTS, plumber, "Plumber collecting products at store");
+        }
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.PLUMBER_AT_STORE, plumber, null);
         return toDetail(saved);
@@ -420,7 +416,7 @@ public class PlumberMaterialService {
             throw error(HttpStatus.CONFLICT, "Collection is not allowed or was already recorded");
         ProductOrderStatus prev = request.getStatus();
         request.setPlumberCollectedAt(LocalDateTime.now());
-        request.setCollectedByPlumber(currentUser.require());
+        request.setCollectedByPlumber(plumber);
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.PLUMBER_AT_STORE, plumber, "Plumber collected products");
         return toDetail(saved);
@@ -447,10 +443,12 @@ public class PlumberMaterialService {
         ProductOrderStatus prev = request.getStatus();
         request.setStatus(ProductOrderStatus.COLLECTED);
         request.setCollectionConfirmedAt(LocalDateTime.now());
-        OrderStatus prevJobStatus = request.getServiceOrder().getStatus();
-        request.getServiceOrder().setStatus(OrderStatus.PRODUCTS_COLLECTED);
-        jobs.save(request.getServiceOrder());
-        recordServiceOrderHistory(request.getServiceOrder().getId(), prevJobStatus, OrderStatus.PRODUCTS_COLLECTED, manager, "Products collected from store");
+        if (request.getServiceOrder() != null) {
+            OrderStatus prevJobStatus = request.getServiceOrder().getStatus();
+            request.getServiceOrder().setStatus(OrderStatus.PRODUCTS_COLLECTED);
+            jobs.save(request.getServiceOrder());
+            recordServiceOrderHistory(request.getServiceOrder().getId(), prevJobStatus, OrderStatus.PRODUCTS_COLLECTED, manager, "Products collected from store");
+        }
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.COLLECTED, manager, null);
         return toDetail(saved);

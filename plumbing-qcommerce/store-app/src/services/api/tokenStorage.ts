@@ -38,5 +38,3 @@ export const tokenStorage = {
     await SecureStore.deleteItemAsync(key);
   },
 };
-
-export { apiClient, getAuthToken, setAuthToken, setRefreshToken } from './axiosClient';

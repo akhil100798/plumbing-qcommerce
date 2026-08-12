@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { AppHeader } from '../../components/common/AppHeader';
@@ -85,13 +86,11 @@ export function StoreSelectionScreen({ route, navigation }: Props) {
   };
 
   return (
-    <ScreenWrapper style={styles.container}>
+    <ScreenWrapper safeAreaStyle={styles.safeArea}>
       <AppHeader
-        title="Select Store"
-        onBackPress={() => {
-          if (navigation.canGoBack()) navigation.goBack();
-          else navigation.navigate('Main', { screen: 'Home' });
-        }}
+        title="Select Hardware Store"
+        subtitle="Choose a store for job materials"
+        onBackPress={() => navigation.goBack()}
       />
 
       {loading ? (
@@ -128,8 +127,9 @@ export function StoreSelectionScreen({ route, navigation }: Props) {
             data={stores}
             keyExtractor={item => String(item.id)}
             renderItem={renderItem}
+            style={{ flex: 1 }}
             contentContainerStyle={styles.list}
-            showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator={true}
           />
           <View style={styles.footer}>
             <TouchableOpacity
@@ -151,6 +151,12 @@ export function StoreSelectionScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    height: Platform.OS === 'web' ? ('100vh' as any) : '100%',
+    maxHeight: Platform.OS === 'web' ? ('100vh' as any) : '100%',
+    overflow: 'hidden',
+  },
   container: { backgroundColor: colors.background },
   center: {
     flex: 1,
@@ -245,14 +251,11 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     padding: spacing.layout,
     backgroundColor: colors.surface,
-    borderTopWidth: 1,
+    borderTopWidth: 1.5,
     borderTopColor: colors.border,
+    elevation: 8,
   },
   confirmBtn: {
     backgroundColor: colors.primary,

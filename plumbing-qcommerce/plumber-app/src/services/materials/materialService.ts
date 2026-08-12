@@ -29,6 +29,7 @@ export const materialService = {
       throw createBackendUnavailableError('Material requests', error);
     }
   },
+
   // ── Store Discovery ──────────────────────────────────────────────────────
 
   getAvailableStores: async (): Promise<Store[]> => {
@@ -69,7 +70,7 @@ export const materialService = {
   searchMaterials: async (query: string): Promise<MaterialItem[]> => {
     try {
       const response = await apiClient.get<any[]>(`${ENDPOINTS.CATALOG.SEARCH}?q=${query}`);
-      return response.data.map((item) => ({
+      return response.data.map((item: any) => ({
         productId: item.id,
         name: item.name,
         price: item.price,
@@ -94,7 +95,6 @@ export const materialService = {
         ENDPOINTS.DELIVERY.MATERIAL_REQUEST(numericOrderId),
         { storeId, items }
       );
-      await apiClient.post(ENDPOINTS.DELIVERY.SUBMIT(response.data.id));
 
       const order = response.data;
       const mappedItems: MaterialItem[] = (order.items || items).map((reqItem: any) => {

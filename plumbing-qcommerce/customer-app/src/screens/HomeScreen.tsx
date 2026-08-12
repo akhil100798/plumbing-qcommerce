@@ -22,6 +22,7 @@ import { ProductRepository } from '../services/products/productRepository';
 import { StoreRepository } from '../services/stores/storeRepository';
 import { CartRepository } from '../services/cart/cartRepository';
 import { OrderRepository } from '../services/orders/orderRepository';
+import { isServiceCompletionPendingCustomerAction } from '../services/orders/serviceCompletionStatus';
 import { PlumberRepository } from '../services/plumbers/plumberRepository';
 import { getConfiguredEdgeUrl } from '../services/mockPolicy';
 import { RootState } from '../redux/store';
@@ -187,6 +188,51 @@ export function HomeScreen({ navigation }: any) {
       .catch(err => console.log('Failed to fetch stores:', err));
   }, []);
 
+  // Poll for active service order status updates
+  useEffect(() => {
+    if (!activeJob?.orderId) return;
+
+    let isMounted = true;
+    const checkOrderStatus = async () => {
+      try {
+        const order = await OrderRepository.getServiceOrderById(activeJob.orderId!);
+        if (!isMounted || !order) return;
+
+        const currentStatus = order.status || 'REQUESTED';
+        if (isServiceCompletionPendingCustomerAction(currentStatus)) {
+          dispatch(setActiveJob(null));
+          navigation.navigate('ServiceCompletion', {
+            orderId: activeJob.orderId,
+            plumberName: order.plumber?.fullName || activeJob.plumberName || 'Plumber',
+          });
+          return;
+        }
+        const plumberName = (order as any).plumberName || order.plumber?.fullName;
+        const plumberId = order.plumber?.id ? String(order.plumber.id) : activeJob.plumberId;
+
+        if (currentStatus !== activeJob.status || plumberName !== activeJob.plumberName) {
+          dispatch(
+            setActiveJob({
+              ...activeJob,
+              status: currentStatus,
+              plumberName: plumberName || activeJob.plumberName,
+              plumberId: plumberId || activeJob.plumberId,
+            })
+          );
+        }
+      } catch {
+        // Silently ignore polling errors
+      }
+    };
+
+    checkOrderStatus();
+    const interval = setInterval(checkOrderStatus, 5000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [activeJob?.orderId, activeJob?.status, dispatch, navigation]);
+
   // WebSockets Setup
   useEffect(() => {
     if (!edgeServerUrl) {
@@ -201,9 +247,17 @@ export function HomeScreen({ navigation }: any) {
       newSocket.emit('register_customer', { customerId: CUSTOMER_ID });
     });
 
-    newSocket.on('PLUMBER_ASSIGNED', (data: ActiveJob) => {
-      dispatch(setActiveJob(data));
-      Alert.alert('Plumber assigned', `Partner ${data.plumberId ?? 'nearby'} is on the way.`);
+    newSocket.on('PLUMBER_ASSIGNED', (data: any) => {
+      dispatch(
+        setActiveJob({
+          orderId: data.orderId || data.serviceOrderId,
+          status: 'ACCEPTED',
+          plumberId: data.plumberId ? String(data.plumberId) : undefined,
+          plumberName: data.plumberName || data.fullName,
+          message: 'Partner accepted your service request.',
+        })
+      );
+      Alert.alert('Plumber assigned', `${data.plumberName || 'Partner'} has accepted your request and is on the way.`);
     });
 
     newSocket.on('DELIVERY_ASSIGNED', (data: any) => {
@@ -411,8 +465,11 @@ export function HomeScreen({ navigation }: any) {
         dispatch(stopSearching());
         dispatch(
           setActiveJob({
-            plumberId: order.plumber?.id ? String(order.plumber.id) : `order_${order.id}`,
-            message: `Service order #${order.id} created. It is now visible in the plumber app.`,
+            orderId: order.id,
+            status: order.status || 'REQUESTED',
+            plumberId: order.plumber?.id ? String(order.plumber.id) : undefined,
+            plumberName: order.plumber?.fullName,
+            message: `Service order #${order.id} created. Waiting for partner confirmation.`,
           })
         );
         Alert.alert(
@@ -540,18 +597,27 @@ export function HomeScreen({ navigation }: any) {
 
   /* Render Plumber Task Tracking screen */
   if (activeJob) {
+    const isAccepted =
+      activeJob.status === 'ACCEPTED' ||
+      activeJob.status === 'IN_PROGRESS' ||
+      activeJob.status === 'ARRIVED' ||
+      activeJob.status === 'COMPLETED';
+
     return (
       <SafeAreaView style={styles.container}>
-        <ScrollView contentContainerStyle={styles.trackingContent}>
-          {/* Phase 3: Material Payment Approval Card � floats at top if request is pending */}
+        <View style={styles.header}>
+          <Text style={styles.locationTitle}>Track Repair Request</Text>
+        </View>
+
+        <ScrollView contentContainerStyle={styles.content}>
           {materialPaymentRequest && (
             <View style={styles.materialApprovalCard}>
-              <Text style={styles.materialApprovalEyebrow}>�x� Parts Needed by Your Plumber</Text>
-              <Text style={styles.materialApprovalTitle}>{materialPaymentRequest.plumberName} needs supplies</Text>
+              <Text style={styles.materialApprovalEyebrow}>⚠️ Parts Required for Repair</Text>
+              <Text style={styles.materialApprovalTitle}>{materialPaymentRequest.plumberName} requested materials</Text>
               <Text style={styles.materialApprovalMsg}>{materialPaymentRequest.message}</Text>
               <View style={styles.materialApprovalAmountRow}>
                 <Text style={styles.materialApprovalLabel}>Total to Pay</Text>
-                <Text style={styles.materialApprovalAmount}>Rs. {materialPaymentRequest.totalAmount}</Text>
+                <Text style={styles.materialApprovalAmount}>₹{materialPaymentRequest.totalAmount}</Text>
               </View>
               <View style={styles.materialApprovalActions}>
                 <TouchableOpacity
@@ -565,19 +631,26 @@ export function HomeScreen({ navigation }: any) {
                   onPress={approveMaterialPayment}
                   disabled={isApprovingPayment}
                 >
-                  {isApprovingPayment
-                    ? <ActivityIndicator color="#FFFFFF" />
-                    : <Text style={styles.materialApproveBtnText}>Approve Material Request</Text>
-                  }
+                  {isApprovingPayment ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.materialApproveBtnText}>Approve Material Request</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
           )}
 
           <View style={styles.hero}>
-            <Text style={styles.brand}>PlumbCommerce</Text>
-            <Text style={styles.heroTitle}>Your plumber is on the way</Text>
-            <Text style={styles.heroSub}>Live assignment for {selectedCategory.toLowerCase()}.</Text>
+            <Text style={styles.brand}>FixKart Services</Text>
+            <Text style={styles.heroTitle}>
+              {isAccepted ? 'Your plumber is on the way' : 'Service request submitted'}
+            </Text>
+            <Text style={styles.heroSub}>
+              {isAccepted
+                ? `Live assignment for ${selectedCategory.toLowerCase()}.`
+                : `Waiting for a nearby partner to accept your request.`}
+            </Text>
           </View>
 
           <View style={styles.mapPanel}>
@@ -589,8 +662,8 @@ export function HomeScreen({ navigation }: any) {
               <Text style={styles.pinText}>Pro</Text>
             </View>
             <View style={styles.etaBadge}>
-              <Text style={styles.etaNumber}>9 min</Text>
-              <Text style={styles.etaLabel}>estimated arrival</Text>
+              <Text style={styles.etaNumber}>{isAccepted ? '9 min' : '---'}</Text>
+              <Text style={styles.etaLabel}>{isAccepted ? 'estimated arrival' : 'matching partner'}</Text>
             </View>
           </View>
 
@@ -600,15 +673,27 @@ export function HomeScreen({ navigation }: any) {
                 <Text style={styles.avatarText}>P</Text>
               </View>
               <View style={styles.partnerCopy}>
-                <Text style={styles.partnerName}>Partner {activeJob.plumberId ?? 'assigned'}</Text>
-                <Text style={styles.partnerMeta}>Verified plumber - 4.8 rating - Tools ready</Text>
+                <Text style={styles.partnerName}>
+                  {isAccepted
+                    ? activeJob.plumberName || `Partner ${activeJob.plumberId ?? 'assigned'}`
+                    : 'Partner Assignment'}
+                </Text>
+                <Text style={styles.partnerMeta}>
+                  {isAccepted
+                    ? 'Verified plumber - 4.8 rating - Tools ready'
+                    : 'Connecting to nearby available plumbers'}
+                </Text>
               </View>
-              <Text style={styles.statusPill}>En route</Text>
+              <Text style={[styles.statusPill, !isAccepted && { backgroundColor: '#FEF3C7', color: '#D97706' }]}>
+                {isAccepted ? 'En route' : 'Pending'}
+              </Text>
             </View>
 
             <View style={styles.timeline}>
               <Text style={styles.timelineItem}>Request confirmed</Text>
-              <Text style={styles.timelineItem}>Partner accepted</Text>
+              <Text style={isAccepted ? styles.timelineItem : styles.timelineItemMuted}>
+                {isAccepted ? 'Partner accepted' : 'waiting for partner confirmation'}
+              </Text>
               <Text style={styles.timelineItemMuted}>Inspection and quote pending</Text>
             </View>
 
