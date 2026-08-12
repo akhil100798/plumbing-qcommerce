@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -62,23 +63,37 @@ export function ProfileScreen(_: Props) {
     loadKyc();
   }, [loadKyc]);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
+    const performLogout = async () => {
+      try {
+        await tokenStorage.deleteItem('authToken');
+        await tokenStorage.deleteItem('refreshToken');
+      } catch (err) {
+        console.error('Error clearing tokens during logout:', err);
+      } finally {
+        dispatch(clearJobState());
+        dispatch(clearMaterialState());
+        dispatch(logout());
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Auth' as any }],
+        });
+      }
+    };
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      if (window.confirm('Are you sure you want to log out of your FixKart Plumber session?')) {
+        performLogout();
+      }
+      return;
+    }
+
     Alert.alert('Sign Out', 'Are you sure you want to log out of your FixKart Plumber session?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Logout',
         style: 'destructive',
-        onPress: async () => {
-          await tokenStorage.deleteItem('authToken');
-          await tokenStorage.deleteItem('refreshToken');
-          dispatch(clearJobState());
-          dispatch(clearMaterialState());
-          dispatch(logout());
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Auth' as any }],
-          });
-        },
+        onPress: performLogout,
       },
     ]);
   };

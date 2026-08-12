@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -87,7 +88,7 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
     };
 
     poll();
-    const interval = setInterval(poll, 10000);
+    const interval = setInterval(poll, 3000);
 
     return () => {
       cancelled = true;
@@ -108,7 +109,7 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
           {
             text: 'OK',
             onPress: () =>
-              navigation.replace('ServiceCompletion', { plumberName }),
+              navigation.replace('ServiceCompletion', { plumberName, orderId }),
           },
         ]
       );
@@ -125,6 +126,55 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
     'Arrived & Work in Progress',
   ];
 
+  const getStepIndex = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return 0;
+      case 'ACCEPTED':
+        return 1;
+      case 'IN_PROGRESS':
+      case 'MATERIALS_REQUIRED':
+      case 'WAITING_FOR_STORE':
+      case 'READY_FOR_PRODUCT_PICKUP':
+      case 'PLUMBER_COLLECTING_PRODUCTS':
+      case 'PRODUCTS_COLLECTED':
+      case 'WORK_RESUMED':
+        return 2;
+      case 'WORK_COMPLETED':
+      case 'COMPLETED':
+        return 3;
+      default:
+        return 1;
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return 'Request confirmed, waiting for partner confirmation';
+      case 'ACCEPTED':
+        return 'Partner assigned & on the way';
+      case 'IN_PROGRESS':
+        return 'Partner arrived & work in progress';
+      case 'MATERIALS_REQUIRED':
+      case 'WAITING_FOR_STORE':
+        return 'Partner requested materials from store';
+      case 'READY_FOR_PRODUCT_PICKUP':
+      case 'PLUMBER_COLLECTING_PRODUCTS':
+        return 'Materials ready - Partner collecting from store';
+      case 'PRODUCTS_COLLECTED':
+      case 'WORK_RESUMED':
+        return 'Materials collected - Work resumed at site';
+      case 'COMPLETED':
+        return 'Service completed';
+      default:
+        return 'Partner assigned & on the way';
+    }
+  };
+
+  const currentStep = getStepIndex(orderStatus);
+  const statusText = getStatusText(orderStatus);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -134,7 +184,11 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
         <Text style={styles.title}>Track Plumber</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        style={{ flex: 1, width: '100%' }}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={true}
+      >
         <View style={styles.mapPanel}>
           <MapView
             style={styles.map}
@@ -143,24 +197,24 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
             zoomEnabled={false}
           >
             <Marker coordinate={{ latitude: 17.4485, longitude: 78.3741 }} title="Your Location" />
-            <Marker coordinate={{ latitude: 17.452, longitude: 78.38 }} title={plumberName}>
+            <Marker coordinate={{ latitude: 17.452, longitude: 78.38 }} title={plumberName || 'Plumber'}>
               <PulsingLocationMarker color={colors.warning} size={14} />
             </Marker>
             <Polyline coordinates={[{ latitude: 17.4485, longitude: 78.3741 }, { latitude: 17.452, longitude: 78.38 }]} strokeColor={colors.primary} strokeWidth={4} />
           </MapView>
         </View>
 
-        {/* Material Approval Card â€” shown when plumber requests parts */}
+        {/* Material Approval Card — shown when plumber requests parts */}
         {materialRequest && (
           <View style={styles.approvalCard}>
-            <Text style={styles.approvalEyebrow}>âš ï¸ Parts Needed by Your Plumber</Text>
-            <Text style={styles.approvalTitle}>{materialRequest.plumberName} needs supplies</Text>
+            <Text style={styles.approvalEyebrow}>⚠️ Parts Needed by Your Plumber</Text>
+            <Text style={styles.approvalTitle}>{materialRequest.plumberName || 'Your plumber'} needs supplies</Text>
             <Text style={styles.approvalMsg}>
               Your plumber has inspected the issue and requested additional materials to complete the job.
             </Text>
             <View style={styles.approvalAmountRow}>
               <Text style={styles.approvalLabel}>Total to Approve</Text>
-              <Text style={styles.approvalAmount}>â‚¹{materialRequest.totalAmount}</Text>
+              <Text style={styles.approvalAmount}>₹{materialRequest.totalAmount}</Text>
             </View>
             <View style={styles.approvalActions}>
               <TouchableOpacity
@@ -187,17 +241,17 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
         <View style={styles.cardContainer}>
           <LiveTrackingCard
             eta="6 mins"
-            statusText="On the way to your location"
-            name={plumberName}
+            statusText={statusText}
+            name={plumberName || 'Partner Plumber'}
             role="FixKart Expert Plumber"
             onCallPress={() => Linking.openURL('tel:+919876543210').catch(() => Alert.alert('Call failed'))}
-            onChatPress={() => navigation.navigate('Chat', { name: plumberName, role: 'Plumber' })}
+            onChatPress={() => navigation.navigate('Chat', { name: plumberName || 'Plumber', role: 'Plumber' })}
           />
         </View>
 
         <View style={styles.statusSection}>
           <Text style={styles.sectionTitle}>Service Progress</Text>
-          <TrackingStatusStepper steps={steps} currentStep={1} />
+          <TrackingStatusStepper steps={steps} currentStep={currentStep} />
         </View>
       </ScrollView>
 
@@ -216,11 +270,17 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: {
+    flex: 1,
+    height: Platform.OS === 'web' ? ('100vh' as any) : '100%',
+    maxHeight: Platform.OS === 'web' ? ('100vh' as any) : '100%',
+    backgroundColor: colors.background,
+    overflow: 'hidden',
+  },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.layout, paddingVertical: spacing.md, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border, gap: spacing.md },
   backButton: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   title: { fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  scrollContent: { padding: spacing.layout, paddingBottom: spacing.huge },
+  scrollContent: { padding: spacing.layout, paddingBottom: 80 },
   map: { ...StyleSheet.absoluteFillObject },
   mapPanel: { height: 250, borderRadius: borderRadius.md, backgroundColor: '#DBEAFE', marginBottom: spacing.lg, justifyContent: 'center', overflow: 'hidden' },
   cardContainer: { marginBottom: spacing.lg },

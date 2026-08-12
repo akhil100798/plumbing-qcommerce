@@ -1,4 +1,5 @@
 import { StackScreenProps } from '@react-navigation/stack';
+import { CommonActions } from '@react-navigation/native';
 import React, { useState } from 'react';
 import {
   Alert,
@@ -19,6 +20,8 @@ import { OrderRepository } from '../services/orders/orderRepository';
 import { canUseDevMockFallbacks } from '../services/mockPolicy';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
+import { serviceCompletionHomeReset } from './serviceCompletionNavigation';
+import { isAlreadySubmittedRatingError } from './serviceCompletionResult';
 
 type Props = StackScreenProps<AppStackParamList, 'ServiceCompletion'>;
 
@@ -44,13 +47,19 @@ export function ServiceCompletionScreen({ route, navigation }: Props) {
       Alert.alert('Thank You!', 'Your rating and feedback have been submitted successfully.', [
         {
           text: 'OK',
-          onPress: () => navigation.navigate('Main'),
+          onPress: () => navigation.dispatch(CommonActions.reset(serviceCompletionHomeReset() as any)),
         },
       ]);
     } catch (err: any) {
+      if (isAlreadySubmittedRatingError(err)) {
+        Alert.alert('Rating Already Submitted', 'Your previous rating is saved. Returning you to Home.', [
+          { text: 'OK', onPress: () => navigation.dispatch(CommonActions.reset(serviceCompletionHomeReset() as any)) },
+        ]);
+        return;
+      }
       if (canUseDevMockFallbacks()) {
         Alert.alert('Feedback Received', 'Thank you for rating your service experience!', [
-          { text: 'OK', onPress: () => navigation.navigate('Main') },
+          { text: 'OK', onPress: () => navigation.dispatch(CommonActions.reset(serviceCompletionHomeReset() as any)) },
         ]);
       } else {
         Alert.alert('Submission Error', err?.message || 'Could not submit rating. Please try again.');

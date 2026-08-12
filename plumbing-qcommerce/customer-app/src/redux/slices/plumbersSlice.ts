@@ -1,7 +1,10 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-interface ActiveJob {
+export interface ActiveJob {
+  orderId?: number;
   plumberId?: string;
+  plumberName?: string;
+  status?: string;
   message?: string;
 }
 

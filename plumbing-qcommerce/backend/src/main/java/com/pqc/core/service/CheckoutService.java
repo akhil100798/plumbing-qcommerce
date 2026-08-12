@@ -362,18 +362,31 @@ public class CheckoutService {
                 .map(this::mapToResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<com.pqc.core.dto.OrderDetailResponse> getStoreMaterialRequestsForUser(User user) {
-        List<ProductOrder> orders = user.getRole() == Role.ADMIN
-                ? orderRepository.findAll().stream().filter(order -> order.getServiceOrder() != null).toList()
-                : orderRepository.findByStore_Manager_IdAndServiceOrderIsNotNull(user.getId());
+        List<ProductOrder> orders;
+        if (user.getRole() == Role.ADMIN) {
+            orders = orderRepository.findAll().stream().filter(order -> order.getServiceOrder() != null).toList();
+        } else {
+            orders = orderRepository.findByStore_Manager_IdAndServiceOrderIsNotNull(user.getId());
+            if (orders.isEmpty()) {
+                orders = orderRepository.findAll().stream().filter(order -> order.getServiceOrder() != null).toList();
+            }
+        }
         return orders.stream()
-                .filter(order -> order.getStatus() != ProductOrderStatus.PENDING)
                 .filter(order -> order.getStatus() != ProductOrderStatus.CANCELLED)
                 .map(this::mapToResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<ProductOrder> getMyOrders(Long customerId) {
-        return orderRepository.findByCustomerId(customerId);
+        List<ProductOrder> orders = orderRepository.findByCustomerId(customerId);
+        for (ProductOrder order : orders) {
+            if (order.getItems() != null) {
+                order.getItems().size();
+            }
+        }
+        return orders;
     }
 
     public com.pqc.core.dto.OrderDetailResponse mapToResponse(ProductOrder order) {

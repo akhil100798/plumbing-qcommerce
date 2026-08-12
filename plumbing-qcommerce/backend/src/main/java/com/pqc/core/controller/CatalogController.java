@@ -10,12 +10,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/catalog")
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class CatalogController {
 
     private final CategoryRepository categoryRepository;

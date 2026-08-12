@@ -29,6 +29,9 @@ export function LiveTrackingCard({
   onChatPress,
   style,
 }: LiveTrackingCardProps) {
+  const safeName = (name && typeof name === 'string' && name.trim().length > 0) ? name : 'Partner Plumber';
+  const initial = safeName.charAt(0).toUpperCase();
+
   return (
     <View style={[styles.container, style]}>
       <View style={styles.header}>
@@ -38,10 +41,10 @@ export function LiveTrackingCard({
 
       <View style={styles.profileRow}>
         <View style={styles.avatarContainer}>
-          <Text style={styles.avatarText}>{name.charAt(0)}</Text>
+          <Text style={styles.avatarText}>{initial}</Text>
         </View>
         <View style={styles.profileInfo}>
-          <Text style={styles.name}>{name}</Text>
+          <Text style={styles.name}>{safeName}</Text>
           <Text style={styles.role}>{role}</Text>
         </View>
         {rating && (

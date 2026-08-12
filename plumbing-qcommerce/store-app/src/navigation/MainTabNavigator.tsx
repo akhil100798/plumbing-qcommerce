@@ -58,7 +58,7 @@ export function MainTabNavigator() {
       />
       <Tab.Screen
         name="OrdersTab"
-        component={OrdersScreen}
+        component={MaterialRequestsScreen}
         options={{ tabBarLabel: 'Orders' }}
       />
       <Tab.Screen

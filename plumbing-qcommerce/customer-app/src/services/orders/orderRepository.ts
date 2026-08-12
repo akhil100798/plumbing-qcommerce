@@ -48,7 +48,7 @@ export const OrderRepository = {
   },
 
   confirmServiceCompletion: async (id: number): Promise<ServiceOrderDTO> => {
-    const response = await apiClient.patch<ServiceOrderDTO>(`/orders/${id}/confirm-completion`);
+    const response = await apiClient.patch<ServiceOrderDTO>(`/orders/${id}/confirm`);
     return response.data;
   },
 

@@ -2,6 +2,7 @@ import { NavigationProp, useNavigation } from '@react-navigation/native';
 import React from 'react';
 import {
   Alert,
+  Platform,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -26,16 +27,33 @@ export function AccountScreen() {
   const user = useAppSelector((state) => state.auth.storeUser);
 
   const handleLogout = () => {
+    const performLogout = async () => {
+      try {
+        await authService.logout();
+      } catch (err) {
+        console.error('Logout error:', err);
+      } finally {
+        dispatch(logout());
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Auth', params: { screen: 'Login' } }],
+        });
+      }
+    };
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      if (window.confirm('Are you sure you want to sign out of the FixKart Store Manager App?')) {
+        performLogout();
+      }
+      return;
+    }
+
     Alert.alert('Sign Out', 'Are you sure you want to sign out of the FixKart Store Manager App?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Sign Out',
         style: 'destructive',
-        onPress: async () => {
-          await authService.logout();
-          dispatch(logout());
-          navigation.navigate('Auth', { screen: 'Login' });
-        },
+        onPress: performLogout,
       },
     ]);
   };
@@ -90,8 +108,6 @@ export function AccountScreen() {
           <Text style={styles.logoutText}>Sign Out of Store Session</Text>
         </TouchableOpacity>
       </ScrollView>
-
-      <BottomTabBar active="Account" navigation={navigation} />
     </SafeAreaView>
   );
 }

@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
@@ -73,15 +74,24 @@ export function DrawerMenuScreen({ navigation }: Props) {
   };
 
   const handleLogout = () => {
+    const performLogout = () => {
+      dispatch(logout());
+      navigation?.replace?.('Auth');
+    };
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      if (window.confirm('Are you sure you want to logout of the FixKart Plumber app?')) {
+        performLogout();
+      }
+      return;
+    }
+
     Alert.alert('Confirm Logout', 'Are you sure you want to logout of the FixKart Plumber app?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Logout',
         style: 'destructive',
-        onPress: () => {
-          dispatch(logout());
-          navigation?.replace?.('Auth');
-        },
+        onPress: performLogout,
       },
     ]);
   };

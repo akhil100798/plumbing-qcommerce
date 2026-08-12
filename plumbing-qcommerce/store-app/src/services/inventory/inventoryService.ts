@@ -32,13 +32,17 @@ export const inventoryService = {
   getInventory: async (storeId?: number): Promise<{ products: Product[]; categories: Category[] }> => {
     try {
       const inventoryEndpoint = storeId ? ENDPOINTS.store.inventory(storeId) : ENDPOINTS.store.meInventory;
-      const [stockResponse, catResponse] = await Promise.all([
-        apiClient.get(inventoryEndpoint),
-        apiClient.get(ENDPOINTS.catalog.categories),
-      ]);
-
+      const stockResponse = await apiClient.get(inventoryEndpoint);
       const products: Product[] = (stockResponse.data || []).map(mapStockToProduct);
-      const categories: Category[] = catResponse.data || [];
+
+      let categories: Category[] = [];
+      try {
+        const catResponse = await apiClient.get(ENDPOINTS.catalog.categories);
+        categories = catResponse.data || [];
+      } catch (catErr) {
+        console.warn('Category list fetch warning:', catErr);
+      }
+
       localProducts = products;
       return { products, categories };
     } catch (e) {

@@ -56,8 +56,6 @@ export function OrdersScreen() {
           <Text style={styles.actionBtnText}>Go to Material Request Queue</Text>
         </TouchableOpacity>
       </View>
-
-      <BottomTabBar active="Orders" navigation={navigation} />
     </SafeAreaView>
   );
 }

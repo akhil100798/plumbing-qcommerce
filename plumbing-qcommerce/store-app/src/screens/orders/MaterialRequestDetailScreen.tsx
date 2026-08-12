@@ -102,9 +102,27 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
     }
   };
 
+  const handleMarkReady = async () => {
+    if (!request) return;
+    setActionLoading(true);
+    try {
+      const updated = await materialRequestService.completePreparation(request.id as number);
+      setRequest(updated);
+      Alert.alert(
+        'Materials Ready!',
+        'Materials marked ready for pickup. Plumber and Customer have been notified.'
+      );
+    } catch (err: any) {
+      Alert.alert('Action Failed', err.message || 'Could not mark materials as ready.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const statusConfig = STATUS_LABELS[request?.rawStatus || request?.status || 'REQUESTED'] || STATUS_LABELS.REQUESTED;
   const canAccept = request?.status === 'PENDING' || request?.rawStatus === 'APPROVED' || request?.rawStatus === 'REQUESTED';
-  const canReject = request?.status !== 'COMPLETED' && request?.status !== 'REJECTED' && request?.rawStatus !== 'COLLECTED';
+  const canMarkReady = request?.status === 'PREPARING' || request?.rawStatus === 'STORE_ACCEPTED' || request?.rawStatus === 'RESERVED' || request?.rawStatus === 'PREPARING';
+  const canReject = request?.status !== 'COMPLETED' && request?.status !== 'REJECTED' && request?.rawStatus !== 'COLLECTED' && request?.rawStatus !== 'READY_FOR_PICKUP';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -199,6 +217,20 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <Text style={styles.actionBtnText}>Accept Request & Start Prep</Text>
+                )}
+              </TouchableOpacity>
+            )}
+
+            {canMarkReady && (
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.actionBtnSuccess, actionLoading && styles.actionBtnDisabled]}
+                onPress={handleMarkReady}
+                disabled={actionLoading}
+              >
+                {actionLoading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.actionBtnText}>✓ Mark Ready for Pickup</Text>
                 )}
               </TouchableOpacity>
             )}
@@ -352,6 +384,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   actionBtnPrimary: { backgroundColor: colors.primaryContainer || colors.primary },
+  actionBtnSuccess: { backgroundColor: colors.secondary || '#1B6D24' },
   actionBtnDanger: { backgroundColor: colors.dangerLight || '#FFDAD6', borderWidth: 1, borderColor: colors.danger },
   actionBtnDisabled: { opacity: 0.6 },
   actionBtnText: { color: '#FFFFFF', fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold },

@@ -63,16 +63,16 @@ export function InventoryScreen() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
-        (i) => (i.productName || i.name || '').toLowerCase().includes(q) || (i.category || '').toLowerCase().includes(q)
+        (i: any) => (i.productName || i.name || '').toLowerCase().includes(q) || (i.categoryName || i.category || '').toLowerCase().includes(q)
       );
     }
 
     if (activeTab === 'inStock') {
-      result = result.filter((i) => (i.availableQuantity ?? i.quantity) > 5);
+      result = result.filter((i: any) => (i.stock ?? i.availableQuantity ?? i.quantity ?? 0) > 5);
     } else if (activeTab === 'lowStock') {
-      result = result.filter((i) => (i.availableQuantity ?? i.quantity) > 0 && (i.availableQuantity ?? i.quantity) <= 5);
+      result = result.filter((i: any) => (i.stock ?? i.availableQuantity ?? i.quantity ?? 0) > 0 && (i.stock ?? i.availableQuantity ?? i.quantity ?? 0) <= 5);
     } else if (activeTab === 'outOfStock') {
-      result = result.filter((i) => (i.availableQuantity ?? i.quantity) === 0);
+      result = result.filter((i: any) => (i.stock ?? i.availableQuantity ?? i.quantity ?? 0) === 0);
     }
 
     return result;
@@ -131,12 +131,12 @@ export function InventoryScreen() {
       ) : (
         <FlatList
           data={filteredItems}
-          keyExtractor={(item) => String(item.id)}
+          keyExtractor={(item: any) => String(item.id)}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => {
-            const qty = item.availableQuantity ?? item.quantity ?? 0;
+          renderItem={({ item }: { item: any }) => {
+            const qty = item.stock ?? item.availableQuantity ?? item.quantity ?? 0;
             const statusLabel = qty === 0 ? 'Out of Stock' : qty <= 5 ? 'Low Stock' : 'In Stock';
             const pillColor = qty === 0 ? colors.danger : qty <= 5 ? colors.warning : colors.success;
 
@@ -149,8 +149,8 @@ export function InventoryScreen() {
                   <WarehouseIcon width={24} height={24} stroke={colors.textMuted} />
                 </View>
                 <View style={{ flex: 1, marginLeft: spacing.md }}>
-                  <Text style={styles.productName}>{item.productName || item.name || 'Hardware Part'}</Text>
-                  <Text style={styles.productCategory}>{item.category || 'Plumbing Supplies'}</Text>
+                  <Text style={styles.productName}>{item.name || item.productName || 'Hardware Part'}</Text>
+                  <Text style={styles.productCategory}>{item.categoryName || item.category || 'Plumbing Supplies'}</Text>
                   <Text style={styles.productQty}>Available Stock: {qty} units</Text>
                 </View>
                 <View style={[styles.statusPill, { borderColor: pillColor }]}>

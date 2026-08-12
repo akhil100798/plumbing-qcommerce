@@ -71,12 +71,13 @@ export function MaterialRequestsScreen() {
   };
 
   const filteredRequests = requests.filter((r) => {
+    const raw = r.rawStatus || r.status;
     if (activeTab === 'all') return true;
-    if (activeTab === 'approved') return r.status === 'APPROVED';
-    if (activeTab === 'accepted') return r.status === 'STORE_ACCEPTED';
-    if (activeTab === 'preparing') return r.status === 'PREPARING';
-    if (activeTab === 'ready') return r.status === 'READY_FOR_PICKUP' || r.status === 'PLUMBER_AT_STORE';
-    if (activeTab === 'collected') return r.status === 'COLLECTED';
+    if (activeTab === 'approved') return raw === 'APPROVED' || raw === 'REQUESTED' || r.status === 'PENDING';
+    if (activeTab === 'accepted') return raw === 'STORE_ACCEPTED' || raw === 'RESERVED';
+    if (activeTab === 'preparing') return raw === 'PREPARING' || r.status === 'PREPARING';
+    if (activeTab === 'ready') return raw === 'READY_FOR_PICKUP' || raw === 'PLUMBER_AT_STORE' || r.status === 'READY';
+    if (activeTab === 'collected') return raw === 'COLLECTED' || r.status === 'COMPLETED';
     return true;
   });
 
@@ -143,8 +144,9 @@ export function MaterialRequestsScreen() {
             </View>
           }
           renderItem={({ item }) => {
-            const style = statusDisplay[item.status] || statusDisplay.REQUESTED;
-            const isActionNeeded = item.status === 'APPROVED';
+            const rawStatus = item.rawStatus || item.status;
+            const style = statusDisplay[rawStatus] || statusDisplay[item.status] || statusDisplay.REQUESTED;
+            const isActionNeeded = rawStatus === 'APPROVED' || rawStatus === 'REQUESTED';
 
             return (
               <TouchableOpacity
