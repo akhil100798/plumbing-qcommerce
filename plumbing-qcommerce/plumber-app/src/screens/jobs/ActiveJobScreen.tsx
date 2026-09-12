@@ -18,12 +18,14 @@ import { AppHeader } from '../../components/common/AppHeader';
 import { JobProgressStepper } from '../../components/common/JobProgressStepper';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
+import { StatusChip } from '../../components/common/StatusChip';
 import { setActiveJob, updateJobStatus } from '../../redux/slices/jobSlice';
 import { RootState } from '../../redux/store';
 import { jobService } from '../../services/jobs/jobService';
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
 import { ActiveJob } from '../../types';
 import { AppStackParamList } from '../../types/navigation';
+import { mapJobStatus } from '../../utils/statusMapping';
 
 type Props = StackScreenProps<AppStackParamList, 'ActiveJob'>;
 
@@ -168,9 +170,7 @@ export function ActiveJobScreen({ route, navigation }: Props) {
         <View style={styles.card}>
           <View style={styles.cardTopRow}>
             <Text style={styles.jobIdText}>#{displayJob.jobId}</Text>
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusText}>{displayJob.status.toUpperCase()}</Text>
-            </View>
+            <StatusChip label={mapJobStatus(displayJob.status).label} type={mapJobStatus(displayJob.status).tone === 'info' ? 'primary' : mapJobStatus(displayJob.status).tone} />
           </View>
           <Text style={styles.titleText}>{displayJob.issueDescription || 'Service job'}</Text>
           <View style={styles.addressRow}>
@@ -192,10 +192,10 @@ export function ActiveJobScreen({ route, navigation }: Props) {
               ) : null}
             </View>
             <View style={styles.contactButtons}>
-              <TouchableOpacity style={styles.callBtn} onPress={handleCall}>
+              <TouchableOpacity style={styles.callBtn} onPress={handleCall} accessibilityRole="button" accessibilityLabel="Call customer">
                 <PhoneIcon width={16} height={16} stroke="#FFFFFF" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.chatBtn} onPress={handleChat}>
+              <TouchableOpacity style={styles.chatBtn} onPress={handleChat} accessibilityRole="button" accessibilityLabel="Chat with customer">
                 <ChatIcon width={16} height={16} stroke={colors.primary} />
               </TouchableOpacity>
             </View>
@@ -259,17 +259,6 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
     color: colors.textMuted,
   },
-  statusBadge: {
-    backgroundColor: colors.successLight,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: borderRadius.xs,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.success,
-  },
   titleText: {
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.bold,
@@ -311,17 +300,17 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   callBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.success,
     justifyContent: 'center',
     alignItems: 'center',
   },
   chatBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
