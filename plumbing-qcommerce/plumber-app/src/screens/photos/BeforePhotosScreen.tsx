@@ -18,14 +18,7 @@ export function BeforePhotosScreen({ route, navigation }: Props) {
   const [photos, setPhotos] = useState<string[]>([]);
 
   const handleAddPhoto = async () => {
-    // Add mock captured photo uri or camera asset
-    const mockPhotos = [
-      'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=400',
-      'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&q=80&w=400',
-      'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=400',
-    ];
-    const nextUri = mockPhotos[photos.length % mockPhotos.length];
-    setPhotos((prev) => [...prev, nextUri]);
+    Alert.alert('Photo capture unavailable', 'Camera and photo upload are not connected yet. No photo was added.');
   };
 
   const handleRemovePhoto = (index: number) => {
@@ -67,7 +60,7 @@ export function BeforePhotosScreen({ route, navigation }: Props) {
         </View>
 
         {!canProceed && (
-          <Text style={styles.hint}>Add at least {MIN_PHOTOS} photos to continue.</Text>
+            <Text style={styles.hint}>Photo capture is required before continuing.</Text>
         )}
 
         <View style={styles.spacer} />

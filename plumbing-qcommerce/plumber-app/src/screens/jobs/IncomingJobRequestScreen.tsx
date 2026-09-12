@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   StyleSheet,
@@ -11,20 +11,38 @@ import { useDispatch } from 'react-redux';
 
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { jobService } from '../../services/jobs/jobService';
-import { setActiveJob, removeIncomingJob } from '../../redux/slices/jobSlice';
+import { dismissIncomingJob, setActiveJob, removeIncomingJob } from '../../redux/slices/jobSlice';
 import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import MapPinIcon from '../../assets/icons/location-pin.svg';
 import StarIcon from '../../assets/icons/star.svg';
 import WrenchIcon from '../../assets/icons/active-job.svg';
+import { ActiveJob } from '../../types';
 
 type Props = StackScreenProps<AppStackParamList, 'IncomingJobRequest'>;
 
 export function IncomingJobRequestScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
-  const { jobId, customerId, distance } = route.params;
+  const { jobId, distance } = route.params;
   const [seconds, setSeconds] = useState(21);
   const [loading, setLoading] = useState(false);
+  const [job, setJob] = useState<ActiveJob | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    jobService.fetchJobById(jobId).then((value) => {
+      if (active) setJob(value);
+    }).catch((error) => {
+      if (active) setLoadError(error instanceof Error ? error.message : 'Unable to load this job offer.');
+    });
+    return () => { active = false; };
+  }, [jobId]);
+
+  const handleDecline = useCallback(() => {
+    dispatch(dismissIncomingJob(jobId));
+    navigation.goBack();
+  }, [dispatch, jobId, navigation]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -39,12 +57,7 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
-
-  const handleDecline = () => {
-    dispatch(removeIncomingJob(jobId));
-    navigation.goBack();
-  };
+  }, [handleDecline]);
 
   const handleAccept = async () => {
     setLoading(true);
@@ -56,12 +69,37 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
       navigation.replace('ActiveJob', { jobId });
     } catch (error: any) {
       setLoading(false);
-      Alert.alert('Accept job failed', error?.message || 'Could not accept this service request. Please retry.');
+      const isConflict =
+        error?.status === 409 ||
+        error?.status === 400 ||
+        error?.message?.toLowerCase().includes('assigned') ||
+        error?.message?.toLowerCase().includes('accepted');
+
+      if (isConflict) {
+        Alert.alert(
+          'Offer No Longer Available',
+          'This service request was accepted by another plumber in your service area.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                dispatch(removeIncomingJob(jobId));
+                navigation.goBack();
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Accept Job Failed',
+          error?.message || 'Could not accept this service request. Please retry.'
+        );
+      }
     }
   };
 
   return (
-    <ScreenWrapper safeAreaStyle={{ backgroundColor: '#0F172A' }}>
+    <ScreenWrapper safeAreaStyle={{ backgroundColor: colors.textPrimary }}>
       <View style={styles.container}>
         {/* Top Status Row */}
         <View style={styles.topRow}>
@@ -85,27 +123,25 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
                   <Text style={styles.jobId}>#{jobId}</Text>
                   <MapPinIcon width={14} height={14} stroke={colors.textMuted} />
                 </View>
-                <Text style={styles.serviceName}>Water Heater Installation</Text>
+                <Text style={styles.serviceName}>{job?.issueDescription || 'Service request'}</Text>
               </View>
             </View>
 
             <View style={styles.locationBlock}>
-              <Text style={styles.distanceText}>📍 {distance || 4.2} km away</Text>
-              <Text style={styles.addressText}>
-                22, Green Park, Indiranagar, Bengaluru, 560038
-              </Text>
+              <Text style={styles.distanceText}>{distance} km away</Text>
+              <Text style={styles.addressText}>{job?.address || loadError || 'Customer location unavailable'}</Text>
             </View>
 
             <View style={styles.detailsGrid}>
               <View>
-                <Text style={styles.priceText}>₹650</Text>
+                <Text style={styles.priceText}>{job ? `₹${job.estimatedEarnings}` : '—'}</Text>
                 <Text style={styles.subText}>Estimated</Text>
               </View>
 
               <View style={styles.ratingBox}>
                 <View style={styles.ratingRow}>
-                  <Text style={styles.ratingVal}>4.7</Text>
-                  <StarIcon width={14} height={14} fill="#F59E0B" stroke="#F59E0B" />
+                  <Text style={styles.ratingVal}>{job?.customer.rating != null ? job.customer.rating.toFixed(1) : '—'}</Text>
+                  <StarIcon width={14} height={14} fill={colors.warning} stroke={colors.warning} />
                 </View>
                 <Text style={styles.subText}>Customer Rating</Text>
               </View>
@@ -123,6 +159,8 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
                 style={styles.rejectBtn}
                 onPress={handleDecline}
                 disabled={loading}
+                accessibilityRole="button"
+                accessibilityLabel="Reject job offer"
               >
                 <Text style={styles.rejectBtnText}>Reject</Text>
               </TouchableOpacity>
@@ -131,6 +169,9 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
                 style={styles.acceptBtn}
                 onPress={handleAccept}
                 disabled={loading}
+                accessibilityRole="button"
+                accessibilityLabel="Accept job offer"
+                accessibilityState={{ disabled: loading, busy: loading }}
               >
                 <Text style={styles.acceptBtnText}>
                   {loading ? 'Accepting...' : 'Accept'}
@@ -147,7 +188,7 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: colors.textPrimary,
     padding: spacing.layout,
   },
   topRow: {
@@ -157,17 +198,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   onlineDot: {
-    color: '#10B981',
+    color: colors.success,
     fontSize: 18,
   },
   onlineBadge: {
-    backgroundColor: '#D1FAE5',
+    backgroundColor: colors.successLight,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: borderRadius.xs,
   },
   onlineText: {
-    color: '#059669',
+    color: colors.success,
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
   },
@@ -196,7 +237,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: borderRadius.xs,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,
@@ -246,7 +287,7 @@ const styles = StyleSheet.create({
   priceText: {
     fontSize: 22,
     fontWeight: typography.fontWeight.black,
-    color: '#059669',
+    color: colors.success,
   },
   subText: {
     fontSize: 10,
@@ -304,7 +345,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: spacing.md,
     borderRadius: borderRadius.md,
-    backgroundColor: '#10B981',
+    backgroundColor: colors.success,
     alignItems: 'center',
     ...shadows.md,
   },

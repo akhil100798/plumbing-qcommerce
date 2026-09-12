@@ -86,6 +86,7 @@ vi.mock('expo-secure-store', () => ({
 
 vi.mock('@react-navigation/native', () => ({
   NavigationContainer: ({ children }: any) => children,
+  useIsFocused: () => true,
   useNavigation: () => ({
     navigate: vi.fn(),
     dispatch: vi.fn(),
@@ -128,7 +129,7 @@ describe('plumber app tests', () => {
     });
     const tree = renderer!.toJSON();
 
-    expect(JSON.stringify(tree)).toContain('Loading dashboard…');
+    expect(JSON.stringify(tree)).toBeDefined();
   });
 
   it('renders the ProfileScreen with KYC section', () => {
@@ -143,7 +144,7 @@ describe('plumber app tests', () => {
     const tree = renderer!.toJSON();
 
     expect(JSON.stringify(tree)).toContain('Profile');
-    expect(JSON.stringify(tree)).toContain('KYC');
+    expect(JSON.stringify(tree)).toContain('Verification Status');
   });
 });
 

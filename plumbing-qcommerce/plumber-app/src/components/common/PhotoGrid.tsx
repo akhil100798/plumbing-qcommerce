@@ -39,8 +39,8 @@ export function PhotoGrid({
                 {uri ? (
                   <Image source={{ uri }} style={styles.image} resizeMode="cover" />
                 ) : (
-                  <View style={styles.mockThumb}>
-                    <CameraIcon width={28} height={28} stroke={colors.textMuted} />
+                  <View style={styles.invalidPhoto}>
+                    <Text style={styles.invalidPhotoText}>Photo unavailable</Text>
                   </View>
                 )}
                 {onRemovePhoto ? (
@@ -48,7 +48,8 @@ export function PhotoGrid({
                     style={styles.removeBtn}
                     onPress={() => onRemovePhoto(idx)}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    accessibilityLabel="Remove photo"
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove photo ${idx + 1}`}
                   >
                     <CloseIcon width={12} height={12} stroke="#FFFFFF" />
                   </TouchableOpacity>
@@ -59,7 +60,8 @@ export function PhotoGrid({
                 style={[styles.cell, styles.emptyCell]}
                 onPress={onAddPhoto}
                 activeOpacity={0.7}
-                accessibilityLabel="Add photo"
+                accessibilityRole="button"
+                accessibilityLabel={`Add photo ${idx + 1}`}
               >
                 <CameraIcon width={26} height={26} stroke={colors.textMuted} />
                 <Text style={styles.addLabel}>Add Photo</Text>
@@ -105,21 +107,22 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  mockThumb: {
+  invalidPhoto: {
     width: '100%',
     height: '100%',
-    backgroundColor: colors.border,
+    backgroundColor: colors.errorLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  invalidPhotoText: { color: colors.error, fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold },
   removeBtn: {
     position: 'absolute',
     top: 6,
     right: 6,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.error,
     alignItems: 'center',
     justifyContent: 'center',
   },

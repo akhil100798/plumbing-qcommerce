@@ -1,27 +1,60 @@
 export const colors = {
-  // Brand colors
-  primary: '#0B6BFF',      // FixKart Brand Blue
-  primaryDark: '#1E40AF',
-  primaryLight: '#DBEAFE',
+  primary: "#0066CC",
+  primaryContainer: "#1a73e8",
+  primaryFixed: "#E8F0FE",
+  primaryFixedDim: "#adc7ff",
+  onPrimary: "#ffffff",
+  onPrimaryContainer: "#ffffff",
 
-  // Status indicators
-  success: '#20C45A',      // FixKart Brand Success Green
-  successLight: '#D1FAE5',
-  warning: '#F59E0B',      // Amber Yellow
-  warningLight: '#FEF3C7',
-  error: '#EF4444',        // Red
-  errorLight: '#FEE2E2',
+  secondary: "#42526E",
+  secondaryContainer: "#DBE2F9",
+  onSecondary: "#ffffff",
+  onSecondaryContainer: "#111c2d",
 
-  // Neutrals
-  background: '#F8FAFC',   // Slate Background
-  surface: '#FFFFFF',
-  textPrimary: '#0F172A',  // Slate 900
-  textSecondary: '#64748B',// Slate 500
-  textMuted: '#94A3B8',    // Slate 400
-  border: '#E2E8F0',       // Slate 200
-  borderDark: '#CBD5E1',   // Slate 300
+  tertiary: "#783100",
+  tertiaryContainer: "#ffdbc9",
+  onTertiary: "#ffffff",
 
-  // Decorative
-  accent: '#7DD3BC',       // Soft teal
-  darkOverlay: 'rgba(15, 23, 42, 0.4)',
+  background: "#F8F9FF",
+  onBackground: "#0B1C30",
+  surface: "#ffffff",
+  onSurface: "#0B1C30",
+  surfaceVariant: "#E1E2EC",
+  onSurfaceVariant: "#414754",
+  surfaceContainerLow: "#F3F3F8",
+  surfaceContainer: "#EDEDF4",
+  surfaceContainerHigh: "#E7E8EE",
+
+  inverseSurface: "#213145",
+  inverseOnSurface: "#eaf1ff",
+  inversePrimary: "#adc7ff",
+
+  outline: "#727785",
+  outlineVariant: "#C1C6D6",
+  border: "#E1E2EC",
+
+  error: "#BA1A1A",
+  errorContainer: "#FFDAD6",
+  onError: "#ffffff",
+  onErrorContainer: "#93000A",
+
+  success: "#0D7A3E",
+  successContainer: "#E6F7EC",
+  onSuccess: "#0D652D",
+
+  warning: "#F59E0B",
+  warningContainer: "#FEF3C7",
+  onWarning: "#92400E",
+
+  info: "#0284C7",
+  infoContainer: "#E0F2FE",
+  onInfo: "#0369A1",
+
+  star: "#F59E0B",
+
+  overlay: "rgba(11, 28, 48, 0.5)",
+  backdrop: "rgba(0, 0, 0, 0.4)",
+  glass: "rgba(255, 255, 255, 0.85)",
+  disabled: "rgba(11, 28, 48, 0.12)",
+  onDisabled: "rgba(11, 28, 48, 0.26)",
 };

@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -13,7 +12,10 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { AppHeader } from '../../components/common/AppHeader';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
+import { ErrorState, LoadingState } from '../../components/common/FeedbackStates';
+import { StatusChip } from '../../components/common/StatusChip';
 import { materialService } from '../../services/materials/materialService';
+import { materialResumeRoute } from './materialResumeRoute';
 import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 
@@ -131,7 +133,7 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     fetchDetail();
-    const timer = setInterval(fetchDetail, 8000);
+    const timer = setInterval(fetchDetail, 3000);
     return () => clearInterval(timer);
   }, [fetchDetail]);
 
@@ -151,15 +153,13 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
 
   const handleConfirmCollection = async () => {
     if (!detail) return;
-    setActionLoading(true);
     try {
       await materialService.confirmCollection(productOrderId);
-      await fetchDetail();
     } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to confirm collection');
-    } finally {
-      setActionLoading(false);
+      console.warn('Collection error:', e);
     }
+    const destination = materialResumeRoute(String(jobId));
+    navigation.navigate(destination.name, destination.params);
   };
 
   const handleCancel = () => {
@@ -174,7 +174,7 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
           onPress: async () => {
             try {
               await materialService.cancelMaterialRequest(productOrderId, 'Cancelled by plumber');
-              navigation.replace('ActiveJob', { jobId });
+              navigation.navigate('StartWork', { jobId: String(jobId) });
             } catch (e: any) {
               Alert.alert('Error', e.message || 'Failed to cancel request');
             }
@@ -185,7 +185,8 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
   };
 
   const handleContinueWork = () => {
-    navigation.replace('ActiveJob', { jobId });
+    const destination = materialResumeRoute(String(jobId));
+    navigation.navigate(destination.name, destination.params);
   };
 
   if (loading) {
@@ -195,10 +196,7 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
           if (navigation.canGoBack()) navigation.goBack();
           else navigation.navigate('Main', { screen: 'Home' });
         }} />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading status…</Text>
-        </View>
+          <LoadingState message="Loading material pickup status..." />
       </ScreenWrapper>
     );
   }
@@ -210,16 +208,7 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
           if (navigation.canGoBack()) navigation.goBack();
           else navigation.navigate('Main', { screen: 'Home' });
         }} />
-        <View style={styles.center}>
-          <Text style={styles.errorIcon}>⚠️</Text>
-          <Text style={styles.errorTitle}>Could Not Load Tracking</Text>
-          <Text style={styles.errorMessage}>
-            {error || 'Material request details are unavailable.'}
-          </Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={fetchDetail}>
-            <Text style={styles.retryBtnText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
+        <ErrorState message={error || 'Material request details are unavailable.'} onRetry={fetchDetail} />
       </ScreenWrapper>
     );
   }
@@ -228,110 +217,166 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
   const isCollected = detail.status === 'COLLECTED';
   const isRejected = detail.status === 'REJECTED';
   const canMarkArrived = detail.status === 'READY_FOR_PICKUP';
-  const canConfirmCollection = detail.status === 'PLUMBER_AT_STORE';
+  const canConfirmCollection = detail.status === 'PLUMBER_AT_STORE' || detail.status === 'READY_FOR_PICKUP';
 
   const steps = buildSteps(detail);
+
+  const guidance = (() => {
+    switch (detail.status) {
+      case 'REQUESTED':
+      case 'STORE_REVIEWING':
+      case 'APPROVED':
+        return {
+          bg: colors.warningContainer,
+          border: colors.warning,
+          icon: '⏳',
+          title: 'Request Sent to Store',
+          desc: 'Your material request has been submitted. Store manager will pack your materials shortly.',
+        };
+      case 'RESERVED':
+      case 'PREPARING':
+        return {
+          bg: colors.primaryLight,
+          border: colors.primaryContainer,
+          icon: '📦',
+          title: 'Store is Packing Materials',
+          desc: 'The store manager is preparing your items. You will be notified as soon as it is ready for pickup.',
+        };
+      case 'READY_FOR_PICKUP':
+        return {
+          bg: colors.successLight,
+          border: colors.success,
+          icon: '🛵',
+          title: 'Materials Ready for Pickup!',
+          desc: 'Travel to the hardware store. Click "I\'ve Arrived at the Store" when you arrive.',
+        };
+      case 'PLUMBER_AT_STORE':
+        return {
+          bg: colors.primaryLight,
+          border: colors.primaryContainer,
+          icon: '🏪',
+          title: 'At Store — Handover Items',
+          desc: `Show Request #${productOrderId} to store staff, collect items, and tap "I've Collected the Materials".`,
+        };
+      case 'COLLECTED':
+        return {
+          bg: colors.successLight,
+          border: colors.success,
+          icon: '✅',
+          title: 'Materials Collected!',
+          desc: 'Return to customer site and click "Continue Job" to resume work.',
+        };
+      default:
+        return null;
+    }
+  })();
 
   return (
     <ScreenWrapper>
       <AppHeader title="Material Pickup Status" onBackPress={() => navigation.goBack()} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.mainLayout}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={true}>
 
-        {/* Store info card */}
-        <View style={styles.storeCard}>
-          <Text style={styles.storeLabel}>Pickup from</Text>
-          <Text style={styles.storeName}>{detail.storeName}</Text>
-          <Text style={styles.storeAddress}>{detail.storeAddress}</Text>
-        </View>
+          {/* Flash Toast Banner */}
+          {/* Guidance Card */}
+          {guidance && (
+              <View style={[styles.guidanceCard, { backgroundColor: guidance.bg, borderColor: guidance.border }]}>
+              <View style={styles.guidanceRow}>
+              <Text style={styles.guidanceIcon} accessibilityElementsHidden>{guidance.icon}</Text>
+                <View style={styles.guidanceContent}>
+                  <Text style={styles.guidanceTitle}>{guidance.title}</Text>
+                  <Text style={styles.guidanceDesc}>{guidance.desc}</Text>
+                </View>
+              </View>
+            </View>
+          )}
 
-        {/* Status badge */}
-        {(isCancelled || isRejected) && (
-          <View style={[styles.statusBadge, styles.badgeDanger]}>
-            <Text style={styles.badgeText}>
-              {isCancelled ? '⚠ Request Cancelled' : '✕ Request Rejected by Store'}
-            </Text>
-            {detail.notes && <Text style={styles.badgeNote}>{detail.notes}</Text>}
+          {/* Store info card */}
+          <View style={styles.storeCard}>
+            <Text style={styles.storeLabel}>Pickup from</Text>
+            <Text style={styles.storeName}>{detail.storeName}</Text>
+            <Text style={styles.storeAddress}>{detail.storeAddress}</Text>
           </View>
-        )}
-        {isCollected && (
-          <View style={[styles.statusBadge, styles.badgeSuccess]}>
-            <Text style={styles.badgeText}>✓ Materials Collected — Resume Work!</Text>
-          </View>
-        )}
 
-        {/* Timeline */}
-        {!isCancelled && !isRejected && (
-          <View style={styles.card}>
-            <Text style={styles.sectionLabel}>Pickup Progress</Text>
-            <View style={styles.timeline}>
-              {steps.map((step, index) => (
-                <View key={step.id} style={styles.timelineRow}>
-                  <View style={styles.indicatorCol}>
-                    <View style={[
-                      styles.dot,
-                      step.done && styles.dotDone,
-                      step.current && !step.done && styles.dotCurrent,
-                    ]} />
-                    {index < steps.length - 1 && (
-                      <View style={[styles.line, steps[index + 1].done && styles.lineDone]} />
-                    )}
-                  </View>
-                  <View style={styles.contentCol}>
-                    <View style={styles.textRow}>
-                      <Text style={[
-                        styles.label,
-                        step.done && styles.labelDone,
-                        step.current && !step.done && styles.labelCurrent,
-                      ]}>
-                        {step.label}
-                      </Text>
-                      {step.timestamp && (
-                        <Text style={styles.time}>{fmtTime(step.timestamp)}</Text>
+          {/* Status badge */}
+            {(isCancelled || isRejected) && (
+            <View style={[styles.statusBadge, styles.badgeDanger]}>
+              <StatusChip label={isCancelled ? 'Request Cancelled' : 'Request Rejected by Store'} type="error" />
+              {detail.notes && <Text style={styles.badgeNote}>{detail.notes}</Text>}
+            </View>
+          )}
+          {isCollected && (
+            <View style={[styles.statusBadge, styles.badgeSuccess]}>
+              <StatusChip label="Materials Collected — Resume Work" type="success" />
+            </View>
+          )}
+
+          {/* Timeline */}
+          {!isCancelled && !isRejected && (
+            <View style={styles.card}>
+              <Text style={styles.sectionLabel}>Pickup Progress</Text>
+              <View style={styles.timeline}>
+                {steps.map((step, index) => (
+                  <View key={step.id} style={styles.timelineRow}>
+                    <View style={styles.indicatorCol}>
+                      <View style={[
+                        styles.dot,
+                        step.done && styles.dotDone,
+                        step.current && !step.done && styles.dotCurrent,
+                      ]} />
+                      {index < steps.length - 1 && (
+                        <View style={[styles.line, steps[index + 1].done && styles.lineDone]} />
                       )}
                     </View>
-                    {step.sublabel && (
-                      <Text style={styles.sublabel}>{step.sublabel}</Text>
-                    )}
+                    <View style={styles.contentCol}>
+                      <View style={styles.textRow}>
+                        <Text style={[
+                          styles.label,
+                          step.done && styles.labelDone,
+                          step.current && !step.done && styles.labelCurrent,
+                        ]}>
+                          {step.label}
+                        </Text>
+                        {step.timestamp && (
+                          <Text style={styles.time}>{fmtTime(step.timestamp)}</Text>
+                        )}
+                      </View>
+                      {step.sublabel && (
+                        <Text style={styles.sublabel}>{step.sublabel}</Text>
+                      )}
+                    </View>
                   </View>
-                </View>
-              ))}
+                ))}
+              </View>
             </View>
-          </View>
-        )}
-
-        {/* Items summary */}
-        <View style={styles.card}>
-          <Text style={styles.sectionLabel}>Items</Text>
-          {detail.items.map((item, idx) => (
-            <View key={idx} style={styles.itemRow}>
-              <Text style={styles.itemName}>{item.productName}</Text>
-              <Text style={styles.itemQty}>
-                {item.reservedQuantity > 0
-                  ? `${item.reservedQuantity} / ${item.requestedQuantity} reserved`
-                  : `${item.requestedQuantity} requested`}
-              </Text>
-            </View>
-          ))}
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalAmount}>₹{detail.totalAmount?.toFixed(2)}</Text>
-          </View>
-        </View>
-
-        {/* Actions */}
-        <View style={styles.actions}>
-          {canMarkArrived && (
-            <PrimaryButton
-              title="I've Arrived at the Store"
-              onPress={handleArrived}
-              loading={actionLoading}
-              style={styles.actionBtn}
-            />
           )}
-          {canConfirmCollection && (
+
+          {/* Items summary */}
+          <View style={styles.card}>
+            <Text style={styles.sectionLabel}>Items</Text>
+            {detail.items.map((item, idx) => (
+              <View key={idx} style={styles.itemRow}>
+                <Text style={styles.itemName}>{item.productName}</Text>
+                <Text style={styles.itemQty}>
+                  {item.reservedQuantity > 0
+                    ? `${item.reservedQuantity} / ${item.requestedQuantity} reserved`
+                    : `${item.requestedQuantity} requested`}
+                </Text>
+              </View>
+            ))}
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Total</Text>
+              <Text style={styles.totalAmount}>₹{detail.totalAmount?.toFixed(2)}</Text>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Sticky Footer */}
+        <View style={styles.stickyFooter}>
+          {canConfirmCollection && !isCollected && (
             <PrimaryButton
-              title="I've Collected the Materials"
+              title="I've Collected Materials from Store"
               onPress={handleConfirmCollection}
               loading={actionLoading}
               style={styles.actionBtn}
@@ -339,8 +384,23 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
           )}
           {isCollected && (
             <PrimaryButton
-              title="Continue Job"
+              title="Resume Work & Return to Job"
               onPress={handleContinueWork}
+              style={styles.actionBtn}
+            />
+          )}
+          {canMarkArrived && !canConfirmCollection && (
+            <PrimaryButton
+              title="I've Arrived at the Store"
+              onPress={handleArrived}
+              loading={actionLoading}
+              style={styles.actionBtn}
+            />
+          )}
+          {isRejected && (
+            <PrimaryButton
+              title="Select Alternative Hardware Store"
+              onPress={() => navigation.navigate('StoreSelection', { jobId })}
               style={styles.actionBtn}
             />
           )}
@@ -350,7 +410,7 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
             </TouchableOpacity>
           )}
         </View>
-      </ScrollView>
+      </View>
     </ScreenWrapper>
   );
 }
@@ -385,7 +445,48 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
   },
 
-  content: { padding: spacing.layout, paddingBottom: spacing.huge },
+  mainLayout: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    overflow: 'hidden',
+  },
+  content: { padding: spacing.layout, paddingBottom: spacing.giant },
+  stickyFooter: {
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingHorizontal: spacing.layout,
+    paddingVertical: spacing.md,
+    gap: spacing.xs,
+    ...shadows.md,
+  },
+  guidanceCard: {
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    borderWidth: 1.5,
+    marginBottom: spacing.md,
+    ...shadows.sm,
+  },
+  guidanceRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  guidanceIcon: { fontSize: 24, marginTop: 2 },
+  guidanceContent: { flex: 1 },
+  guidanceTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    marginBottom: 2,
+  },
+  guidanceDesc: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
   storeCard: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,

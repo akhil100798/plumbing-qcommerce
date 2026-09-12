@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View, StyleProp, ViewStyle } from 'react-native';
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
 import { SecondaryButton } from './SecondaryButton';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface AnimatedBannerProps {
   title: string;
@@ -29,8 +30,15 @@ export function AnimatedBanner({
   const entranceFade = useRef(new Animated.Value(0)).current;
   const entranceSlide = useRef(new Animated.Value(-15)).current;
   const floatAnim = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reduceMotion) {
+      entranceFade.setValue(1);
+      entranceSlide.setValue(0);
+      return;
+    }
+
     Animated.parallel([
       Animated.timing(entranceFade, {
         toValue: 1,
@@ -45,7 +53,7 @@ export function AnimatedBanner({
       }),
     ]).start();
 
-    Animated.loop(
+    const floating = Animated.loop(
       Animated.sequence([
         Animated.timing(floatAnim, {
           toValue: -6,
@@ -58,8 +66,10 @@ export function AnimatedBanner({
           useNativeDriver: true,
         }),
       ])
-    ).start();
-  }, [entranceFade, entranceSlide, floatAnim]);
+    );
+    floating.start();
+    return () => floating.stop();
+  }, [entranceFade, entranceSlide, floatAnim, reduceMotion]);
 
   return (
     <Animated.View

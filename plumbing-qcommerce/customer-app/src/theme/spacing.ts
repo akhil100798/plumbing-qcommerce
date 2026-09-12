@@ -6,7 +6,12 @@ export const spacing = {
   lg: 16,
   xl: 20,
   xxl: 24,
-  layout: 18, // App standard side margin
-  huge: 32,
-  giant: 48,
+  xxxl: 32,
+  section: 40,
+  page: 48,
+
+  touchTarget: 44,
+  headerHeight: 64,
+  bottomNavHeight: 68,
+  referenceViewportWidth: 390,
 };

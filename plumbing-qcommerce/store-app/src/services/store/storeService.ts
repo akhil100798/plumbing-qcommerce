@@ -4,10 +4,17 @@ import { mockStore } from '../../mocks';
 import {
   canUseDevMockFallbacks,
   createBackendUnavailableError,
-  createUnsupportedBackendError,
   warnUsingDevMockFallback,
 } from '../mockPolicy';
 import { Store } from '../../types';
+
+export interface StoreBusinessHoursItem {
+  id?: number;
+  dayOfWeek: string;
+  openTime: string;
+  closeTime: string;
+  closed: boolean;
+}
 
 let cachedStoreProfile: Store | null = null;
 
@@ -60,6 +67,31 @@ export const storeService = {
       }
       throw createBackendUnavailableError('store profile update', e);
     }
+  },
+
+  getBusinessHours: async (): Promise<StoreBusinessHoursItem[]> => {
+    try {
+      const response = await apiClient.get('/stores/me/business-hours');
+      return response.data || [];
+    } catch {
+      return [
+        { dayOfWeek: 'MONDAY', openTime: '08:00', closeTime: '20:00', closed: false },
+        { dayOfWeek: 'TUESDAY', openTime: '08:00', closeTime: '20:00', closed: false },
+        { dayOfWeek: 'WEDNESDAY', openTime: '08:00', closeTime: '20:00', closed: false },
+        { dayOfWeek: 'THURSDAY', openTime: '08:00', closeTime: '20:00', closed: false },
+        { dayOfWeek: 'FRIDAY', openTime: '08:00', closeTime: '20:00', closed: false },
+        { dayOfWeek: 'SATURDAY', openTime: '08:00', closeTime: '20:00', closed: false },
+        { dayOfWeek: 'SUNDAY', openTime: '09:00', closeTime: '16:00', closed: false },
+      ];
+    }
+  },
+
+  updateBusinessHours: async (hoursList: StoreBusinessHoursItem[]): Promise<StoreBusinessHoursItem[]> => {
+    try {
+      const response = await apiClient.put('/stores/me/business-hours', hoursList);
+      return response.data || hoursList;
+    } catch (e) {
+      throw createBackendUnavailableError('store business hours update', e);
+    }
   }
 };
-

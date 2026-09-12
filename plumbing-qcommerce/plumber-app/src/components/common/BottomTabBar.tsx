@@ -38,6 +38,9 @@ export function BottomTabBar({ active = 'Earnings', onTabPress }: BottomTabBarPr
             style={styles.tab}
             onPress={() => onTabPress?.(tab.id)}
             activeOpacity={0.7}
+            accessibilityRole="tab"
+            accessibilityLabel={tab.label}
+            accessibilityState={{ selected: isActive }}
           >
             <IconComp width={22} height={22} stroke={iconColor} />
             <Text style={[styles.label, isActive && styles.labelActive]}>{tab.label}</Text>

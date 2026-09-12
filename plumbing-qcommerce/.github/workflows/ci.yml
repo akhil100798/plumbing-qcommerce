@@ -1,0 +1,97 @@
+name: FixKart Production Quality Gates
+
+on:
+  push:
+    branches: [ Development, Development-2, main ]
+  pull_request:
+    branches: [ Development, Development-2, main ]
+
+jobs:
+  backend-quality-gate:
+    name: Backend Build & Unit Test Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      - name: Build, Test and Package Backend
+        run: |
+          cd backend
+          ./mvnw test package -DskipTests=false
+
+  customer-app-gate:
+    name: Customer App Typecheck & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: customer-app/package-lock.json
+      - name: Typecheck and Test Customer App
+        run: |
+          cd customer-app
+          npm ci
+          npx tsc --noEmit
+          npm test -- --run
+
+  plumber-app-gate:
+    name: Plumber App Typecheck & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: plumber-app/package-lock.json
+      - name: Typecheck and Test Plumber App
+        run: |
+          cd plumber-app
+          npm ci
+          npx tsc --noEmit
+          npm test -- --run
+
+  store-app-gate:
+    name: Store App Typecheck & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: store-app/package-lock.json
+      - name: Typecheck and Test Store App
+        run: |
+          cd store-app
+          npm ci
+          npx tsc --noEmit
+          npm test -- --run
+
+  admin-portal-gate:
+    name: Admin Portal Typecheck & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: admin-portal/package-lock.json
+      - name: Typecheck, Test and Build Admin Portal
+        run: |
+          cd admin-portal
+          npm ci
+          npx tsc --noEmit
+          npm test -- --run
+          npm run build

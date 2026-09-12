@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -252,6 +253,7 @@ class PlumberMaterialIntegrationTest {
         assertThat(reserved.getAvailableQuantity()).isEqualTo(7);
         assertThat(reserved.getReservedQuantity()).isEqualTo(3);
         plumberMaterialService.prepare(request.id());
+        plumberMaterialService.updatePackingProgress(request.id(), Map.of(product.getId(), 3));
         plumberMaterialService.ready(request.id());
         authenticate(plumber);
         plumberMaterialService.arrived(request.id());

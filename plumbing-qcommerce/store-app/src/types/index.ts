@@ -33,8 +33,14 @@ export interface Product {
   categoryId: number;
   categoryName: string;
   stock: number;
+  lowStockThreshold?: number;
   brand?: string;
   gst?: number;
+  productName?: string;
+  category?: string;
+  availableQuantity?: number;
+  quantity?: number;
+  reservedQuantity?: number;
 }
 
 export interface Category {
@@ -49,6 +55,7 @@ export interface OrderItem {
   productName: string;
   quantity: number;
   price: number;
+  packedQuantity?: number;
   imageUrl?: string;
 }
 
@@ -83,6 +90,8 @@ export interface Rider {
   eta?: string;
 }
 
+export type InventoryItem = Product;
+
 export interface MaterialRequest {
   id: number;
   serviceOrderId: number;
@@ -91,10 +100,16 @@ export interface MaterialRequest {
   plumberName: string;
   items: OrderItem[];
   totalAmount: number;
-  status: 'PENDING' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
+  status: 'PENDING' | 'REQUESTED' | 'STORE_REVIEWING' | 'APPROVED' | 'REJECTED' | 'STORE_ACCEPTED' | 'PREPARING' | 'RESERVED' | 'READY' | 'READY_FOR_PICKUP' | 'PLUMBER_AT_STORE' | 'COLLECTED' | 'COMPLETED' | 'CANCELLED' | 'PARTIALLY_AVAILABLE';
   createdAt: string;
+  notes?: string;
   rawStatus?: string;
+  storeConfirmedAt?: string | null;
+  preparingStartedAt?: string | null;
+  readyForPickupAt?: string | null;
+  plumberArrivedAt?: string | null;
   plumberCollectedAt?: string | null;
+  collectionConfirmedAt?: string | null;
 }
 
 export interface Transaction {
@@ -130,5 +145,6 @@ export interface AppNotification {
   message: string;
   read: boolean;
   createdAt: string;
-  type: 'NEW_ORDER' | 'RIDER_ASSIGNED' | 'PAYMENT_RECEIVED' | 'LOW_STOCK' | 'OFFER_ACTIVATED';
+  timestamp?: number | string;
+  type: 'NEW_ORDER' | 'RIDER_ASSIGNED' | 'PAYMENT_RECEIVED' | 'LOW_STOCK' | 'OFFER_ACTIVATED' | 'MATERIAL_REQUEST_APPROVED' | 'PLUMBER_COLLECTION' | string;
 }

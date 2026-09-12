@@ -17,13 +17,7 @@ export function AfterPhotosScreen({ route, navigation }: Props) {
   const [photos, setPhotos] = useState<string[]>([]);
 
   const handleAddPhoto = async () => {
-    const mockPhotos = [
-      'https://images.unsplash.com/photo-1542013936693-8848e574047a?auto=format&fit=crop&q=80&w=400',
-      'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&q=80&w=400',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=400',
-    ];
-    const nextUri = mockPhotos[photos.length % mockPhotos.length];
-    setPhotos((prev) => [...prev, nextUri]);
+    Alert.alert('Photo capture unavailable', 'Camera and photo upload are not connected yet. No photo was added.');
   };
 
   const handleRemovePhoto = (index: number) => {
@@ -57,7 +51,7 @@ export function AfterPhotosScreen({ route, navigation }: Props) {
         </View>
 
         {!canProceed && (
-          <Text style={styles.hint}>Add at least {MIN_PHOTOS} photos to continue.</Text>
+          <Text style={styles.hint}>Photo capture is required before continuing.</Text>
         )}
 
         <View style={styles.spacer} />

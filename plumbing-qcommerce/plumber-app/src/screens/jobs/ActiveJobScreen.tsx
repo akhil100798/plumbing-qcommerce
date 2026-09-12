@@ -1,30 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import { StackScreenProps } from '@react-navigation/stack';
+import React, { useEffect, useState } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
+  ActivityIndicator,
   Alert,
   ScrollView,
-  ActivityIndicator,
+  StyleSheet,
+  Text,
   TouchableOpacity,
+  View,
 } from 'react-native';
-import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { AppHeader } from '../../components/common/AppHeader';
-import { PrimaryButton } from '../../components/common/PrimaryButton';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { JobProgressStepper } from '../../components/common/JobProgressStepper';
-import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
-import { AppStackParamList } from '../../types/navigation';
-import { RootState } from '../../redux/store';
-import { setActiveJob, updateJobStatus } from '../../redux/slices/jobSlice';
-import { jobService } from '../../services/jobs/jobService';
-import { ActiveJob } from '../../types';
-import PhoneIcon from '../../assets/icons/phone.svg';
 import ChatIcon from '../../assets/icons/chat.svg';
 import MapPinIcon from '../../assets/icons/location-pin.svg';
-import NavigationIcon from '../../assets/icons/navigation.svg';
+import PhoneIcon from '../../assets/icons/phone.svg';
+import { AppHeader } from '../../components/common/AppHeader';
+import { JobProgressStepper } from '../../components/common/JobProgressStepper';
+import { PrimaryButton } from '../../components/common/PrimaryButton';
+import { ScreenWrapper } from '../../components/common/ScreenWrapper';
+import { StatusChip } from '../../components/common/StatusChip';
+import { setActiveJob, updateJobStatus } from '../../redux/slices/jobSlice';
+import { RootState } from '../../redux/store';
+import { jobService } from '../../services/jobs/jobService';
+import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
+import { ActiveJob } from '../../types';
+import { AppStackParamList } from '../../types/navigation';
+import { mapJobStatus } from '../../utils/statusMapping';
 
 type Props = StackScreenProps<AppStackParamList, 'ActiveJob'>;
 
@@ -55,13 +56,39 @@ export function ActiveJobScreen({ route, navigation }: Props) {
       }
     }
     syncJob();
-  }, [currentJobId, activeJob?.jobId]);
+  }, [currentJobId, activeJob?.jobId, dispatch]);
 
   const displayJob = activeJob && activeJob.jobId === currentJobId ? activeJob : loadedJob;
 
-  if (!currentJobId) return <ScreenWrapper><View style={styles.empty}><Text>No active job selected.</Text><PrimaryButton title="Back to jobs" onPress={() => navigation.navigate('Main')} /></View></ScreenWrapper>;
-  if (syncLoading && !displayJob) return <ScreenWrapper><View style={styles.empty}><ActivityIndicator color={colors.primary} /><Text>Loading job…</Text></View></ScreenWrapper>;
-  if (!displayJob) return <ScreenWrapper><View style={styles.empty}><Text>{loadError || 'This job is unavailable.'}</Text><PrimaryButton title="Back to jobs" onPress={() => navigation.navigate('Main')} /></View></ScreenWrapper>;
+  if (!currentJobId)
+    return (
+      <ScreenWrapper>
+        <View style={styles.empty}>
+          <Text>No active job selected.</Text>
+          <PrimaryButton title="Back to jobs" onPress={() => navigation.navigate('Main')} />
+        </View>
+      </ScreenWrapper>
+    );
+
+  if (syncLoading && !displayJob)
+    return (
+      <ScreenWrapper>
+        <View style={styles.empty}>
+          <ActivityIndicator color={colors.primary} />
+          <Text>Loading job…</Text>
+        </View>
+      </ScreenWrapper>
+    );
+
+  if (!displayJob)
+    return (
+      <ScreenWrapper>
+        <View style={styles.empty}>
+          <Text>{loadError || 'This job is unavailable.'}</Text>
+          <PrimaryButton title="Back to jobs" onPress={() => navigation.navigate('Main')} />
+        </View>
+      </ScreenWrapper>
+    );
 
   const getStepIndex = (status: string) => {
     switch (status) {
@@ -82,7 +109,12 @@ export function ActiveJobScreen({ route, navigation }: Props) {
   };
 
   const handleCall = () => {
-    Alert.alert('Phone Call', displayJob.customer.phone ? `Calling customer at ${displayJob.customer.phone}` : 'Customer phone is unavailable.');
+    Alert.alert(
+      'Phone Call',
+      displayJob.customer.phone
+        ? `Calling customer at ${displayJob.customer.phone}`
+        : 'Customer phone is unavailable.'
+    );
   };
 
   const handleChat = () => {
@@ -130,10 +162,7 @@ export function ActiveJobScreen({ route, navigation }: Props) {
   return (
     <ScreenWrapper safeAreaStyle={{ backgroundColor: colors.primary }}>
       <View style={styles.headerBar}>
-        <AppHeader
-          title="Active Job"
-          onBackPress={() => navigation.navigate('Main')}
-        />
+        <AppHeader title="Active Job" onBackPress={() => navigation.navigate('Main')} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -141,9 +170,7 @@ export function ActiveJobScreen({ route, navigation }: Props) {
         <View style={styles.card}>
           <View style={styles.cardTopRow}>
             <Text style={styles.jobIdText}>#{displayJob.jobId}</Text>
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusText}>{displayJob.status.toUpperCase()}</Text>
-            </View>
+            <StatusChip label={mapJobStatus(displayJob.status).label} type={mapJobStatus(displayJob.status).tone === 'info' ? 'primary' : mapJobStatus(displayJob.status).tone} />
           </View>
           <Text style={styles.titleText}>{displayJob.issueDescription || 'Service job'}</Text>
           <View style={styles.addressRow}>
@@ -158,13 +185,17 @@ export function ActiveJobScreen({ route, navigation }: Props) {
           <View style={styles.customerRow}>
             <View>
               <Text style={styles.customerName}>{displayJob.customer.fullName}</Text>
-              <Text style={styles.customerSub}>Rating: {displayJob.customer.rating || 4.8} ⭐</Text>
+              {displayJob.customer.rating != null ? (
+                <Text style={styles.customerSub}>
+                  Rating: {displayJob.customer.rating.toFixed(1)} ⭐
+                </Text>
+              ) : null}
             </View>
             <View style={styles.contactButtons}>
-              <TouchableOpacity style={styles.callBtn} onPress={handleCall}>
+              <TouchableOpacity style={styles.callBtn} onPress={handleCall} accessibilityRole="button" accessibilityLabel="Call customer">
                 <PhoneIcon width={16} height={16} stroke="#FFFFFF" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.chatBtn} onPress={handleChat}>
+              <TouchableOpacity style={styles.chatBtn} onPress={handleChat} accessibilityRole="button" accessibilityLabel="Chat with customer">
                 <ChatIcon width={16} height={16} stroke={colors.primary} />
               </TouchableOpacity>
             </View>
@@ -177,7 +208,9 @@ export function ActiveJobScreen({ route, navigation }: Props) {
         {/* Job Details Card */}
         <View style={[styles.card, { marginTop: spacing.md }]}>
           <Text style={styles.cardSubtitle}>Job Details</Text>
-          <Text style={styles.detailDescription}>{displayJob.customerNote || displayJob.issueDescription || 'No job description provided.'}</Text>
+          <Text style={styles.detailDescription}>
+            {displayJob.customerNote || displayJob.issueDescription || 'No job description provided.'}
+          </Text>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Work Type</Text>
             <Text style={styles.detailVal}>Repair</Text>
@@ -226,17 +259,6 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.bold,
     color: colors.textMuted,
   },
-  statusBadge: {
-    backgroundColor: '#D1FAE5',
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: borderRadius.xs,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: typography.fontWeight.bold,
-    color: '#059669',
-  },
   titleText: {
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.bold,
@@ -278,18 +300,18 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   callBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#10B981',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.success,
     justifyContent: 'center',
     alignItems: 'center',
   },
   chatBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#DBEAFE',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },

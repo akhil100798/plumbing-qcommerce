@@ -81,7 +81,7 @@ export function RegisterScreen({ navigation }: Props) {
 }
 
 function Field(props: any) {
-  return <View style={styles.field}><Text style={styles.label}>{props.label}</Text><TextInput {...props} label={undefined} style={styles.input} autoCapitalize="none" placeholderTextColor={colors.textMuted} /></View>;
+  return <View style={styles.field}><Text style={styles.label}>{props.label}</Text><TextInput {...props} label={undefined} accessibilityLabel={props.label} style={styles.input} autoCapitalize="none" placeholderTextColor={colors.textMuted} /></View>;
 }
 
 const styles = StyleSheet.create({

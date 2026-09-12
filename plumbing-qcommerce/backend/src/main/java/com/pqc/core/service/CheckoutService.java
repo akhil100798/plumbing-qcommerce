@@ -19,6 +19,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class CheckoutService {
 
     private final ProductRepository productRepository;
@@ -286,6 +287,106 @@ public class CheckoutService {
                 throw new AccessDeniedException("You do not have permission to manage orders for this store.");
             }
         }
+    }
+
+    public com.pqc.core.dto.OrderDetailDTO getOrderByIdForUser(Long id, User user) {
+        ProductOrder order = orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + id));
+
+        if (!order.getCustomer().getId().equals(user.getId())
+                && (order.getDeliveryPartner() == null || !order.getDeliveryPartner().getId().equals(user.getId()))
+                && user.getRole() != Role.ADMIN
+                && user.getRole() != Role.STORE_MANAGER) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied to this order");
+        }
+
+        List<com.pqc.core.dto.OrderDetailDTO.OrderItemDetail> items = order.getItems().stream()
+                .map(item -> com.pqc.core.dto.OrderDetailDTO.OrderItemDetail.builder()
+                        .productId(item.getProduct() != null ? item.getProduct().getId() : null)
+                        .productName(item.getProduct() != null ? item.getProduct().getName() : "Unknown")
+                        .quantity(item.getQuantity())
+                        .price(item.getPrice())
+                        .build())
+                .toList();
+
+        com.pqc.core.dto.OrderDetailDTO.OrderDetailDTOBuilder builder = com.pqc.core.dto.OrderDetailDTO.builder()
+                .id(order.getId())
+                .customerId(order.getCustomer().getId())
+                .storeId(order.getStore().getId())
+                .storeName(order.getStore().getName())
+                .totalAmount(order.getTotalAmount())
+                .status(order.getStatus().name())
+                .deliveryPartnerName(order.getDeliveryPartner() != null ? order.getDeliveryPartner().getFullName() : null)
+                .deliveryPartnerPhone(order.getDeliveryPartner() != null ? order.getDeliveryPartner().getPhone() : null)
+                .deliveryOtp(null)
+                .estimatedDeliveryAt(order.getEstimatedDeliveryAt())
+                .createdAt(order.getCreatedAt())
+                .items(items);
+
+        if (order.getServiceOrder() != null) {
+            ServiceOrder so = order.getServiceOrder();
+            builder.serviceOrderId(so.getId())
+                    .serviceOrderStatus(so.getStatus().name())
+                    .assignedPlumberName(so.getPlumber() != null ? so.getPlumber().getFullName() : null)
+                    .assignedPlumberPhone(so.getPlumber() != null ? so.getPlumber().getPhone() : null);
+        }
+
+        return builder.build();
+    }
+
+    public List<com.pqc.core.dto.OrderDetailResponse> getOrdersByStatusForUser(ProductOrderStatus status, User user) {
+        List<ProductOrder> orders;
+        if (user.getRole() == Role.ADMIN) {
+            orders = orderRepository.findByStatus(status);
+        } else if (user.getRole() == Role.STORE_MANAGER) {
+            orders = orderRepository.findAll().stream()
+                    .filter(order -> order.getStore() != null)
+                    .filter(order -> order.getStore().getManager() != null)
+                    .filter(order -> order.getStore().getManager().getId().equals(user.getId()))
+                    .filter(order -> order.getStatus() == status)
+                    .toList();
+        } else {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Only store managers and admins can list product orders by status");
+        }
+        return orders.stream().map(this::mapToResponse).toList();
+    }
+
+    public List<com.pqc.core.dto.OrderDetailResponse> getCustomerMaterialRequestsForUser(Long customerId) {
+        return orderRepository.findByCustomerIdAndServiceOrderIsNotNull(customerId).stream()
+                .map(this::mapToResponse).toList();
+    }
+
+    public List<com.pqc.core.dto.OrderDetailResponse> getPlumberMaterialRequestsForUser(Long plumberId) {
+        return orderRepository.findByServiceOrder_Plumber_Id(plumberId).stream()
+                .map(this::mapToResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.pqc.core.dto.OrderDetailResponse> getStoreMaterialRequestsForUser(User user) {
+        List<ProductOrder> orders;
+        if (user.getRole() == Role.ADMIN) {
+            orders = orderRepository.findAll().stream().filter(order -> order.getServiceOrder() != null).toList();
+        } else {
+            orders = orderRepository.findByStore_Manager_IdAndServiceOrderIsNotNull(user.getId());
+            if (orders.isEmpty()) {
+                orders = orderRepository.findAll().stream().filter(order -> order.getServiceOrder() != null).toList();
+            }
+        }
+        return orders.stream()
+                .filter(order -> order.getStatus() != ProductOrderStatus.CANCELLED)
+                .map(this::mapToResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductOrder> getMyOrders(Long customerId) {
+        List<ProductOrder> orders = orderRepository.findByCustomerId(customerId);
+        for (ProductOrder order : orders) {
+            if (order.getItems() != null) {
+                order.getItems().size();
+            }
+        }
+        return orders;
     }
 
     public com.pqc.core.dto.OrderDetailResponse mapToResponse(ProductOrder order) {

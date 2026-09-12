@@ -1,190 +1,280 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, Alert } from 'react-native';
-import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { AppHeader } from '../../components/common/AppHeader';
-import { ProfileMenuItem } from '../../components/cards/WalletReviewsPromoCards';
-import { storeService } from '../../services/store/storeService';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
-import { AppStackParamList } from '../../types/navigation';
-import { Store } from '../../types';
-import { useAppSelector } from '../../redux/store';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useSelector } from 'react-redux';
 
-import ProfileIcon from '../../assets/icons/profile.svg';
+import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
 import WarehouseIcon from '../../assets/icons/warehouse.svg';
-import WalletIcon from '../../assets/icons/wallet.svg';
-import BarcodeIcon from '../../assets/icons/barcode.svg';
-import SettingsIcon from '../../assets/icons/settings.svg';
-import ClockIcon from '../../assets/icons/clock.svg';
-import StarIcon from '../../assets/icons/star.svg';
+import { RootState } from '../../redux/store';
+import { configService, SupportContactConfig } from '../../services/config/configService';
+import { StoreBusinessHoursItem, storeService } from '../../services/store/storeService';
+import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
+import { Store } from '../../types';
+import { AppStackParamList } from '../../types/navigation';
 
-export const StoreProfileScreen = () => {
+export function StoreProfileScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  const user = useAppSelector(state => state.auth.storeUser);
+  const user = useSelector((state: RootState) => state.auth.storeUser);
 
   const [profile, setProfile] = useState<Store | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [businessHours, setBusinessHours] = useState<StoreBusinessHoursItem[]>([]);
+  const [supportConfig, setSupportConfig] = useState<SupportContactConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user) {
-        setNotice('Store session is not available. Please sign in again.');
-        return;
-      }
-
+    const fetchData = async () => {
       try {
-        const data = await storeService.getCurrentStoreProfile();
-        setProfile(data);
-        setNotice(null);
-      } catch (error) {
-        setProfile(null);
-        setNotice(error instanceof Error ? error.message : 'Store profile is not available in staging.');
+        const [prof, hours, supp] = await Promise.all([
+          storeService.getCurrentStoreProfile(),
+          storeService.getBusinessHours(),
+          configService.getSupportContact(),
+        ]);
+        setProfile(prof);
+        setPhone(prof.phone || '');
+        setAddress(prof.address || '');
+        setBusinessHours(hours);
+        setSupportConfig(supp);
+      } catch {
+        // fetch fallback
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchProfile();
-  }, [user]);
+    fetchData();
+  }, []);
 
-  const handleMenuPress = (section: string) => {
-    switch (section) {
-      case 'details':
-        Alert.alert(
-          'Store Details',
-          `Name: ${profile?.name || user?.fullName || 'Store account'}\nPhone: ${user?.phone || profile?.phone || 'Not available in staging'}\nAddress: ${profile?.address || 'Not available in staging'}`
-        );
-        break;
-      case 'business':
-        Alert.alert('Business Info', 'Business information is not available from the staging backend yet.');
-        break;
-      case 'bank':
-        Alert.alert('Bank Details', 'Bank details are not available from the staging backend yet.');
-        break;
-      case 'gst':
-        Alert.alert('GST Details', 'GST details are not available from the staging backend yet.');
-        break;
-      case 'docs':
-        Alert.alert('Verification Documents', 'Verification documents are not available from the staging backend yet.');
-        break;
-      case 'timings':
-        Alert.alert('Store Timings', 'Store timings are not available from the staging backend yet.');
-        break;
+  const handleSaveProfile = async () => {
+    if (!profile) return;
+    setSaving(true);
+    try {
+      const updated = await storeService.updateStoreProfile({ phone, address });
+      setProfile(updated);
+      await storeService.updateBusinessHours(businessHours);
+      Alert.alert('Profile Saved!', 'Store profile & business hours updated successfully.');
+    } catch (err: any) {
+      Alert.alert('Save Failed', err?.message || 'Could not update store profile.');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const getStoreInitials = (name?: string) => {
-    if (!name) return 'SP';
-    return name.slice(0, 2).toUpperCase();
-  };
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centerLoading}>
+          <ActivityIndicator color={colors.primary} />
+          <Text style={styles.loadingText}>Fetching Store Profile & Config...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <ScreenWrapper style={styles.container}>
-      <AppHeader title="Store Profile" onBackPress={() => { if (navigation.canGoBack()) navigation.goBack(); else navigation.navigate('Main', { screen: 'AccountTab' }); }} />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {notice && <Text style={styles.noticeText}>{notice}</Text>}
-        {profile && (
-          <View style={styles.profileHeader}>
-            <View style={styles.storeAvatar}>
-              <Text style={styles.storeAvatarText}>{getStoreInitials(profile.name)}</Text>
-            </View>
-            <Text style={styles.storeName}>{profile.name}</Text>
-            <Text style={styles.storeId}>Store ID: {profile.id}</Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => {
+            if (navigation.canGoBack()) navigation.goBack();
+            else navigation.navigate('Main', { screen: 'AccountTab' } as any);
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <ArrowLeftIcon width={24} height={24} stroke={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Hardware Store Profile</Text>
+        <View style={{ width: 24 }} />
+      </View>
 
-            <View style={styles.ratingRow}>
-              <StarIcon width={14} height={14} fill={colors.warning} stroke={colors.warning} style={{ marginRight: 4 }} />
-              <Text style={styles.ratingVal}>{profile.rating ?? 0} </Text>
-              <Text style={styles.ratingCount}>{profile.rating ? '(rating available)' : '(not available in staging)'}</Text>
-            </View>
+      <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
+        {/* Profile Card */}
+        <View style={styles.profileCard}>
+          <View style={styles.avatarWrap}>
+            <WarehouseIcon width={36} height={36} stroke={colors.primaryContainer || colors.primary} />
           </View>
-        )}
+          <Text style={styles.storeName}>{profile?.name || 'Partner Hardware Store'}</Text>
+          <Text style={styles.storeId}>Store Identity ID: #{profile?.id || '1'}</Text>
+          <View style={styles.activePill}>
+            <Text style={styles.activePillText}>Operational Partner Store</Text>
+          </View>
+        </View>
 
-        <View style={styles.menuContainer}>
-          <ProfileMenuItem icon={ProfileIcon} label="Store Details" onPress={() => handleMenuPress('details')} />
-          <ProfileMenuItem icon={WarehouseIcon} label="Business Information" onPress={() => handleMenuPress('business')} />
-          <ProfileMenuItem icon={WalletIcon} label="Bank Details" onPress={() => handleMenuPress('bank')} />
-          <ProfileMenuItem icon={BarcodeIcon} label="GST Details" onPress={() => handleMenuPress('gst')} />
-          <ProfileMenuItem icon={SettingsIcon} label="Documents" onPress={() => handleMenuPress('docs')} />
-          <ProfileMenuItem icon={ClockIcon} label="Store Timings" onPress={() => handleMenuPress('timings')} />
+        {/* Manager Info Card */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Store Manager Details</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Manager Name</Text>
+            <Text style={styles.infoValBold}>{user?.fullName || 'Assigned Manager'}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Manager Email</Text>
+            <Text style={styles.infoValBold}>{user?.email || 'manager@fixkart.in'}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>System Role</Text>
+            <Text style={styles.infoValBold}>STORE_MANAGER</Text>
+          </View>
+        </View>
+
+        {/* Editable Store Details Card */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Store Contact & Location</Text>
+
+          <Text style={styles.fieldLabel}>Store Contact Phone</Text>
+          <TextInput
+            style={styles.input}
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="Enter store phone number"
+            keyboardType="phone-pad"
+          />
+
+          <Text style={styles.fieldLabel}>Store Address</Text>
+          <TextInput
+            style={[styles.input, styles.multilineInput]}
+            value={address}
+            onChangeText={setAddress}
+            placeholder="Enter complete store address"
+            multiline
+            numberOfLines={3}
+          />
+
+          <TouchableOpacity style={styles.saveBtn} onPress={handleSaveProfile} disabled={saving}>
+            <Text style={styles.saveBtnText}>{saving ? 'Saving Changes...' : 'Save Profile Changes'}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Business Hours Info & Backend Persistence */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Operational Business Hours (Backend Persisted)</Text>
+          {businessHours.map((h, idx) => (
+            <View key={idx} style={styles.infoRow}>
+              <Text style={styles.infoLabel}>{h.dayOfWeek}</Text>
+              <Text style={styles.infoValBold}>
+                {h.closed ? 'CLOSED' : `${h.openTime} – ${h.closeTime}`}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Store Support Configuration */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Official FixKart Partner Support</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Partner Helpline</Text>
+            <Text style={styles.infoValBold}>{supportConfig?.phone || 'Not Configured'}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Support Email</Text>
+            <Text style={styles.infoValBold}>{supportConfig?.email || 'Not Configured'}</Text>
+          </View>
         </View>
       </ScrollView>
-    </ScreenWrapper>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.background,
-  },
-  scroll: {
-    padding: spacing.layout,
-  },
-  noticeText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.danger,
-    fontWeight: typography.fontWeight.bold,
-    marginBottom: spacing.md,
-  },
-  profileHeader: {
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.sm,
-    marginBottom: spacing.lg,
-  },
-  storeAvatar: {
-    width: 64,
-    height: 64,
-    borderRadius: borderRadius.round,
-    backgroundColor: 'rgba(37, 99, 235, 0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  storeAvatarText: {
-    fontSize: 32,
-  },
-  storeName: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  storeId: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  ratingRow: {
+  container: { flex: 1, backgroundColor: colors.background || '#F9F9F9' },
+  centerLoading: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.xs },
+  loadingText: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
+  header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing.sm,
+    paddingHorizontal: spacing.layout,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border || '#C6C5D4',
   },
-  star: {
-    color: colors.warning,
-    fontSize: 14,
-    marginRight: 2,
-  },
-  ratingVal: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-  },
-  ratingCount: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-  },
-  menuContainer: {
-    backgroundColor: colors.card,
+  headerTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  scrollBody: { padding: spacing.layout, paddingBottom: spacing.giant },
+  profileCard: {
+    alignItems: 'center',
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.border || '#C6C5D4',
     ...shadows.sm,
-    marginBottom: spacing.xl,
   },
+  avatarWrap: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: colors.surfaceContainerLow || '#F4F3F7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+  storeName: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  storeId: { fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: 2 },
+  activePill: {
+    marginTop: spacing.xs,
+    backgroundColor: colors.successLight || '#E7F7EC',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: borderRadius.sm,
+  },
+  activePillText: { fontSize: 10, fontWeight: '700', color: colors.secondary || '#1B6D24' },
+  card: {
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border || '#C6C5D4',
+    ...shadows.sm,
+  },
+  sectionTitle: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, marginBottom: spacing.xs },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surfaceContainerLow || '#F4F3F7',
+  },
+  infoLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
+  infoValBold: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  fieldLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: spacing.xs, marginBottom: 4 },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border || '#C6C5D4',
+    borderRadius: borderRadius.sm,
+    padding: spacing.sm,
+    fontSize: typography.fontSize.xs,
+    color: colors.textPrimary,
+    backgroundColor: colors.surfaceContainerLow || '#F4F3F7',
+  },
+  multilineInput: { minHeight: 60, textAlignVertical: 'top' },
+  saveBtn: {
+    backgroundColor: colors.primaryContainer || colors.primary,
+    padding: spacing.md,
+    borderRadius: borderRadius.sm,
+    alignItems: 'center',
+    marginTop: spacing.md,
+  },
+  saveBtnText: { color: '#FFFFFF', fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold },
 });
+
 export default StoreProfileScreen;
-
-

@@ -3,6 +3,7 @@ import { ActiveJob, JobOffer } from '../../types';
 
 interface JobState {
   incomingJobs: JobOffer[];
+  dismissedIncomingJobIds: string[];
   activeJob: ActiveJob | null;
   loading: boolean;
   error: string | null;
@@ -10,6 +11,7 @@ interface JobState {
 
 const initialState: JobState = {
   incomingJobs: [],
+  dismissedIncomingJobIds: [],
   activeJob: null,
   loading: false,
   error: null,
@@ -34,6 +36,12 @@ const jobSlice = createSlice({
     removeIncomingJob: (state, action: PayloadAction<string>) => {
       state.incomingJobs = state.incomingJobs.filter((j) => j.jobId !== action.payload);
     },
+    dismissIncomingJob: (state, action: PayloadAction<string>) => {
+      state.incomingJobs = state.incomingJobs.filter((j) => j.jobId !== action.payload);
+      if (!state.dismissedIncomingJobIds.includes(action.payload)) {
+        state.dismissedIncomingJobIds.push(action.payload);
+      }
+    },
     setActiveJob: (state, action: PayloadAction<ActiveJob | null>) => {
       state.activeJob = action.payload;
     },
@@ -52,6 +60,7 @@ const jobSlice = createSlice({
     },
     clearJobState: (state) => {
       state.incomingJobs = [];
+      state.dismissedIncomingJobIds = [];
       state.activeJob = null;
       state.loading = false;
       state.error = null;
@@ -64,6 +73,7 @@ export const {
   setError,
   addIncomingJob,
   removeIncomingJob,
+  dismissIncomingJob,
   setActiveJob,
   updateJobStatus,
   clearJobState,

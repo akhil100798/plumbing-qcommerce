@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import { colors } from '../../theme';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface PulsingLocationMarkerProps {
   color?: string;
@@ -12,16 +13,23 @@ export function PulsingLocationMarker({
   size = 14,
 }: PulsingLocationMarkerProps) {
   const pulseAnim = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    Animated.loop(
+    if (reduceMotion) {
+      pulseAnim.setValue(0);
+      return;
+    }
+    const animation = Animated.loop(
       Animated.timing(pulseAnim, {
         toValue: 1,
         duration: 1500,
         useNativeDriver: true,
       })
-    ).start();
-  }, [pulseAnim]);
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [pulseAnim, reduceMotion]);
 
   const scale = pulseAnim.interpolate({
     inputRange: [0, 1],

@@ -15,22 +15,10 @@ import {
   type UserStatus,
   type AdminUserListResponse,
 } from "@/services/superAdminService";
+import { formatDate, statusTone } from "@/lib/helpers";
 
 const STATUS_OPTIONS: Array<UserStatus | ""> = ["", "ACTIVE", "SUSPENDED", "BLOCKED"];
 const PAGE_SIZES = [10, 20, 50];
-
-function formatDate(value?: string | null) {
-  if (!value) return "-";
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString("en-IN");
-}
-
-function statusTone(status: string) {
-  if (status === "ACTIVE") return "success";
-  if (status === "SUSPENDED") return "warning";
-  if (status === "BLOCKED") return "danger";
-  return "neutral";
-}
 
 function statusButtonTone(status: UserStatus) {
   if (status === "ACTIVE") return "button-primary";

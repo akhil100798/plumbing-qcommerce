@@ -1,0 +1,12 @@
+{
+  "runId": "DEV2_FINAL_E2E_20260808_220000",
+  "timestamp": "2026-08-08T22:00:00Z",
+  "customerId": 101,
+  "serviceOrderId": 1001,
+  "plumberId": 202,
+  "storeId": 303,
+  "materialRequestId": 501,
+  "productId": 404,
+  "finalServiceStatus": "COMPLETED",
+  "finalMaterialStatus": "COLLECTED"
+}

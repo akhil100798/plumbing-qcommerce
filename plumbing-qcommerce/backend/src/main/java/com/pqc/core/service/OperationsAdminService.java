@@ -38,6 +38,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class OperationsAdminService {
 
     private static final List<ProductOrderStatus> ACTIVE_PRODUCT_STATUSES = List.of(

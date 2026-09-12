@@ -1,76 +1,77 @@
-import React from 'react';
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-
-import { borderRadius, colors, spacing, typography } from '../../theme';
+import React from "react";
+import { View, TextInput, StyleSheet, TouchableOpacity } from "react-native";
+import { colors } from "../../theme/colors";
+import { typography } from "../../theme/typography";
+import { spacing } from "../../theme/spacing";
+import { SearchIcon, ChevronRightIcon } from "../../assets/svg/Icons";
 
 interface SearchBarProps {
-  placeholder: string;
   value?: string;
   onChangeText?: (text: string) => void;
-  onFocus?: () => void;
+  placeholder?: string;
+  onPress?: () => void;
+  onClear?: () => void;
+  autoFocus?: boolean;
   editable?: boolean;
 }
 
-export function SearchBar({
-  placeholder,
+export const SearchBar: React.FC<SearchBarProps> = ({
   value,
   onChangeText,
-  onFocus,
+  placeholder = "Search 'Tap repair', 'CPVC pipes', 'Geyser'...",
+  onPress,
+  onClear,
+  autoFocus = false,
   editable = true,
-}: SearchBarProps) {
-  return (
-    <Pressable style={styles.container} onPress={onFocus}>
-      <Text style={styles.searchIcon}>🔍</Text>
-      {editable ? (
-        <TextInput
-          style={styles.input}
-          placeholder={placeholder}
-          placeholderTextColor={colors.textMuted}
-          value={value}
-          onChangeText={onChangeText}
-          onFocus={onFocus}
-          autoCorrect={false}
-        />
-      ) : (
-        <Text style={styles.placeholderText}>{placeholder}</Text>
-      )}
-    </Pressable>
+}) => {
+  const content = (
+    <View style={styles.container}>
+      <SearchIcon size={20} color={colors.primary} />
+      <TextInput
+        style={styles.input}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.outline}
+        editable={editable}
+        pointerEvents={editable ? "auto" : "none"}
+      />
+    </View>
   );
-}
+
+  if (!editable && onPress) {
+    return (
+      <TouchableOpacity activeOpacity={0.8} onPress={onPress}>
+        {content}
+      </TouchableOpacity>
+    );
+  }
+
+  return content;
+};
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    height: 52,
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: colors.primaryFixed,
+    borderRadius: 14,
     paddingHorizontal: spacing.md,
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  searchIcon: {
-    fontSize: 18,
-    color: colors.textMuted,
+    paddingVertical: spacing.sm + 2,
+    marginVertical: spacing.xs,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   input: {
     flex: 1,
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.textPrimary,
+    marginLeft: spacing.sm,
+    ...typography.body2,
+    color: colors.onBackground,
     padding: 0,
-  },
-  placeholderText: {
-    flex: 1,
-    fontSize: typography.fontSize.md,
-    color: colors.textMuted,
-    fontWeight: typography.fontWeight.medium,
   },
 });

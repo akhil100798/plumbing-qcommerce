@@ -5,6 +5,10 @@ import com.pqc.core.entity.RequestType;
 import com.pqc.core.entity.Role;
 import com.pqc.core.entity.ServiceOrder;
 import com.pqc.core.entity.User;
+import com.pqc.core.entity.PlumberKyc;
+import com.pqc.core.entity.PlumberAvailabilityStatus;
+import com.pqc.core.entity.PlumberKycStatus;
+import com.pqc.core.repository.PlumberKycRepository;
 import com.pqc.core.repository.OutboxEventRepository;
 import com.pqc.core.repository.ServiceOrderRepository;
 import com.pqc.core.repository.StoreRepository;
@@ -30,6 +34,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.springframework.web.server.ResponseStatusException;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -44,6 +50,7 @@ class ResourceAuthorizationTest {
     @Autowired PasswordEncoder passwordEncoder;
     @Autowired JwtService jwtService;
     @Autowired ServiceOrderService orderService;
+    @Autowired PlumberKycRepository plumberKycRepository;
 
     @Autowired org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
@@ -69,6 +76,7 @@ class ResourceAuthorizationTest {
         jdbcTemplate.execute("TRUNCATE TABLE wallets RESTART IDENTITY");
         jdbcTemplate.execute("TRUNCATE TABLE refresh_tokens RESTART IDENTITY");
         jdbcTemplate.execute("TRUNCATE TABLE notifications RESTART IDENTITY");
+        jdbcTemplate.execute("TRUNCATE TABLE plumber_kyc RESTART IDENTITY");
         jdbcTemplate.execute("TRUNCATE TABLE users RESTART IDENTITY");
         jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
 
@@ -152,6 +160,31 @@ class ResourceAuthorizationTest {
 
         assertThrows(AccessDeniedException.class,
                 () -> orderService.acceptOrder(otherCustomersOrder.getId(), plumber.getId()));
+    }
+
+    @Test
+    void serviceRejectsOfflinePlumberAcceptingAnOrder() {
+        plumberKycRepository.save(PlumberKyc.builder()
+                .plumberId(plumber.getId())
+                .status(PlumberKycStatus.APPROVED)
+                .availabilityStatus(PlumberAvailabilityStatus.OFFLINE)
+                .build());
+        authenticate(plumber);
+
+        assertThrows(ResponseStatusException.class,
+                () -> orderService.acceptOrder(otherCustomersOrder.getId(), plumber.getId()));
+    }
+
+    @Test
+    void offlinePlumberDoesNotReceivePendingOrderOffers() {
+        plumberKycRepository.save(PlumberKyc.builder()
+                .plumberId(plumber.getId())
+                .status(PlumberKycStatus.APPROVED)
+                .availabilityStatus(PlumberAvailabilityStatus.OFFLINE)
+                .build());
+        authenticate(plumber);
+
+        assertTrue(orderService.getOrdersByStatus(OrderStatus.PENDING).isEmpty());
     }
 
     @Test

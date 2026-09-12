@@ -56,7 +56,7 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - "9092:9092"
+      - "29092:9092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -84,6 +84,12 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: pqc_kafka:9092
       SPRING_MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-admin}:${MONGO_INITDB_ROOT_PASSWORD:-local-mongo-password}@pqc_mongodb:27017/pqc_logs?authSource=admin
       JWT_SECRET: ${JWT_SECRET:-your-very-strong-jwt-secret-key-here-at-least-256-bits-long-for-hs256}
+      SPRING_PROFILES_ACTIVE: local-staging,staging
+      APP_CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001,http://localhost:3100,http://localhost:3101,http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,http://localhost:19006,http://localhost:19007,http://localhost:19008,http://localhost:19009
+      APP_SEED_STAGING_ADMIN_ENABLED: "true"
+      APP_SEED_MOBILE_QA_ENABLED: "true"
+      APP_SEED_CATALOG_ENABLED: "true"
+      APP_SEED_DEMO_PASSWORD: FixKartLocal!2026
     depends_on:
       - postgres
       - redis
@@ -143,4 +149,3 @@ volumes:
   pgdata:
   redisdata:
   mongodata:
-

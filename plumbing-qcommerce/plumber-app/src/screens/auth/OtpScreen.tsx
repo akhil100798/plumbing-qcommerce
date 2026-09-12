@@ -23,7 +23,7 @@ type Props = StackScreenProps<AuthStackParamList, 'Otp'>;
 
 export function OtpScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
-  const phone = route.params?.phone || '+91 98765 43210';
+  const phone = route.params?.phone || '';
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(28);
@@ -50,7 +50,7 @@ export function OtpScreen({ route, navigation }: Props) {
     } catch (err: any) {
       setLoading(false);
       dispatch(authFailure(err.message || 'OTP verification failed'));
-      Alert.alert('Verification Failed', err.message || 'The OTP entered is incorrect. Try 123456.');
+       Alert.alert('Verification Failed', err.message || 'The OTP entered is incorrect. Please try again.');
     }
   };
 
@@ -91,7 +91,7 @@ export function OtpScreen({ route, navigation }: Props) {
               Resend OTP in <Text style={styles.timerHighlight}>{mm}:{ss}</Text>
             </Text>
           ) : (
-            <TouchableOpacity onPress={handleResend}>
+            <TouchableOpacity onPress={handleResend} accessibilityRole="button" accessibilityLabel="Resend verification code">
               <Text style={styles.resendLink}>Resend OTP</Text>
             </TouchableOpacity>
           )}

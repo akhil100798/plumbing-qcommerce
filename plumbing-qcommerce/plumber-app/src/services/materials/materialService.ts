@@ -29,6 +29,7 @@ export const materialService = {
       throw createBackendUnavailableError('Material requests', error);
     }
   },
+
   // ── Store Discovery ──────────────────────────────────────────────────────
 
   getAvailableStores: async (): Promise<Store[]> => {
@@ -69,7 +70,7 @@ export const materialService = {
   searchMaterials: async (query: string): Promise<MaterialItem[]> => {
     try {
       const response = await apiClient.get<any[]>(`${ENDPOINTS.CATALOG.SEARCH}?q=${query}`);
-      return response.data.map((item) => ({
+      return response.data.map((item: any) => ({
         productId: item.id,
         name: item.name,
         price: item.price,
@@ -94,9 +95,12 @@ export const materialService = {
         ENDPOINTS.DELIVERY.MATERIAL_REQUEST(numericOrderId),
         { storeId, items }
       );
-      await apiClient.post(ENDPOINTS.DELIVERY.SUBMIT(response.data.id));
 
-      const order = response.data;
+      // A draft material request is not visible to the store for approval
+      // until it is submitted. Submit it as part of the plumber's final
+      // material-request action so the store receives an actionable offer.
+      const submittedResponse = await apiClient.post<any>(ENDPOINTS.DELIVERY.SUBMIT(response.data.id));
+      const order = submittedResponse.data;
       const mappedItems: MaterialItem[] = (order.items || items).map((reqItem: any) => {
         const matchingRequest =
           'productId' in reqItem

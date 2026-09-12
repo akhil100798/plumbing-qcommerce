@@ -1,166 +1,123 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
-import { AppStackParamList } from '../../types/navigation';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
 import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
 import WarehouseIcon from '../../assets/icons/warehouse.svg';
-import { ordersService } from '../../services/orders/ordersService';
-import { colors, borderRadius, spacing, typography } from '../../theme';
+import { materialRequestService } from '../../services/orders/materialRequestService';
+import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
+import { MaterialRequest } from '../../types';
+import { AppStackParamList } from '../../types/navigation';
 
-type Props = StackScreenProps<AppStackParamList, 'ReadyForPickup'>;
+type Props = StackScreenProps<AppStackParamList, 'ReadyForPickup' | any>;
 
 export function ReadyForPickupScreen({ route, navigation }: Props) {
-  const { orderId } = route.params;
-  const [order, setOrder] = useState<any>(null);
+  const requestId = (route.params as any)?.requestId || (route.params as any)?.orderId;
+  const [request, setRequest] = useState<MaterialRequest | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [confirming, setConfirming] = useState(false);
 
-  const loadOrder = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const loadDetails = useCallback(async () => {
     try {
-      const data = await ordersService.getOrderById(orderId);
-      setOrder(data);
-    } catch (err: any) {
-      setError(err.message || 'Unable to load order details.');
+      const data = await materialRequestService.getById(Number(requestId));
+      setRequest(data);
+    } catch {
+      // transient fetch error
     } finally {
       setLoading(false);
     }
-  }, [orderId]);
+  }, [requestId]);
 
   useEffect(() => {
-    loadOrder();
-  }, [loadOrder]);
+    loadDetails();
+  }, [loadDetails]);
 
-  const handleConfirmCollection = async () => {
-    setConfirming(true);
-    try {
-      await ordersService.confirmPickup(orderId);
-      Alert.alert(
-        'Collection Confirmed',
-        'Plumber has collected all materials. Order complete.',
-        [{ text: 'OK', onPress: () => {
-          if (navigation.canGoBack()) navigation.goBack();
-          else navigation.navigate('Main', { screen: 'OrdersTab' } as any);
-        }}]
-      );
-    } catch (err: any) {
-      Alert.alert('Error', err.message || 'Could not confirm collection. Please try again.');
-    } finally {
-      setConfirming(false);
-    }
-  };
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.center}>
+          <ActivityIndicator color={colors.primary} />
+          <Text style={styles.loadingText}>Loading Pickup Status...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.accentGreen} />
+      <StatusBar barStyle="light-content" backgroundColor={colors.secondary || '#1B6D24'} />
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
-        {/* Green hero panel */}
+      <ScrollView contentContainerStyle={{ paddingBottom: spacing.giant }} showsVerticalScrollIndicator={false}>
+        {/* Stitch Green Hero Panel */}
         <View style={styles.heroPanel}>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => {
               if (navigation.canGoBack()) navigation.goBack();
-              else navigation.navigate('Main', { screen: 'OrdersTab' } as any);
+              else navigation.navigate('Main', { screen: 'MaterialsTab' } as any);
             }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <ArrowLeftIcon width={22} height={22} stroke={colors.surface} />
+            <ArrowLeftIcon width={22} height={22} stroke="#FFFFFF" />
           </TouchableOpacity>
 
           <View style={styles.heroIconRow}>
-            <WarehouseIcon width={44} height={44} stroke={colors.surface} />
+            <WarehouseIcon width={44} height={44} stroke="#FFFFFF" />
           </View>
 
-          <Text style={styles.heroTitle}>Order Packed & Ready</Text>
-          <Text style={styles.heroSubtitle}>Awaiting plumber pickup</Text>
+          <Text style={styles.heroTitle}>Materials Packed & Ready</Text>
+          <Text style={styles.heroSubtitle}>Awaiting Plumber Self-Pickup at Store Counter</Text>
         </View>
 
         <View style={styles.content}>
-
-          {loading ? (
-            <View style={styles.center}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={styles.loadingText}>Loading order details…</Text>
+          {/* Request Metadata Card */}
+          <View style={styles.card}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Material Request ID</Text>
+              <Text style={styles.infoValueBold}>#{request?.id || requestId}</Text>
             </View>
-          ) : error ? (
-            <View style={styles.card}>
-              <Text style={styles.errorText}>{error}</Text>
-              <TouchableOpacity style={styles.retryLink} onPress={loadOrder}>
-                <Text style={styles.retryLinkText}>Retry</Text>
-              </TouchableOpacity>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Service Order ID</Text>
+              <Text style={styles.infoValueBold}>#{request?.serviceOrderId || 'N/A'}</Text>
             </View>
-          ) : (
-            <>
-              {/* Order info */}
-              <View style={styles.card}>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Order ID</Text>
-                  <Text style={styles.infoValueBold}>#{order?.id || orderId}</Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Status</Text>
-                  <View style={styles.statusChip}>
-                    <Text style={styles.statusChipText}>READY FOR PICKUP</Text>
-                  </View>
-                </View>
-                {order?.items?.length > 0 && (
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Items</Text>
-                    <Text style={styles.infoValue}>{order.items.length} item{order.items.length > 1 ? 's' : ''}</Text>
-                  </View>
-                )}
-                {order?.totalAmount != null && (
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Amount</Text>
-                    <Text style={styles.infoValueBold}>₹{Number(order.totalAmount).toFixed(2)}</Text>
-                  </View>
-                )}
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Fulfillment Status</Text>
+              <View style={styles.statusChip}>
+                <Text style={styles.statusChipText}>READY FOR PICKUP</Text>
               </View>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Assigned Plumber</Text>
+              <Text style={styles.infoValueBold}>{request?.plumberName || 'Field Technician'}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Total Value</Text>
+              <Text style={styles.infoValueBold}>₹{(request?.totalAmount || 0).toFixed(2)}</Text>
+            </View>
+          </View>
 
-              {/* Plumber pickup status note */}
-              <View style={styles.statusCard}>
-                <Text style={styles.statusCardTitle}>🔧 Plumber Pickup Workflow</Text>
-                <Text style={styles.statusCardBody}>
-                  The assigned plumber will arrive at the store to collect the packed materials.
-                  Once the plumber has collected, confirm collection below.
-                </Text>
-              </View>
+          {/* Plumber Pickup Workflow Status Note */}
+          <View style={styles.statusCard}>
+            <Text style={styles.statusCardTitle}>🔧 Plumber Self-Pickup Notification</Text>
+            <Text style={styles.statusCardBody}>
+              The assigned plumber has been notified via Plumber App. When the plumber arrives at your hardware store counter, proceed to Phase 6 collection confirmation.
+            </Text>
+          </View>
 
-              {/* Confirm collection CTA */}
-              <TouchableOpacity
-                style={[styles.confirmBtn, confirming && styles.confirmBtnDisabled]}
-                onPress={handleConfirmCollection}
-                disabled={confirming}
-              >
-                {confirming ? (
-                  <ActivityIndicator size="small" color={colors.surface} />
-                ) : (
-                  <Text style={styles.confirmBtnText}>Confirm Plumber Collected</Text>
-                )}
-              </TouchableOpacity>
-
-              {/* Print invoice secondary action */}
-              <TouchableOpacity
-                style={styles.outlineButton}
-                onPress={() => Alert.alert('Print Invoice', 'Invoice sent to thermal printer.')}
-              >
-                <Text style={styles.outlineButtonText}>Print Invoice</Text>
-              </TouchableOpacity>
-            </>
-          )}
+          <TouchableOpacity
+            style={styles.outlineButton}
+            onPress={() => navigation.navigate('Main', { screen: 'MaterialsTab' } as any)}
+          >
+            <Text style={styles.outlineButtonText}>Return to Queue</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -168,76 +125,60 @@ export function ReadyForPickupScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: colors.background || '#F9F9F9' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.xs },
+  loadingText: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
   heroPanel: {
-    backgroundColor: colors.accentGreen,
-    paddingTop: spacing.lg,
-    paddingBottom: 32,
-    paddingHorizontal: spacing.xl,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    backgroundColor: colors.secondary || '#1B6D24',
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.layout,
+    borderBottomLeftRadius: borderRadius.md,
+    borderBottomRightRadius: borderRadius.md,
     alignItems: 'center',
   },
-  backButton: { alignSelf: 'flex-start', marginBottom: spacing.lg },
-  heroIconRow: { alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md },
-  heroTitle: { color: colors.surface, fontSize: 20, fontWeight: '700', marginBottom: 4 },
-  heroSubtitle: { color: 'rgba(255,255,255,0.85)', fontSize: 13 },
-  content: { paddingHorizontal: spacing.xl, marginTop: -20 },
-  center: { justifyContent: 'center', alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.md },
-  loadingText: { fontSize: typography.fontSize.sm, color: colors.textSecondary },
+  backButton: { alignSelf: 'flex-start', marginBottom: spacing.sm },
+  heroIconRow: { alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xs },
+  heroTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: typography.fontWeight.bold, marginBottom: 2 },
+  heroSubtitle: { color: 'rgba(255,255,255,0.85)', fontSize: typography.fontSize.xs },
+  content: { paddingHorizontal: spacing.layout, marginTop: -spacing.md },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
     borderRadius: borderRadius.md,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.border || '#C6C5D4',
+    ...shadows.sm,
   },
-  errorText: { fontSize: typography.fontSize.sm, color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.sm },
-  retryLink: { alignSelf: 'center' },
-  retryLinkText: { color: colors.primary, fontWeight: typography.fontWeight.bold, fontSize: typography.fontSize.sm },
-  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  infoLabel: { fontSize: 13, color: colors.textSecondary },
-  infoValue: { fontSize: 13, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  infoValueBold: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  infoLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
+  infoValueBold: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
   statusChip: {
-    backgroundColor: colors.accentGreenLight,
-    borderRadius: borderRadius.round,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    backgroundColor: colors.successLight || '#E7F7EC',
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
-  statusChipText: { fontSize: 11, fontWeight: '700', color: colors.accentGreen },
+  statusChipText: { fontSize: 10, fontWeight: '700', color: colors.secondary || '#1B6D24' },
   statusCard: {
     backgroundColor: '#EFF6FF',
     borderRadius: borderRadius.md,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: '#BFDBFE',
   },
-  statusCardTitle: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: '#1D4ED8', marginBottom: spacing.xs },
-  statusCardBody: { fontSize: typography.fontSize.xs, color: '#1E40AF', lineHeight: 18 },
-  confirmBtn: {
-    backgroundColor: colors.accentGreen,
-    borderRadius: borderRadius.md,
-    height: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  confirmBtnDisabled: { opacity: 0.6 },
-  confirmBtnText: { color: colors.surface, fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold },
+  statusCardTitle: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: '#1D4ED8', marginBottom: 4 },
+  statusCardBody: { fontSize: typography.fontSize.xs, color: '#1E40AF', lineHeight: 16 },
   outlineButton: {
-    height: 50,
+    height: 48,
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.border || '#C6C5D4',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface,
-    marginBottom: spacing.lg,
+    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
   },
-  outlineButtonText: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  outlineButtonText: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
 });
-
-export default ReadyForPickupScreen;

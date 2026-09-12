@@ -12,6 +12,7 @@ import {
 
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
 import { animation } from '../../theme/animation';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface PrimaryButtonProps {
   title: string;
@@ -37,9 +38,11 @@ export function PrimaryButton({
   accessibilityLabel,
 }: PrimaryButtonProps) {
   const scale = useRef(new Animated.Value(1)).current;
+  const reduceMotion = useReducedMotion();
   const isInteractionDisabled = disabled || loading || success;
 
   const handlePressIn = () => {
+    if (reduceMotion) return;
     Animated.spring(scale, {
       toValue: animation.pressScale,
       useNativeDriver: true,
@@ -49,6 +52,7 @@ export function PrimaryButton({
   };
 
   const handlePressOut = () => {
+    if (reduceMotion) return;
     Animated.spring(scale, {
       toValue: 1,
       useNativeDriver: true,
@@ -64,8 +68,9 @@ export function PrimaryButton({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={isInteractionDisabled}
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel || title}
+         accessibilityRole="button"
+         accessibilityLabel={accessibilityLabel || title}
+         accessibilityState={{ disabled: isInteractionDisabled, busy: loading }}
         style={({ pressed }) => [
           styles.button,
           success && styles.successButton,

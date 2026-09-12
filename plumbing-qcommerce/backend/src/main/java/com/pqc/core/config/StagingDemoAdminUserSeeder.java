@@ -16,51 +16,71 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Staging-only admin QA user seeder for FixKart.
+ *
+ * <p>Activation requirements (ALL must be true):
+ * <ul>
+ *   <li>{@code SPRING_PROFILES_ACTIVE} contains {@code staging}</li>
+ *   <li>{@code APP_SEED_STAGING_ADMIN_ENABLED=true} (env var → {@code app.seed.staging-admin-enabled})</li>
+ * </ul>
+ *
+ * <p>This seeder MUST NOT run in production. The {@code @Profile("staging")} annotation
+ * ensures it is never instantiated when only the {@code prod} profile is active.
+ *
+ * <p>All seeding is idempotent — restarting staging does not duplicate records.
+ * Passwords come from {@code app.seed.demo-password} (env: {@code APP_SEED_DEMO_PASSWORD}).
+ * Passwords are NEVER committed to source code.
+ */
 @Component
-@Profile("prod & staging")
-@ConditionalOnProperty(prefix = "app.demo-seed", name = "enabled", havingValue = "true", matchIfMissing = false)
+@Profile("staging")
+@ConditionalOnProperty(prefix = "app.seed", name = "staging-admin-enabled", havingValue = "true", matchIfMissing = false)
 @Order(5)
 @RequiredArgsConstructor
 @Slf4j
 public class StagingDemoAdminUserSeeder implements CommandLineRunner {
-    private static final String DEMO_PASSWORD = "password";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SeedProperties seedProperties;
 
     @Override
     @Transactional
     public void run(String... args) {
-        demoUsers().forEach(this::seedOrUpdate);
-        log.info("Staging demo admin users seeded/verified.");
+        log.info("StagingDemoAdminUserSeeder: provisioning staging admin QA accounts...");
+        stagingAdminUsers().forEach(this::seedOrUpdate);
+        log.info("StagingDemoAdminUserSeeder: staging admin provisioning complete.");
     }
 
-    private void seedOrUpdate(DemoUser demoUser) {
-        User user = userRepository.findByEmail(demoUser.email())
+    private void seedOrUpdate(StagingUser stagingUser) {
+        User user = userRepository.findByEmail(stagingUser.email())
                 .orElseGet(() -> User.builder()
-                        .email(demoUser.email())
+                        .email(stagingUser.email())
                         .build());
 
-        user.setFullName(demoUser.fullName());
-        user.setPhone(demoUser.phone());
-        user.setRole(demoUser.role());
+        user.setFullName(stagingUser.fullName());
+        user.setPhone(stagingUser.phone());
+        user.setRole(stagingUser.role());
         user.setStatus(UserStatus.ACTIVE);
-        user.setPassword(passwordEncoder.encode(DEMO_PASSWORD));
+        user.setPassword(passwordEncoder.encode(seedProperties.getDemoPassword()));
 
         userRepository.save(user);
+        log.debug("StagingDemoAdminUserSeeder: upserted {} ({})", stagingUser.email(), stagingUser.role());
     }
 
-    private List<DemoUser> demoUsers() {
+    private List<StagingUser> stagingAdminUsers() {
         return List.of(
-                new DemoUser("superadmin@plumbcommerce.com", "Staging Super Admin", "5555555501", Role.SUPER_ADMIN),
-                new DemoUser("operations@plumbcommerce.com", "Staging Operations Admin", "5555555502", Role.OPERATIONS_ADMIN),
-                new DemoUser("finance@plumbcommerce.com", "Staging Finance Admin", "5555555503", Role.FINANCE_ADMIN),
-                new DemoUser("support@plumbcommerce.com", "Staging Support Admin", "5555555504", Role.SUPPORT_ADMIN),
-                new DemoUser("plumbermanager@plumbcommerce.com", "Staging Plumber Manager", "5555555505", Role.PLUMBER_MANAGER),
-                new DemoUser("marketing@plumbcommerce.com", "Staging Marketing Admin", "5555555506", Role.MARKETING_ADMIN)
+                // FixKart QA admin account — used by automation
+                new StagingUser("admin.qa@fixkart.com",           "QA Administrator",           "5555500006", Role.SUPER_ADMIN),
+                // Legacy @plumbcommerce.com staging admin accounts (retained for demo/admin portal compat)
+                new StagingUser("superadmin@plumbcommerce.com",   "Staging Super Admin",         "5555555501", Role.SUPER_ADMIN),
+                new StagingUser("operations@plumbcommerce.com",   "Staging Operations Admin",    "5555555502", Role.OPERATIONS_ADMIN),
+                new StagingUser("finance@plumbcommerce.com",      "Staging Finance Admin",       "5555555503", Role.FINANCE_ADMIN),
+                new StagingUser("support@plumbcommerce.com",      "Staging Support Admin",       "5555555504", Role.SUPPORT_ADMIN),
+                new StagingUser("plumbermanager@plumbcommerce.com","Staging Plumber Manager",    "5555555505", Role.PLUMBER_MANAGER),
+                new StagingUser("marketing@plumbcommerce.com",    "Staging Marketing Admin",     "5555555506", Role.MARKETING_ADMIN)
         );
     }
 
-    private record DemoUser(String email, String fullName, String phone, Role role) {
-    }
+    private record StagingUser(String email, String fullName, String phone, Role role) {}
 }

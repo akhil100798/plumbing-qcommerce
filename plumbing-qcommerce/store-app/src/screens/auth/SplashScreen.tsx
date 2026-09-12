@@ -1,62 +1,58 @@
-﻿import React, { useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Animated,
-  StatusBar,
-  Dimensions,
-  ActivityIndicator,
-} from 'react-native';
-import { colors, spacing, typography } from '../../theme';
-import { getAuthToken, setAuthToken, setRefreshToken, apiClient } from '../../services/api/axiosClient';
-import { tokenStorage } from '../../services/api/tokenStorage';
-import { useAppDispatch } from '../../redux/store';
-import { authSuccess, logout } from '../../redux/slices/authSlice';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
-import { AppStackParamList } from '../../types/navigation';
-import { User } from '../../types';
+import React, { useEffect } from 'react';
+import {
+  ActivityIndicator,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import LogoMark from '../../assets/icons/logo-mark.svg';
-
-const getWindowWidth = () => {
-  try {
-    return Dimensions?.get ? Dimensions.get('window')?.width || 360 : 360;
-  } catch {
-    return 360;
-  }
-};
+import { authSuccess, logout } from '../../redux/slices/authSlice';
+import { useAppDispatch } from '../../redux/store';
+import { apiClient, getAuthToken, setAuthToken, setRefreshToken } from '../../services/api/axiosClient';
+import { tokenStorage } from '../../services/api/tokenStorage';
+import { storeService } from '../../services/store/storeService';
+import { colors, spacing, typography } from '../../theme';
+import { User } from '../../types';
+import { AppStackParamList } from '../../types/navigation';
 
 export function SplashScreen() {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  const spin = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.loop(
-      Animated.timing(spin, {
-        toValue: 1,
-        duration: 1200,
-        useNativeDriver: true,
-      })
-    ).start();
-
     const checkAuth = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
       try {
         const token = await getAuthToken();
         const refreshToken = await tokenStorage.getItem('storeRefreshToken');
+
         if (token && refreshToken) {
           const response = await apiClient.get<User>('/users/me');
           const user = response.data;
+
+          // Strict Role enforcement P1 security gate
+          const allowedRoles = ['STORE_MANAGER', 'ROLE_STORE_MANAGER'];
+          if (!user?.role || !allowedRoles.includes(user.role)) {
+            await setAuthToken(null);
+            await setRefreshToken(null);
+            dispatch(logout());
+            navigation.navigate('Auth', { screen: 'Login' });
+            return;
+          }
+
+          // Resolve assigned store context
+          await storeService.getStoreProfile();
+
           dispatch(authSuccess({ user, token, refreshToken }));
           navigation.navigate('Main', { screen: 'HomeTab' });
         } else {
           dispatch(logout());
           navigation.navigate('Auth', { screen: 'Login' });
         }
-      } catch (e) {
+      } catch {
         await setAuthToken(null);
         await setRefreshToken(null);
         dispatch(logout());
@@ -65,41 +61,34 @@ export function SplashScreen() {
     };
 
     checkAuth();
-  }, [dispatch, navigation, spin]);
-
-  const rotate = spin.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
+  }, [dispatch, navigation]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
 
       <View style={styles.center}>
         <View style={styles.logoBadge}>
           <LogoMark width={48} height={48} stroke={colors.primary} />
           <View style={styles.wrenchBadge}>
-            <Text style={{ fontSize: 14 }}>🛠</Text>
+            <Text style={{ fontSize: 14 }}>🏬</Text>
           </View>
         </View>
 
         <Text style={styles.brand}>
-          Fix<Text style={{ color: colors.success }}>K</Text>art
+          Fix<Text style={{ color: colors.secondary }}>K</Text>art Store
         </Text>
 
         <Text style={styles.tagline}>
-          Parts that keep{'\n'}every repair going.
+          Hardware inventory & partner{'\n'}fulfillment operations.
         </Text>
       </View>
 
       <View style={styles.footer}>
-        <Animated.View style={{ transform: [{ rotate }] }}>
-          <ActivityIndicator color="#FFFFFF" size="small" />
-        </Animated.View>
-        <Text style={styles.footerText}>Partnering in progress</Text>
+        <ActivityIndicator color="#FFFFFF" size="small" />
+        <Text style={styles.footerText}>Restoring store session...</Text>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -108,7 +97,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.primary,
     justifyContent: 'space-between',
-    overflow: 'hidden',
   },
   center: {
     flex: 1,
@@ -137,12 +125,12 @@ const styles = StyleSheet.create({
   },
   brand: {
     fontSize: 32,
-    fontWeight: typography.fontWeight.black,
+    fontWeight: typography.fontWeight.bold,
     color: '#FFFFFF',
     marginBottom: 10,
   },
   tagline: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.xs,
     color: 'rgba(255,255,255,0.85)',
     textAlign: 'center',
     lineHeight: 20,

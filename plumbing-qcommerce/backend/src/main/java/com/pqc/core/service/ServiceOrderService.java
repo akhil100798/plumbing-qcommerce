@@ -7,6 +7,7 @@ import com.pqc.core.dto.ServiceOrderStatusHistoryResponse;
 import com.pqc.core.entity.*;
 import com.pqc.core.repository.OutboxEventRepository;
 import com.pqc.core.repository.ProductOrderRepository;
+import com.pqc.core.repository.PlumberKycRepository;
 import com.pqc.core.repository.ServiceOrderRepository;
 import com.pqc.core.repository.UserRepository;
 import com.pqc.core.repository.ServiceOrderStatusHistoryRepository;
@@ -23,6 +24,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +40,7 @@ public class ServiceOrderService {
     private final CurrentUser currentUser;
     private final ProductOrderRepository productOrderRepository;
     private final ServiceOrderStatusHistoryRepository historyRepository;
+    private final PlumberKycRepository plumberKycRepository;
 
     private void recordHistory(Long orderId, OrderStatus prev, OrderStatus next, User actor, String reason) {
         historyRepository.save(ServiceOrderStatusHistory.builder()
@@ -123,6 +126,7 @@ public class ServiceOrderService {
         if (plumber.getRole() != Role.PLUMBER) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Assigned user is not a plumber");
         }
+        requireOnlinePlumber(plumber);
 
         OrderStatus prev = order.getStatus();
         order.setPlumber(plumber);
@@ -180,12 +184,22 @@ public class ServiceOrderService {
             return order;
         }
 
-        if (order.getStatus() != OrderStatus.ACCEPTED) {
+        Set<OrderStatus> startableStatuses = Set.of(
+                OrderStatus.ACCEPTED,
+                OrderStatus.WORK_RESUMED,
+                OrderStatus.PRODUCTS_COLLECTED,
+                OrderStatus.PLUMBER_COLLECTING_PRODUCTS,
+                OrderStatus.READY_FOR_PRODUCT_PICKUP,
+                OrderStatus.WAITING_FOR_STORE,
+                OrderStatus.MATERIALS_REQUIRED
+        );
+
+        if (!startableStatuses.contains(order.getStatus())) {
             throw conflict("Order cannot be started from status: " + order.getStatus());
         }
 
         if (order.getArrivedAt() == null) {
-            throw conflict("Order must be marked arrived before work can start.");
+            order.setArrivedAt(LocalDateTime.now());
         }
 
         OrderStatus prev = order.getStatus();
@@ -213,9 +227,18 @@ public class ServiceOrderService {
             return order;
         }
 
-        if (order.getStatus() != OrderStatus.IN_PROGRESS
-                && order.getStatus() != OrderStatus.WORK_RESUMED
-                && order.getStatus() != OrderStatus.COMBINED_ORDER) {
+        Set<OrderStatus> completableStatuses = Set.of(
+                OrderStatus.IN_PROGRESS,
+                OrderStatus.WORK_RESUMED,
+                OrderStatus.COMBINED_ORDER,
+                OrderStatus.MATERIALS_REQUIRED,
+                OrderStatus.WAITING_FOR_STORE,
+                OrderStatus.READY_FOR_PRODUCT_PICKUP,
+                OrderStatus.PLUMBER_COLLECTING_PRODUCTS,
+                OrderStatus.PRODUCTS_COLLECTED,
+                OrderStatus.RETURNING_TO_CUSTOMER
+        );
+        if (!completableStatuses.contains(order.getStatus())) {
             throw conflict("Order cannot be completed from status: " + order.getStatus());
         }
 
@@ -452,11 +475,28 @@ public class ServiceOrderService {
     }
 
     public List<ServiceOrder> getOrdersByStatus(OrderStatus status) {
-        Role role = currentUser.require().getRole();
+        User actor = currentUser.require();
+        Role role = actor.getRole();
         if (role != Role.ADMIN && role != Role.PLUMBER && role != Role.STORE_MANAGER) {
             throw new AccessDeniedException("This role cannot browse orders by status");
         }
+        if (role == Role.PLUMBER && status == OrderStatus.PENDING && !isOnlinePlumber(actor)) {
+            return List.of();
+        }
         return orderRepository.findByStatus(status);
+    }
+
+    private void requireOnlinePlumber(User plumber) {
+        if (!isOnlinePlumber(plumber)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Plumber must be online to accept service orders");
+        }
+    }
+
+    private boolean isOnlinePlumber(User plumber) {
+        return plumberKycRepository.findByPlumberId(plumber.getId())
+                .map(kyc -> kyc.getStatus() == PlumberKycStatus.APPROVED
+                        && kyc.getAvailabilityStatus() == PlumberAvailabilityStatus.ONLINE)
+                .orElse(false);
     }
 
     public ServiceOrder getOrderById(Long id) {

@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet } from 'react-native';
 import { borderRadius, colors, shadows } from '../../theme';
 import { animation } from '../../theme/animation';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface AnimatedCardProps {
   children: React.ReactNode;
@@ -14,8 +15,14 @@ export function AnimatedCard({ children, onPress, style, delay = 0 }: AnimatedCa
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reduceMotion) {
+      fadeAnim.setValue(1);
+      slideAnim.setValue(0);
+      return;
+    }
     Animated.sequence([
       Animated.delay(delay),
       Animated.parallel([
@@ -32,10 +39,11 @@ export function AnimatedCard({ children, onPress, style, delay = 0 }: AnimatedCa
         }),
       ]),
     ]).start();
-  }, [delay, fadeAnim, slideAnim]);
+  }, [delay, fadeAnim, slideAnim, reduceMotion]);
 
   const handlePressIn = () => {
     if (!onPress) return;
+    if (reduceMotion) return;
     Animated.spring(scaleAnim, {
       toValue: animation.pressScale,
       useNativeDriver: true,
@@ -46,6 +54,7 @@ export function AnimatedCard({ children, onPress, style, delay = 0 }: AnimatedCa
 
   const handlePressOut = () => {
     if (!onPress) return;
+    if (reduceMotion) return;
     Animated.spring(scaleAnim, {
       toValue: 1,
       useNativeDriver: true,
@@ -71,6 +80,7 @@ export function AnimatedCard({ children, onPress, style, delay = 0 }: AnimatedCa
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           accessibilityRole="button"
+          accessibilityLabel="Open card"
         >
           {children}
         </Pressable>

@@ -9,6 +9,8 @@ const mapBackendStatus = (status: string): MaterialRequest['status'] => {
   switch (status) {
     case 'REQUESTED':
     case 'STORE_REVIEWING':
+    case 'APPROVED':
+    case 'STORE_ACCEPTED':
       return 'PENDING';
     case 'RESERVED':
     case 'PREPARING':
@@ -17,6 +19,9 @@ const mapBackendStatus = (status: string): MaterialRequest['status'] => {
       return 'READY';
     case 'COLLECTED':
       return 'COMPLETED';
+    case 'REJECTED':
+    case 'CANCELLED':
+      return 'REJECTED';
     default:
       return 'PENDING';
   }
@@ -33,12 +38,19 @@ const mapRequest = (request: any): MaterialRequest => ({
     productName: item.productName || 'Item',
     quantity: item.quantity || item.requestedQuantity || 0,
     price: Number(item.price || item.unitPrice || 0),
+    packedQuantity: Number(item.packedQuantity || 0),
   })),
   totalAmount: Number(request.totalAmount || 0),
   status: mapBackendStatus(request.status),
   createdAt: request.createdAt || new Date().toISOString(),
   rawStatus: request.status,
+  notes: request.notes,
+  storeConfirmedAt: request.storeConfirmedAt,
+  preparingStartedAt: request.preparingStartedAt,
+  readyForPickupAt: request.readyForPickupAt,
+  plumberArrivedAt: request.plumberArrivedAt,
   plumberCollectedAt: request.plumberCollectedAt,
+  collectionConfirmedAt: request.collectionConfirmedAt,
 });
 
 const updateLocalRequest = (updated: MaterialRequest) => {
@@ -60,6 +72,10 @@ export const materialRequestService = {
     }
   },
 
+  getStoreRequests: async (): Promise<MaterialRequest[]> => {
+    return materialRequestService.getMaterialRequests();
+  },
+
   getById: async (requestId: number): Promise<MaterialRequest> => {
     try {
       const response = await apiClient.get(ENDPOINTS.materialRequests.details(requestId));
@@ -73,12 +89,45 @@ export const materialRequestService = {
     }
   },
 
+  rejectRequest: async (requestId: number, reason?: string): Promise<MaterialRequest> => {
+    try {
+      const response = await apiClient.post(`/store/material-requests/${requestId}/reject`, { reason: reason || 'Item unavailable' });
+      const mapped = mapRequest(response.data);
+      updateLocalRequest(mapped);
+      return mapped;
+    } catch (e) {
+      throw createBackendUnavailableError('Store material request rejection', e);
+    }
+  },
+
+  updatePackingProgress: async (requestId: number, packedQuantities: Record<number, number>): Promise<MaterialRequest> => {
+    try {
+      const response = await apiClient.post(`/store/material-requests/${requestId}/packing`, { packedQuantities });
+      const mapped = mapRequest(response.data);
+      updateLocalRequest(mapped);
+      return mapped;
+    } catch (e) {
+      throw createBackendUnavailableError('Store packing progress update', e);
+    }
+  },
+
   prepareOrder: async (requestId: number): Promise<MaterialRequest> => {
     try {
       await apiClient.post(ENDPOINTS.materialRequests.approve(requestId));
       await apiClient.post(ENDPOINTS.materialRequests.reserve(requestId));
       const response = await apiClient.post(ENDPOINTS.materialRequests.prepare(requestId));
-      const mapped = mapRequest(response.data);
+      const prepared = mapRequest(response.data);
+      // This store flow has no per-item packing screen. Once preparation is
+      // started, record the full requested quantities as packed so the store
+      // can proceed to the Ready for Pickup action.
+      const packedQuantities = Object.fromEntries(
+        prepared.items.map((item) => [item.productId, item.quantity])
+      );
+      const packedResponse = await apiClient.post(
+        `/store/material-requests/${requestId}/packing`,
+        { packedQuantities }
+      );
+      const mapped = mapRequest(packedResponse.data);
       updateLocalRequest(mapped);
       return mapped;
     } catch (e) {
