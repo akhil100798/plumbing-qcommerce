@@ -16,6 +16,9 @@ export function ChecklistItem({ label, checked, onToggle, disabled = false }: Ch
       activeOpacity={0.7}
       style={styles.container}
       onPress={onToggle}
+      accessibilityRole="checkbox"
+      accessibilityLabel={label}
+      accessibilityState={{ checked, disabled }}
       disabled={disabled}
     >
       <View style={[styles.checkbox, checked && styles.checkboxChecked]}>

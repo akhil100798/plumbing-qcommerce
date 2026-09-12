@@ -14,6 +14,7 @@ import { useDispatch } from 'react-redux';
 import { authSuccess, logout } from '../../redux/slices/authSlice';
 import { profileService } from '../../services/profile/profileService';
 import { tokenStorage } from '../../services/api/tokenStorage';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 import LogoMark from '../../assets/icons/logo-mark.svg';
 import PlumberHero from '../../assets/illustrations/plumber-splash-hero.svg';
@@ -22,6 +23,7 @@ type Props = StackScreenProps<AuthStackParamList, 'Splash'>;
 
 export function SplashScreen({ navigation }: Props) {
   const dispatch = useDispatch();
+  const reduceMotion = useReducedMotion();
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -29,23 +31,18 @@ export function SplashScreen({ navigation }: Props) {
   const floatAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Entrance animation
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 6,
-        tension: 40,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    if (reduceMotion) {
+      fadeAnim.setValue(1);
+      scaleAnim.setValue(1);
+    } else {
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.spring(scaleAnim, { toValue: 1, friction: 6, tension: 40, useNativeDriver: true }),
+      ]).start();
+    }
 
     // Floating animation
-    Animated.loop(
+    const floating = Animated.loop(
       Animated.sequence([
         Animated.timing(floatAnim, {
           toValue: -8,
@@ -58,7 +55,8 @@ export function SplashScreen({ navigation }: Props) {
           useNativeDriver: true,
         }),
       ])
-    ).start();
+    );
+    if (!reduceMotion) floating.start();
 
     const checkAuth = async () => {
       try {
@@ -89,7 +87,7 @@ export function SplashScreen({ navigation }: Props) {
 
     // Check authentication immediately without artificial delay
     checkAuth();
-  }, [navigation, dispatch, fadeAnim, scaleAnim, floatAnim]);
+  }, [navigation, dispatch, fadeAnim, scaleAnim, floatAnim, reduceMotion]);
 
   return (
     <View style={styles.container}>

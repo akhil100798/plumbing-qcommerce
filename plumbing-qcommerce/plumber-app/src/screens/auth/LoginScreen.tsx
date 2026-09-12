@@ -28,9 +28,9 @@ type Props = StackScreenProps<AuthStackParamList, 'Login'>;
 export function LoginScreen({ navigation }: Props) {
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState<'mobile' | 'email'>('mobile');
-  const [phone, setPhone] = useState('9876543210');
-  const [email, setEmail] = useState('plumber@plumbcommerce.com');
-  const [password, setPassword] = useState('password');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
@@ -83,6 +83,9 @@ export function LoginScreen({ navigation }: Props) {
             <TouchableOpacity
               style={[styles.tabButton, activeTab === 'mobile' && styles.tabButtonActive]}
               onPress={() => setActiveTab('mobile')}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: activeTab === 'mobile' }}
+              accessibilityLabel="Log in with mobile number"
             >
               <Text style={[styles.tabText, activeTab === 'mobile' && styles.tabTextActive]}>
                 Mobile
@@ -91,6 +94,9 @@ export function LoginScreen({ navigation }: Props) {
             <TouchableOpacity
               style={[styles.tabButton, activeTab === 'email' && styles.tabButtonActive]}
               onPress={() => setActiveTab('email')}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: activeTab === 'email' }}
+              accessibilityLabel="Log in with email"
             >
               <Text style={[styles.tabText, activeTab === 'email' && styles.tabTextActive]}>
                 Email
@@ -113,6 +119,9 @@ export function LoginScreen({ navigation }: Props) {
                     maxLength={10}
                     value={phone}
                     onChangeText={(val) => setPhone(val.replace(/\D/g, ''))}
+                    accessibilityLabel="Mobile number"
+                    textContentType="telephoneNumber"
+                    autoComplete="tel"
                   />
                 </View>
               </View>
@@ -130,6 +139,9 @@ export function LoginScreen({ navigation }: Props) {
                       autoCorrect={false}
                       value={email}
                       onChangeText={setEmail}
+                      accessibilityLabel="Email address"
+                      textContentType="emailAddress"
+                      autoComplete="email"
                     />
                   </View>
                 </View>
@@ -144,6 +156,9 @@ export function LoginScreen({ navigation }: Props) {
                       secureTextEntry
                       value={password}
                       onChangeText={setPassword}
+                      accessibilityLabel="Password"
+                      textContentType="password"
+                      autoComplete="password"
                     />
                   </View>
                 </View>
@@ -154,6 +169,9 @@ export function LoginScreen({ navigation }: Props) {
               <TouchableOpacity
                 style={styles.rememberMe}
                 onPress={() => setRememberMe(!rememberMe)}
+                accessibilityRole="checkbox"
+                accessibilityLabel="Remember me"
+                accessibilityState={{ checked: rememberMe }}
               >
                 <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
                   {rememberMe && <Text style={styles.checkmark}>✓</Text>}
@@ -161,7 +179,7 @@ export function LoginScreen({ navigation }: Props) {
                 <Text style={styles.rememberText}>Remember me</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => Alert.alert('Forgot Password', 'Password reset is not configured in staging. Use plumber@plumbcommerce.com / password.')}>
+              <TouchableOpacity onPress={() => Alert.alert('Forgot Password', 'Password reset is not available yet. Please contact support.')} accessibilityRole="button" accessibilityLabel="Forgot password">
                 <Text style={styles.forgotText}>Forgot Password?</Text>
               </TouchableOpacity>
             </View>
@@ -183,6 +201,8 @@ export function LoginScreen({ navigation }: Props) {
               <TouchableOpacity
                 style={styles.socialButton}
                 onPress={() => Alert.alert('Google login', 'Google sign-in is not configured for the plumber app staging build yet.')}
+                accessibilityRole="button"
+                accessibilityLabel="Google sign in unavailable"
               >
                 <Text style={styles.googleBadge}>G</Text>
                 <Text style={styles.socialLabel}>Google</Text>
@@ -191,6 +211,8 @@ export function LoginScreen({ navigation }: Props) {
               <TouchableOpacity
                 style={styles.socialButton}
                 onPress={() => Alert.alert('Facebook login', 'Facebook sign-in is not configured for the plumber app staging build yet.')}
+                accessibilityRole="button"
+                accessibilityLabel="Facebook sign in unavailable"
               >
                 <Text style={styles.fbBadge}>f</Text>
                 <Text style={styles.socialLabel}>Facebook</Text>

@@ -49,7 +49,7 @@ export function DrawerMenuScreen({ navigation }: Props) {
   const { plumber } = useSelector((state: RootState) => state.auth);
   const [isOnline, setIsOnline] = useState<boolean>(plumber?.availability ?? true);
 
-  const plumberName = plumber?.fullName || 'Ramesh Kumar';
+  const plumberName = plumber?.fullName || 'FixKart Technician';
 
   const handleToggleOnline = async (val: boolean) => {
     setIsOnline(val);
@@ -109,6 +109,8 @@ export function DrawerMenuScreen({ navigation }: Props) {
             style={styles.profileInfo}
             onPress={() => navigation?.navigate?.('Profile')}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="View profile"
           >
             <Avatar name={plumberName} size={48} />
             <View style={styles.profileText}>
@@ -124,9 +126,11 @@ export function DrawerMenuScreen({ navigation }: Props) {
             <Switch
               value={isOnline}
               onValueChange={handleToggleOnline}
-              trackColor={{ false: '#D1D5DB', true: colors.success }}
-              thumbColor="#FFFFFF"
-              ios_backgroundColor="#D1D5DB"
+              trackColor={{ false: colors.border, true: colors.success }}
+              thumbColor={colors.surfaceContainerLowest}
+              ios_backgroundColor={colors.border}
+              accessibilityLabel="Toggle availability"
+              accessibilityState={{ checked: isOnline }}
             />
           </View>
         </View>
@@ -143,12 +147,14 @@ export function DrawerMenuScreen({ navigation }: Props) {
                 style={styles.menuItem}
                 onPress={() => handleNavigate(item)}
                 activeOpacity={0.6}
+                accessibilityRole="button"
+                accessibilityLabel={item.label}
               >
                 <View style={styles.menuIconContainer}>
-                  <IconComp width={20} height={20} stroke="#4B5563" />
+                  <IconComp width={20} height={20} stroke={colors.textSecondary} />
                 </View>
                 <Text style={styles.menuLabel}>{item.label}</Text>
-                <ArrowRightIcon width={18} height={18} stroke="#C4C9D0" />
+                <ArrowRightIcon width={18} height={18} stroke={colors.borderDark} />
               </TouchableOpacity>
             );
           })}
@@ -161,6 +167,8 @@ export function DrawerMenuScreen({ navigation }: Props) {
           style={styles.menuItem}
           onPress={handleLogout}
           activeOpacity={0.6}
+          accessibilityRole="button"
+          accessibilityLabel="Logout"
         >
           <View style={styles.menuIconContainer}>
             <LogoutIcon width={20} height={20} stroke={colors.error} />
@@ -175,7 +183,7 @@ export function DrawerMenuScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surfaceContainerLowest,
   },
   container: {
     flex: 1,
@@ -224,7 +232,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#F0F1F3',
+    backgroundColor: colors.surfaceContainerLow,
     marginVertical: 12,
   },
   menuList: {

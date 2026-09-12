@@ -26,22 +26,9 @@ interface MessageItem {
 }
 
 export function ChatScreen({ route, navigation }: Props) {
-  const { name, role } = route.params;
+  const { name } = route.params;
 
-  const [messages, setMessages] = useState<MessageItem[]>([
-    {
-      id: '1',
-      sender: 'other',
-      text: `Hello! I need plumbing work. Are you arriving soon?`,
-      time: '10:18 AM',
-    },
-    {
-      id: '2',
-      sender: 'me',
-      text: `Hi! Yes, I have accepted the request and am en route. Will reach in 10 minutes.`,
-      time: '10:19 AM',
-    },
-  ]);
+  const [messages, setMessages] = useState<MessageItem[]>([]);
 
   const [inputText, setInputText] = useState('');
 
@@ -58,18 +45,6 @@ export function ChatScreen({ route, navigation }: Props) {
     setMessages((prev) => [...prev, newMsg]);
     setInputText('');
 
-    // Auto reply simulation for customer
-    if (role === 'Customer') {
-      setTimeout(() => {
-        const reply: MessageItem = {
-          id: String(Date.now() + 1),
-          sender: 'other',
-          text: `Okay, thank you! I will be waiting.`,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        };
-        setMessages((prev) => [...prev, reply]);
-      }, 2000);
-    }
   };
 
   return (
@@ -100,6 +75,7 @@ export function ChatScreen({ route, navigation }: Props) {
           }}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={<Text style={styles.emptyText}>No messages yet. Send a message to {name}.</Text>}
         />
 
         {/* Chat Input Bar */}
@@ -110,8 +86,11 @@ export function ChatScreen({ route, navigation }: Props) {
             placeholderTextColor={colors.textMuted}
             value={inputText}
             onChangeText={setInputText}
+            accessibilityLabel={`Message ${name}`}
+            returnKeyType="send"
+            onSubmitEditing={handleSend}
           />
-          <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
+          <TouchableOpacity style={styles.sendButton} onPress={handleSend} disabled={!inputText.trim()} accessibilityRole="button" accessibilityLabel="Send message" accessibilityState={{ disabled: !inputText.trim() }}>
             <Text style={styles.sendText}>Send</Text>
           </TouchableOpacity>
         </View>
@@ -210,4 +189,5 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
   },
+  emptyText: { color: colors.textMuted, textAlign: 'center', padding: spacing.xl },
 });

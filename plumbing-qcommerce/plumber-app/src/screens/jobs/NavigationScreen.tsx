@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, Alert, TouchableOpacity, SafeAreaView } from 'react-native';
+import { StyleSheet, Text, View, Alert, TouchableOpacity, SafeAreaView, Linking } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -36,16 +36,19 @@ export function NavigationScreen({ route, navigation }: Props) {
       );
       navigation.replace('ReachedCustomer', { jobId });
     } catch (err: any) {
-      Alert.alert('Arrival failed', err?.message || 'Could not mark this job as arrived. Proceeding to arrival confirmation.');
-      navigation.replace('ReachedCustomer', { jobId });
+      Alert.alert('Arrival failed', err?.message || 'Could not mark this job as arrived. Please retry.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleCall = () => {
-    const phone = activeJob?.customer.phone || '+91 98765 43210';
-    Alert.alert('Contact Customer', `Calling customer at ${phone}`);
+    const phone = activeJob?.customer.phone;
+    if (!phone) {
+      Alert.alert('Phone unavailable', 'This customer has not provided a phone number.');
+      return;
+    }
+    Linking.openURL(`tel:${phone}`).catch(() => Alert.alert('Unable to call', 'The phone app could not be opened.'));
   };
 
   return (
@@ -71,17 +74,17 @@ export function NavigationScreen({ route, navigation }: Props) {
             <Text style={styles.turnDistance}>350 m</Text>
             <Text style={styles.turnDesc}>Turn right{'\n'}100 Feet Road</Text>
           </View>
-          <TouchableOpacity style={styles.recenterBtn}>
+          <TouchableOpacity style={styles.recenterBtn} accessibilityRole="button" accessibilityLabel="Recenter route map" onPress={() => Alert.alert('Recenter', 'Live location is not available on this device.') }>
             <LocationPinIcon width={16} height={16} stroke={colors.textPrimary} />
           </TouchableOpacity>
         </View>
 
         {/* Floating Map Controls */}
         <View style={styles.mapControls}>
-          <TouchableOpacity style={styles.controlBtn} onPress={() => Alert.alert('Recenter', 'Map centered on live position.')}>
+          <TouchableOpacity style={styles.controlBtn} onPress={() => Alert.alert('Recenter', 'Live location is not available on this device.')} accessibilityRole="button" accessibilityLabel="Recenter map">
             <NavigationIcon width={16} height={16} stroke={colors.textPrimary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.controlBtn} onPress={handleCall}>
+          <TouchableOpacity style={styles.controlBtn} onPress={handleCall} accessibilityRole="button" accessibilityLabel="Call customer">
             <PhoneIcon width={16} height={16} stroke={colors.textPrimary} />
           </TouchableOpacity>
         </View>
@@ -97,6 +100,9 @@ export function NavigationScreen({ route, navigation }: Props) {
           style={styles.endTripBtn}
           onPress={handleEndTrip}
           disabled={loading}
+          accessibilityRole="button"
+          accessibilityLabel="Confirm arrival at customer"
+          accessibilityState={{ disabled: loading, busy: loading }}
         >
           <Text style={styles.endTripLabel}>{loading ? 'Arriving...' : 'End Trip'}</Text>
         </TouchableOpacity>

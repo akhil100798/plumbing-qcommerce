@@ -17,6 +17,8 @@ import { apiClient } from '../../services/api/axiosClient';
 import { ENDPOINTS } from '../../services/api/endpoints';
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
+import { StatusChip } from '../../components/common/StatusChip';
+import { mapJobStatus } from '../../utils/statusMapping';
 
 type Props = StackScreenProps<AppStackParamList, 'JobHistory' | any>;
 
@@ -35,9 +37,11 @@ export function JobHistoryScreen({ navigation }: Props) {
   const [jobs, setJobs] = useState<HistoryJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchHistory = useCallback(async () => {
     try {
+      setError(null);
       const response = await apiClient.get<any[]>(ENDPOINTS.ORDERS.PLUMBER_ASSIGNED);
       const orders = response.data || [];
       const mapped: HistoryJob[] = orders.map((o: any) => ({
@@ -48,8 +52,8 @@ export function JobHistoryScreen({ navigation }: Props) {
         time: o.completedAt ? new Date(o.completedAt).toLocaleDateString() : 'Recent',
       }));
       setJobs(mapped);
-    } catch {
-      setJobs([]);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Unable to load job history.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -94,6 +98,8 @@ export function JobHistoryScreen({ navigation }: Props) {
           <ActivityIndicator color={colors.primary} />
           <Text style={styles.loadingText}>Fetching Job History...</Text>
         </View>
+      ) : error ? (
+        <View style={styles.center}><Text style={styles.errorText}>{error}</Text><TouchableOpacity onPress={fetchHistory} accessibilityRole="button" accessibilityLabel="Retry loading job history"><Text style={styles.retryText}>Retry</Text></TouchableOpacity></View>
       ) : (
         <FlatList
           data={filteredJobs}
@@ -102,8 +108,8 @@ export function JobHistoryScreen({ navigation }: Props) {
           renderItem={({ item }) => {
             const isCancelled = item.status === 'Cancelled';
             return (
-              <TouchableOpacity style={styles.row} activeOpacity={0.7}>
-                <View style={[styles.iconCircle, isCancelled && { backgroundColor: '#FEE2E2' }]}>
+              <View style={styles.row}>
+                <View style={[styles.iconCircle, isCancelled && styles.iconCircleCancelled]}>
                   <ActiveJobIcon
                     width={16}
                     height={16}
@@ -116,12 +122,10 @@ export function JobHistoryScreen({ navigation }: Props) {
                   <Text style={styles.jobAmount}>₹{item.amount}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={[styles.badge, { color: isCancelled ? colors.error : colors.success }]}>
-                    {item.status}
-                  </Text>
+                  <StatusChip label={mapJobStatus(item.status).label} type={isCancelled ? 'error' : 'success'} />
                   <Text style={styles.jobTime}>{item.time}</Text>
                 </View>
-              </TouchableOpacity>
+              </View>
             );
           }}
           contentContainerStyle={styles.list}
@@ -161,7 +165,7 @@ const styles = StyleSheet.create({
   },
   tabActive: { backgroundColor: colors.primaryContainer || colors.primary },
   tabLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary, fontWeight: typography.fontWeight.medium },
-  tabLabelActive: { color: '#FFFFFF', fontWeight: typography.fontWeight.bold },
+  tabLabelActive: { color: colors.onPrimary, fontWeight: typography.fontWeight.bold },
   list: { padding: spacing.md, paddingBottom: spacing.giant },
   row: {
     flexDirection: 'row',
@@ -182,11 +186,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: spacing.sm,
   },
+  iconCircleCancelled: { backgroundColor: colors.errorLight },
   jobId: { fontSize: typography.fontSize.xs, color: colors.textMuted },
   jobTitle: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, marginTop: 2 },
   jobAmount: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: 2 },
   jobTime: { fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: 4 },
   badge: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold },
+  errorText: { color: colors.error, textAlign: 'center', paddingHorizontal: spacing.lg },
+  retryText: { color: colors.primary, fontWeight: typography.fontWeight.bold, marginTop: spacing.sm },
   separator: { height: spacing.sm },
   emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingTop: spacing.giant },
   emptyIcon: { fontSize: 32, marginBottom: spacing.xs },

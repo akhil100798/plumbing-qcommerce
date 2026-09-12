@@ -1,8 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +12,8 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { AppHeader } from '../../components/common/AppHeader';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
+import { ErrorState, LoadingState } from '../../components/common/FeedbackStates';
+import { StatusChip } from '../../components/common/StatusChip';
 import { materialService } from '../../services/materials/materialService';
 import { materialResumeRoute } from './materialResumeRoute';
 import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
@@ -196,10 +196,7 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
           if (navigation.canGoBack()) navigation.goBack();
           else navigation.navigate('Main', { screen: 'Home' });
         }} />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading status…</Text>
-        </View>
+          <LoadingState message="Loading material pickup status..." />
       </ScreenWrapper>
     );
   }
@@ -211,16 +208,7 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
           if (navigation.canGoBack()) navigation.goBack();
           else navigation.navigate('Main', { screen: 'Home' });
         }} />
-        <View style={styles.center}>
-          <Text style={styles.errorIcon}>⚠️</Text>
-          <Text style={styles.errorTitle}>Could Not Load Tracking</Text>
-          <Text style={styles.errorMessage}>
-            {error || 'Material request details are unavailable.'}
-          </Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={fetchDetail}>
-            <Text style={styles.retryBtnText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
+        <ErrorState message={error || 'Material request details are unavailable.'} onRetry={fetchDetail} />
       </ScreenWrapper>
     );
   }
@@ -239,8 +227,8 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
       case 'STORE_REVIEWING':
       case 'APPROVED':
         return {
-          bg: '#FFFBEB',
-          border: '#FDE68A',
+          bg: colors.warningContainer,
+          border: colors.warning,
           icon: '⏳',
           title: 'Request Sent to Store',
           desc: 'Your material request has been submitted. Store manager will pack your materials shortly.',
@@ -248,32 +236,32 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
       case 'RESERVED':
       case 'PREPARING':
         return {
-          bg: '#E7F5FE',
-          border: '#B9E2FE',
+          bg: colors.primaryLight,
+          border: colors.primaryContainer,
           icon: '📦',
           title: 'Store is Packing Materials',
           desc: 'The store manager is preparing your items. You will be notified as soon as it is ready for pickup.',
         };
       case 'READY_FOR_PICKUP':
         return {
-          bg: '#ECFDF5',
-          border: '#A7F3D0',
+          bg: colors.successLight,
+          border: colors.success,
           icon: '🛵',
           title: 'Materials Ready for Pickup!',
           desc: 'Travel to the hardware store. Click "I\'ve Arrived at the Store" when you arrive.',
         };
       case 'PLUMBER_AT_STORE':
         return {
-          bg: '#EFF6FF',
-          border: '#BFDBFE',
+          bg: colors.primaryLight,
+          border: colors.primaryContainer,
           icon: '🏪',
           title: 'At Store — Handover Items',
           desc: `Show Request #${productOrderId} to store staff, collect items, and tap "I've Collected the Materials".`,
         };
       case 'COLLECTED':
         return {
-          bg: '#F0FDF4',
-          border: '#86EFAC',
+          bg: colors.successLight,
+          border: colors.success,
           icon: '✅',
           title: 'Materials Collected!',
           desc: 'Return to customer site and click "Continue Job" to resume work.',
@@ -284,22 +272,18 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
   })();
 
   return (
-    <ScreenWrapper safeAreaStyle={Platform.OS === 'web' ? { height: '100vh' as any, maxHeight: '100vh' as any, overflow: 'hidden' } : undefined}>
+    <ScreenWrapper>
       <AppHeader title="Material Pickup Status" onBackPress={() => navigation.goBack()} />
 
-      <View style={styles.mainLayout}>
+        <View style={styles.mainLayout}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={true}>
 
           {/* Flash Toast Banner */}
-          <View style={styles.flashBanner}>
-            <Text style={styles.flashText}>✓ Material request submitted successfully!</Text>
-          </View>
-
           {/* Guidance Card */}
           {guidance && (
-            <View style={[styles.guidanceCard, { backgroundColor: guidance.bg, borderColor: guidance.border }]}>
+              <View style={[styles.guidanceCard, { backgroundColor: guidance.bg, borderColor: guidance.border }]}>
               <View style={styles.guidanceRow}>
-                <Text style={styles.guidanceIcon}>{guidance.icon}</Text>
+              <Text style={styles.guidanceIcon} accessibilityElementsHidden>{guidance.icon}</Text>
                 <View style={styles.guidanceContent}>
                   <Text style={styles.guidanceTitle}>{guidance.title}</Text>
                   <Text style={styles.guidanceDesc}>{guidance.desc}</Text>
@@ -316,17 +300,15 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
           </View>
 
           {/* Status badge */}
-          {(isCancelled || isRejected) && (
+            {(isCancelled || isRejected) && (
             <View style={[styles.statusBadge, styles.badgeDanger]}>
-              <Text style={styles.badgeText}>
-                {isCancelled ? '⚠ Request Cancelled' : '✕ Request Rejected by Store'}
-              </Text>
+              <StatusChip label={isCancelled ? 'Request Cancelled' : 'Request Rejected by Store'} type="error" />
               {detail.notes && <Text style={styles.badgeNote}>{detail.notes}</Text>}
             </View>
           )}
           {isCollected && (
             <View style={[styles.statusBadge, styles.badgeSuccess]}>
-              <Text style={styles.badgeText}>✓ Materials Collected — Resume Work!</Text>
+              <StatusChip label="Materials Collected — Resume Work" type="success" />
             </View>
           )}
 
@@ -472,28 +454,13 @@ const styles = StyleSheet.create({
   },
   content: { padding: spacing.layout, paddingBottom: spacing.giant },
   stickyFooter: {
-    backgroundColor: colors.surface || '#FFFFFF',
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: colors.border || '#E5E7EB',
+    borderTopColor: colors.border,
     paddingHorizontal: spacing.layout,
     paddingVertical: spacing.md,
     gap: spacing.xs,
     ...shadows.md,
-  },
-  flashBanner: {
-    backgroundColor: '#DCFCE7',
-    borderWidth: 1,
-    borderColor: '#86EFAC',
-    borderRadius: borderRadius.md,
-    padding: spacing.sm,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.md,
-  },
-  flashText: {
-    color: '#166534',
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    textAlign: 'center',
   },
   guidanceCard: {
     borderRadius: borderRadius.lg,

@@ -47,7 +47,7 @@ export function StartWorkScreen({ route, navigation }: Props) {
     );
   }, [checked, discussed]);
 
-  const customerName = activeJob?.customer.fullName || 'Anil Kumar';
+  const customerName = activeJob?.customer.fullName || 'Customer';
   const customerInitial = customerName.charAt(0).toUpperCase();
 
   const handleStartWorkDirect = async () => {
@@ -87,8 +87,7 @@ export function StartWorkScreen({ route, navigation }: Props) {
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       })
     );
-    // Handoff to Phase 5 Material Selection Flow
-    navigation.navigate('MaterialRequest', { jobId, storeId: 1, storeName: 'Central Hardware Hub' });
+    navigation.navigate('StoreSelection', { jobId });
   };
 
   return (
@@ -138,12 +137,14 @@ export function StartWorkScreen({ route, navigation }: Props) {
           <TouchableOpacity
             style={styles.materialsBtn}
             onPress={handleMaterialsRequired}
+            accessibilityRole="button"
+            accessibilityLabel="Select materials required for this job"
           >
-            <Text style={styles.materialsBtnText}>🛒 Materials Required</Text>
+            <Text style={styles.materialsBtnText}>Materials Required</Text>
           </TouchableOpacity>
 
           <PrimaryButton
-            title={loading ? 'Starting...' : '🔧 Start Direct Work'}
+            title={loading ? 'Starting...' : 'Start Direct Work'}
             onPress={handleStartWorkDirect}
             loading={loading}
             disabled={!canStart}

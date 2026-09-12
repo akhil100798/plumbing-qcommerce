@@ -184,7 +184,7 @@ export function ProfileScreen(_: Props) {
                 {statusText}
               </Text>
               {(kyc?.status === 'NOT_SUBMITTED' || kyc?.status === 'REJECTED') && (
-                <TouchableOpacity style={styles.kycBtn} onPress={() => setShowForm(!showForm)}>
+               <TouchableOpacity style={styles.kycBtn} onPress={() => setShowForm(!showForm)} accessibilityRole="button" accessibilityLabel={showForm ? 'Close KYC form' : 'Upload verification documents'}>
                   <Text style={styles.kycBtnText}>{showForm ? 'Cancel' : 'Upload Documents'}</Text>
                 </TouchableOpacity>
               )}
@@ -202,6 +202,8 @@ export function ProfileScreen(_: Props) {
               placeholder="12-digit Aadhaar Number"
               keyboardType="number-pad"
               maxLength={12}
+              accessibilityLabel="Aadhaar number"
+              secureTextEntry
             />
             <TextInput
               style={styles.input}
@@ -210,6 +212,8 @@ export function ProfileScreen(_: Props) {
               placeholder="10-character PAN Card Number"
               autoCapitalize="characters"
               maxLength={10}
+              accessibilityLabel="PAN number"
+              autoCorrect={false}
             />
             <TextInput
               style={styles.input}
@@ -217,6 +221,8 @@ export function ProfileScreen(_: Props) {
               onChangeText={setBankAccountNumber}
               placeholder="Bank Account Number"
               keyboardType="number-pad"
+              accessibilityLabel="Bank account number"
+              secureTextEntry
             />
             <TextInput
               style={styles.input}
@@ -224,14 +230,16 @@ export function ProfileScreen(_: Props) {
               onChangeText={setExperienceYears}
               placeholder="Years of Plumbing Experience"
               keyboardType="number-pad"
+              accessibilityLabel="Years of plumbing experience"
             />
             <TextInput
               style={styles.input}
               value={serviceAreas}
               onChangeText={setServiceAreas}
               placeholder="Primary Service Areas (e.g. Indiranagar, Koramangala)"
+              accessibilityLabel="Primary service areas"
             />
-            <TouchableOpacity style={styles.submitBtn} onPress={submitKyc} disabled={submitting}>
+            <TouchableOpacity style={styles.submitBtn} onPress={submitKyc} disabled={submitting} accessibilityRole="button" accessibilityLabel="Submit verification documents" accessibilityState={{ disabled: submitting, busy: submitting }}>
               <Text style={styles.submitBtnText}>
                 {submitting ? 'Submitting Documents...' : 'Submit Verification'}
               </Text>
@@ -242,18 +250,18 @@ export function ProfileScreen(_: Props) {
         {/* Support & Settings Menu Links */}
         <View style={styles.card}>
           <Text style={styles.cardHeader}>Partner Support & Legal</Text>
-          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('JobHistory' as any)}>
-            <Text style={styles.menuText}>📋 Service History</Text>
+          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('JobHistory' as any)} accessibilityRole="button" accessibilityLabel="Open service history">
+            <Text style={styles.menuText}>Service History</Text>
             <Text style={styles.arrowText}>→</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Chat' as any)}>
-            <Text style={styles.menuText}>💬 Chat with Support</Text>
+          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Chat', { name: 'Support', role: 'Support' })} accessibilityRole="button" accessibilityLabel="Chat with support">
+            <Text style={styles.menuText}>Chat with Support</Text>
             <Text style={styles.arrowText}>→</Text>
           </TouchableOpacity>
         </View>
 
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} accessibilityRole="button" accessibilityLabel="Sign out of Plumber account">
           <Text style={styles.logoutText}>Sign Out of Plumber Account</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -364,13 +372,13 @@ const styles = StyleSheet.create({
   menuText: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
   arrowText: { fontSize: 16, color: colors.textMuted },
   logoutBtn: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: colors.errorLight,
     borderWidth: 1,
-    borderColor: '#EF4444',
+    borderColor: colors.error,
     padding: spacing.md,
     borderRadius: borderRadius.md,
     alignItems: 'center',
     marginTop: spacing.md,
   },
-  logoutText: { color: '#EF4444', fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold },
+  logoutText: { color: colors.error, fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold },
 });

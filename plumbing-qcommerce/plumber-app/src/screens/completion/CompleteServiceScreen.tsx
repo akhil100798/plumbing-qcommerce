@@ -36,7 +36,7 @@ export function CompleteServiceScreen({ route, navigation }: Props) {
   const [currentJob, setCurrentJob] = useState<ActiveJob | null>(activeJob);
   const [status, setStatus] = useState<string>(activeJob?.status || 'started');
 
-  const serviceCharge = currentJob?.estimatedEarnings || activeJob?.estimatedEarnings || 299;
+  const serviceCharge = currentJob?.estimatedEarnings || activeJob?.estimatedEarnings || 0;
   const partsCharge = activeJob?.partsCharge || materialCost || 0;
   const totalAmount = serviceCharge + partsCharge;
 
@@ -178,7 +178,7 @@ export function CompleteServiceScreen({ route, navigation }: Props) {
           <Text style={styles.sectionLabel}>Service & Customer</Text>
           <Text style={styles.jobTitle}>{activeJob?.issueDescription || 'Plumbing Service Repair'}</Text>
           <Text style={styles.customerName}>Customer: {activeJob?.customer.fullName || 'Customer'}</Text>
-          <Text style={styles.addressText}>📍 {activeJob?.address || 'Customer Location'}</Text>
+          <Text style={styles.addressText}>{activeJob?.address || 'Customer location unavailable'}</Text>
         </View>
 
         <View style={styles.card}>
