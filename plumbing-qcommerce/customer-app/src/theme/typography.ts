@@ -1,100 +1,96 @@
-export const typography = {
-  fontFamily: {
-    heading: 'Manrope',
-    body: 'Inter',
-    label: 'Inter',
-    regular: 'Inter',
-    medium: 'Inter',
-    bold: 'Inter',
-    black: 'Inter',
+import { TextStyle } from 'react-native';
+
+export const fonts = {
+  headline: 'Manrope',
+  body: 'Inter',
+  label: 'Inter',
+  mono: 'JetBrains Mono',
+} as const;
+
+export interface TypographyTokens {
+  display: TextStyle;
+  h1: TextStyle;
+  h2: TextStyle;
+  h3: TextStyle;
+  h4: TextStyle;
+  body: TextStyle;
+  body2: TextStyle;
+  caption: TextStyle;
+  label: TextStyle;
+  button: TextStyle;
+  data: TextStyle;
+}
+
+export const typography: TypographyTokens = {
+  display: {
+    fontFamily: fonts.headline,
+    fontSize: 32,
+    fontWeight: '700',
+    lineHeight: 38,
+    letterSpacing: -0.75,
   },
-  fontSize: {
-    labelSm: 10,
-    xs: 12,
-    sm: 14,
-    md: 16,
-    lg: 18,
-    xl: 20,
-    xxl: 24,
-    heading: 32,
+  h1: {
+    fontFamily: fonts.headline,
+    fontSize: 26,
+    fontWeight: '700',
+    lineHeight: 32,
+    letterSpacing: -0.5,
   },
-  lineHeight: {
-    labelSm: 14,
-    tight: 16,
-    normal: 20,
-    relaxed: 24,
-    headingMd: 28,
-    headingLg: 32,
-    headingXl: 40,
+  h2: {
+    fontFamily: fonts.headline,
+    fontSize: 22,
+    fontWeight: '700',
+    lineHeight: 28,
+    letterSpacing: -0.3,
   },
-  fontWeight: {
-    regular: '400' as const,
-    medium: '500' as const,
-    semibold: '600' as const,
-    bold: '700' as const,
-    black: '900' as const,
+  h3: {
+    fontFamily: fonts.headline,
+    fontSize: 18,
+    fontWeight: '600',
+    lineHeight: 24,
   },
-  styles: {
-    headlineXl: {
-      fontFamily: 'Manrope',
-      fontSize: 32,
-      fontWeight: '700' as const,
-      lineHeight: 40,
-    },
-    headlineLg: {
-      fontFamily: 'Manrope',
-      fontSize: 24,
-      fontWeight: '700' as const,
-      lineHeight: 32,
-    },
-    headlineMd: {
-      fontFamily: 'Manrope',
-      fontSize: 20,
-      fontWeight: '600' as const,
-      lineHeight: 28,
-    },
-    headlineSm: {
-      fontFamily: 'Manrope',
-      fontSize: 18,
-      fontWeight: '600' as const,
-      lineHeight: 24,
-    },
-    bodyLg: {
-      fontFamily: 'Inter',
-      fontSize: 16,
-      fontWeight: '400' as const,
-      lineHeight: 24,
-    },
-    bodyMd: {
-      fontFamily: 'Inter',
-      fontSize: 14,
-      fontWeight: '400' as const,
-      lineHeight: 20,
-    },
-    bodySm: {
-      fontFamily: 'Inter',
-      fontSize: 12,
-      fontWeight: '400' as const,
-      lineHeight: 16,
-    },
-    labelLg: {
-      fontFamily: 'Inter',
-      fontSize: 14,
-      fontWeight: '600' as const,
-      lineHeight: 20,
-    },
-    labelMd: {
-      fontFamily: 'Inter',
-      fontSize: 12,
-      fontWeight: '500' as const,
-      lineHeight: 16,
-    },
-    labelSm: {
-      fontFamily: 'Inter',
-      fontSize: 10,
-      fontWeight: '500' as const,
-      lineHeight: 14,
-    },
+  h4: {
+    fontFamily: fonts.headline,
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 22,
+  },
+  body: {
+    fontFamily: fonts.body,
+    fontSize: 15,
+    fontWeight: '400',
+    lineHeight: 22,
+  },
+  body2: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    fontWeight: '400',
+    lineHeight: 20,
+  },
+  caption: {
+    fontFamily: fonts.label,
+    fontSize: 12,
+    fontWeight: '400',
+    lineHeight: 16,
+  },
+  label: {
+    fontFamily: fonts.label,
+    fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 14,
+    letterSpacing: 0.5,
+  },
+  button: {
+    fontFamily: fonts.headline,
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 20,
+    letterSpacing: 0.3,
+  },
+  data: {
+    fontFamily: fonts.mono,
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 18,
   },
 };
-
