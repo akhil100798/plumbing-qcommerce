@@ -412,9 +412,14 @@ public class PlumberMaterialService {
     public MaterialRequestDetailResponse collect(Long id) {
         ProductOrder request = plumberRequestEntity(id);
         User plumber = role(Role.PLUMBER);
-        if (request.getStatus() != ProductOrderStatus.PLUMBER_AT_STORE || request.getPlumberCollectedAt() != null)
+        if (request.getPlumberCollectedAt() != null || request.getStatus() == ProductOrderStatus.COLLECTED || request.getStatus() == ProductOrderStatus.DELIVERED) {
+            return toDetail(request);
+        }
+        if (request.getStatus() != ProductOrderStatus.PLUMBER_AT_STORE && request.getStatus() != ProductOrderStatus.READY_FOR_PICKUP) {
             throw error(HttpStatus.CONFLICT, "Collection is not allowed or was already recorded");
+        }
         ProductOrderStatus prev = request.getStatus();
+        request.setStatus(ProductOrderStatus.PLUMBER_AT_STORE);
         request.setPlumberCollectedAt(LocalDateTime.now());
         request.setCollectedByPlumber(plumber);
         ProductOrder saved = requests.save(request);

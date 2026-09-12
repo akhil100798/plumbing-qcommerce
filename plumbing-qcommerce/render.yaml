@@ -10,7 +10,7 @@ services:
         value: prod,staging
       - key: APP_SCHEDULING_ENABLED
         value: false
-      - key: APP_DEMO_SEED_ENABLED
+      - key: APP_SEED_DEMO_ENABLED
         value: true
       - key: PORT
         value: 10000

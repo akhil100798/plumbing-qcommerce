@@ -116,7 +116,18 @@ export const materialRequestService = {
       await apiClient.post(ENDPOINTS.materialRequests.approve(requestId));
       await apiClient.post(ENDPOINTS.materialRequests.reserve(requestId));
       const response = await apiClient.post(ENDPOINTS.materialRequests.prepare(requestId));
-      const mapped = mapRequest(response.data);
+      const prepared = mapRequest(response.data);
+      // This store flow has no per-item packing screen. Once preparation is
+      // started, record the full requested quantities as packed so the store
+      // can proceed to the Ready for Pickup action.
+      const packedQuantities = Object.fromEntries(
+        prepared.items.map((item) => [item.productId, item.quantity])
+      );
+      const packedResponse = await apiClient.post(
+        `/store/material-requests/${requestId}/packing`,
+        { packedQuantities }
+      );
+      const mapped = mapRequest(packedResponse.data);
       updateLocalRequest(mapped);
       return mapped;
     } catch (e) {

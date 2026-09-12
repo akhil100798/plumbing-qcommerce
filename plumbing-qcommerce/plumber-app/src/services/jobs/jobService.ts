@@ -43,7 +43,15 @@ const mapServiceOrderToActiveJob = (order: any, status?: ActiveJob['status']): A
   if (!status) {
     if (order.status === 'ACCEPTED') {
       mappedStatus = order.arrivedAt != null ? 'reached' : 'accepted';
-    } else if (order.status === 'IN_PROGRESS' || order.status === 'COMBINED_ORDER') {
+    } else if (
+      order.status === 'IN_PROGRESS' ||
+      order.status === 'COMBINED_ORDER' ||
+      order.status === 'WORK_RESUMED' ||
+      order.status === 'READY_FOR_PRODUCT_PICKUP' ||
+      order.status === 'PLUMBER_COLLECTING_PRODUCTS' ||
+      order.status === 'PRODUCTS_COLLECTED' ||
+      order.status === 'RETURNING_TO_CUSTOMER'
+    ) {
       mappedStatus = 'started';
     } else if (order.status === 'COMPLETED' || order.status === 'PAID') {
       mappedStatus = 'completed';
@@ -189,7 +197,12 @@ export const jobService = {
         (order) =>
           order.status === 'ACCEPTED' ||
           order.status === 'IN_PROGRESS' ||
-          order.status === 'COMBINED_ORDER'
+          order.status === 'COMBINED_ORDER' ||
+          order.status === 'WORK_RESUMED' ||
+          order.status === 'READY_FOR_PRODUCT_PICKUP' ||
+          order.status === 'PLUMBER_COLLECTING_PRODUCTS' ||
+          order.status === 'PRODUCTS_COLLECTED' ||
+          order.status === 'RETURNING_TO_CUSTOMER'
       );
       if (!activeOrder) return null;
 

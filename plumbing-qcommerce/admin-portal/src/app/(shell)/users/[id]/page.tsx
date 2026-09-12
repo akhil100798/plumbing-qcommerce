@@ -8,19 +8,7 @@ import StatusBadge from "@/components/admin-shell/StatusBadge";
 import { usePortalSession } from "@/components/admin-shell/PortalGate";
 import { ApiError, clearStoredToken } from "@/services/apiClient";
 import { getUser, updateUserStatus, type AdminUserDetailResponse, type UserStatus } from "@/services/superAdminService";
-
-function formatDate(value?: string | null) {
-  if (!value) return "-";
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString("en-IN");
-}
-
-function statusTone(status: string) {
-  if (status === "ACTIVE") return "success";
-  if (status === "SUSPENDED") return "warning";
-  if (status === "BLOCKED") return "danger";
-  return "neutral";
-}
+import { formatDate, statusTone } from "@/lib/helpers";
 
 export default function UserDetailPage() {
   const router = useRouter();

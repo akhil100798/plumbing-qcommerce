@@ -227,9 +227,18 @@ public class ServiceOrderService {
             return order;
         }
 
-        if (order.getStatus() != OrderStatus.IN_PROGRESS
-                && order.getStatus() != OrderStatus.WORK_RESUMED
-                && order.getStatus() != OrderStatus.COMBINED_ORDER) {
+        Set<OrderStatus> completableStatuses = Set.of(
+                OrderStatus.IN_PROGRESS,
+                OrderStatus.WORK_RESUMED,
+                OrderStatus.COMBINED_ORDER,
+                OrderStatus.MATERIALS_REQUIRED,
+                OrderStatus.WAITING_FOR_STORE,
+                OrderStatus.READY_FOR_PRODUCT_PICKUP,
+                OrderStatus.PLUMBER_COLLECTING_PRODUCTS,
+                OrderStatus.PRODUCTS_COLLECTED,
+                OrderStatus.RETURNING_TO_CUSTOMER
+        );
+        if (!completableStatuses.contains(order.getStatus())) {
             throw conflict("Order cannot be completed from status: " + order.getStatus());
         }
 

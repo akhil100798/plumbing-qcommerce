@@ -96,7 +96,11 @@ export const materialService = {
         { storeId, items }
       );
 
-      const order = response.data;
+      // A draft material request is not visible to the store for approval
+      // until it is submitted. Submit it as part of the plumber's final
+      // material-request action so the store receives an actionable offer.
+      const submittedResponse = await apiClient.post<any>(ENDPOINTS.DELIVERY.SUBMIT(response.data.id));
+      const order = submittedResponse.data;
       const mappedItems: MaterialItem[] = (order.items || items).map((reqItem: any) => {
         const matchingRequest =
           'productId' in reqItem

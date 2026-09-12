@@ -1,0 +1,5 @@
+<svg width="60" height="24" viewBox="0 0 60 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="60" height="24" rx="6" fill="#1a73e8" />
+  <path d="M12 7l1.5 3.5 3.5.5-2.5 2.5.5 3.5-3-1.5-3 1.5.5-3.5-2.5-2.5 3.5-.5z" fill="#ffffff" />
+  <text x="24" y="16" fill="#ffffff" font-family="Inter, sans-serif" font-size="10" font-weight="800" letter-spacing="0.5">PLUS</text>
+</svg>

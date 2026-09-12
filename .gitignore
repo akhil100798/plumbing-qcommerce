@@ -1,1 +1,9 @@
 .worktrees/
+node_modules/
+e2e-evidence/
+playwright-report/
+test-results/
+coverage/
+dist/
+target/
+*.log
