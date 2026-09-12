@@ -14,23 +14,13 @@ import {
 } from 'react-native';
 
 import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
+import { StatusChip } from '../../components/common/StatusChip';
 import { materialRequestService } from '../../services/orders/materialRequestService';
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
 import { MaterialRequest } from '../../types';
 import { AppStackParamList } from '../../types/navigation';
 
 type Props = StackScreenProps<AppStackParamList, 'MaterialRequestDetail'>;
-
-const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  REQUESTED: { label: 'Pending Customer Approval', color: colors.textMuted, bg: colors.surfaceContainerLow },
-  APPROVED: { label: 'Approved by Customer (Action Req.)', color: colors.warning, bg: colors.warningLight },
-  STORE_ACCEPTED: { label: 'Request Accepted', color: colors.primary, bg: colors.surfaceContainerLow },
-  PREPARING: { label: 'Preparing / Packing', color: '#2E9AE0', bg: '#E7F5FE' },
-  READY_FOR_PICKUP: { label: 'Ready for Pickup', color: colors.secondary || '#1B6D24', bg: colors.successLight },
-  PLUMBER_AT_STORE: { label: 'Plumber Arrived at Store', color: colors.secondary || '#1B6D24', bg: colors.successLight },
-  COLLECTED: { label: 'Materials Collected ✓', color: '#6B7280', bg: '#F3F4F6' },
-  REJECTED: { label: 'Request Rejected', color: colors.danger, bg: colors.dangerLight },
-};
 
 const REJECTION_REASONS = [
   'Insufficient Hardware Stock',
@@ -45,8 +35,6 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-
-  // Reject modal state
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
   const [selectedReason, setSelectedReason] = useState(REJECTION_REASONS[0]);
 
@@ -73,10 +61,7 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
     try {
       const updated = await materialRequestService.prepareOrder(request.id as number);
       setRequest(updated);
-      Alert.alert(
-        'Request Accepted!',
-        'You have accepted this material request. Stock is reserved and preparation has started.'
-      );
+      Alert.alert('Request Accepted', 'Stock reserved. Preparation started.');
     } catch (err: any) {
       Alert.alert('Acceptance Failed', err.message || 'Could not accept material request.');
     } finally {
@@ -91,10 +76,7 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
     try {
       const updated = await materialRequestService.rejectRequest(request.id as number, selectedReason);
       setRequest(updated);
-      Alert.alert(
-        'Request Rejected',
-        `Material Request #${request.id} has been marked as REJECTED with reason: ${selectedReason}`
-      );
+      Alert.alert('Request Rejected', `Request #${request.id} has been rejected.`);
     } catch (err: any) {
       Alert.alert('Rejection Failed', err.message || 'Could not reject material request.');
     } finally {
@@ -108,10 +90,7 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
     try {
       const updated = await materialRequestService.completePreparation(request.id as number);
       setRequest(updated);
-      Alert.alert(
-        'Materials Ready!',
-        'Materials marked ready for pickup. Plumber and Customer have been notified.'
-      );
+      Alert.alert('Materials Ready', 'Marked ready for pickup. Notifications sent.');
     } catch (err: any) {
       Alert.alert('Action Failed', err.message || 'Could not mark materials as ready.');
     } finally {
@@ -119,16 +98,14 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
     }
   };
 
-  const statusConfig = STATUS_LABELS[request?.rawStatus || request?.status || 'REQUESTED'] || STATUS_LABELS.REQUESTED;
-  const canAccept = request?.status === 'PENDING' || request?.rawStatus === 'APPROVED' || request?.rawStatus === 'REQUESTED';
-  const canMarkReady = request?.status === 'PREPARING' || request?.rawStatus === 'STORE_ACCEPTED' || request?.rawStatus === 'RESERVED' || request?.rawStatus === 'PREPARING';
-  const canReject = request?.status !== 'COMPLETED' && request?.status !== 'REJECTED' && request?.rawStatus !== 'COLLECTED' && request?.rawStatus !== 'READY_FOR_PICKUP';
+  const rawStatus = request?.rawStatus || request?.status || 'REQUESTED';
+  const canAccept = rawStatus === 'STORE_REVIEWING';
+  const canMarkReady = ['STORE_ACCEPTED', 'RESERVED', 'PREPARING'].includes(rawStatus);
+  const canReject = !['COMPLETED', 'REJECTED', 'COLLECTED', 'READY_FOR_PICKUP'].includes(rawStatus);
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
-
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => {
@@ -139,19 +116,19 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
         >
           <ArrowLeftIcon width={24} height={24} stroke={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Material Request #{requestId}</Text>
+        <Text style={styles.headerTitle}>Request #{requestId}</Text>
         <View style={{ width: 24 }} />
       </View>
 
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading request details...</Text>
+          <Text style={styles.loadingText}>Loading...</Text>
         </View>
       ) : error ? (
         <View style={styles.center}>
-          <Text style={styles.errorIcon}>⚠️</Text>
-          <Text style={styles.errorTitle}>Request Detail Error</Text>
+          <Text style={styles.errorIcon}>!</Text>
+          <Text style={styles.errorTitle}>Error</Text>
           <Text style={styles.errorMessage}>{error}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={loadRequest}>
             <Text style={styles.retryBtnText}>Retry</Text>
@@ -159,53 +136,38 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
         </View>
       ) : request ? (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Header Row */}
           <View style={styles.idRow}>
             <Text style={styles.requestId}>Request #{request.id}</Text>
-            <View style={[styles.statusPill, { backgroundColor: statusConfig.bg }]}>
-              <Text style={[styles.statusPillText, { color: statusConfig.color }]}>
-                {statusConfig.label}
-              </Text>
-            </View>
+            <StatusChip status={rawStatus} />
           </View>
 
-          {/* Metadata Card */}
           <View style={styles.card}>
             <Row label="Service Order" value={`#${request.serviceOrderId}`} />
-            <Row label="Assigned Plumber" value={request.plumberName || 'Field Technician'} />
+            <Row label="Plumber" value={request.plumberName || 'Field Technician'} />
             <Row label="Store ID" value={`${request.storeId}`} />
-            <Row
-              label="Requested Date"
-              value={new Date(request.createdAt).toLocaleDateString('en-IN', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric',
-              })}
-            />
+            <Row label="Date" value={new Date(request.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} />
           </View>
 
-          {/* Requested Items Card */}
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Requested Materials</Text>
             {(request.items || []).map((item, idx) => (
               <View key={idx} style={styles.itemRow}>
                 <View style={styles.itemInfo}>
                   <Text style={styles.itemName}>{item.productName}</Text>
-                  <Text style={styles.itemCategory}>Product ID: #{item.productId}</Text>
+                  <Text style={styles.itemCategory}>#{item.productId}</Text>
                 </View>
                 <View style={styles.itemQtyBlock}>
-                  <Text style={styles.itemQtyLabel}>Quantity</Text>
-                  <Text style={styles.itemQtyVal}>{item.quantity} Units</Text>
+                  <Text style={styles.itemQtyLabel}>Qty</Text>
+                  <Text style={styles.itemQtyVal}>{item.quantity}</Text>
                 </View>
               </View>
             ))}
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total Value</Text>
+              <Text style={styles.totalLabel}>Total</Text>
               <Text style={styles.totalValue}>₹{(request.totalAmount || 0).toFixed(2)}</Text>
             </View>
           </View>
 
-          {/* Action CTAs */}
           <View style={styles.actions}>
             {canAccept && (
               <TouchableOpacity
@@ -214,13 +176,12 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
                 disabled={actionLoading}
               >
                 {actionLoading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={colors.onPrimary} />
                 ) : (
-                  <Text style={styles.actionBtnText}>Accept Request & Start Prep</Text>
+                  <Text style={styles.actionBtnText}>Accept & Start Prep</Text>
                 )}
               </TouchableOpacity>
             )}
-
             {canMarkReady && (
               <TouchableOpacity
                 style={[styles.actionBtn, styles.actionBtnSuccess, actionLoading && styles.actionBtnDisabled]}
@@ -228,13 +189,12 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
                 disabled={actionLoading}
               >
                 {actionLoading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={colors.onPrimary} />
                 ) : (
-                  <Text style={styles.actionBtnText}>✓ Mark Ready for Pickup</Text>
+                  <Text style={styles.actionBtnText}>Mark Ready for Pickup</Text>
                 )}
               </TouchableOpacity>
             )}
-
             {canReject && (
               <TouchableOpacity
                 style={[styles.actionBtn, styles.actionBtnDanger, actionLoading && styles.actionBtnDisabled]}
@@ -248,13 +208,11 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
         </ScrollView>
       ) : null}
 
-      {/* Reject Reason Modal */}
       <Modal visible={rejectModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Reject Material Request #{requestId}</Text>
-            <Text style={styles.modalSub}>Select structured rejection reason to persist to backend:</Text>
-
+            <Text style={styles.modalTitle}>Reject Request #{requestId}</Text>
+            <Text style={styles.modalSub}>Select reason for rejection:</Text>
             {REJECTION_REASONS.map((reason) => (
               <TouchableOpacity
                 key={reason}
@@ -262,23 +220,15 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
                 onPress={() => setSelectedReason(reason)}
               >
                 <Text style={[styles.reasonText, selectedReason === reason && styles.reasonTextSelected]}>
-                  {selectedReason === reason ? '✓ ' : ''}{reason}
+                  {reason}
                 </Text>
               </TouchableOpacity>
             ))}
-
             <View style={styles.modalBtnRow}>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.modalBtnCancel]}
-                onPress={() => setRejectModalVisible(false)}
-              >
+              <TouchableOpacity style={[styles.modalBtn, styles.modalBtnCancel]} onPress={() => setRejectModalVisible(false)}>
                 <Text style={styles.modalBtnCancelText}>Cancel</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.modalBtnConfirm]}
-                onPress={handleConfirmReject}
-              >
+              <TouchableOpacity style={[styles.modalBtn, styles.modalBtnConfirm]} onPress={handleConfirmReject}>
                 <Text style={styles.modalBtnConfirmText}>Confirm Rejection</Text>
               </TouchableOpacity>
             </View>
@@ -299,141 +249,73 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background || '#F9F9F9' },
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing.layout,
     paddingVertical: spacing.md,
-    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border || '#C6C5D4',
+    borderBottomColor: colors.border,
   },
   headerTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.sm, padding: spacing.layout },
   loadingText: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
-  errorIcon: { fontSize: 32 },
+  errorIcon: { fontSize: 24, fontWeight: 'bold', color: colors.danger, marginBottom: spacing.xs },
   errorTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
   errorMessage: { fontSize: typography.fontSize.xs, color: colors.textSecondary, textAlign: 'center' },
-  retryBtn: {
-    backgroundColor: colors.primaryContainer || colors.primary,
-    borderRadius: borderRadius.sm,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-  },
-  retryBtnText: { color: '#FFFFFF', fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold },
+  retryBtn: { backgroundColor: colors.primary, borderRadius: borderRadius.sm, paddingVertical: spacing.sm, paddingHorizontal: spacing.lg },
+  retryBtnText: { color: colors.onPrimary, fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold },
   content: { padding: spacing.layout, paddingBottom: spacing.giant },
-  idRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
+  idRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
   requestId: { fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: borderRadius.sm },
-  statusPillText: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold },
   card: {
-    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border || '#C6C5D4',
+    borderColor: colors.border,
     ...shadows.sm,
   },
   sectionTitle: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, marginBottom: spacing.xs },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surfaceContainerLow || '#F4F3F7',
-  },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.xs, borderBottomWidth: 1, borderBottomColor: colors.surfaceContainerLow },
   infoLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
   infoValue: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  itemRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surfaceContainerLow || '#F4F3F7',
-  },
+  itemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.xs, borderBottomWidth: 1, borderBottomColor: colors.surfaceContainerLow },
   itemInfo: { flex: 1 },
   itemName: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
   itemCategory: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
   itemQtyBlock: { alignItems: 'flex-end' },
-  itemQtyLabel: { fontSize: 10, color: colors.textMuted, textTransform: 'uppercase' },
+  itemQtyLabel: { fontSize: 10, color: colors.textMuted },
   itemQtyVal: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: spacing.md,
-    paddingTop: spacing.xs,
-  },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.md, paddingTop: spacing.xs },
   totalLabel: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  totalValue: { fontSize: 18, fontWeight: typography.fontWeight.bold, color: colors.primaryContainer || colors.primary },
+  totalValue: { fontSize: 18, fontWeight: typography.fontWeight.bold, color: colors.primary },
   actions: { gap: spacing.md, marginTop: spacing.xs },
-  actionBtn: {
-    height: 48,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionBtnPrimary: { backgroundColor: colors.primaryContainer || colors.primary },
-  actionBtnSuccess: { backgroundColor: colors.secondary || '#1B6D24' },
-  actionBtnDanger: { backgroundColor: colors.dangerLight || '#FFDAD6', borderWidth: 1, borderColor: colors.danger },
+  actionBtn: { height: 48, borderRadius: borderRadius.md, alignItems: 'center', justifyContent: 'center' },
+  actionBtnPrimary: { backgroundColor: colors.primary },
+  actionBtnSuccess: { backgroundColor: colors.success },
+  actionBtnDanger: { backgroundColor: colors.dangerLight, borderWidth: 1, borderColor: colors.danger },
   actionBtnDisabled: { opacity: 0.6 },
-  actionBtnText: { color: '#FFFFFF', fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold },
+  actionBtnText: { color: colors.onPrimary, fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold },
   actionBtnDangerText: { color: colors.danger, fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold },
-
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.layout,
-  },
-  modalCard: {
-    width: '100%',
-    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
-    borderRadius: borderRadius.md,
-    padding: spacing.layout,
-    gap: spacing.xs,
-    ...shadows.md,
-  },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: spacing.layout },
+  modalCard: { width: '100%', backgroundColor: colors.surface, borderRadius: borderRadius.md, padding: spacing.layout, gap: spacing.xs, ...shadows.md },
   modalTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
   modalSub: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginBottom: spacing.xs },
-  reasonOption: {
-    padding: spacing.md,
-    borderRadius: borderRadius.sm,
-    borderWidth: 1,
-    borderColor: colors.border || '#C6C5D4',
-    backgroundColor: colors.surfaceContainerLow || '#F4F3F7',
-    marginBottom: 6,
-  },
-  reasonOptionSelected: {
-    borderColor: colors.danger,
-    backgroundColor: colors.dangerLight || '#FFDAD6',
-  },
+  reasonOption: { padding: spacing.md, borderRadius: borderRadius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceContainerLow, marginBottom: 6 },
+  reasonOptionSelected: { borderColor: colors.danger, backgroundColor: colors.dangerLight },
   reasonText: { fontSize: typography.fontSize.xs, color: colors.textPrimary },
   reasonTextSelected: { fontWeight: typography.fontWeight.bold, color: colors.danger },
   modalBtnRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.md },
-  modalBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: borderRadius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalBtnCancel: { backgroundColor: colors.surfaceContainerLow || '#F4F3F7', borderWidth: 1, borderColor: colors.border || '#C6C5D4' },
+  modalBtn: { flex: 1, height: 44, borderRadius: borderRadius.sm, alignItems: 'center', justifyContent: 'center' },
+  modalBtnCancel: { backgroundColor: colors.surfaceContainerLow, borderWidth: 1, borderColor: colors.border },
   modalBtnCancelText: { fontSize: typography.fontSize.xs, color: colors.textPrimary, fontWeight: typography.fontWeight.bold },
   modalBtnConfirm: { backgroundColor: colors.danger },
-  modalBtnConfirmText: { fontSize: typography.fontSize.xs, color: '#FFFFFF', fontWeight: typography.fontWeight.bold },
+  modalBtnConfirmText: { fontSize: typography.fontSize.xs, color: colors.onPrimary, fontWeight: typography.fontWeight.bold },
 });
 
 export default MaterialRequestDetailScreen;

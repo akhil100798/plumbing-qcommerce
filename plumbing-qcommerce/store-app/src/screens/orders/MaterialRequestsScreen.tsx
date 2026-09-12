@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
-import RefreshIcon from '../../assets/icons/plus.svg';
+import { StatusChip } from '../../components/common/StatusChip';
 import { materialRequestService } from '../../services/orders/materialRequestService';
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
 import { MaterialRequest } from '../../types';
@@ -28,16 +28,28 @@ const tabs = [
   { key: 'collected', label: 'Completed' },
 ];
 
-const statusDisplay: Record<string, { label: string; color: string; bg: string }> = {
-  REQUESTED: { label: 'Requested (Pending Cust. Approval)', color: colors.textMuted, bg: colors.surfaceContainerLow },
-  APPROVED: { label: 'Approved by Customer (Action Req.)', color: colors.warning, bg: colors.warningLight },
-  STORE_ACCEPTED: { label: 'Request Accepted', color: colors.primary, bg: colors.surfaceContainerLow },
-  PREPARING: { label: 'Preparing / Packing', color: '#2E9AE0', bg: '#E7F5FE' },
-  READY_FOR_PICKUP: { label: 'Ready for Pickup', color: colors.secondary || '#1B6D24', bg: colors.successLight },
-  PLUMBER_AT_STORE: { label: 'Plumber Arrived (Handover Req.)', color: colors.secondary || '#1B6D24', bg: colors.successLight },
-  COLLECTED: { label: 'Materials Collected ✓', color: '#6B7280', bg: '#F3F4F6' },
-  REJECTED: { label: 'Request Rejected', color: colors.danger, bg: colors.dangerLight },
-  CANCELLED: { label: 'Cancelled', color: colors.danger, bg: colors.dangerLight },
+const statusToChipType: Record<string, 'warning' | 'primary' | 'info' | 'success' | 'error' | 'neutral'> = {
+  REQUESTED: 'warning',
+  APPROVED: 'warning',
+  STORE_ACCEPTED: 'primary',
+  PREPARING: 'info',
+  READY_FOR_PICKUP: 'success',
+  PLUMBER_AT_STORE: 'success',
+  COLLECTED: 'neutral',
+  REJECTED: 'error',
+  CANCELLED: 'error',
+};
+
+const statusLabel: Record<string, string> = {
+  REQUESTED: 'Pending Approval',
+  APPROVED: 'Action Required',
+  STORE_ACCEPTED: 'Accepted',
+  PREPARING: 'Preparing',
+  READY_FOR_PICKUP: 'Ready for Pickup',
+  PLUMBER_AT_STORE: 'Handover',
+  COLLECTED: 'Collected',
+  REJECTED: 'Rejected',
+  CANCELLED: 'Cancelled',
 };
 
 export function MaterialRequestsScreen() {
@@ -84,8 +96,6 @@ export function MaterialRequestsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
-
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => {
@@ -96,11 +106,10 @@ export function MaterialRequestsScreen() {
         >
           <ArrowLeftIcon width={24} height={24} stroke={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Material Requests Queue</Text>
+        <Text style={styles.headerTitle}>Material Requests</Text>
         <View style={{ width: 24 }} />
       </View>
 
-      {/* Filter Tabs */}
       <View style={styles.tabsRow}>
         {tabs.map((tab) => {
           const isActive = tab.key === activeTab;
@@ -119,15 +128,15 @@ export function MaterialRequestsScreen() {
       {loading && !refreshing ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Fetching Store Queue...</Text>
+          <Text style={styles.loadingText}>Loading requests...</Text>
         </View>
       ) : error ? (
         <View style={styles.center}>
-          <Text style={styles.errorIcon}>⚠️</Text>
-          <Text style={styles.errorTitle}>Queue Unavailable</Text>
+          <Text style={styles.errorIcon}>!</Text>
+          <Text style={styles.errorTitle}>Unable to Load</Text>
           <Text style={styles.errorMessage}>{error}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={loadRequests}>
-            <Text style={styles.retryBtnText}>Retry Queue Sync</Text>
+            <Text style={styles.retryBtnText}>Retry</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -139,14 +148,14 @@ export function MaterialRequestsScreen() {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.center}>
-              <Text style={styles.emptyIcon}>📋</Text>
-              <Text style={styles.emptyText}>No material requests in this queue tab.</Text>
+              <Text style={styles.emptyTitle}>No requests</Text>
+              <Text style={styles.emptySub}>No material requests in this queue tab.</Text>
             </View>
           }
           renderItem={({ item }) => {
             const rawStatus = item.rawStatus || item.status;
-            const style = statusDisplay[rawStatus] || statusDisplay[item.status] || statusDisplay.REQUESTED;
-            const isActionNeeded = rawStatus === 'APPROVED' || rawStatus === 'REQUESTED';
+            const chipType = statusToChipType[rawStatus] || 'neutral';
+            const isActionNeeded = rawStatus === 'STORE_REVIEWING';
 
             return (
               <TouchableOpacity
@@ -155,20 +164,15 @@ export function MaterialRequestsScreen() {
               >
                 <View style={styles.requestTopRow}>
                   <Text style={styles.requestId}>Request #{item.id}</Text>
-                  <View style={[styles.statusPill, { backgroundColor: style.bg }]}>
-                    <Text style={[styles.statusPillText, { color: style.color }]}>{style.label}</Text>
-                  </View>
+                  <StatusChip status={rawStatus} />
                 </View>
-
                 {item.serviceOrderId && (
                   <Text style={styles.requestMeta}>Service Order: #{item.serviceOrderId}</Text>
                 )}
-
                 <Text style={styles.requestMeta}>Plumber: {item.plumberName || 'Field Technician'}</Text>
-
                 {item.items && item.items.length > 0 && (
                   <Text style={styles.requestQty}>
-                    {item.items.length} item{item.items.length > 1 ? 's' : ''} · Total Value: ₹
+                    {item.items.length} item{item.items.length > 1 ? 's' : ''} · ₹
                     {(item.totalAmount || 0).toFixed(2)}
                   </Text>
                 )}
@@ -182,25 +186,25 @@ export function MaterialRequestsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background || '#F9F9F9' },
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing.layout,
     paddingVertical: spacing.md,
-    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border || '#C6C5D4',
+    borderBottomColor: colors.border,
   },
   headerTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
   tabsRow: {
     flexDirection: 'row',
     paddingHorizontal: spacing.layout,
-    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    backgroundColor: colors.surface,
     paddingBottom: spacing.xs,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border || '#C6C5D4',
+    borderBottomColor: colors.border,
     flexWrap: 'wrap',
   },
   tabItem: {
@@ -209,48 +213,46 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     marginRight: 6,
     marginTop: 4,
-    backgroundColor: colors.surfaceContainerLow || '#F4F3F7',
+    backgroundColor: colors.surfaceContainerLow,
   },
-  tabItemActive: { backgroundColor: colors.primaryContainer || colors.primary },
+  tabItemActive: { backgroundColor: colors.primary },
   tabLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary, fontWeight: '600' },
-  tabLabelActive: { color: '#FFFFFF', fontWeight: typography.fontWeight.bold },
+  tabLabelActive: { color: colors.onPrimary, fontWeight: typography.fontWeight.bold },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.sm, padding: spacing.layout, minHeight: 220 },
   loadingText: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
-  errorIcon: { fontSize: 32 },
+  errorIcon: { fontSize: 24, fontWeight: 'bold', color: colors.danger, marginBottom: spacing.xs },
   errorTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
   errorMessage: { fontSize: typography.fontSize.xs, color: colors.textSecondary, textAlign: 'center' },
   retryBtn: {
-    backgroundColor: colors.primaryContainer || colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: borderRadius.sm,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
   },
-  retryBtnText: { color: '#FFFFFF', fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold },
-  emptyIcon: { fontSize: 32 },
-  emptyText: { fontSize: typography.fontSize.xs, color: colors.textMuted, textAlign: 'center' },
+  retryBtnText: { color: colors.onPrimary, fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold },
+  emptyTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  emptySub: { fontSize: typography.fontSize.xs, color: colors.textMuted, textAlign: 'center', marginTop: spacing.xs },
   listContainer: { padding: spacing.layout, paddingBottom: spacing.giant },
   requestCard: {
-    backgroundColor: colors.surfaceContainerLowest || '#FFFFFF',
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.xs,
     borderWidth: 1,
-    borderColor: colors.border || '#C6C5D4',
+    borderColor: colors.border,
     ...shadows.sm,
   },
   requestCardHighlighted: {
-    borderColor: colors.warning || '#FD6C00',
+    borderColor: colors.warning,
     borderWidth: 1.5,
   },
   requestTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   requestId: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: borderRadius.sm },
-  statusPillText: { fontSize: typography.fontSize.xs, fontWeight: '700' },
   requestMeta: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: 2 },
-  requestQty: { fontSize: typography.fontSize.xs, color: colors.textPrimary, fontWeight: typography.fontWeight.bold, marginTop: 4 },
+  requestQty: { fontSize: typography.fontSize.xs, color: colors.textPrimary, fontWeight: typography.fontWeight.bold, marginTop: spacing.xs },
 });
