@@ -11,7 +11,7 @@ import { useDispatch } from 'react-redux';
 
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { jobService } from '../../services/jobs/jobService';
-import { setActiveJob, removeIncomingJob } from '../../redux/slices/jobSlice';
+import { dismissIncomingJob, setActiveJob, removeIncomingJob } from '../../redux/slices/jobSlice';
 import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import MapPinIcon from '../../assets/icons/location-pin.svg';
@@ -42,7 +42,7 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
   }, []);
 
   const handleDecline = () => {
-    dispatch(removeIncomingJob(jobId));
+    dispatch(dismissIncomingJob(jobId));
     navigation.goBack();
   };
 
@@ -86,7 +86,7 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
   };
 
   return (
-    <ScreenWrapper safeAreaStyle={{ backgroundColor: '#0F172A' }}>
+    <ScreenWrapper safeAreaStyle={{ backgroundColor: colors.textPrimary }}>
       <View style={styles.container}>
         {/* Top Status Row */}
         <View style={styles.topRow}>
@@ -172,7 +172,7 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: colors.textPrimary,
     padding: spacing.layout,
   },
   topRow: {
@@ -182,17 +182,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   onlineDot: {
-    color: '#10B981',
+    color: colors.success,
     fontSize: 18,
   },
   onlineBadge: {
-    backgroundColor: '#D1FAE5',
+    backgroundColor: colors.successLight,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: borderRadius.xs,
   },
   onlineText: {
-    color: '#059669',
+    color: colors.success,
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
   },
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   priceText: {
     fontSize: 22,
     fontWeight: typography.fontWeight.black,
-    color: '#059669',
+    color: 'colors.success',
   },
   subText: {
     fontSize: 10,

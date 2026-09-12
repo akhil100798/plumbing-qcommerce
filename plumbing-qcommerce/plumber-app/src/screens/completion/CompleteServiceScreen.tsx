@@ -216,9 +216,9 @@ export function CompleteServiceScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background || '#FAF9FD' },
+  container: { flex: 1, backgroundColor: colors.background },
   heroSuccess: {
-    backgroundColor: colors.secondary || '#1B6D24',
+    backgroundColor: colors.success,
     paddingVertical: spacing.xl,
     alignItems: 'center',
     borderBottomLeftRadius: borderRadius.lg,
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
   billingVal: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
   amountRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   totalLabel: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  amountValue: { fontSize: 24, fontWeight: typography.fontWeight.bold, color: colors.secondary || '#1B6D24' },
+  amountValue: { fontSize: 24, fontWeight: typography.fontWeight.bold, color: colors.success },
   waitingContainer: {
     flex: 1,
     justifyContent: 'center',

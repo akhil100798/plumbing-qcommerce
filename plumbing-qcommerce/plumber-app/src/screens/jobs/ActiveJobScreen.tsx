@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   statusBadge: {
-    backgroundColor: '#D1FAE5',
+    backgroundColor: colors.successLight,
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
     borderRadius: borderRadius.xs,
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 10,
     fontWeight: typography.fontWeight.bold,
-    color: '#059669',
+    color: colors.success,
   },
   titleText: {
     fontSize: typography.fontSize.md,
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#10B981',
+    backgroundColor: colors.success,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
   },

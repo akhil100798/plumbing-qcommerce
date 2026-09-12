@@ -170,10 +170,10 @@ const styles = StyleSheet.create({
   eta: { fontSize: 24, fontWeight: typography.fontWeight.black, color: colors.textPrimary },
   etaSub: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: 2 },
   endTripBtn: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: colors.errorLight,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm + 2,
     borderRadius: borderRadius.md,
   },
-  endTripLabel: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: '#EF4444' },
+  endTripLabel: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.error },
 });
