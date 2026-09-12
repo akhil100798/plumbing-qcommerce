@@ -1,45 +1,54 @@
 export const colors = {
-  // Brand colors (Stitch Operations System)
-  primary: '#1A237E', // FixKart Industrial Navy
-  primaryDark: '#000666',
-  primaryLight: '#E0E0FF',
-  primaryContainer: '#1A237E',
+  // Unified FixKart brand (trustworthy blue)
+  primary: '#0066CC',
+  primaryDark: '#004DB5',
+  primaryContainer: '#0066CC',
+  primaryLight: '#E8F0FE',
 
-  // Secondary Accents
-  secondary: '#FD6C00', // Safety Orange
-  secondaryLight: '#FFDBCB',
-  secondaryContainer: '#FD6C00',
+  // Secondary accent (muted navy)
+  secondary: '#42526E',
+  secondaryContainer: '#DBE2F9',
+  secondaryLight: '#E8EEFB',
 
   // Status semantic colors
-  success: '#1B6D24', // FixKart Success Green
-  successLight: '#E7F7EC',
-  warning: '#FD6C00', // Warning Orange
+  success: '#0D7A3E',
+  successContainer: '#E6F7EC',
+  successLight: '#E6F7EC',
+  warning: '#B45309',
+  warningContainer: '#FEF3C7',
   warningLight: '#FFF3E0',
-  danger: '#BA1A1A', // Danger Red
+  danger: '#BA1A1A',
   dangerLight: '#FFDAD6',
   error: '#BA1A1A',
+  errorContainer: '#FFDAD6',
   errorLight: '#FFDAD6',
   accentRed: '#BA1A1A',
 
   // Neutrals & Surfaces
   white: '#FFFFFF',
-  black: '#1A1C1C',
-  background: '#F9F9F9',
+  black: '#0B1C30',
+  background: '#F8F9FF',
   surface: '#FFFFFF',
   card: '#FFFFFF',
   surfaceContainerLowest: '#FFFFFF',
-  surfaceContainerLow: '#F3F3F7',
-  surfaceContainer: '#EEEEEE',
-  surfaceContainerHigh: '#E8E8E8',
+  surfaceContainerLow: '#F3F3F8',
+  surfaceContainer: '#EDEDF4',
+  surfaceContainerHigh: '#E7E8EE',
 
   // Typography & Borders
-  text: '#1A1C1C',
-  textPrimary: '#1A1C1C',
-  textSecondary: '#454652',
-  textMuted: '#767683',
-  border: '#C6C5D4',
-  borderDark: '#767683',
+  text: '#0B1C30',
+  textPrimary: '#0B1C30',
+  textSecondary: '#42526E',
+  textMuted: '#727785',
+  border: '#C1C6D6',
+  borderDark: '#727785',
 
   // Overlays
-  darkOverlay: 'rgba(26, 28, 28, 0.5)',
+  darkOverlay: 'rgba(11, 28, 48, 0.5)',
+  onPrimary: '#FFFFFF',
+  onSuccess: '#0D652D',
+  onWarning: '#92400E',
+  onError: '#FFFFFF',
+  onErrorContainer: '#93000A',
+  backgroundMuted: '#E8E8E8',
 };
