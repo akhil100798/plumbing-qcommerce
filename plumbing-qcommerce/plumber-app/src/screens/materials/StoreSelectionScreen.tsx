@@ -67,6 +67,9 @@ export function StoreSelectionScreen({ route, navigation }: Props) {
         onPress={() => setSelected(item.id)}
         activeOpacity={0.85}
         testID={`plumber-store-card-${item.id}`}
+        accessibilityRole="radio"
+        accessibilityLabel={`${item.name}, ${item.address}`}
+        accessibilityState={{ selected: isSelected }}
       >
         <View style={styles.storeRow}>
           <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
@@ -103,7 +106,7 @@ export function StoreSelectionScreen({ route, navigation }: Props) {
           <Text style={styles.errorIcon}>⚠️</Text>
           <Text style={styles.errorTitle}>Could Not Load Stores</Text>
           <Text style={styles.errorMessage}>{error}</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={loadStores}>
+          <TouchableOpacity style={styles.retryBtn} onPress={loadStores} accessibilityRole="button" accessibilityLabel="Retry loading stores">
             <Text style={styles.retryBtnText}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -114,7 +117,7 @@ export function StoreSelectionScreen({ route, navigation }: Props) {
           <Text style={styles.errorMessage}>
             No stores are currently available for this job. Please try again later.
           </Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={loadStores}>
+          <TouchableOpacity style={styles.retryBtn} onPress={loadStores} accessibilityRole="button" accessibilityLabel="Retry loading stores">
             <Text style={styles.retryBtnText}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -136,6 +139,9 @@ export function StoreSelectionScreen({ route, navigation }: Props) {
               style={[styles.confirmBtn, selected === null && styles.confirmBtnDisabled]}
               onPress={handleConfirm}
               disabled={selected === null}
+              accessibilityRole="button"
+              accessibilityLabel={selected !== null ? 'Continue with selected store' : 'Select a store to continue'}
+              accessibilityState={{ disabled: selected === null }}
             >
               <Text style={styles.confirmBtnText}>
                 {selected !== null
