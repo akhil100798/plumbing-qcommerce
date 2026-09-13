@@ -13,7 +13,7 @@ import {
   type OperationsMaterialRequestDetail,
   type OperationsMaterialRequestSummary,
 } from "@/services/operationsService";
-import { formatDate, currency, statusTone } from "../operationsHelpers";
+import { formatDate, statusTone } from "../operationsHelpers";
 
 const materialStatuses: Array<MaterialRequestStatus | ""> = [
   "",
@@ -35,7 +35,7 @@ function currency(amount?: number | null) {
   return `₹${amount.toFixed(2)}`;
 }
 
-function formatDate(iso?: string | null) {
+function fmtTime(iso?: string | null) {
   if (!iso) return "—";
   return new Date(iso).toLocaleString();
 }
@@ -130,25 +130,25 @@ function DetailPanel({
         <div className="field">
           <span className="field-label">Created</span>
           <div className="field-input" style={{ background: "transparent", border: "none", padding: 0, marginTop: 4 }}>
-            {formatDate(detail.createdAt)}
+            {fmtTime(detail.createdAt)}
           </div>
         </div>
         <div className="field">
           <span className="field-label">Store Confirmed</span>
           <div className="field-input" style={{ background: "transparent", border: "none", padding: 0, marginTop: 4 }}>
-            {formatDate(detail.storeConfirmedAt)}
+            {fmtTime(detail.storeConfirmedAt)}
           </div>
         </div>
         <div className="field">
           <span className="field-label">Plumber Arrived</span>
           <div className="field-input" style={{ background: "transparent", border: "none", padding: 0, marginTop: 4 }}>
-            {formatDate(detail.plumberArrivedAt)}
+            {fmtTime(detail.plumberArrivedAt)}
           </div>
         </div>
         <div className="field">
           <span className="field-label">Collected At</span>
           <div className="field-input" style={{ background: "transparent", border: "none", padding: 0, marginTop: 4 }}>
-            {formatDate(detail.collectionConfirmedAt)}
+            {fmtTime(detail.collectionConfirmedAt)}
           </div>
         </div>
       </div>
@@ -199,7 +199,7 @@ function DetailPanel({
                 {detail.statusHistory.map((entry, idx) => (
                   <tr key={idx}>
                     <td><StatusBadge tone={statusTone(entry.status)}>{entry.status}</StatusBadge></td>
-                    <td>{formatDate(entry.changedAt)}</td>
+                    <td>{fmtTime(entry.changedAt)}</td>
                     <td>{entry.notes ?? "—"}</td>
                   </tr>
                 ))}
