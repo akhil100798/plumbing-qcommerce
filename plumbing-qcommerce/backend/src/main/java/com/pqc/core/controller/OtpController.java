@@ -8,6 +8,7 @@ import com.pqc.core.security.JwtService;
 import com.pqc.core.service.OtpService;
 import com.pqc.core.service.RefreshTokenService;
 import com.pqc.core.util.PhoneMaskingUtil;
+import com.pqc.core.util.IndianPhoneNormalizer;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,14 +33,14 @@ public class OtpController {
 
     @PostMapping("/send-otp")
     public ResponseEntity<?> sendOtp(@Valid @RequestBody OtpRequest request) {
-        String phone = request.getPhone();
+        String phone = IndianPhoneNormalizer.normalize(request.getPhone());
         otpService.sendOtp(phone);
         return ResponseEntity.ok(Map.of("message", "OTP sent successfully"));
     }
 
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@Valid @RequestBody OtpRequest request) {
-        String phone = request.getPhone();
+        String phone = IndianPhoneNormalizer.normalize(request.getPhone());
         String code = request.getCode();
 
         // Performs secure validation, lockout check, demo bypass and consumption logic inside the service

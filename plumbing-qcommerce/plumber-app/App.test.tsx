@@ -1,3 +1,4 @@
+(globalThis as any).__DEV__ = true;
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import { describe, expect, it, vi } from 'vitest';
@@ -7,6 +8,11 @@ import App from './App';
 import { DashboardScreen } from './src/screens/dashboard/DashboardScreen';
 import { ProfileScreen } from './src/screens/profile/ProfileScreen';
 import { store } from './src/redux/store';
+
+vi.mock('expo-image-picker', () => ({
+  requestMediaLibraryPermissionsAsync: vi.fn(() => Promise.resolve({ granted: true })),
+  launchImageLibraryAsync: vi.fn(() => Promise.resolve({ canceled: true, assets: [] })),
+}));
 
 vi.mock('react-native', async () => {
   function AnimatedValue(this: any) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 
@@ -7,6 +7,7 @@ import { PhotoGrid } from '../../components/common/PhotoGrid';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { colors, spacing, typography } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
+import { photoService, JobPhoto } from '../../services/photos/photoService';
 
 const MIN_PHOTOS = 3;
 
@@ -14,14 +15,27 @@ type Props = StackScreenProps<AppStackParamList, 'AfterPhotos'>;
 
 export function AfterPhotosScreen({ route, navigation }: Props) {
   const { jobId } = route.params;
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<JobPhoto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    photoService.list(jobId, 'AFTER').then(setPhotos).catch((error: Error) =>
+      Alert.alert('Unable to load photos', error.message || 'Please try again.')
+    ).finally(() => setLoading(false));
+  }, [jobId]);
 
   const handleAddPhoto = async () => {
-    Alert.alert('Photo capture unavailable', 'Camera and photo upload are not connected yet. No photo was added.');
-  };
-
-  const handleRemovePhoto = (index: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== index));
+    if (uploading) return;
+    setUploading(true);
+    try {
+      const photo = await photoService.pickAndUpload(jobId, 'AFTER');
+      if (photo) setPhotos((current) => [...current, photo]);
+    } catch (error: any) {
+      Alert.alert('Upload failed', error.message || 'Unable to upload this image. Please try again.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const canProceed = photos.length >= MIN_PHOTOS;
@@ -46,7 +60,6 @@ export function AfterPhotosScreen({ route, navigation }: Props) {
             photos={photos}
             minPhotos={MIN_PHOTOS}
             onAddPhoto={handleAddPhoto}
-            onRemovePhoto={handleRemovePhoto}
           />
         </View>
 
@@ -57,9 +70,9 @@ export function AfterPhotosScreen({ route, navigation }: Props) {
         <View style={styles.spacer} />
 
         <PrimaryButton
-          title="Next"
+          title={uploading ? 'Uploading...' : 'Next'}
           onPress={handleContinue}
-          disabled={!canProceed}
+          disabled={!canProceed || uploading || loading}
           style={canProceed ? styles.nextButton : styles.nextButtonDisabled}
         />
       </ScrollView>

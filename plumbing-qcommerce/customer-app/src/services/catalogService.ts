@@ -46,15 +46,8 @@ function mapProductDTOToUI(dto: ProductDTO): Product {
 
 export class CatalogService {
   static async getCategories(): Promise<Category[]> {
-    try {
-      const dtos = await apiClient.get<CategoryDTO[]>('/catalog/categories', { timeoutMs: 8000 });
-      if (Array.isArray(dtos) && dtos.length > 0) {
-        return dtos.map(mapCategoryDTOToUI);
-      }
-    } catch (e) {
-      console.warn('Backend categories fetch failed, using fallback categories:', e);
-    }
-    return staticCategories;
+    const dtos = await apiClient.get<CategoryDTO[]>('/catalog/categories', { timeoutMs: 8000 });
+    return Array.isArray(dtos) ? dtos.map(mapCategoryDTOToUI) : [];
   }
 
   static async getFeaturedCategories(): Promise<Category[]> {
@@ -78,16 +71,9 @@ export class CatalogService {
   }
 
   static async getProducts(categoryId?: number): Promise<Product[]> {
-    try {
-      const url = categoryId ? `/catalog/products?categoryId=${categoryId}` : '/catalog/products';
-      const dtos = await apiClient.get<ProductDTO[]>(url, { timeoutMs: 8000 });
-      if (Array.isArray(dtos) && dtos.length > 0) {
-        return dtos.map(mapProductDTOToUI);
-      }
-    } catch (e) {
-      console.warn('Backend products fetch failed, using catalog products fallback:', e);
-    }
-    return staticProducts;
+    const url = categoryId ? `/catalog/products?categoryId=${categoryId}` : '/catalog/products';
+    const dtos = await apiClient.get<ProductDTO[]>(url, { timeoutMs: 8000 });
+    return Array.isArray(dtos) ? dtos.map(mapProductDTOToUI) : [];
   }
 
   static async getProductById(id: string): Promise<Product | undefined> {
@@ -98,11 +84,9 @@ export class CatalogService {
         if (dto) {
           return mapProductDTOToUI(dto);
         }
-      } catch {
-        // Fallback to memory search
-      }
+      } catch (error) { throw error; }
     }
-    return staticProducts.find((p) => p.id === id);
+    return undefined;
   }
 
   static async getProductsByCategory(categoryName: string): Promise<Product[]> {
@@ -120,14 +104,7 @@ export class CatalogService {
       if (Array.isArray(dtos) && dtos.length > 0) {
         searchedProducts = dtos.map(mapProductDTOToUI);
       }
-    } catch {
-      searchedProducts = staticProducts.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q.toLowerCase()) ||
-          p.category.toLowerCase().includes(q.toLowerCase()) ||
-          p.brand.toLowerCase().includes(q.toLowerCase())
-      );
-    }
+    } catch (error) { throw error; }
 
     const matchedServices = defaultServices.filter(
       (s) =>

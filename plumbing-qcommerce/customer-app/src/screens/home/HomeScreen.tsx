@@ -53,11 +53,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [categoriesList, setCategoriesList] = useState<Category[]>([]);
   const [servicesList, setServicesList] = useState<PlumbingService[]>([]);
   const [productsList, setProductsList] = useState<Product[]>([]);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
     async function loadCatalog() {
       try {
+        setCatalogError(null);
         const [cats, srvs, prods] = await Promise.all([
           CatalogService.getCategories(),
           CatalogService.getServices(),
@@ -69,7 +71,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           setProductsList(prods);
         }
       } catch (e) {
-        console.warn('Failed to fetch home catalog:', e);
+        if (isMounted) {
+          setCategoriesList([]);
+          setProductsList([]);
+          setCatalogError(e instanceof Error ? e.message : 'Live inventory is unavailable.');
+        }
       }
     }
     loadCatalog();
@@ -224,7 +230,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.productsGrid}>
+          {catalogError ? (
+            <View style={styles.catalogError}>
+              <Text style={styles.catalogErrorText}>Live catalog is unavailable. Products cannot be added until it reconnects.</Text>
+              <TouchableOpacity onPress={() => {
+                setCatalogError(null);
+                Promise.all([CatalogService.getCategories(), CatalogService.getProducts()]).then(([cats, prods]) => {
+                  setCategoriesList(cats); setProductsList(prods);
+                }).catch((error) => setCatalogError(error instanceof Error ? error.message : 'Live inventory is unavailable.'));
+              }} accessibilityRole="button" accessibilityLabel="Retry live catalog"><Text style={styles.retryText}>Retry catalog</Text></TouchableOpacity>
+            </View>
+          ) : <View style={styles.productsGrid}>
             {productsList.map((product) => {
               const isAdded = cartItems.some((i) => i.id === product.id);
               return (
@@ -237,7 +253,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 />
               );
             })}
-          </View>
+          </View>}
         </View>
 
         {/* FixKart Assurance Banner */}
@@ -497,6 +513,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
+  catalogError: { borderWidth: 1, borderColor: colors.error, borderRadius: 12, padding: spacing.md },
+  catalogErrorText: { color: colors.error, marginBottom: spacing.sm },
+  retryText: { color: colors.primary, fontWeight: '700' },
   assuranceCard: {
     marginHorizontal: spacing.lg,
     marginTop: spacing.xl,

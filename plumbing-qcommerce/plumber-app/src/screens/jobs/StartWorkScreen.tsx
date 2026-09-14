@@ -50,17 +50,18 @@ export function StartWorkScreen({ route, navigation }: Props) {
   const customerName = activeJob?.customer.fullName || 'Customer';
   const customerInitial = customerName.charAt(0).toUpperCase();
 
-  const handleStartWorkDirect = async () => {
+  const persistWorkStart = async (): Promise<boolean> => {
     if (!canStart) {
       Alert.alert(
         'Checklist Incomplete',
         'Please complete all inspection checklist items and confirm diagnosis with customer.'
       );
-      return;
+      return false;
     }
     setLoading(true);
     try {
-      await (jobService as any).startWork?.(jobId);
+      const startedJob = await jobService.startWork(jobId);
+      dispatch(setActiveJob(startedJob));
       dispatch(
         updateJobStatus({
           status: 'started',
@@ -68,26 +69,25 @@ export function StartWorkScreen({ route, navigation }: Props) {
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         })
       );
-      if (activeJob) {
-        dispatch(setActiveJob({ ...activeJob, status: 'started' }));
-      }
-      navigation.navigate('ActiveJob', { jobId });
+      return true;
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Failed to start job.');
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const handleMaterialsRequired = () => {
-    dispatch(
-      updateJobStatus({
-        status: 'started' as any,
-        timelineField: 'started',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      })
-    );
-    navigation.navigate('StoreSelection', { jobId });
+  const handleStartWorkDirect = async () => {
+    if (await persistWorkStart()) {
+      navigation.navigate('ActiveJob', { jobId });
+    }
+  };
+
+  const handleMaterialsRequired = async () => {
+    if (await persistWorkStart()) {
+      navigation.navigate('StoreSelection', { jobId });
+    }
   };
 
   return (
@@ -135,8 +135,9 @@ export function StartWorkScreen({ route, navigation }: Props) {
         <Text style={styles.decisionLabel}>Work & Material Decision</Text>
         <View style={styles.decisionRow}>
           <TouchableOpacity
-            style={styles.materialsBtn}
+            style={[styles.materialsBtn, (!canStart || loading) && styles.materialsBtnDisabled]}
             onPress={handleMaterialsRequired}
+            disabled={!canStart || loading}
             accessibilityRole="button"
             accessibilityLabel="Select materials required for this job"
           >
@@ -234,6 +235,9 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
     color: colors.warning || '#865200',
+  },
+  materialsBtnDisabled: {
+    opacity: 0.5,
   },
   startBtn: {
     flex: 1.2,

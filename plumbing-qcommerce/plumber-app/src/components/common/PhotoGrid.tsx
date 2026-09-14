@@ -4,7 +4,7 @@ import CameraIcon from '../../assets/icons/camera.svg';
 import CloseIcon from '../../assets/icons/close.svg';
 import { colors, spacing, borderRadius, typography } from '../../theme';
 
-export type PhotoItem = string | { uri?: string } | null | undefined;
+export type PhotoItem = string | { uri?: string; headers?: Record<string, string> } | null | undefined;
 
 interface PhotoGridProps {
   photos?: PhotoItem[];
@@ -22,22 +22,22 @@ export function PhotoGrid({
 }: PhotoGridProps) {
   const cells = Array.from({ length: slots }, (_, i) => photos[i] || null);
 
-  const getPhotoUri = (photo: PhotoItem): string | undefined => {
+  const getPhotoSource = (photo: PhotoItem): { uri?: string; headers?: Record<string, string> } | undefined => {
     if (!photo) return undefined;
-    if (typeof photo === 'string') return photo;
-    return photo.uri;
+    if (typeof photo === 'string') return { uri: photo };
+    return photo;
   };
 
   return (
     <View style={styles.grid}>
       {cells.map((photo, idx) => {
-        const uri = getPhotoUri(photo);
+        const source = getPhotoSource(photo);
         return (
           <View key={idx} style={styles.cellWrap}>
             {photo ? (
               <View style={styles.cell}>
-                {uri ? (
-                  <Image source={{ uri }} style={styles.image} resizeMode="cover" />
+                {source?.uri ? (
+                  <Image source={source} style={styles.image} resizeMode="cover" />
                 ) : (
                   <View style={styles.invalidPhoto}>
                     <Text style={styles.invalidPhotoText}>Photo unavailable</Text>
