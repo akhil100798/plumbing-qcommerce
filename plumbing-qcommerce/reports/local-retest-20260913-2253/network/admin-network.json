@@ -1,0 +1,756 @@
+[
+  {
+    "method": "POST",
+    "url": "http://localhost:8081/api/v1/auth/login",
+    "failure": "net::ERR_CONNECTION_RESET"
+  },
+  {
+    "phase": "request",
+    "method": "POST",
+    "url": "http://localhost:8081/api/v1/auth/login"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8081/api/v1/auth/login",
+    "failure": "net::ERR_CONNECTION_RESET"
+  },
+  {
+    "phase": "request",
+    "method": "POST",
+    "url": "http://localhost:8081/api/v1/auth/login"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8081/api/v1/auth/login",
+    "status": 200,
+    "time": "2026-09-14T08:19:07.534Z"
+  },
+  {
+    "phase": "request",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me"
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200,
+    "time": "2026-09-14T08:19:08.759Z"
+  },
+  {
+    "phase": "request",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/super/dashboard"
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/super/dashboard",
+    "status": 200,
+    "time": "2026-09-14T08:19:28.046Z"
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:8081/health/live",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "method": "GET",
+    "url": "http://127.0.0.1:8081/health/live",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "POST",
+    "url": "http://localhost:8081/api/v1/auth/login",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/super/dashboard",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/super/dashboard",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/super/users",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/users/12",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/users/13",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/users/14",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/users/15",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/users/12",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/users/13",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/users/15",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/users/14",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/roles",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/permissions",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/roles/SUPER_ADMIN/permissions",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/operations/service-jobs",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/operations/material-requests",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/operations/product-orders",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/operations/dashboard",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/operations/product-orders",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/operations/orders/1",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/operations/orders/1",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/operations/service-jobs",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/operations/service-jobs/1",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/operations/service-jobs/2",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/operations/service-jobs/1",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/operations/service-jobs/2",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/operations/material-requests",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/material-requests",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/operations/delivery-partners/available",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/operations/product-orders",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/operations/service-jobs",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/operations/service-jobs/1",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/operations/service-jobs/2",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/operations/service-jobs/1",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/operations/service-jobs/2",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/finance/settlements/stores",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/finance/payments",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/finance/refunds",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/finance/dashboard",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/finance/payments",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/finance/payments/PO-1",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/finance/settlements/stores",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/finance/payouts/plumbers",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/finance/payouts/delivery-partners",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/finance/refunds",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/finance/commission-report",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/support/tickets",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/support/tickets",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/support/tickets",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/support/dashboard",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/support/tickets",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/support/tickets",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/plumber-manager/kyc/pending",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/plumber-manager/dashboard",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/plumber-manager/plumbers",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/plumber-manager/plumbers/10",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/plumber-manager/plumbers/10",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/plumber-manager/plumbers/11",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/plumber-manager/kyc/pending",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/plumber-manager/plumbers",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/plumber-manager/plumbers/10/performance",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/plumber-manager/plumbers/11/performance",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/plumber-manager/plumbers/10",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/plumber-manager/plumbers/10",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/plumber-manager/plumbers/11",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/plumber-manager/plumbers",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/plumber-manager/plumbers/10",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/plumber-manager/plumbers/10",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:3001/plumber-manager/plumbers/11",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/marketing/dashboard",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/marketing/offers",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/marketing/campaigns",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/marketing/banners",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/marketing/notifications",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/marketing/segments",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/rbac/me",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/admin/marketing/reports",
+    "status": 200
+  }
+]

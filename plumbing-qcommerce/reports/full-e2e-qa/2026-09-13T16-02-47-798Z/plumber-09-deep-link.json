@@ -1,0 +1,40 @@
+{
+  "url": "https://fixkart-plumber-web.vercel.app/jobs",
+  "text": "404: NOT_FOUND\nCode: NOT_FOUND\nID: bom1::rnjvt-1789315377689-f0a88195ea94\n\nRead our documentation to learn more about this error.",
+  "aria": "- main:\n  - paragraph:\n    - strong: \"404\"\n    - text: \": NOT_FOUND Code:\"\n    - code: \"`NOT_FOUND`\"\n    - text: \"ID:\"\n    - code: \"`bom1::rnjvt-1789315377689-f0a88195ea94`\"\n  - link \"Read our documentation to learn more about this error.\":\n    - /url: https://vercel.com/docs/errors/NOT_FOUND",
+  "inputs": [],
+  "controls": [
+    {
+      "tag": "A",
+      "role": null,
+      "text": "Read our documentation to learn more about this error.",
+      "label": null,
+      "placeholder": null,
+      "type": ""
+    }
+  ],
+  "events": [
+    {
+      "type": "warning",
+      "text": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md"
+    },
+    {
+      "type": "request",
+      "url": "https://fixkart-dev2-backend.onrender.com/api/v1/auth/login",
+      "method": "POST"
+    },
+    {
+      "type": "warning",
+      "text": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md"
+    },
+    {
+      "type": "response",
+      "url": "https://fixkart-plumber-web.vercel.app/jobs",
+      "status": 404
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    }
+  ]
+}

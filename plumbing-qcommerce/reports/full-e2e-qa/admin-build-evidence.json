@@ -1,0 +1,10 @@
+{
+  "id": "dpl_4an6mA73RTVQBE7PWkQ6a3A4Ni1y",
+  "url": "admin-portal-a063lhba6-sirupuramakhil-2873s-projects.vercel.app",
+  "state": "ERROR",
+  "errorCode": "missing_pages_app",
+  "errorMessage": "Command \"npm run vercel-build\" exited with 1",
+  "errorStep": "buildStep",
+  "branch": "Development-2",
+  "sha": "618a8181b165644013422a217bb5dc2ff66b9209"
+}

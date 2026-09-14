@@ -1,0 +1,4 @@
+{
+  "url": "http://localhost:8082/",
+  "snapshot": "- img\n- text: Order Cart (1 items)\n- img\n- text: Service Location (HOME) Sector 14, 27th Main, HSR Layout CHANGE Selected Services & Items SPARE PART CPVC Pipe 1/2 inch (QA) ₹290 ₹980 − 2 + Offers & Coupons\n- textbox \"Enter coupon (e.g. FIXFIRST50)\"\n- text: APPLY Bill Details Item Total ₹290 Visiting & Inspection Fee ₹29 Taxes & GST (5%) ₹15 To Pay ₹334\n- img\n- text: Free cancellation up to 15 minutes before scheduled arrival time. Total Amount ₹334 Proceed to Checkout\n- img\n- img\n- text: Home\n- img\n- text: Search\n- img\n- text: Bookings\n- img\n- text: 2 Cart\n- img\n- text: Profile"
+}

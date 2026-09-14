@@ -1,0 +1,4 @@
+{
+  "url": "http://localhost:8082/",
+  "snapshot": "- img\n- img\n- textbox \"Search plumber services, pipes, taps...\"\n- button \"All Items\"\n- button \"Plumbing Services\"\n- button \"Genuine Spares\"\n- text: POPULAR SEARCHES\n- button \"Tap repair\"\n- button \"CPVC pipes\"\n- button \"Western toilet\"\n- button \"Geyser service\"\n- button \"Brass valve\"\n- img\n- text: No results for \"\" Try searching with general keywords like \"tap\", \"leakage\", \"pipes\", or \"geyser\".\n- img\n- text: Home\n- img\n- text: Search\n- img\n- text: Bookings\n- img\n- text: Cart\n- img\n- text: Profile"
+}

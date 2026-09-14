@@ -1,0 +1,178 @@
+{
+  "status": 200,
+  "ms": 108,
+  "data": [
+    {
+      "id": 1,
+      "store": {
+        "id": 1,
+        "name": "FixKart QA Staging Store",
+        "address": "1 QA Test Lane, Hyderabad",
+        "latitude": 17.4485,
+        "longitude": 78.3741,
+        "manager": {
+          "id": 12,
+          "email": "store.qa@fixkart.com",
+          "fullName": "QA Store Manager",
+          "phone": "5555500005",
+          "authProvider": "LOCAL",
+          "providerId": null,
+          "phoneVerified": false,
+          "profileImageUrl": null,
+          "profileComplete": false,
+          "role": "STORE_MANAGER",
+          "status": "ACTIVE",
+          "createdAt": "2026-09-14T08:07:17.800331",
+          "updatedAt": "2026-09-14T12:48:06.000019",
+          "availability": null
+        }
+      },
+      "product": {
+        "id": 1,
+        "sku": "QA-CPVC-PIPE-12",
+        "name": "CPVC Pipe 1/2 inch (QA)",
+        "description": "Half-inch CPVC repair pipe — QA sufficient stock",
+        "price": 145,
+        "imageUrl": null,
+        "category": {
+          "id": 1,
+          "name": "Pipes",
+          "description": "PVC, CPVC, and drainage pipes",
+          "parent": null
+        }
+      },
+      "availableQuantity": 48,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5
+    },
+    {
+      "id": 2,
+      "store": {
+        "id": 1,
+        "name": "FixKart QA Staging Store",
+        "address": "1 QA Test Lane, Hyderabad",
+        "latitude": 17.4485,
+        "longitude": 78.3741,
+        "manager": {
+          "id": 12,
+          "email": "store.qa@fixkart.com",
+          "fullName": "QA Store Manager",
+          "phone": "5555500005",
+          "authProvider": "LOCAL",
+          "providerId": null,
+          "phoneVerified": false,
+          "profileImageUrl": null,
+          "profileComplete": false,
+          "role": "STORE_MANAGER",
+          "status": "ACTIVE",
+          "createdAt": "2026-09-14T08:07:17.800331",
+          "updatedAt": "2026-09-14T12:48:06.000019",
+          "availability": null
+        }
+      },
+      "product": {
+        "id": 2,
+        "sku": "QA-PVC-ELBOW-34",
+        "name": "PVC Elbow 3/4 inch (QA)",
+        "description": "3/4 inch elbow fitting — QA sufficient stock",
+        "price": 35,
+        "imageUrl": null,
+        "category": {
+          "id": 2,
+          "name": "Fittings",
+          "description": "Joints, tees, elbows, and couplers",
+          "parent": null
+        }
+      },
+      "availableQuantity": 50,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5
+    },
+    {
+      "id": 3,
+      "store": {
+        "id": 1,
+        "name": "FixKart QA Staging Store",
+        "address": "1 QA Test Lane, Hyderabad",
+        "latitude": 17.4485,
+        "longitude": 78.3741,
+        "manager": {
+          "id": 12,
+          "email": "store.qa@fixkart.com",
+          "fullName": "QA Store Manager",
+          "phone": "5555500005",
+          "authProvider": "LOCAL",
+          "providerId": null,
+          "phoneVerified": false,
+          "profileImageUrl": null,
+          "profileComplete": false,
+          "role": "STORE_MANAGER",
+          "status": "ACTIVE",
+          "createdAt": "2026-09-14T08:07:17.800331",
+          "updatedAt": "2026-09-14T12:48:06.000019",
+          "availability": null
+        }
+      },
+      "product": {
+        "id": 3,
+        "sku": "QA-THREAD-TAPE-01",
+        "name": "Thread Seal Tape (QA)",
+        "description": "Leak-resistant sealing tape — QA sufficient stock",
+        "price": 25,
+        "imageUrl": null,
+        "category": {
+          "id": 3,
+          "name": "Tools",
+          "description": "Repair tools and accessories",
+          "parent": null
+        }
+      },
+      "availableQuantity": 50,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5
+    },
+    {
+      "id": 4,
+      "store": {
+        "id": 1,
+        "name": "FixKart QA Staging Store",
+        "address": "1 QA Test Lane, Hyderabad",
+        "latitude": 17.4485,
+        "longitude": 78.3741,
+        "manager": {
+          "id": 12,
+          "email": "store.qa@fixkart.com",
+          "fullName": "QA Store Manager",
+          "phone": "5555500005",
+          "authProvider": "LOCAL",
+          "providerId": null,
+          "phoneVerified": false,
+          "profileImageUrl": null,
+          "profileComplete": false,
+          "role": "STORE_MANAGER",
+          "status": "ACTIVE",
+          "createdAt": "2026-09-14T08:07:17.800331",
+          "updatedAt": "2026-09-14T12:48:06.000019",
+          "availability": null
+        }
+      },
+      "product": {
+        "id": 4,
+        "sku": "QA-LOW-STOCK-01",
+        "name": "Pipe Wrench (QA Low-Stock)",
+        "description": "Pipe wrench — intentionally LOW stock for negative test",
+        "price": 299,
+        "imageUrl": null,
+        "category": {
+          "id": 3,
+          "name": "Tools",
+          "description": "Repair tools and accessories",
+          "parent": null
+        }
+      },
+      "availableQuantity": 2,
+      "reservedQuantity": 0,
+      "lowStockThreshold": 5
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "tag": "INPUT",
+    "role": null,
+    "name": ""
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "name": ""
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "name": "Remember me"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "name": "Forgot Password?"
+  },
+  {
+    "tag": "BUTTON",
+    "role": "button",
+    "name": "Log In"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "name": "Register Store"
+  },
+  {
+    "tag": "BODY",
+    "role": null,
+    "name": "\n    \n    \n      You need to enable JavaScript to run this app.\n    \n "
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "name": ""
+  }
+]

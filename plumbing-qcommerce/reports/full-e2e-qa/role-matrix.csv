@@ -1,0 +1,12 @@
+role,sourceSupported,runtimeSeedEvidence,login,allowedNavigation,forbiddenNavigation,allowedAPI,forbiddenAPI,profile,session,logout,reason
+"CUSTOMER","yes","mobile QA seeder","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","No usable authenticated QA session; source/log role names are not deployed authorization proof"
+"PLUMBER","yes","mobile QA seeder","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","No usable authenticated QA session; source/log role names are not deployed authorization proof"
+"STORE_MANAGER","yes","startup seed logs","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","No usable authenticated QA session; source/log role names are not deployed authorization proof"
+"ADMIN","yes","startup seed logs","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","No usable authenticated QA session; source/log role names are not deployed authorization proof"
+"SUPER_ADMIN","yes","startup seed logs","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","No usable authenticated QA session; source/log role names are not deployed authorization proof"
+"OPERATIONS_ADMIN","yes","startup seed logs","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","No usable authenticated QA session; source/log role names are not deployed authorization proof"
+"PLUMBER_MANAGER","yes","startup seed logs","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","No usable authenticated QA session; source/log role names are not deployed authorization proof"
+"FINANCE_ADMIN","yes","startup seed logs","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","No usable authenticated QA session; source/log role names are not deployed authorization proof"
+"SUPPORT_ADMIN","yes","startup seed logs","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","No usable authenticated QA session; source/log role names are not deployed authorization proof"
+"MARKETING_ADMIN","yes","startup seed logs","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","No usable authenticated QA session; source/log role names are not deployed authorization proof"
+"DELIVERY_PARTNER","yes","not investigated","NOT APPLICABLE","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","BLOCKED","Outside self-pickup scope"

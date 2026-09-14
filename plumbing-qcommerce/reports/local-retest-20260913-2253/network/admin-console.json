@@ -1,0 +1,10 @@
+[
+  {
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_CONNECTION_RESET"
+  },
+  {
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_CONNECTION_RESET"
+  }
+]

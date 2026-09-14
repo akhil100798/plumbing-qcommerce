@@ -1,0 +1,3 @@
+{
+  "snapshot": "- text: Hardware Inventory\n- img\n- text: All In Stock Low Stock Out of Stock 📦 No hardware products in this stock category.\n- tablist:\n  - tab \"Home\":\n    - img\n    - img\n    - text: Home\n  - tab \"Orders\":\n    - img\n    - img\n    - text: Orders\n  - tab \"Inventory\" [selected]:\n    - img\n    - img\n    - text: Inventory\n  - tab \"Materials\":\n    - img\n    - img\n    - text: Materials\n  - tab \"Account\":\n    - img\n    - img\n    - text: Account"
+}

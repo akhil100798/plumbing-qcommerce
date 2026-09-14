@@ -1,0 +1,46 @@
+[
+  {
+    "type": "request",
+    "url": "https://fixkart-dev2-backend.onrender.com/api/v1/auth/verify-otp",
+    "method": "POST"
+  },
+  {
+    "type": "error",
+    "text": "Access to XMLHttpRequest at 'https://fixkart-dev2-backend.onrender.com/api/v1/auth/verify-otp' from origin 'https://fixkart-plumber-web.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+  },
+  {
+    "type": "error",
+    "text": "API Error: {url: /auth/verify-otp, status: undefined, message: Network Error}"
+  },
+  {
+    "type": "failed",
+    "url": "https://fixkart-dev2-backend.onrender.com/api/v1/auth/verify-otp",
+    "error": "net::ERR_FAILED"
+  },
+  {
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_FAILED"
+  },
+  {
+    "type": "request",
+    "url": "https://fixkart-dev2-backend.onrender.com/api/v1/auth/send-otp",
+    "method": "POST"
+  },
+  {
+    "type": "error",
+    "text": "Access to XMLHttpRequest at 'https://fixkart-dev2-backend.onrender.com/api/v1/auth/send-otp' from origin 'https://fixkart-plumber-web.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+  },
+  {
+    "type": "error",
+    "text": "API Error: {url: /auth/send-otp, status: undefined, message: Network Error}"
+  },
+  {
+    "type": "failed",
+    "url": "https://fixkart-dev2-backend.onrender.com/api/v1/auth/send-otp",
+    "error": "net::ERR_FAILED"
+  },
+  {
+    "type": "error",
+    "text": "Failed to load resource: net::ERR_FAILED"
+  }
+]

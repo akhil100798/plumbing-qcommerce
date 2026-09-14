@@ -1,0 +1,50 @@
+{
+  "url": "https://fixkart-plumber-web.vercel.app/",
+  "text": "←\nVerify Number\nVerify Your Number\nEnter the 6-digit code sent to\n+91 5555500003\nResend OTP in 00:27\nYour data is safe with us",
+  "aria": "- text: ← Verify Number Verify Your Number Enter the 6-digit code sent to +91 5555500003\n- textbox: \"0\"\n- textbox: \"0\"\n- textbox: \"0\"\n- textbox: \"0\"\n- textbox: \"0\"\n- textbox: \"0\"\n- text: Resend OTP in 00:27\n- img\n- text: Your data is safe with us\n- button \"Verify & Continue\" [disabled]:\n  - progressbar:\n    - img",
+  "inputs": [
+    {
+      "type": "text",
+      "placeholder": "",
+      "label": null,
+      "valueLength": 1
+    },
+    {
+      "type": "text",
+      "placeholder": "",
+      "label": null,
+      "valueLength": 1
+    },
+    {
+      "type": "text",
+      "placeholder": "",
+      "label": null,
+      "valueLength": 1
+    },
+    {
+      "type": "text",
+      "placeholder": "",
+      "label": null,
+      "valueLength": 1
+    },
+    {
+      "type": "text",
+      "placeholder": "",
+      "label": null,
+      "valueLength": 1
+    },
+    {
+      "type": "text",
+      "placeholder": "",
+      "label": null,
+      "valueLength": 1
+    }
+  ],
+  "events": [
+    {
+      "type": "request",
+      "url": "https://fixkart-dev2-backend.onrender.com/api/v1/auth/verify-otp",
+      "method": "POST"
+    }
+  ]
+}

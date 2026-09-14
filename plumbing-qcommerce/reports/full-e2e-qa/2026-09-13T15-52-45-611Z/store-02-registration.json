@@ -1,0 +1,148 @@
+{
+  "time": "2026-09-13T15:52:58.914Z",
+  "url": "https://fixkart-store-web.vercel.app/",
+  "text": "Register your Store\nCreate a Store manager account and business profile.\nManager full name\nEmail\nMobile number\nStore name\nStore address\nLatitude\nLongitude\nPassword\nConfirm password\nCreate Store Account\nAlready registered? Log in",
+  "controls": [
+    {
+      "tag": "INPUT",
+      "role": null,
+      "tabindex": null,
+      "type": "text",
+      "label": null,
+      "text": "",
+      "placeholder": null,
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "role": null,
+      "tabindex": null,
+      "type": "email",
+      "label": null,
+      "text": "",
+      "placeholder": null,
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "role": null,
+      "tabindex": null,
+      "type": "tel",
+      "label": null,
+      "text": "",
+      "placeholder": null,
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "role": null,
+      "tabindex": null,
+      "type": "text",
+      "label": null,
+      "text": "",
+      "placeholder": null,
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "role": null,
+      "tabindex": null,
+      "type": "text",
+      "label": null,
+      "text": "",
+      "placeholder": null,
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "role": null,
+      "tabindex": null,
+      "type": "text",
+      "label": null,
+      "text": "",
+      "placeholder": null,
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "role": null,
+      "tabindex": null,
+      "type": "text",
+      "label": null,
+      "text": "",
+      "placeholder": null,
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "role": null,
+      "tabindex": null,
+      "type": "password",
+      "label": null,
+      "text": "",
+      "placeholder": null,
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "role": null,
+      "tabindex": null,
+      "type": "password",
+      "label": null,
+      "text": "",
+      "placeholder": null,
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "role": "button",
+      "tabindex": "0",
+      "type": "button",
+      "label": "Create Store Account",
+      "text": "Create Store Account",
+      "placeholder": null,
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "DIV",
+      "role": null,
+      "tabindex": "0",
+      "label": null,
+      "text": "Already registered? Log in",
+      "placeholder": null,
+      "href": null
+    }
+  ],
+  "cursorControls": [
+    {
+      "text": "Remember me",
+      "role": null,
+      "tabindex": 0
+    },
+    {
+      "text": "Forgot Password?",
+      "role": null,
+      "tabindex": 0
+    },
+    {
+      "text": "Register Store",
+      "role": null,
+      "tabindex": 0
+    },
+    {
+      "text": "Already registered? Log in",
+      "role": null,
+      "tabindex": 0
+    }
+  ]
+}

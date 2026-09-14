@@ -1,0 +1,87 @@
+{
+  "url": "https://fixkart-store-web.vercel.app/",
+  "text": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\n✓\nRemember me\nForgot Password?\nWant to register a store? \nRegister Store",
+  "aria": "- img\n- text: FixKart Store Partner App Welcome Back! Log in to manage and fulfill your inventory orders. Email Address\n- textbox \"store@plumbcommerce.com\"\n- text: Password\n- textbox \"••••••••\"\n- text: ✓ Remember me Forgot Password?\n- button \"Log In\" [disabled]:\n  - progressbar:\n    - img\n- text: Want to register a store? Register Store",
+  "inputs": [
+    {
+      "type": "email",
+      "placeholder": "store@plumbcommerce.com",
+      "label": null,
+      "labels": [],
+      "required": false,
+      "maxLength": -1,
+      "validity": true
+    },
+    {
+      "type": "password",
+      "placeholder": "••••••••",
+      "label": null,
+      "labels": [],
+      "required": false,
+      "maxLength": -1,
+      "validity": true
+    }
+  ],
+  "controls": [
+    {
+      "tag": "INPUT",
+      "role": null,
+      "text": "",
+      "label": null,
+      "placeholder": "store@plumbcommerce.com",
+      "type": "email"
+    },
+    {
+      "tag": "INPUT",
+      "role": null,
+      "text": "",
+      "label": null,
+      "placeholder": "••••••••",
+      "type": "password"
+    },
+    {
+      "tag": "DIV",
+      "role": null,
+      "text": "✓\nRemember me",
+      "label": null,
+      "placeholder": null
+    },
+    {
+      "tag": "DIV",
+      "role": null,
+      "text": "Forgot Password?",
+      "label": null,
+      "placeholder": null
+    },
+    {
+      "tag": "BUTTON",
+      "role": "button",
+      "text": "",
+      "label": "Log In",
+      "placeholder": null,
+      "type": "button"
+    },
+    {
+      "tag": "DIV",
+      "role": null,
+      "text": "Register Store",
+      "label": null,
+      "placeholder": null
+    }
+  ],
+  "events": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "warning",
+      "text": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md"
+    },
+    {
+      "type": "request",
+      "url": "https://fixkart-dev2-backend.onrender.com/api/v1/auth/login",
+      "method": "POST"
+    }
+  ]
+}

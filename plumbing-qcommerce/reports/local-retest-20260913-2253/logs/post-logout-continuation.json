@@ -1,0 +1,18 @@
+[
+  {
+    "app": "plumber",
+    "result": "PASS",
+    "note": "UI logout and reload return to login; token invalidation assessed separately",
+    "tokenObservedInActualBrowserStorage": true,
+    "loggedOutAccessTokenReuseStatus": 200,
+    "invalidationResult": "FAIL"
+  },
+  {
+    "app": "store",
+    "result": "PASS",
+    "note": "UI logout and reload return to login; token invalidation assessed separately",
+    "tokenObservedInActualBrowserStorage": true,
+    "loggedOutAccessTokenReuseStatus": 200,
+    "invalidationResult": "FAIL"
+  }
+]

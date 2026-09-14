@@ -1,0 +1,43 @@
+{
+  "status": 200,
+  "data": {
+    "id": 2,
+    "customer": {
+      "id": 8,
+      "email": "customer.qa@fixkart.com",
+      "fullName": "QA Customer One",
+      "phone": "5555500001",
+      "authProvider": "LOCAL",
+      "providerId": null,
+      "phoneVerified": false,
+      "profileImageUrl": null,
+      "profileComplete": false,
+      "role": "CUSTOMER",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-14T08:07:16.890252",
+      "updatedAt": "2026-09-14T08:07:16.890288",
+      "availability": null
+    },
+    "plumber": null,
+    "store": null,
+    "status": "PENDING",
+    "requestType": "NEARBY_AUTO",
+    "description": "QA continuation 2026-09-14T08:11:49.836Z leaking kitchen tap; isolated regression",
+    "customerLatitude": 17.4485,
+    "customerLongitude": 78.3741,
+    "laborCharge": null,
+    "partsCharge": null,
+    "platformFee": null,
+    "totalAmount": null,
+    "referralCommission": null,
+    "createdAt": "2026-09-14T08:11:53.477331319",
+    "acceptedAt": null,
+    "arrivedAt": null,
+    "startedAt": null,
+    "completedAt": null,
+    "customerConfirmedAt": null,
+    "ratedAt": null,
+    "rating": null,
+    "comment": null
+  }
+}

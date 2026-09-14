@@ -1,0 +1,114 @@
+[
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "store@plumbcommerce.com",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "••••••••",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "label": null,
+    "text": "Remember me",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "label": null,
+    "text": "Forgot Password?",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "BUTTON",
+    "role": "button",
+    "label": "Log In",
+    "text": "Log In",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "label": null,
+    "text": "Register Store",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "BODY",
+    "role": null,
+    "label": null,
+    "text": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill y",
+    "placeholder": null,
+    "outline": "rgb(0, 0, 0) none 3px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "store@plumbcommerce.com",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "••••••••",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "label": null,
+    "text": "Remember me",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "label": null,
+    "text": "Forgot Password?",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "BUTTON",
+    "role": "button",
+    "label": "Log In",
+    "text": "Log In",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "label": null,
+    "text": "Register Store",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "BUTTON",
+    "role": "button",
+    "label": "Log In",
+    "text": "Log In",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  }
+]

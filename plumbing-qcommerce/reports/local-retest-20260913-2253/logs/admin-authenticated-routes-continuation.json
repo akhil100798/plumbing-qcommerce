@@ -1,0 +1,821 @@
+[
+  {
+    "route": "/dashboard",
+    "module": "Dashboard",
+    "text": "Platform Overview\n\nA clean read on the platform core and its current load.\n\nLIVE\nRefresh\nLast synced 14/9/2026, 6:21:16 pm\nCUSTOMERS\n3\nRegistered buyers\nPLUMBERS\n2\nTrade accounts\nSTORES\n1\nManaged locations\nDELIVERY PARTNERS\n0\nLogistics users\nADMIN USERS\n8\nPrivileged operators\nPRODUCT ORDERS\n1\nCommerce orders\nSERVICE ORDERS\n2\nJob requests\nREVENUE\n₹0\nCompleted value\nPENDING ORDERS\n1\nOrders awaiting action\nACTIVE JOBS\n0\nJobs in motion\nOperational Mix\nSUMMARY\nUSER BASE\n3 customers and 2 plumbers\nACTIVITY\n1 pending orders and 0 active jobs\nREVENUE\n₹0\nSUPPORT LOAD\n0 material requests awaiting review",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/super/dashboard",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/users",
+    "module": "Users",
+    "text": "Users\n\nSearch, filter, and manage every platform user.\n\n15 USERS\nSearch\nRole\nAll roles\nSUPER ADMIN\nADMIN\nOPERATIONS ADMIN\nPLUMBER MANAGER\nFINANCE ADMIN\nSUPPORT ADMIN\nMARKETING ADMIN\nSTORE MANAGER\nCUSTOMER\nPLUMBER\nDELIVERY PARTNER\nStatus\nAll statuses\nACTIVE\nSUSPENDED\nBLOCKED\nPage size\n10\n20\n50\nUSER\tROLE\tSTATUS\tCREATED\tLAST ACTIVE\tACTIONS\n\nDefault Admin\nadmin@plumbcommerce.com\n5555555555\n\tADMIN\tACTIVE\t14/9/2026, 8:07:19 am\t-\t\nView\nSuspend\nBlock\nActivate\n\n\nDefault Customer\ncustomer@plumbcommerce.com\n0987654321\n\tCUSTOMER\tACTIVE\t14/9/2026, 8:07:19 am\t-\t\nView\nSuspend\nBlock\nActivate\n\n\nDefault Store Manager\nmanager@plumbcommerce.com\n1234567890\n\tSTORE MANAGER\tACTIVE\t14/9/2026, 8:07:18 am\t-\t\nView\nSuspend\nBlock\nActivate\n\n\nQA Store Manager\nstore.qa@fixkart.com\n5555500005\n\tSTORE MANAGER\tACTIVE\t14/9/2026, 8:07:17 am\t-\t\nView\nSuspend\nBlock\nActivate\n\n\nQA Plumber Two\nplumber2.qa@fixkart.com\n5555500004\n\tPLUMBER\tACTIVE\t14/9/2026, 8:07:17 am\t-\t\nView\nSuspend\nBlock\nActivate\n\n\nQA Plumber One\nplumber.qa@fixkart.com\n5555500003\n\tPLUMBER\tACTIVE\t14/9/2026, 8:07:17 am\t-\t\nView\nSuspend\nBlock\nActivate\n\n\nQA Customer Two\ncustomer2.qa@fixkart.com\n5555500002\n\tCUSTOMER\tACTIVE\t14/9/2026, 8:07:17 am\t-\t\nView\nSuspend\nBlock\nActivate\n\n\nQA Customer One\ncustomer.qa@fixkart.com\n5555500001\n\tCUSTOMER\tACTIVE\t14/9/2026, 8:07:16 am\t-\t\nView\nSuspend\nBlock\nActivate\n\n\nStaging Marketing Admin\nmarketing@plumbcommerce.com\n5555555506\n\tMARKETING ADMIN\tACTIVE\t14/9/2026, 8:07:16 am\t-\t\nView\nSuspend\nBlock\nActivate\n\n\nStaging Plumber Manager\nplumbermanager@plumbcommerce.com\n5555555505\n\tPLUMBER MANAGER\tACTIVE\t14/9/2026, 8:07:16 am\t-\t\nView\nSuspend\nBlock\nActivate\nShowing 10 of 15\nPrevious\nPAGE 1 OF 2\nNext",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/super/users",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/admins",
+    "module": "Admin Users",
+    "text": "Admin Users\n\nA grouped view of privileged accounts across the platform.\n\nLOADING\nSUPER ADMIN\n0\nLoading...\nADMIN\n0\nLoading...\nOPERATIONS ADMIN\n0\nLoading...\nPLUMBER MANAGER\n0\nLoading...\nFINANCE ADMIN\n0\nLoading...\nSUPPORT ADMIN\n0\nLoading...\nMARKETING ADMIN\n0\nLoading...",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/roles",
+    "module": "Roles & Permissions",
+    "text": "Roles & Permissions\n\nPhase 1 RBAC foundation, surfaced for the Super Admin team.\n\nSUPER ADMIN\nRoles\n11\nSUPER ADMIN\nADMIN\nOPERATIONS ADMIN\nPLUMBER MANAGER\nFINANCE ADMIN\nSUPPORT ADMIN\nMARKETING ADMIN\nSTORE MANAGER\nCUSTOMER\nPLUMBER\nDELIVERY PARTNER\nSUPER ADMIN\n33\nPERMISSIONS\nUSER_VIEW\nUSER_MANAGE\nPLUMBER_VIEW\nPLUMBER_MANAGE\nPLUMBER_KYC_APPROVE\nSTORE_VIEW\nSTORE_MANAGE\nORDER_VIEW\nORDER_MANAGE\nSERVICE_JOB_VIEW\nSERVICE_JOB_MANAGE\nDELIVERY_VIEW\nDELIVERY_MANAGE\nMATERIAL_REQUEST_VIEW\nMATERIAL_REQUEST_MANAGE\nPAYMENT_VIEW\nPAYMENT_MANAGE\nSETTLEMENT_VIEW\nSETTLEMENT_MANAGE\nREFUND_VIEW\nREFUND_MANAGE\nSUPPORT_TICKET_VIEW\nSUPPORT_TICKET_MANAGE\nOFFER_VIEW\nOFFER_MANAGE\nNOTIFICATION_VIEW\nNOTIFICATION_MANAGE\nREPORT_VIEW\nAI_ANALYTICS_VIEW\nSYSTEM_SETTINGS_VIEW\nSYSTEM_SETTINGS_MANAGE\nROLE_VIEW\nROLE_MANAGE\nASSIGNMENT NOTE\nOnly SUPER_ADMIN and ADMIN can manage role assignment. SUPER_ADMIN can assign any role. ADMIN can assign administrative roles, but cannot assign SUPER_ADMIN.\nALL PERMISSIONS\nUSER_VIEW\nUSER_MANAGE\nPLUMBER_VIEW\nPLUMBER_MANAGE\nPLUMBER_KYC_APPROVE\nSTORE_VIEW\nSTORE_MANAGE\nORDER_VIEW\nORDER_MANAGE\nSERVICE_JOB_VIEW\nSERVICE_JOB_MANAGE\nDELIVERY_VIEW\nDELIVERY_MANAGE\nMATERIAL_REQUEST_VIEW\nMATERIAL_REQUEST_MANAGE\nPAYMENT_VIEW\nPAYMENT_MANAGE\nSETTLEMENT_VIEW\nSETTLEMENT_MANAGE\nREFUND_VIEW\nREFUND_MANAGE\nSUPPORT_TICKET_VIEW\nSUPPORT_TICKET_MANAGE\nOFFER_VIEW\nOFFER_MANAGE\nNOTIFICATION_VIEW\nNOTIFICATION_MANAGE\nREPORT_VIEW\nAI_ANALYTICS_VIEW\nSYSTEM_SETTINGS_VIEW\nSYSTEM_SETTINGS_MANAGE\nROLE_VIEW\nROLE_MANAGE",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/roles",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/permissions",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/roles/SUPER_ADMIN/permissions",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/system-health",
+    "module": "System Health",
+    "text": "System Health\n\nA backend-visible dependency snapshot for the current admin environment.\n\nRefreshing\nThis page reports backend-visible dependency health. UNKNOWN means the dependency could not be reached from the current environment, not necessarily that the service is broken.\nLast checked No successful check yet\nDependency Status\nBACKEND-VISIBLE CHECKS\nLoading system health snapshot\nStatus Notes\nINTERPRETATION\nUP\nShown in green when the backend can reach and validate the dependency.\nDOWN\nShown in red when the dependency responds as unhealthy or a backend-visible check fails.\nUNKNOWN\nShown in yellow when the dependency could not be reached from the current environment.",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/operations",
+    "module": "Operations Dashboard",
+    "text": "Operations Dashboard\n\nLive orders, service jobs, delivery pressure, and material flow.\n\nRefresh\nACTIVE PRODUCT ORDERS\nLoading\nPENDING ORDERS\nLoading\nPACKED ORDERS\nLoading\nOUT FOR DELIVERY\nLoading\nDELAYED ORDERS\nLoading\nACTIVE SERVICE JOBS\nLoading\nPENDING MATERIALS\nLoading\nACTIVE DELIVERIES\nLoading\nAVAILABLE PARTNERS\nLoading\nCANCELLED TODAY\nLoading\nRecent Product Orders\nView all\nRecent Service Jobs\nView all\nMaterial Requests\nView all\nREQUEST\tJOB\tPLUMBER\tCUSTOMER\tSTATUS\tAMOUNT",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/operations/service-jobs",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/operations/material-requests",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/operations/product-orders",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/operations/orders",
+    "module": "Product Orders",
+    "text": "Product Orders\n\nMonitor, cancel, and reassign live commerce orders.\n\n1 SHOWN\nSearch\nStatus\nAll statuses\nPENDING\nCONFIRMED\nPACKING\nREADY_FOR_PICKUP\nOUT_FOR_DELIVERY\nDELIVERED\nFAILED\nCANCELLED\nStore ID\nORDER\tCUSTOMER\tSTORE\tTOTAL\tSTATUS\tDELIVERY\tCREATED\tACTIONS\n#1\t\nQA Customer One\n5555500001\n\tFixKart QA Staging Store\t₹290\tREQUESTED\tUnassigned\t14/9/2026, 12:49:48 pm\t\nView\nReassign\nCancel\nPage 1 of 1\nPrevious\nNext",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/operations/product-orders",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/operations/service-jobs",
+    "module": "Service Jobs",
+    "text": "Service Jobs\n\nTrack plumber jobs, delayed work, and reassignment needs.\n\n2 SHOWN\nSearch\nStatus\nAll statuses\nPENDING\nACCEPTED\nIN_PROGRESS\nCOMBINED_ORDER\nCOMPLETED\nPAID\nCANCELLED\nPlumber ID\nJOB\tCUSTOMER\tPLUMBER\tTYPE\tSTATUS\tCREATED\tACTIONS\n#2\t\nQA Customer One\n5555500001\n\t\nQA Plumber One\n5555500003\n\tNEARBY_AUTO\tDELAYED\t14/9/2026, 8:11:53 am\t\nView\nReassign\n\n#1\t\nQA Customer One\n5555500001\n\t\nUnassigned\n-\n\tNEARBY_AUTO\tDELAYED\t14/9/2026, 8:07:18 am\t\nView\nReassign\nPage 1 of 1\nPrevious\nNext",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/operations/service-jobs",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/operations/material-requests",
+    "module": "Material Requests",
+    "text": "Material Requests\n\nMaterial orders raised from active plumber jobs.\n\n1 REQUESTS\nStatus\nAll statuses\nPENDING\nCONFIRMED\nPACKING\nREADY_FOR_PICKUP\nOUT_FOR_DELIVERY\nDELIVERED\nFAILED\nCANCELLED\nPlumber ID\nService Order ID\nREQUEST\tSERVICE JOB\tPLUMBER\tCUSTOMER\tSTORE\tSTATUS\tAMOUNT\tCREATED\n#1\t2\tQA Plumber One\tQA Customer One\tFixKart QA Staging Store\tREQUESTED\t₹290\t14/9/2026, 12:49:48 pm",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/operations/material-requests",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/operations/material-pickups",
+    "module": "Material Pickups",
+    "text": "Material Pickup Management\n\nMonitor, reassign stores, and cancel plumber material pickup requests.\n\n1 REQUESTS\nRefresh\nStatus\nAll statuses\nREQUESTED\nSTORE_REVIEWING\nAPPROVED\nPARTIALLY_AVAILABLE\nREJECTED\nRESERVED\nPREPARING\nREADY_FOR_PICKUP\nPLUMBER_AT_STORE\nCOLLECTED\nCANCELLED\nStore ID\nPlumber ID\nService Order ID\nREQUEST\tSERVICE JOB\tPLUMBER\tCUSTOMER\tSTORE\tSTATUS\tAMOUNT\tCREATED\tACTIONS\n#\t2\tQA Plumber One\tQA Customer One\tFixKart QA Staging Store\tREQUESTED\t—\t14/9/2026, 12:49:48 pm\tManage",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/material-requests",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/operations/delivery-partners",
+    "module": "Delivery Partners",
+    "text": "Delivery Partners\n\nAvailable delivery capacity and active load.\n\n0 ACTIVE PARTNERS\nPARTNER\tPHONE\tSTATUS\tACTIVE LOAD\tLAST LOCATION",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/operations/delivery-partners/available",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/operations/delayed",
+    "module": "Delayed Orders",
+    "text": "Delayed Orders\n\nOperationally delayed product orders and service jobs.\n\n2 DELAYED\nDelayed Product Orders\nORDER\tCUSTOMER\tSTATUS\tREASON\tACTION\nDelayed Service Jobs\nJOB\tCUSTOMER\tSTATUS\tREASON\tACTION\n#2\tQA Customer One\tMATERIALS_REQUIRED\tOlder than service SLA - 14/9/2026, 8:11:53 am\tOpen\n#1\tQA Customer One\tPENDING\tOlder than service SLA - 14/9/2026, 8:07:18 am\tOpen",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/operations/product-orders",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/operations/service-jobs",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/operations/reassignments",
+    "module": "Reassignments",
+    "text": "Reassignments\n\nGuided actions for stuck jobs and delayed deliveries. Reason is required.\n\nOPERATIONS ACTION\nReassign Plumber\nService Job ID\nNew Plumber ID\nSubmit plumber reassignment\nReassign Delivery Partner\nProduct Order ID\nNew Delivery Partner ID\nSubmit delivery reassignment\nReason",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/finance",
+    "module": "Finance Dashboard",
+    "text": "Finance Dashboard\n\nRevenue, payments, refunds, settlements, payouts, and wallet exposure.\n\nFINANCE\nTOTAL REVENUE\n₹0\nTODAY REVENUE\n₹0\nSUCCESSFUL PAYMENTS\n0\nFAILED PAYMENTS\n0\nPENDING PAYMENTS\n0\nPENDING REFUNDS\n0\nPENDING STORE SETTLEMENTS\n0\nPENDING PLUMBER PAYOUTS\n0\nPENDING DELIVERY PAYOUTS\n0\nPLATFORM COMMISSION\n₹0\nRecent Payments\nView all\nPO-1 - QA Customer One\n₹290 - 14/9/2026, 12:49:48 pm\nSUCCESS\nPending Refunds\nReview\nSettlement Snapshot\nSTORE\tGROSS\tCOMMISSION\tNET\tSTATUS",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/finance/settlements/stores",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/finance/payments",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/finance/refunds",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/finance/dashboard",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/finance/payments",
+    "module": "Payments",
+    "text": "Payments\n\nInferred payment ledger from product orders and gateway flow.\n\nStatus\nAll\nSUCCESS\nPENDING\nFAILED\nSearch\nFrom\nTo\nPAYMENT\tORDER\tCUSTOMER\tAMOUNT\tSTATUS\tMETHOD\tCREATED\tACTION\nPO-1\t1\tQA Customer One\t₹290\tSUCCESS\tUNKNOWN\t14/9/2026, 12:49:48 pm\tView\nPage 1 of 1\nPrevious\nNext",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/finance/payments",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/finance/settlements",
+    "module": "Store Settlements",
+    "text": "Store Settlements\n\nGross, commission, and net payable by store.\n\nAll\nPENDING\nPAID\nFAILED\nSETTLEMENT\tSTORE\tGROSS\tCOMMISSION\tNET\tSTATUS\tPAID",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/finance/settlements/stores",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/finance/payouts/plumbers",
+    "module": "Plumber Payouts",
+    "text": "Plumber Payouts\n\nCompleted jobs, gross earnings, platform commission, and net payout.\n\nPAYOUT\tPLUMBER\tJOBS\tGROSS\tCOMMISSION\tNET\tSTATUS\tPAID",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/finance/payouts/plumbers",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/finance/payouts/delivery-partners",
+    "module": "Delivery Payouts",
+    "text": "Delivery Payouts\n\nCompleted deliveries, delivery commission, and payout status.\n\nPAYOUT\tPARTNER\tDELIVERIES\tGROSS\tCOMMISSION\tNET\tSTATUS\tPAID",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/finance/payouts/delivery-partners",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/finance/refunds",
+    "module": "Refunds",
+    "text": "Refunds\n\nReview, approve, or reject customer refund requests.\n\nNOTE REQUIRED\nStatus\nAll\nPENDING\nAPPROVED\nREJECTED\nPROCESSED\nSearch\nFinance Note\nREFUND\tORDER\tCUSTOMER\tAMOUNT\tREASON\tSTATUS\tREQUESTED\tACTIONS",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/finance/refunds",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/finance/commission-report",
+    "module": "Commission Report",
+    "text": "Commission Report\n\nGross revenue, platform commission, and net payable across beneficiaries.\n\nFrom\nTo\nGROSS REVENUE\n₹0\nPLATFORM COMMISSION\n₹0\nSTORE COMMISSION\n₹0\nPLUMBER COMMISSION\n₹0\nDELIVERY COMMISSION\n₹0\nNET PAYABLE\n₹0\nGenerated 14/9/2026, 12:51:57 pm",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/finance/commission-report",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/support",
+    "module": "Support Dashboard",
+    "text": "Support Dashboard\n\nTicket queue, escalations, complaints, and customer issue workflow.\n\nRefresh\nOPEN TICKETS\n0\nIN PROGRESS\n0\nESCALATED\n0\nRESOLVED TODAY\n0\nURGENT TICKETS\n0\nPAYMENT ISSUES\n0\nDELIVERY ISSUES\n0\nSERVICE ISSUES\n0\nRecent Tickets\nView\nUrgent Tickets\nView\nEscalated Tickets\nView",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/support/tickets",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/support/tickets",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/support/tickets",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/support/tickets",
+    "module": "Tickets",
+    "text": "Support Tickets\n\nFilter support queue by workflow, priority, category, requester, and text.\n\nCreate Ticket\nAll statuses\nOPEN\nIN_PROGRESS\nESCALATED\nRESOLVED\nCLOSED\nAll priorities\nLOW\nMEDIUM\nHIGH\nURGENT\nAll categories\nPRODUCT_ORDER\nSERVICE_JOB\nPAYMENT\nREFUND\nDELIVERY\nPLUMBER_SERVICE\nSTORE_ISSUE\nACCOUNT\nOTHER\nAll requester roles\nCUSTOMER\nPLUMBER\nSTORE_MANAGER\nDELIVERY_PARTNER\nTICKET\tREQUESTER\tSUBJECT\tCATEGORY\tPRIORITY\tSTATUS\tASSIGNED\tUPDATED\tACTION\nPage 1 of 1\nPrevious\nNext",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/support/tickets",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/support/escalations",
+    "module": "Escalations",
+    "text": "Escalations\n\nTickets needing finance, operations, or leadership review.\n\nTICKET\tREQUESTER\tREASON\tRELATED\tSTATUS\tUPDATED\tACTION",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/support/tickets",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/support/create-ticket",
+    "module": "Create Ticket",
+    "text": "Create Ticket\n\nOpen a support case linked to a customer, order, or service job.\n\nCUSTOMER\nPLUMBER\nSTORE_MANAGER\nDELIVERY_PARTNER\nPRODUCT_ORDER\nSERVICE_JOB\nPAYMENT\nREFUND\nDELIVERY\nPLUMBER_SERVICE\nSTORE_ISSUE\nACCOUNT\nOTHER\nLOW\nMEDIUM\nHIGH\nURGENT\nCreate Ticket",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/support/user-context",
+    "module": "User Context",
+    "text": "User Context\n\nReview profile, recent product orders, service jobs, and support history.\n\nLoad Context",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/plumber-manager",
+    "module": "Plumber Dashboard",
+    "text": "Plumber Dashboard\n\nWorkforce availability, KYC, workload, and earnings visibility.\n\nTOTAL PLUMBERS\n0\nONLINE\n0\nBUSY\n0\nOFFLINE\n0\nSUSPENDED\n0\nPENDING KYC\n0\nACTIVE JOBS\n0\nCOMPLETED TODAY\n0\nAVERAGE RATING\n-\nMONTHLY EARNINGS\n₹0\nPending KYC\nReview all",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/plumber-manager/plumbers",
+    "module": "Plumbers",
+    "text": "Plumbers\n\nSearch and filter the technician workforce.\n\nAll availability\nONLINE\nBUSY\nOFFLINE\nSUSPENDED\nAll KYC\nNOT_SUBMITTED\nPENDING\nAPPROVED\nREJECTED\nAny rating\n4+\n3+\nPLUMBER\tAVAILABILITY\tKYC\tRATING\tJOBS\tEARNINGS\t\n\nQA Plumber Two\n5555500004\n\tONLINE\tAPPROVED\t-\t0 complete - 0 active\t₹0\tView\n\nQA Plumber One\n5555500003\n\tONLINE\tAPPROVED\t-\t0 complete - 0 active\t₹0\tView\nPreviousPage 1 of 1Next",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/plumber-manager/plumbers",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/plumber-manager/kyc",
+    "module": "KYC Approvals",
+    "text": "KYC Approvals\n\nReview masked identity and banking documents.\n\nPLUMBER\tPHONE\tEXPERIENCE\tSERVICE AREAS\tSUBMITTED\tSTATUS\t",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/plumber-manager/kyc/pending",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/plumber-manager/performance",
+    "module": "Performance",
+    "text": "Plumber Performance\n\nWorkload, outcomes, ratings, and earnings by technician.\n\nPLUMBER\tCOMPLETED\tACTIVE\tCANCELLED\tRATING\tTOTAL EARNINGS\tMONTHLY\nQA Plumber Two\t0\t0\t0\t-\t₹0\t₹0\nQA Plumber One\t0\t0\t0\t-\t₹0\t₹0",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/plumber-manager/plumbers",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/plumber-manager/plumbers/10/performance",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/plumber-manager/plumbers/11/performance",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/plumber-manager/earnings",
+    "module": "Earnings",
+    "text": "Plumber Earnings\n\nGross earnings are derived from completed service jobs. Finance settlement integration is still pending for payout details.\n\nCommission, net payout, and settlement states remain unavailable until finance settlement integration is completed.\nPLUMBER\tCOMPLETED JOBS\tGROSS EARNINGS\tCOMMISSION\tNET PAYOUT\tSETTLEMENT\nQA Plumber Two\t0\t₹0\tCOMMISSION NOT AVAILABLE\tNET PAYOUT NOT CALCULATED YET\tSETTLEMENT INTEGRATION PENDING\nQA Plumber One\t0\t₹0\tCOMMISSION NOT AVAILABLE\tNET PAYOUT NOT CALCULATED YET\tSETTLEMENT INTEGRATION PENDING",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/plumber-manager/plumbers",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/marketing",
+    "module": "Marketing Dashboard",
+    "text": "Marketing Dashboard\n\nOffers, campaigns, audience segments, and promotion performance.\n\nACTIVE OFFERS\n0\nSCHEDULED OFFERS\n0\nEXPIRED OFFERS\n0\nACTIVE CAMPAIGNS\n0\nACTIVE BANNERS\n0\nNOTIFICATIONS SENT\n0\nCOUPON USAGE\n0\nESTIMATED DISCOUNT\n₹0",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/marketing/dashboard",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/marketing/offers",
+    "module": "Offers & Coupons",
+    "text": "Offers & Coupons\n\nManage offer records and activation windows without claiming checkout discount application from this page alone.\n\nSearch offers\nCODE\tOFFER\tDISCOUNT\tUSAGE\tSTATUS\tACTION\n\nNo offers match the current search\nCreate Offer\nValidation reminders: keep the code unique, keep discount values positive, and make sure the start and end dates form a valid time window.\nOffer code\nTitle\nDiscount type\nPercentage\nFlat amount\nDiscount value\nMinimum order amount\nStart date\nEnd date\nOffer code should be unique and not left blank.\nCreate offer",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/marketing/offers",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/marketing/campaigns",
+    "module": "Campaigns",
+    "text": "Campaigns\n\nTrack campaign records and lifecycle changes with demo-safe admin reporting.\n\nDEMO TRACKING\nCampaign statuses are recorded here for operational review. Attribution and downstream delivery analytics remain limited to available admin data.\nNAME\tTYPE\tSEGMENT\tSTATUS\tACTION\n\nNo campaign drafts or live campaigns yet\nCreate Campaign Draft\nCampaign name\nNew drafts use the current demo defaults: campaign type `PUSH` and target segment `CUSTOMERS`.\nCreate draft",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/marketing/campaigns",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/marketing/banners",
+    "module": "Banners",
+    "text": "Promotional Banners\n\nManage banner records and activation state for admin workflows.\n\nBanner records are managed here; rendering inside mobile apps requires separate mobile integration.\nTITLE\tPLACEMENT\tSTATUS\tACTION\n\nNo banner records yet\nCreate Banner\nBanner title\nPlacement\nCUSTOMER_HOME\nCUSTOMER_CATEGORY\nPLUMBER_HOME\nCreate banner",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/marketing/banners",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/marketing/notifications",
+    "module": "Push Notifications",
+    "text": "Push Notifications\n\nCreate demo notification records for admin review without claiming live delivery.\n\nDEMO SEND ONLY\nThis stores a notification record but does not send through Firebase, SMS, or email yet.\nTitle\nMessage\nCurrent demo flow records notifications for the Customers segment only.\nSave demo notification\nNotification History\nTITLE\tMESSAGE\tSEGMENT\tSTATUS\tRECORDED\n\nNo demo notifications recorded yet",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/marketing/notifications",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/marketing/segments",
+    "module": "User Segments",
+    "text": "User Segments\nALL USERS\n15\nCUSTOMERS\n3\nPLUMBERS\n2\nSTORE MANAGERS\n2\nDELIVERY PARTNERS\n0\nNEW CUSTOMERS\n3\nACTIVE CUSTOMERS\n3\nINACTIVE CUSTOMERS\n0\nHIGH VALUE CUSTOMERS\n0",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/marketing/segments",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  },
+  {
+    "route": "/marketing/reports",
+    "module": "Reports",
+    "text": "Marketing Reports\n\nUse these metrics for admin visibility, not audited finance reporting.\n\nCoupon usage, discount given, and other computed promotion metrics are estimated from available admin data.\nTOTAL OFFERS\n0\nACTIVE OFFERS\n0\nTOTAL CAMPAIGNS\n0\nACTIVE CAMPAIGNS\n0\nTOTAL NOTIFICATIONS SENT\n0\nCOUPON USAGE\nESTIMATED\n0\nDISCOUNT GIVEN\nESTIMATED\n₹0\nREPORT GENERATED AT\nESTIMATED\n2026-09-14T12:52:34.585759948",
+    "requests": [
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/rbac/me",
+        "status": 200
+      },
+      {
+        "phase": "IPv4 browser",
+        "method": "GET",
+        "url": "http://localhost:8081/api/v1/admin/marketing/reports",
+        "status": 200
+      }
+    ],
+    "result": "PASS",
+    "scope": "Authenticated route renders; business API responses captured. Does not certify unexecuted form mutations."
+  }
+]

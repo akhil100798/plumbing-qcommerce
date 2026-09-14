@@ -1,0 +1,1 @@
+module.exports=async c=>{const p=c.pages.plumber;await p.getByRole('tab',{name:'Materials',exact:true}).click();await p.waitForTimeout(1500);await c.snap('plumber','ready-material-list');await c.snap('store','ready-material-detail');c.flush();};

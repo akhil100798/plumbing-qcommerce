@@ -1,0 +1,4 @@
+{
+  "url": "http://localhost:8082/",
+  "snapshot": "- img\n- img\n- img\n- text: HOME\n- img\n- text: Sector 14, 27th Main, HSR Layout\n- img\n- textbox \"Search 'Tap repair', 'CPVC pipes', 'Geyser'...\"\n- img\n- text: EXPRESS 30 MINS Water Leakage or Pipe Burst? Get a certified master plumber at your doorstep in under 30 minutes.\n- button \"Book Emergency Plumber\"\n- img\n- text: Plumbing Categories\n- button \"View All\"\n- button \"Explore FixKart Plus\":\n  - text: FIXKART PLUS Save up to ₹2,400 / Year on Home Repairs Free visiting fees • 15% off genuine spare parts • Priority plumber dispatch Explore\n  - img\n- text: Most Booked Services\n- button \"View All\"\n- text: Plumbing Spares & Fittings\n- button \"Store\"\n- img\n- text: The FixKart Promise 30 Min Average Arrival Time 60 Days Service Warranty 100% Verified Background\n- img\n- text: Home\n- img\n- text: Search\n- img\n- text: Bookings\n- img\n- text: Cart\n- img\n- text: Profile"
+}

@@ -1,0 +1,4 @@
+{
+  "url": "http://localhost:8083/",
+  "snapshot": "- text: Account & Profile Q QA Plumber One 5555500003 Verification Status Verified Technician ✓ Partner Support & Legal\n- button \"Open service history\": Service History →\n- button \"Chat with support\": Chat with Support →\n- button \"Sign out of Plumber account\": Sign Out of Plumber Account\n- tablist:\n  - tab \"Home\":\n    - img\n    - img\n    - text: Home\n  - tab \"Jobs\":\n    - img\n    - img\n    - text: Jobs\n  - tab \"Earnings\":\n    - img\n    - img\n    - text: Earnings\n  - tab \"Materials\":\n    - img\n    - img\n    - text: Materials\n  - tab \"Profile\" [selected]:\n    - img\n    - img\n    - text: Profile"
+}

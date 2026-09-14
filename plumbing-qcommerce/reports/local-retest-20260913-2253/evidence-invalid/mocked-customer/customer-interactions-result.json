@@ -1,0 +1,20 @@
+{
+  "steps": [
+    {
+      "name": "open-root",
+      "url": "http://localhost:8082/"
+    },
+    {
+      "name": "open-catalog",
+      "url": "http://localhost:8082/catalog",
+      "ok": true
+    },
+    {
+      "name": "find-product-failed",
+      "reason": "no product href found after retries"
+    }
+  ],
+  "success": false,
+  "timestamp": "2026-09-14T06:14:44.950Z",
+  "error": "Error: No product link found on catalog\n    at C:\\Users\\akhil\\OneDrive\\Desktop\\Workspace\\fixkart\\plumbing-qcommerce\\plumbing-qcommerce\\reports\\local-retest-20260913-2253\\scripts\\customer-interactions.js:52:13"
+}

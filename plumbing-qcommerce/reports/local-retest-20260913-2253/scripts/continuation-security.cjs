@@ -1,0 +1,15 @@
+module.exports=async c=>{
+ const out=[];const check=async(id,method,url,role,body,expect)=>{const r=await c.api(method,url,role,body);const pass=expect==='2xx'?r.status>=200&&r.status<300:r.status>=400&&r.status<500;const item={id,role,method,url,status:r.status,expected:expect,result:pass?'PASS':'FAIL',ms:r.ms};if(!pass&&typeof r.data==='object')item.error=r.data?.message||r.data?.error;out.push(item);c.record(id,'Backend',id,item.result,'HTTP '+r.status+' expected '+expect,'logs/security-api-continuation.json');return r;};
+ for(const role of ['CUSTOMER','PLUMBER','STORE_MANAGER'])for(const url of ['/api/v1/admin/super/dashboard','/api/v1/admin/operations/dashboard','/api/v1/admin/finance/dashboard','/api/v1/admin/support/dashboard','/api/v1/admin/marketing/dashboard','/api/v1/admin/plumber-manager/dashboard'])await check('RBAC-'+role+'-'+url.split('/').slice(-2)[0],'GET',url,role,undefined,'4xx');
+ const roles={SUPER_ADMIN:'super',OPERATIONS_ADMIN:'operations',FINANCE_ADMIN:'finance',SUPPORT_ADMIN:'support',PLUMBER_MANAGER:'plumber-manager',MARKETING_ADMIN:'marketing'};
+ for(const [role,module]of Object.entries(roles)){await check('ADMIN-OWN-'+role,'GET','/api/v1/admin/'+module+'/dashboard',role,undefined,'2xx');if(role!=='SUPER_ADMIN')await check('ADMIN-DENY-SUPER-'+role,'GET','/api/v1/admin/super/users',role,undefined,'4xx');}
+ await check('CUSTOMER-DENY-PLUMBER','GET','/api/v1/plumber/dashboard','CUSTOMER',undefined,'4xx');await check('CUSTOMER-DENY-STORE','GET','/api/v1/stores/me','CUSTOMER',undefined,'4xx');
+ const oid=c.order.id,sid=c.store.id,pid=c.stock[0].product.id;
+ for(const role of ['CUSTOMER2','PLUMBER2']){await check('IDOR-ORDER-'+role,'GET','/api/v1/orders/'+oid,role,undefined,'4xx');await check('IDOR-HISTORY-'+role,'GET','/api/v1/orders/'+oid+'/history',role,undefined,'4xx');}
+ await check('IDOR-CUSTOMER-LIST','GET','/api/v1/orders/customer/'+c.users.CUSTOMER.userId,'CUSTOMER2',undefined,'4xx');
+ await check('UNAUTHORIZED-STOCK-CUSTOMER','PUT',`/api/v1/stores/${sid}/inventory/${pid}`,'CUSTOMER',{quantity:-1},'4xx');await check('UNAUTHORIZED-STOCK-PLUMBER','PUT',`/api/v1/stores/${sid}/inventory/${pid}`,'PLUMBER',{quantity:-1},'4xx');await check('NEGATIVE-STOCK','PUT',`/api/v1/stores/${sid}/inventory/${pid}`,'STORE_MANAGER',{quantity:-1},'4xx');
+ await check('DUPLICATE-ACCEPT','POST','/api/v1/orders/'+oid+'/accept','PLUMBER',{},'4xx');await check('PREMATURE-COMPLETE','POST','/api/v1/orders/'+oid+'/complete','PLUMBER',{},'4xx');
+ await check('AUTH-MISSING','GET','/api/v1/auth/me',null,undefined,'4xx');await check('AUTH-INVALID-PASSWORD','POST','/api/v1/auth/login',null,{email:c.identities.CUSTOMER,password:'intentionally-invalid-qa-input'},'4xx');
+ const old=c.refresh.CUSTOMER2;const refreshed=await check('REFRESH-ROTATION','POST','/api/v1/auth/refresh',null,{refreshToken:old},'2xx');if(refreshed.status===200){c.tokens.CUSTOMER2=refreshed.data.token;c.refresh.CUSTOMER2=refreshed.data.refreshToken;await check('REFRESH-REUSE','POST','/api/v1/auth/refresh',null,{refreshToken:old},'4xx');}
+ c.save('logs/security-api-continuation.json',out);c.flush();
+};

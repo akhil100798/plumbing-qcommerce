@@ -1,0 +1,42 @@
+[
+  {
+    "tag": "DIV",
+    "role": null,
+    "name": "SkipYour Trusted Plumbing & Home Service AppEnter your mobile number t"
+  },
+  {
+    "tag": "BUTTON",
+    "role": "button",
+    "name": "Skip login"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "name": "Mobile number input"
+  },
+  {
+    "tag": "BUTTON",
+    "role": "button",
+    "name": "Get OTP button"
+  },
+  {
+    "tag": "BODY",
+    "role": null,
+    "name": "\n    \n    \n      You need to enable JavaScript to run this app.\n    \n "
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "name": "SkipYour Trusted Plumbing & Home Service AppEnter your mobile number t"
+  },
+  {
+    "tag": "BUTTON",
+    "role": "button",
+    "name": "Skip login"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "name": "Mobile number input"
+  }
+]

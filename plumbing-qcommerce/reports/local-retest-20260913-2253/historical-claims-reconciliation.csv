@@ -1,0 +1,4 @@
+Source,Classification,CurrentDisposition
+"production-readiness/FIXKART_PRODUCTION_READINESS_REPORT.md","Historical narrative with no canonical row evidence","NOT TESTED as historical deployment; not used for PASS or readiness score"
+"customer-app/CUSTOMER_BACKEND_INTEGRATION_REPORT.md","Implementation claims","Current OTP/material/photo failures prevent blanket integration certification"
+"docs/ui-redesign/FIXKART_UI_REDESIGN_REPORT.md","Design and static history","Current static results verified separately; visual claims not assumed"

@@ -1,0 +1,32 @@
+[
+  {
+    "url": "/health/live",
+    "status": 0,
+    "ms": 123,
+    "error": "fetch failed"
+  },
+  {
+    "url": "/health/ready",
+    "status": 0,
+    "ms": 4,
+    "error": "fetch failed"
+  },
+  {
+    "url": "/version",
+    "status": 0,
+    "ms": 5,
+    "error": "fetch failed"
+  },
+  {
+    "url": "/actuator/health",
+    "status": 0,
+    "ms": 4,
+    "error": "fetch failed"
+  },
+  {
+    "url": "/actuator/info",
+    "status": 0,
+    "ms": 3,
+    "error": "fetch failed"
+  }
+]

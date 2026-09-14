@@ -1,0 +1,114 @@
+[
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "admin@plumbcommerce.com",
+    "outline": "rgb(241, 245, 249) none 3px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "Password",
+    "outline": "rgb(241, 245, 249) none 3px"
+  },
+  {
+    "tag": "BUTTON",
+    "role": null,
+    "label": null,
+    "text": "Sign in",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "BODY",
+    "role": null,
+    "label": null,
+    "text": "P\nPlumbCommerce\n\nAdmin Portal\n\nEmail\nPassword\nSign in",
+    "placeholder": null,
+    "outline": "rgb(241, 245, 249) none 3px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "admin@plumbcommerce.com",
+    "outline": "rgb(241, 245, 249) none 3px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "Password",
+    "outline": "rgb(241, 245, 249) none 3px"
+  },
+  {
+    "tag": "BUTTON",
+    "role": null,
+    "label": null,
+    "text": "Sign in",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "BODY",
+    "role": null,
+    "label": null,
+    "text": "P\nPlumbCommerce\n\nAdmin Portal\n\nEmail\nPassword\nSign in",
+    "placeholder": null,
+    "outline": "rgb(241, 245, 249) none 3px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "admin@plumbcommerce.com",
+    "outline": "rgb(241, 245, 249) none 3px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "Password",
+    "outline": "rgb(241, 245, 249) none 3px"
+  },
+  {
+    "tag": "BUTTON",
+    "role": null,
+    "label": null,
+    "text": "Sign in",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "BODY",
+    "role": null,
+    "label": null,
+    "text": "P\nPlumbCommerce\n\nAdmin Portal\n\nEmail\nPassword\nSign in",
+    "placeholder": null,
+    "outline": "rgb(241, 245, 249) none 3px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "admin@plumbcommerce.com",
+    "outline": "rgb(241, 245, 249) none 3px"
+  },
+  {
+    "tag": "BODY",
+    "role": null,
+    "label": null,
+    "text": "P\nPlumbCommerce\n\nAdmin Portal\n\nEmail\nPassword\nSign in",
+    "placeholder": null,
+    "outline": "rgb(241, 245, 249) none 3px"
+  }
+]

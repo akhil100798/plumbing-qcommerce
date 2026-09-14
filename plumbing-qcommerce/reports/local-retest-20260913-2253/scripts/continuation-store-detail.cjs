@@ -1,0 +1,1 @@
+module.exports=async c=>{const p=c.pages.store;await p.getByText('Request #'+c.material.id,{exact:true}).click();await c.snap('store','material-detail');await c.snap('customer','catalog-recovered');c.flush();};

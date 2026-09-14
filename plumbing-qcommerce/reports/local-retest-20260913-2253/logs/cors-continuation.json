@@ -1,0 +1,27 @@
+[
+  {
+    "origin": "http://localhost:8082",
+    "status": 200,
+    "allowOrigin": "http://localhost:8082"
+  },
+  {
+    "origin": "http://localhost:8083",
+    "status": 200,
+    "allowOrigin": "http://localhost:8083"
+  },
+  {
+    "origin": "http://localhost:8084",
+    "status": 200,
+    "allowOrigin": "http://localhost:8084"
+  },
+  {
+    "origin": "http://localhost:3001",
+    "status": 200,
+    "allowOrigin": "http://localhost:3001"
+  },
+  {
+    "origin": "https://untrusted.invalid",
+    "status": 403,
+    "allowOrigin": null
+  }
+]

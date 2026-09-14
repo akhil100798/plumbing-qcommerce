@@ -1,0 +1,5 @@
+{
+  "reason": "Repeated localhost browser connection resets; explicit loopback DNS mapping in harness",
+  "argument": "--host-resolver-rules=MAP localhost 127.0.0.1",
+  "mocking": false
+}

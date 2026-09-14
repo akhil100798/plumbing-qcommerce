@@ -1,0 +1,126 @@
+{
+  "time": "2026-09-13T15:52:56.153Z",
+  "url": "https://fixkart-plumber-web.vercel.app/",
+  "text": "Welcome Back!\nLogin to continue\nMobile\nEmail\nEmail Address\nPassword\nRemember me\nForgot Password?\nContinue\nor continue with\nG\nGoogle\nf\nFacebook\nNew here? Sign up",
+  "controls": [
+    {
+      "tag": "DIV",
+      "role": null,
+      "tabindex": "0",
+      "label": null,
+      "text": "Mobile",
+      "placeholder": null,
+      "href": null
+    },
+    {
+      "tag": "DIV",
+      "role": null,
+      "tabindex": "0",
+      "label": null,
+      "text": "Email",
+      "placeholder": null,
+      "href": null
+    },
+    {
+      "tag": "INPUT",
+      "role": null,
+      "tabindex": null,
+      "type": "email",
+      "label": null,
+      "text": "",
+      "placeholder": "plumber@plumbcommerce.com",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "role": null,
+      "tabindex": null,
+      "type": "password",
+      "label": null,
+      "text": "",
+      "placeholder": "********",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "DIV",
+      "role": null,
+      "tabindex": "0",
+      "label": null,
+      "text": "Remember me",
+      "placeholder": null,
+      "href": null
+    },
+    {
+      "tag": "DIV",
+      "role": null,
+      "tabindex": "0",
+      "label": null,
+      "text": "Forgot Password?",
+      "placeholder": null,
+      "href": null
+    },
+    {
+      "tag": "BUTTON",
+      "role": "button",
+      "tabindex": "0",
+      "type": "button",
+      "label": "Continue",
+      "text": "Continue",
+      "placeholder": null,
+      "href": null,
+      "disabled": false
+    },
+    {
+      "tag": "DIV",
+      "role": null,
+      "tabindex": "0",
+      "label": null,
+      "text": "G\nGoogle",
+      "placeholder": null,
+      "href": null
+    },
+    {
+      "tag": "DIV",
+      "role": null,
+      "tabindex": "0",
+      "label": null,
+      "text": "f\nFacebook",
+      "placeholder": null,
+      "href": null
+    }
+  ],
+  "cursorControls": [
+    {
+      "text": "Mobile",
+      "role": null,
+      "tabindex": 0
+    },
+    {
+      "text": "Email",
+      "role": null,
+      "tabindex": 0
+    },
+    {
+      "text": "Remember me",
+      "role": null,
+      "tabindex": 0
+    },
+    {
+      "text": "Forgot Password?",
+      "role": null,
+      "tabindex": 0
+    },
+    {
+      "text": "G\nGoogle",
+      "role": null,
+      "tabindex": 0
+    },
+    {
+      "text": "f\nFacebook",
+      "role": null,
+      "tabindex": 0
+    }
+  ]
+}

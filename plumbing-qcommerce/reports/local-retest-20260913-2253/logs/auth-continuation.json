@@ -1,0 +1,133 @@
+[
+  {
+    "role": "CUSTOMER",
+    "status": 401,
+    "accessTokenPresent": false,
+    "refreshTokenPresent": false,
+    "ms": 505
+  },
+  {
+    "role": "CUSTOMER2",
+    "status": 401,
+    "accessTokenPresent": false,
+    "refreshTokenPresent": false,
+    "ms": 55
+  },
+  {
+    "role": "PLUMBER",
+    "status": 401,
+    "accessTokenPresent": false,
+    "refreshTokenPresent": false,
+    "ms": 39
+  },
+  {
+    "role": "PLUMBER2",
+    "status": 401,
+    "accessTokenPresent": false,
+    "refreshTokenPresent": false,
+    "ms": 26
+  },
+  {
+    "role": "STORE_MANAGER",
+    "status": 401,
+    "accessTokenPresent": false,
+    "refreshTokenPresent": false,
+    "ms": 40
+  },
+  {
+    "role": "SUPER_ADMIN",
+    "status": 200,
+    "returnedRole": "SUPER_ADMIN",
+    "userId": 2,
+    "accessTokenPresent": true,
+    "refreshTokenPresent": true,
+    "ms": 778
+  },
+  {
+    "role": "SUPER_ADMIN",
+    "endpoint": "/api/v1/auth/me",
+    "status": 200,
+    "userId": 2,
+    "returnedRole": "SUPER_ADMIN"
+  },
+  {
+    "role": "OPERATIONS_ADMIN",
+    "status": 200,
+    "returnedRole": "OPERATIONS_ADMIN",
+    "userId": 3,
+    "accessTokenPresent": true,
+    "refreshTokenPresent": true,
+    "ms": 269
+  },
+  {
+    "role": "OPERATIONS_ADMIN",
+    "endpoint": "/api/v1/auth/me",
+    "status": 200,
+    "userId": 3,
+    "returnedRole": "OPERATIONS_ADMIN"
+  },
+  {
+    "role": "FINANCE_ADMIN",
+    "status": 200,
+    "returnedRole": "FINANCE_ADMIN",
+    "userId": 4,
+    "accessTokenPresent": true,
+    "refreshTokenPresent": true,
+    "ms": 168
+  },
+  {
+    "role": "FINANCE_ADMIN",
+    "endpoint": "/api/v1/auth/me",
+    "status": 200,
+    "userId": 4,
+    "returnedRole": "FINANCE_ADMIN"
+  },
+  {
+    "role": "SUPPORT_ADMIN",
+    "status": 200,
+    "returnedRole": "SUPPORT_ADMIN",
+    "userId": 5,
+    "accessTokenPresent": true,
+    "refreshTokenPresent": true,
+    "ms": 174
+  },
+  {
+    "role": "SUPPORT_ADMIN",
+    "endpoint": "/api/v1/auth/me",
+    "status": 200,
+    "userId": 5,
+    "returnedRole": "SUPPORT_ADMIN"
+  },
+  {
+    "role": "PLUMBER_MANAGER",
+    "status": 200,
+    "returnedRole": "PLUMBER_MANAGER",
+    "userId": 6,
+    "accessTokenPresent": true,
+    "refreshTokenPresent": true,
+    "ms": 184
+  },
+  {
+    "role": "PLUMBER_MANAGER",
+    "endpoint": "/api/v1/auth/me",
+    "status": 200,
+    "userId": 6,
+    "returnedRole": "PLUMBER_MANAGER"
+  },
+  {
+    "role": "MARKETING_ADMIN",
+    "status": 200,
+    "returnedRole": "MARKETING_ADMIN",
+    "userId": 7,
+    "accessTokenPresent": true,
+    "refreshTokenPresent": true,
+    "ms": 167
+  },
+  {
+    "role": "MARKETING_ADMIN",
+    "endpoint": "/api/v1/auth/me",
+    "status": 200,
+    "userId": 7,
+    "returnedRole": "MARKETING_ADMIN"
+  }
+]

@@ -1,0 +1,1 @@
+module.exports=async c=>{const state={time:new Date().toISOString(),orderId:c.order?.id,pages:{},assertions:c.results.length};for(const[app,p]of Object.entries(c.pages)){try{state.pages[app]={url:p.url(),snapshot:await p.locator('body').ariaSnapshot({timeout:4000})};}catch(e){state.pages[app]={error:e.message}}}c.save('logs/current-state-continuation.json',state);c.flush();};

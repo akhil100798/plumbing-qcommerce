@@ -1,0 +1,133 @@
+[
+  {
+    "label": "Skip onboarding",
+    "time": "2026-09-13T16:00:47.989Z",
+    "before": "Skip\nPlumbing Help\nIn Minutes\nBook expert plumbers, order materials, or get emergency solutions at your doorstep.\nNext",
+    "after": "←\nWelcome back!\nSign in with your email and password\nEmail Address\nPassword\nLogin\nCreate Account\nOTP login coming later\nPhase 1 uses email/password login and registration for customers.\nor continue with\nContinue with Google",
+    "events": [],
+    "executed": true
+  },
+  {
+    "label": "Email missing",
+    "time": "2026-09-13T16:00:51.505Z",
+    "before": "←\nWelcome back!\nSign in with your email and password\nEmail Address\nPassword\nLogin\nCreate Account\nOTP login coming later\nPhase 1 uses email/password login and registration for customers.\nor continue with\nContinue with Google",
+    "after": "←\nWelcome back!\nSign in with your email and password\nEmail Address\nPassword\nLogin\nCreate Account\nOTP login coming later\nPhase 1 uses email/password login and registration for customers.\nor continue with\nContinue with Google",
+    "events": [
+      {
+        "type": "dialog",
+        "text": "Validation Error\n\nPlease enter email and password"
+      }
+    ],
+    "executed": true
+  },
+  {
+    "label": "Malformed email submit",
+    "time": "2026-09-13T16:00:51.690Z",
+    "before": "←\nWelcome back!\nSign in with your email and password\nEmail Address\nPassword\nLogin\nCreate Account\nOTP login coming later\nPhase 1 uses email/password login and registration for customers.\nor continue with\nContinue with Google",
+    "after": "←\nWelcome back!\nSign in with your email and password\nEmail Address\nPassword\nCreate Account\nOTP login coming later\nPhase 1 uses email/password login and registration for customers.\nor continue with\nContinue with Google",
+    "events": [
+      {
+        "type": "request",
+        "url": "https://plumbing-qcommerce.onrender.com/api/v1/auth/login",
+        "method": "POST"
+      }
+    ],
+    "executed": true
+  },
+  {
+    "label": "Google sign in",
+    "time": "2026-09-13T16:00:51.973Z",
+    "before": "←\nWelcome back!\nSign in with your email and password\nEmail Address\nPassword\nCreate Account\nOTP login coming later\nPhase 1 uses email/password login and registration for customers.\nor continue with\nContinue with Google",
+    "after": "←\nWelcome back!\nSign in with your email and password\nEmail Address\nPassword\nCreate Account\nOTP login coming later\nPhase 1 uses email/password login and registration for customers.\nor continue with\nContinue with Google\nPlease configure EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in customer-app/.env before using Google sign-in.",
+    "events": [
+      {
+        "type": "dialog",
+        "text": "Google Client ID missing\n\nPlease configure EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in customer-app/.env before using Google sign-in."
+      }
+    ],
+    "executed": true
+  },
+  {
+    "label": "Create account",
+    "time": "2026-09-13T16:00:52.056Z",
+    "before": "←\nWelcome back!\nSign in with your email and password\nEmail Address\nPassword\nCreate Account\nOTP login coming later\nPhase 1 uses email/password login and registration for customers.\nor continue with\nContinue with Google\nPlease configure EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in customer-app/.env before using Google sign-in.",
+    "after": "←\nCreate account\nRegister as a customer with email and password\nFull Name\nEmail Address\nMobile Number\nPassword\nConfirm Password\nCreate Account\nAlready have an account? Login",
+    "events": [],
+    "executed": true
+  },
+  {
+    "label": "Empty registration",
+    "time": "2026-09-13T16:00:53.572Z",
+    "before": "←\nCreate account\nRegister as a customer with email and password\nFull Name\nEmail Address\nMobile Number\nPassword\nConfirm Password\nCreate Account\nAlready have an account? Login",
+    "after": "←\nCreate account\nRegister as a customer with email and password\nFull Name\nEmail Address\nMobile Number\nPassword\nConfirm Password\nCreate Account\nAlready have an account? Login",
+    "events": [
+      {
+        "type": "dialog",
+        "text": "Validation Error\n\nPlease enter your full name"
+      }
+    ],
+    "executed": true
+  },
+  {
+    "label": "Refresh",
+    "time": "2026-09-13T16:00:54.524Z",
+    "before": "←\nCreate account\nRegister as a customer with email and password\nFull Name\nEmail Address\nMobile Number\nPassword\nConfirm Password\nCreate Account\nAlready have an account? Login",
+    "after": "FixKart\nFix It. Fast. Fixed.\nPlumbing quick-commerce & trusted home services.\nCUSTOMER APP",
+    "events": [
+      {
+        "type": "warning",
+        "text": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md"
+      }
+    ],
+    "executed": true
+  },
+  {
+    "label": "Unauthenticated deep link /orders",
+    "time": "2026-09-13T16:00:56.207Z",
+    "before": "←\nWelcome back!\nSign in with your email and password\nEmail Address\nPassword\nLogin\nCreate Account\nOTP login coming later\nPhase 1 uses email/password login and registration for customers.\nor continue with\nContinue with Google",
+    "after": "404: NOT_FOUND\nCode: NOT_FOUND\nID: bom1::t57gz-1789315257032-726def5f2f9b\n\nRead our documentation to learn more about this error.",
+    "events": [
+      {
+        "type": "response",
+        "url": "https://fixkart-customer-web.vercel.app/orders",
+        "status": 404
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 ()"
+      }
+    ],
+    "executed": true
+  },
+  {
+    "label": "Browser back",
+    "time": "2026-09-13T16:00:56.994Z",
+    "before": "404: NOT_FOUND\nCode: NOT_FOUND\nID: bom1::t57gz-1789315257032-726def5f2f9b\n\nRead our documentation to learn more about this error.",
+    "after": "FixKart\nFix It. Fast. Fixed.\nPlumbing quick-commerce & trusted home services.\nCUSTOMER APP",
+    "events": [
+      {
+        "type": "warning",
+        "text": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md"
+      }
+    ],
+    "executed": true
+  },
+  {
+    "label": "Browser forward",
+    "time": "2026-09-13T16:00:57.572Z",
+    "before": "FixKart\nFix It. Fast. Fixed.\nPlumbing quick-commerce & trusted home services.\nCUSTOMER APP",
+    "after": "404: NOT_FOUND\nCode: NOT_FOUND\nID: bom1::t57gz-1789315257032-726def5f2f9b\n\nRead our documentation to learn more about this error.",
+    "events": [
+      {
+        "type": "response",
+        "url": "https://fixkart-customer-web.vercel.app/orders",
+        "status": 404
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 ()"
+      }
+    ],
+    "executed": true
+  }
+]

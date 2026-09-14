@@ -1,0 +1,55 @@
+{
+  "url": "https://fixkart-store-web.vercel.app/",
+  "status": 200,
+  "headers": {
+    "access-control-allow-origin": "*",
+    "age": "305",
+    "cache-control": "public, max-age=0, must-revalidate",
+    "content-disposition": "inline",
+    "content-encoding": "br",
+    "content-type": "text/html; charset=utf-8",
+    "date": "Sun, 13 Sep 2026 15:53:58 GMT",
+    "etag": "W/\"2b55ff6f31b2841cd63409a44ea41d3f\"",
+    "last-modified": "Sun, 13 Sep 2026 15:48:52 GMT",
+    "server": "Vercel",
+    "strict-transport-security": "max-age=63072000; includeSubDomains; preload",
+    "x-vercel-cache": "HIT",
+    "x-vercel-id": "bom1::pz9f8-1789314838106-0ccf40225a44"
+  },
+  "text": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nLog In\nWant to register a store? \nRegister Store",
+  "controls": [
+    {
+      "tag": "INPUT",
+      "role": null,
+      "type": "email",
+      "label": null,
+      "text": "",
+      "placeholder": "store@plumbcommerce.com",
+      "href": null,
+      "visible": true,
+      "disabled": false
+    },
+    {
+      "tag": "INPUT",
+      "role": null,
+      "type": "password",
+      "label": null,
+      "text": "",
+      "placeholder": "••••••••",
+      "href": null,
+      "visible": true,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "role": "button",
+      "type": "button",
+      "label": "Log In",
+      "text": "Log In",
+      "placeholder": null,
+      "href": null,
+      "visible": true,
+      "disabled": false
+    }
+  ]
+}

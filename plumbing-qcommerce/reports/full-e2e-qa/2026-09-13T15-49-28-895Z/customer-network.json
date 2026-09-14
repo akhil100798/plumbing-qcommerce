@@ -1,0 +1,18 @@
+[
+  {
+    "type": "response",
+    "url": "https://fixkart-customer-web.vercel.app/",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "type": "response",
+    "url": "https://fixkart-customer-web.vercel.app/_expo/static/js/web/index-3dba94de4b51c79e244bd4b5380af208.js",
+    "status": 200,
+    "method": "GET"
+  },
+  {
+    "type": "warning",
+    "text": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md"
+  }
+]

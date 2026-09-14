@@ -1,0 +1,18 @@
+const fs=require('fs'),path=require('path'),cp=require('child_process'),http=require('http');
+const report=path.resolve(__dirname,'..'),root=process.cwd();
+const docker=args=>cp.execFileSync('docker',args,{encoding:'utf8',maxBuffer:20*1024*1024});
+const metadata=JSON.parse(docker(['inspect','fixkart_retest_backend_20260914']))[0];
+const env=Object.fromEntries(metadata.Config.Env.map(x=>{const i=x.indexOf('=');return[x.slice(0,i),x.slice(i+1)]}));
+if(env.SPRING_DATASOURCE_URL!=='jdbc:postgresql://pqc_postgres:5432/fixkart_retest_20260914')throw Error('QA database identity mismatch');
+const password=env.APP_SEED_DEMO_PASSWORD;if(!password||password.length<32)throw Error('Missing generated QA credential');
+const read=n=>JSON.parse(fs.readFileSync(path.join(report,n),'utf8'));
+const c={root,report,password,docker,tokens:{},users:{},refresh:{},pages:{},contexts:{},results:read('logs/runtime-assertions-continuation.json'),order:read('logs/workflow-created-continuation.json').data};
+const stock=read('logs/store-runtime-continuation.json');c.store={id:stock.storeId};c.stock=stock.stock;
+c.identities={CUSTOMER:'customer.qa@fixkart.com',CUSTOMER2:'customer2.qa@fixkart.com',PLUMBER:'plumber.qa@fixkart.com',PLUMBER2:'plumber2.qa@fixkart.com',STORE_MANAGER:'store.qa@fixkart.com',SUPER_ADMIN:'superadmin@plumbcommerce.com',OPERATIONS_ADMIN:'operations@plumbcommerce.com',FINANCE_ADMIN:'finance@plumbcommerce.com',SUPPORT_ADMIN:'support@plumbcommerce.com',PLUMBER_MANAGER:'plumbermanager@plumbcommerce.com',MARKETING_ADMIN:'marketing@plumbcommerce.com'};
+c.clean=x=>String(x).replaceAll(password,'[REDACTED]').replace(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,'[REDACTED JWT]');
+c.save=(name,data)=>{const p=path.join(report,name);fs.mkdirSync(path.dirname(p),{recursive:true});fs.writeFileSync(p,c.clean(typeof data==='string'?data:JSON.stringify(data,null,2)));};
+c.record=(id,app,feature,status,detail,evidence='logs/runtime-assertions-continuation.json')=>{c.results.push({id,app,feature,status,detail,evidence,time:new Date().toISOString()});c.save('logs/runtime-assertions-continuation.json',c.results);};
+c.network={};c.console={};for(const app of ['customer','plumber','store','admin']){for(const type of ['network','console']){try{c[type][app]=read(`network/${app}-${type}.json`);}catch{c[type][app]=[];}}}
+c.flush=()=>{for(const app of Object.keys(c.network)){c.save('network/'+app+'-network.json',c.network[app]);c.save('network/'+app+'-console.json',c.console[app]);}};
+c.snap=async(app,name)=>{const p=c.pages[app];await p.waitForTimeout(1000);c.save('logs/'+app+'-'+name+'-continuation.json',{url:p.url(),snapshot:await p.locator('body').ariaSnapshot()});await p.screenshot({path:report+'/screenshots/'+app+'-'+name+'-continuation.png',fullPage:true});};
+let busy=false;http.createServer(async(req,res)=>{if(req.method!=='POST'){res.writeHead(405).end();return;}if(busy){res.writeHead(409).end('A QA module is still running');return;}let data='';for await(const b of req)data+=b;try{const name=JSON.parse(data).module;if(!/^continuation-[a-z0-9-]+\.cjs$/.test(name))throw Error('Invalid module');busy=true;const file=path.join(__dirname,name);delete require.cache[require.resolve(file)];await require(file)(c);res.end(JSON.stringify({ok:true,assertions:c.results.length}));}catch(e){const error=c.clean(e.stack);c.save('logs/controller-recovered-last-error.log',error);res.writeHead(500).end(JSON.stringify({ok:false,error}));}finally{busy=false;}}).listen(19331,'127.0.0.1',()=>console.log('Existing isolated QA controller recovered; generated credential retained in memory only.'));

@@ -1,0 +1,22 @@
+﻿[
+    {
+        "endpoint":  "/api/v1/catalog/products",
+        "status":  "ERROR",
+        "snippet":  "The term \u0027if\u0027 is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again."
+    },
+    {
+        "endpoint":  "/api/v1/admin/metrics",
+        "status":  401,
+        "snippet":  "error-body"
+    },
+    {
+        "endpoint":  "/api/v1/admin/rbac/roles",
+        "status":  401,
+        "snippet":  "error-body"
+    },
+    {
+        "endpoint":  "/api/v1/edge/ping",
+        "status":  401,
+        "snippet":  "error-body"
+    }
+]

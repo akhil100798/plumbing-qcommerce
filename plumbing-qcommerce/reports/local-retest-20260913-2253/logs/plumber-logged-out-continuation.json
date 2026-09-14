@@ -1,0 +1,4 @@
+{
+  "url": "http://localhost:8083/",
+  "snapshot": "- text: Welcome Back! Login to continue\n- tab \"Log in with mobile number\": Mobile\n- tab \"Log in with email\": Email\n- text: Mobile Number +91\n- textbox \"Mobile number\":\n  - /placeholder: Enter mobile number\n- checkbox \"Remember me\"\n- button \"Forgot password\": Forgot Password?\n- button \"Continue\"\n- text: or continue with\n- button \"Google sign in unavailable\": G Google\n- button \"Facebook sign in unavailable\": f Facebook\n- text: New here? Sign up"
+}

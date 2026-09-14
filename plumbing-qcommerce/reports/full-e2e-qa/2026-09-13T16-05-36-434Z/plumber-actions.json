@@ -1,0 +1,74 @@
+[
+  {
+    "label": "Exact Sign up link",
+    "before": "Welcome Back!\nLogin to continue\nMobile\nEmail\nMobile Number\n+91\nRemember me\nForgot Password?\nContinue\nor continue with\nG\nGoogle\nf\nFacebook\nNew here? Sign up",
+    "after": "Become a FixKart Plumber\nCreate your account. KYC can be completed after registration.\nFull name\nEmail\nMobile number\nPassword\nConfirm password\nCreate Plumber Account\nAlready registered? Log in",
+    "events": [],
+    "executed": true
+  },
+  {
+    "label": "Empty plumber registration",
+    "before": "Become a FixKart Plumber\nCreate your account. KYC can be completed after registration.\nFull name\nEmail\nMobile number\nPassword\nConfirm password\nCreate Plumber Account\nAlready registered? Log in",
+    "after": "Become a FixKart Plumber\nCreate your account. KYC can be completed after registration.\nFull name\nEmail\nMobile number\nPassword\nConfirm password\nCreate Plumber Account\nAlready registered? Log in",
+    "events": [],
+    "executed": true
+  },
+  {
+    "label": "Mobile valid QA number",
+    "before": "Welcome Back!\nLogin to continue\nMobile\nEmail\nMobile Number\n+91\nRemember me\nForgot Password?\nContinue\nor continue with\nG\nGoogle\nf\nFacebook\nNew here? Sign up",
+    "after": "←\nVerify Number\nVerify Your Number\nEnter the 6-digit code sent to\n+91 5555500003\nResend OTP in 00:28\nYour data is safe with us\nVerify & Continue",
+    "events": [],
+    "executed": true
+  },
+  {
+    "label": "Incorrect OTP",
+    "before": "←\nVerify Number\nVerify Your Number\nEnter the 6-digit code sent to\n+91 5555500003\nResend OTP in 00:27\nYour data is safe with us\nVerify & Continue",
+    "after": "←\nVerify Number\nVerify Your Number\nEnter the 6-digit code sent to\n+91 5555500003\nResend OTP in 00:27\nYour data is safe with us",
+    "events": [
+      {
+        "type": "request",
+        "url": "https://fixkart-dev2-backend.onrender.com/api/v1/auth/verify-otp",
+        "method": "POST"
+      }
+    ],
+    "executed": true
+  },
+  {
+    "label": "Resend OTP",
+    "before": "←\nVerify Number\nVerify Your Number\nEnter the 6-digit code sent to\n+91 5555500003\nResend OTP\nYour data is safe with us\nVerify & Continue",
+    "after": "←\nVerify Number\nVerify Your Number\nEnter the 6-digit code sent to\n+91 5555500003\nResend OTP\nYour data is safe with us\nVerify & Continue",
+    "events": [
+      {
+        "type": "request",
+        "url": "https://fixkart-dev2-backend.onrender.com/api/v1/auth/send-otp",
+        "method": "POST"
+      }
+    ],
+    "executed": true
+  },
+  {
+    "label": "OTP back arrow",
+    "before": "←\nVerify Number\nVerify Your Number\nEnter the 6-digit code sent to\n+91 5555500003\nResend OTP\nYour data is safe with us\nVerify & Continue",
+    "after": "Welcome Back!\nLogin to continue\nMobile\nEmail\nMobile Number\n+91\nRemember me\nForgot Password?\nContinue\nor continue with\nG\nGoogle\nf\nFacebook\nNew here? Sign up",
+    "events": [
+      {
+        "type": "error",
+        "text": "Access to XMLHttpRequest at 'https://fixkart-dev2-backend.onrender.com/api/v1/auth/send-otp' from origin 'https://fixkart-plumber-web.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+      },
+      {
+        "type": "error",
+        "text": "API Error: {url: /auth/send-otp, status: undefined, message: Network Error}"
+      },
+      {
+        "type": "failed",
+        "url": "https://fixkart-dev2-backend.onrender.com/api/v1/auth/send-otp",
+        "error": "net::ERR_FAILED"
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: net::ERR_FAILED"
+      }
+    ],
+    "executed": true
+  }
+]

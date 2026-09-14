@@ -1,0 +1,10 @@
+[
+  {
+    "type": "dialog",
+    "text": "Validation Error\n\nPlease enter your email"
+  },
+  {
+    "type": "dialog",
+    "text": "Validation Error\n\nPlease enter a valid email"
+  }
+]

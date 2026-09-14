@@ -1,0 +1,129 @@
+[
+  {
+    "label": "Email missing",
+    "time": "2026-09-13T16:03:17.023Z",
+    "before": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nLog In\nWant to register a store? \nRegister Store",
+    "after": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nLog In\nWant to register a store? \nRegister Store",
+    "events": [
+      {
+        "type": "warning",
+        "text": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md"
+      }
+    ],
+    "executed": true
+  },
+  {
+    "label": "Malformed email submit",
+    "time": "2026-09-13T16:03:17.158Z",
+    "before": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nLog In\nWant to register a store? \nRegister Store",
+    "after": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nWant to register a store? \nRegister Store",
+    "events": [
+      {
+        "type": "request",
+        "url": "https://fixkart-dev2-backend.onrender.com/api/v1/auth/login",
+        "method": "POST"
+      }
+    ],
+    "executed": true
+  },
+  {
+    "label": "Remember me on",
+    "time": "2026-09-13T16:03:17.441Z",
+    "before": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nWant to register a store? \nRegister Store",
+    "after": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\n✓\nRemember me\nForgot Password?\nWant to register a store? \nRegister Store",
+    "events": [],
+    "executed": true
+  },
+  {
+    "label": "Remember me off",
+    "time": "2026-09-13T16:03:17.674Z",
+    "before": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\n✓\nRemember me\nForgot Password?\nWant to register a store? \nRegister Store",
+    "after": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nWant to register a store? \nRegister Store",
+    "events": [],
+    "executed": true
+  },
+  {
+    "label": "Forgot password",
+    "time": "2026-09-13T16:03:17.742Z",
+    "before": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nWant to register a store? \nRegister Store",
+    "after": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nWant to register a store? \nRegister Store",
+    "events": [],
+    "executed": true
+  },
+  {
+    "label": "Register Store",
+    "time": "2026-09-13T16:03:17.891Z",
+    "before": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nWant to register a store? \nRegister Store",
+    "after": "Register your Store\nCreate a Store manager account and business profile.\nManager full name\nEmail\nMobile number\nStore name\nStore address\nLatitude\nLongitude\nPassword\nConfirm password\nCreate Store Account\nAlready registered? Log in",
+    "events": [],
+    "executed": true
+  },
+  {
+    "label": "Empty registration",
+    "time": "2026-09-13T16:03:20.143Z",
+    "before": "Register your Store\nCreate a Store manager account and business profile.\nManager full name\nEmail\nMobile number\nStore name\nStore address\nLatitude\nLongitude\nPassword\nConfirm password\nCreate Store Account\nAlready registered? Log in",
+    "after": "Register your Store\nCreate a Store manager account and business profile.\nManager full name\nEmail\nMobile number\nStore name\nStore address\nLatitude\nLongitude\nPassword\nConfirm password\nCreate Store Account\nAlready registered? Log in",
+    "events": [],
+    "executed": true
+  },
+  {
+    "label": "Back to login",
+    "time": "2026-09-13T16:03:20.443Z",
+    "before": "Register your Store\nCreate a Store manager account and business profile.\nManager full name\nEmail\nMobile number\nStore name\nStore address\nLatitude\nLongitude\nPassword\nConfirm password\nCreate Store Account\nAlready registered? Log in",
+    "after": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nLog In\nWant to register a store? \nRegister Store",
+    "events": [],
+    "executed": true
+  },
+  {
+    "label": "Refresh",
+    "time": "2026-09-13T16:03:21.137Z",
+    "before": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nLog In\nWant to register a store? \nRegister Store",
+    "after": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nLog In\nWant to register a store? \nRegister Store",
+    "events": [],
+    "executed": true
+  },
+  {
+    "label": "Unauthenticated deep link /inventory",
+    "time": "2026-09-13T16:03:21.950Z",
+    "before": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nLog In\nWant to register a store? \nRegister Store",
+    "after": "404: NOT_FOUND\nCode: NOT_FOUND\nID: bom1::bvlfc-1789315402794-689a93bf0f18\n\nRead our documentation to learn more about this error.",
+    "events": [
+      {
+        "type": "response",
+        "url": "https://fixkart-store-web.vercel.app/inventory",
+        "status": 404
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 ()"
+      }
+    ],
+    "executed": true
+  },
+  {
+    "label": "Browser back",
+    "time": "2026-09-13T16:03:22.698Z",
+    "before": "404: NOT_FOUND\nCode: NOT_FOUND\nID: bom1::bvlfc-1789315402794-689a93bf0f18\n\nRead our documentation to learn more about this error.",
+    "after": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nLog In\nWant to register a store? \nRegister Store",
+    "events": [],
+    "executed": true
+  },
+  {
+    "label": "Browser forward",
+    "time": "2026-09-13T16:03:23.287Z",
+    "before": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nLog In\nWant to register a store? \nRegister Store",
+    "after": "404: NOT_FOUND\nCode: NOT_FOUND\nID: bom1::bvlfc-1789315402794-689a93bf0f18\n\nRead our documentation to learn more about this error.",
+    "events": [
+      {
+        "type": "response",
+        "url": "https://fixkart-store-web.vercel.app/inventory",
+        "status": 404
+      },
+      {
+        "type": "error",
+        "text": "Failed to load resource: the server responded with a status of 404 ()"
+      }
+    ],
+    "executed": true
+  }
+]

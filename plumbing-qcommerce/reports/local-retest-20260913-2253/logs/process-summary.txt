@@ -1,0 +1,21 @@
+﻿PID: 11632
+Name: java.exe
+ExecutablePath: C:\Program Files\Java\jdk-17\bin\java.exe
+CommandLine: "C:\Program Files\Java\jdk-17\bin\java.exe" -XX:TieredStopAtLevel=1 -cp @C:\Users\akhil\AppData\Local\Temp\spring-boot-11773260934792277080.argfile com.pqc.core.PlumbingCoreApplication
+----
+PID: 10500
+Name: node.exe
+ExecutablePath: C:\Program Files\nodejs\node.exe
+CommandLine: "node"   "C:\Users\akhil\OneDrive\Desktop\Workspace\fixkart\plumbing-qcommerce\plumbing-qcommerce\admin-portal\node_modules\.bin\\..\next\dist\bin\next" start
+----
+PID: 20980
+Name: node.exe
+ExecutablePath: C:\Program Files\nodejs\node.exe
+CommandLine: "node"   "C:\Users\akhil\OneDrive\Desktop\Workspace\fixkart\plumbing-qcommerce\plumbing-qcommerce\customer-app\node_modules\.bin\\..\expo\bin\cli" start --web --port 8082
+----
+PID: 1284
+Name: node.exe
+ExecutablePath: C:\Program Files\nodejs\node.exe
+CommandLine: "node"   "C:\Users\akhil\OneDrive\Desktop\Workspace\fixkart\plumbing-qcommerce\plumbing-qcommerce\plumber-app\node_modules\.bin\\..\expo\bin\cli" start --web --port 8083
+----
+

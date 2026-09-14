@@ -1,0 +1,64 @@
+{
+  "url": "https://fixkart-store-web.vercel.app/",
+  "response": {
+    "error": "page.waitForResponse: Timeout 45000ms exceeded while waiting for event \"response\""
+  },
+  "text": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nLog In\nWant to register a store? \nRegister Store",
+  "events": [
+    {
+      "type": "response",
+      "url": "https://fixkart-store-web.vercel.app/",
+      "status": 200,
+      "method": "GET",
+      "timing": {
+        "startTime": 1789315050554.775,
+        "domainLookupStart": 0,
+        "domainLookupEnd": 12.219,
+        "connectStart": 12.347,
+        "secureConnectionStart": 45.44,
+        "connectEnd": 127.77,
+        "requestStart": 127.983,
+        "responseStart": 205.176,
+        "responseEnd": 209.023
+      }
+    },
+    {
+      "type": "response",
+      "url": "https://fixkart-store-web.vercel.app/_expo/static/js/web/index-4ff5dde5cf8582eddb6967ba9bf6c27f.js",
+      "status": 200,
+      "method": "GET",
+      "timing": {
+        "startTime": 1789315050782.915,
+        "domainLookupStart": -1,
+        "domainLookupEnd": -1,
+        "connectStart": -1,
+        "secureConnectionStart": -1,
+        "connectEnd": -1,
+        "requestStart": 0.493,
+        "responseStart": 76.082,
+        "responseEnd": 221.652
+      }
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "type": "warning",
+      "text": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md"
+    },
+    {
+      "type": "error",
+      "text": "Access to XMLHttpRequest at 'https://fixkart-dev2-backend.onrender.com/api/v1/auth/login' from origin 'https://fixkart-store-web.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+    },
+    {
+      "type": "requestfailed",
+      "url": "https://fixkart-dev2-backend.onrender.com/api/v1/auth/login",
+      "error": "net::ERR_FAILED"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: net::ERR_FAILED"
+    }
+  ]
+}

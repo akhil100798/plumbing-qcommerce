@@ -1,0 +1,4 @@
+{
+  "url": "http://localhost:8084/",
+  "snapshot": "- text: Account & Store Settings 🏬 QA Store Manager store.qa@fixkart.com STORE_MANAGER\n- img\n- text: Store Identity & Contact Details\n- img\n- text: Hardware Store Inventory\n- img\n- text: Material Request Queue Sign Out of Store Session\n- tablist:\n  - tab \"Home\":\n    - img\n    - img\n    - text: Home\n  - tab \"Orders\":\n    - img\n    - img\n    - text: Orders\n  - tab \"Inventory\":\n    - img\n    - img\n    - text: Inventory\n  - tab \"Materials\":\n    - img\n    - img\n    - text: Materials\n  - tab \"Account\" [selected]:\n    - img\n    - img\n    - text: Account"
+}

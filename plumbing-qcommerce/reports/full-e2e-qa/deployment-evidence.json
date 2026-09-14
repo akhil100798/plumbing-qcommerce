@@ -1,0 +1,556 @@
+{
+  "time": "2026-09-13T16:01:23.635Z",
+  "render": [
+    {
+      "id": "dajceg0ae00c739dtfdg",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "\u001b[0;32m\u001b[1m==> \u001b[0m\u001b[1mDetected service running on port 10000\u001b[0m",
+      "timestamp": "2026-09-12T18:17:26.06599641Z"
+    },
+    {
+      "id": "8ccde44d-4297-40f4-a1ed-341ae6320423",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:50:04.280Z  INFO 1 --- [plumbing-core] [           main] com.pqc.core.PlumbingCoreApplication     : The following 1 profile is active: \"staging\"",
+      "timestamp": "2026-09-13T15:50:04.281352128Z"
+    },
+    {
+      "id": "a159904a-20b2-47a9-96e9-ef2a213c6c76",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:50:57.583Z  INFO 1 --- [plumbing-core] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 10000 (http)",
+      "timestamp": "2026-09-13T15:50:57.583822067Z"
+    },
+    {
+      "id": "3820c547-146f-4094-b9dc-63a1a3a09a64",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:53:39.782Z  INFO 1 --- [plumbing-core] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 10000 (http) with context path '/'",
+      "timestamp": "2026-09-13T15:53:39.783329586Z"
+    },
+    {
+      "id": "00a44287-f76a-4937-a83d-e731b2872bb5",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:53:40.179Z  INFO 1 --- [plumbing-core] [           main] com.pqc.core.PlumbingCoreApplication     : Started PlumbingCoreApplication in 227.096 seconds (process running for 241.321)",
+      "timestamp": "2026-09-13T15:53:40.179923942Z"
+    },
+    {
+      "id": "c896f566-33c8-4ed2-824a-5df9d98fa17c",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:53:41.678Z  INFO 1 --- [plumbing-core] [           main] c.p.c.config.StagingDemoAdminUserSeeder  : StagingDemoAdminUserSeeder: provisioning staging admin QA accounts...",
+      "timestamp": "2026-09-13T15:53:41.678603811Z"
+    },
+    {
+      "id": "4e769a8f-73e2-4835-a622-05e97fc2c590",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:53:56.081Z  INFO 1 --- [plumbing-core] [           main] c.p.c.config.StagingDemoAdminUserSeeder  : StagingDemoAdminUserSeeder: staging admin provisioning complete.",
+      "timestamp": "2026-09-13T15:53:56.082230565Z"
+    },
+    {
+      "id": "1ae44aaf-95d1-4353-8273-bca8067f9b52",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:53:56.287Z  INFO 1 --- [plumbing-core] [           main] c.p.c.c.StagingDemoMobileUserSeeder      : StagingDemoMobileUserSeeder: provisioning FixKart QA accounts...",
+      "timestamp": "2026-09-13T15:53:56.287380915Z"
+    },
+    {
+      "id": "1adc0314-8c37-4c5f-ba1e-cf68506837bd",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:54:06.777Z  INFO 1 --- [plumbing-core] [           main] c.p.c.c.StagingDemoMobileUserSeeder      : StagingDemoMobileUserSeeder: QA provisioning complete. Users=6, Store=1 (id=1), Products=4 (3 sufficient, 1 low-stock)",
+      "timestamp": "2026-09-13T15:54:06.778468962Z"
+    },
+    {
+      "id": "53c9ab5d-4b1e-4fe0-8532-b51fbe1311b0",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:54:06.836Z  INFO 1 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Ensuring development/demo users...",
+      "timestamp": "2026-09-13T15:54:06.837046922Z"
+    },
+    {
+      "id": "b056abf5-ec2c-4643-813a-2a0540ce5df8",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:54:07.578Z  INFO 1 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Demo user already present: manager@plumbcommerce.com (STORE_MANAGER)",
+      "timestamp": "2026-09-13T15:54:07.578484016Z"
+    },
+    {
+      "id": "29537db8-741f-4c58-aa51-7b2a100045fc",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:54:07.679Z  INFO 1 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Demo user already present: customer@plumbcommerce.com (CUSTOMER)",
+      "timestamp": "2026-09-13T15:54:07.679552207Z"
+    },
+    {
+      "id": "790ce850-b143-4285-8b93-d1a0669a291e",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:54:07.778Z  INFO 1 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Demo user already present: admin@plumbcommerce.com (ADMIN)",
+      "timestamp": "2026-09-13T15:54:07.780983969Z"
+    },
+    {
+      "id": "6decaf66-1c18-4a3f-8900-51e9cbbccf8a",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:54:07.834Z  INFO 1 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Demo user already present: superadmin@plumbcommerce.com (SUPER_ADMIN)",
+      "timestamp": "2026-09-13T15:54:07.835317511Z"
+    },
+    {
+      "id": "23ce4bca-d7d0-403f-82f5-2c3034a86f2d",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:54:07.933Z  INFO 1 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Demo user already present: operations@plumbcommerce.com (OPERATIONS_ADMIN)",
+      "timestamp": "2026-09-13T15:54:07.978204897Z"
+    },
+    {
+      "id": "159178b0-07c9-4bf1-82c0-2d0112400d77",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:54:08.080Z  INFO 1 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Demo user already present: plumbermanager@plumbcommerce.com (PLUMBER_MANAGER)",
+      "timestamp": "2026-09-13T15:54:08.082841427Z"
+    },
+    {
+      "id": "8672c497-4b12-4826-8459-4ad4aeabf100",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:54:08.178Z  INFO 1 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Demo user already present: finance@plumbcommerce.com (FINANCE_ADMIN)",
+      "timestamp": "2026-09-13T15:54:08.178637334Z"
+    },
+    {
+      "id": "835dd27a-06dd-49c5-a58e-81c9bbd1d7c7",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:54:08.234Z  INFO 1 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Demo user already present: support@plumbcommerce.com (SUPPORT_ADMIN)",
+      "timestamp": "2026-09-13T15:54:08.27800032Z"
+    },
+    {
+      "id": "99dccbb1-8c0a-4b9a-a3f2-e8a8582dbf58",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:54:08.379Z  INFO 1 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Demo user already present: marketing@plumbcommerce.com (MARKETING_ADMIN)",
+      "timestamp": "2026-09-13T15:54:08.388294746Z"
+    },
+    {
+      "id": "09e09430-416a-4c67-a926-21ac943d4e3b",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-daio2sbm8hqs73dl5oug"
+        },
+        {
+          "name": "instance",
+          "value": "srv-daio2sbm8hqs73dl5oug-wh9xz"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "2026-09-13T15:54:08.633Z  INFO 1 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Catalog already seeded.",
+      "timestamp": "2026-09-13T15:54:08.634280436Z"
+    }
+  ],
+  "apps": {
+    "store": {
+      "latest": {
+        "id": "dpl_E8ynCL7SRGW7v7MXUYhoC1yn12mF",
+        "url": "fixkart-store-ciz3jknlg-sirupuramakhil-2873s-projects.vercel.app",
+        "state": "READY",
+        "target": null,
+        "sha": "618a8181b165644013422a217bb5dc2ff66b9209",
+        "branch": "Development-2"
+      },
+      "production": {
+        "id": "dpl_1rGRXmTqdN1Tt3yHQrSKiYQUiVhE",
+        "url": "fixkart-store-g61crisxv-sirupuramakhil-2873s-projects.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "sha": "cf3fab03ba22ff8b7be03ff89c167373ebd1a137",
+        "branch": "Development-2"
+      },
+      "aliases": [
+        "fixkart-store-web.vercel.app",
+        "fixkart-store-web-sirupuramakhil-2873s-projects.vercel.app",
+        "fixkart-store-web-git-deve-31d2a9-sirupuramakhil-2873s-projects.vercel.app"
+      ],
+      "ready": "READY"
+    },
+    "plumber": {
+      "latest": {
+        "id": "dpl_HtSu1ZrMGB5n57mTssqr5koj8qCC",
+        "url": "fixkart-plumber-gddsuow8y-sirupuramakhil-2873s-projects.vercel.app",
+        "state": "READY",
+        "target": null,
+        "sha": "618a8181b165644013422a217bb5dc2ff66b9209",
+        "branch": "Development-2"
+      },
+      "production": {
+        "id": "dpl_74w7WfUjp6ytSBUprbV7QkT9Bbqg",
+        "url": "fixkart-plumber-d8mcmjq86-sirupuramakhil-2873s-projects.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "sha": "cf3fab03ba22ff8b7be03ff89c167373ebd1a137",
+        "branch": "Development-2"
+      },
+      "aliases": [
+        "fixkart-plumber-web.vercel.app",
+        "fixkart-plumber-web-sirupuramakhil-2873s-projects.vercel.app",
+        "fixkart-plumber-web-git-de-b6a998-sirupuramakhil-2873s-projects.vercel.app"
+      ],
+      "ready": "READY"
+    },
+    "admin": {
+      "latest": {
+        "id": "dpl_4an6mA73RTVQBE7PWkQ6a3A4Ni1y",
+        "url": "admin-portal-a063lhba6-sirupuramakhil-2873s-projects.vercel.app",
+        "state": "ERROR",
+        "target": null,
+        "sha": "618a8181b165644013422a217bb5dc2ff66b9209",
+        "branch": "Development-2"
+      },
+      "production": {
+        "id": "dpl_8vSxyc5TW7vYuRV8JcnPmBU5BRVn",
+        "url": "admin-portal-gut2xedgn-sirupuramakhil-2873s-projects.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "sha": "99a190577a61df168f208ad30e683dd7431754bc",
+        "branch": "phase13a-local-staging-sms",
+        "dirty": "1"
+      },
+      "aliases": [
+        "admin-portal-ten-weld.vercel.app",
+        "admin-portal-sirupuramakhil-2873s-projects.vercel.app",
+        "admin-portal-sirupuramakhil-2873-sirupuramakhil-2873s-projects.vercel.app"
+      ],
+      "ready": "READY"
+    },
+    "customer": {
+      "latest": {
+        "id": "dpl_5csfnzWQUV15gSsPGbKij96HKZDc",
+        "url": "fixkart-customer-q1dx8e5n0-sirupuramakhil-2873s-projects.vercel.app",
+        "state": "READY",
+        "target": null,
+        "sha": "618a8181b165644013422a217bb5dc2ff66b9209",
+        "branch": "Development-2"
+      },
+      "production": {
+        "id": "dpl_6hkspShX7EhgAb93iZbpAvQL4QsJ",
+        "url": "fixkart-customer-p8w44atwh-sirupuramakhil-2873s-projects.vercel.app",
+        "state": "READY",
+        "target": "production",
+        "sha": "cf3fab03ba22ff8b7be03ff89c167373ebd1a137",
+        "branch": "Development-2"
+      },
+      "aliases": [
+        "fixkart-customer-web.vercel.app",
+        "fixkart-customer-web-sirupuramakhil-2873s-projects.vercel.app",
+        "fixkart-customer-web-git-d-3a91dc-sirupuramakhil-2873s-projects.vercel.app"
+      ],
+      "ready": "READY"
+    }
+  }
+}

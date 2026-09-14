@@ -1,0 +1,5 @@
+{
+  "url": "http://localhost:3001/",
+  "snapshot": "- text: P\n- heading \"PlumbCommerce\" [level=1]\n- paragraph: Admin Portal\n- text: Email\n- textbox \"Email\":\n  - /placeholder: admin@plumbcommerce.com\n  - text: superadmin@plumbcommerce.com\n- text: Password\n- textbox \"Password\": [REDACTED]\n- button \"Signing in\" [disabled]\n- alert",
+  "text": "P\nPlumbCommerce\n\nAdmin Portal\n\nEmail\nPassword\nSigning in"
+}

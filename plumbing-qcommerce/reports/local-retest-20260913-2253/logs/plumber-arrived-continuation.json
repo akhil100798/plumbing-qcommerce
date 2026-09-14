@@ -1,0 +1,4 @@
+{
+  "url": "http://localhost:8083/",
+  "snapshot": "- button \"Go back\": ←\n- text: Reached Customer\n- img\n- text: \"You have reached the customer location Please confirm to start the service for Job #2.\"\n- button \"Confirm Arrival\"\n- button \"Contact Customer\""
+}

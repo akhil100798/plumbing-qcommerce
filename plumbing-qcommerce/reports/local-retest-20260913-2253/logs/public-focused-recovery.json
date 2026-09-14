@@ -1,0 +1,465 @@
+[
+  {
+    "app": "plumber",
+    "screen": "empty-login",
+    "snapshot": "- text: Welcome Back! Login to continue\n- tab \"Log in with mobile number\": Mobile\n- tab \"Log in with email\": Email\n- text: Mobile Number +91\n- textbox \"Mobile number\":\n  - /placeholder: Enter mobile number\n- checkbox \"Remember me\"\n- button \"Forgot password\": Forgot Password?\n- button \"Continue\"\n- text: or continue with\n- button \"Google sign in unavailable\": G Google\n- button \"Facebook sign in unavailable\": f Facebook\n- text: New here? Sign up",
+    "violations": [
+      {
+        "id": "aria-required-attr",
+        "impact": "critical",
+        "nodes": [
+          {
+            "target": [
+              ".r-gap-1cmwbt1"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          }
+        ]
+      },
+      {
+        "id": "aria-required-parent",
+        "impact": "critical",
+        "nodes": [
+          {
+            "target": [
+              "div[aria-label=\"Log in with mobile number\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA parent role not present: tablist"
+          },
+          {
+            "target": [
+              "div[aria-label=\"Log in with email\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA parent role not present: tablist"
+          }
+        ]
+      },
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              ".r-color-1ysakl5"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.26 (foreground color: #727785, background color: #faf9fd, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ],
+    "events": []
+  },
+  {
+    "app": "plumber",
+    "screen": "forgot-password",
+    "snapshot": "- text: Welcome Back! Login to continue\n- tab \"Log in with mobile number\": Mobile\n- tab \"Log in with email\": Email\n- text: Mobile Number +91\n- textbox \"Mobile number\":\n  - /placeholder: Enter mobile number\n- checkbox \"Remember me\"\n- button \"Forgot password\": Forgot Password?\n- button \"Continue\"\n- text: or continue with\n- button \"Google sign in unavailable\": G Google\n- button \"Facebook sign in unavailable\": f Facebook\n- text: New here? Sign up",
+    "violations": [
+      {
+        "id": "aria-required-attr",
+        "impact": "critical",
+        "nodes": [
+          {
+            "target": [
+              ".r-gap-1cmwbt1"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          }
+        ]
+      },
+      {
+        "id": "aria-required-parent",
+        "impact": "critical",
+        "nodes": [
+          {
+            "target": [
+              "div[aria-label=\"Log in with mobile number\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA parent role not present: tablist"
+          },
+          {
+            "target": [
+              "div[aria-label=\"Log in with email\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA parent role not present: tablist"
+          }
+        ]
+      },
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              ".r-color-1ysakl5"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.26 (foreground color: #727785, background color: #faf9fd, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ],
+    "events": []
+  },
+  {
+    "app": "plumber",
+    "screen": "google",
+    "snapshot": "- text: Welcome Back! Login to continue\n- tab \"Log in with mobile number\": Mobile\n- tab \"Log in with email\": Email\n- text: Mobile Number +91\n- textbox \"Mobile number\":\n  - /placeholder: Enter mobile number\n- checkbox \"Remember me\"\n- button \"Forgot password\": Forgot Password?\n- button \"Continue\"\n- text: or continue with\n- button \"Google sign in unavailable\": G Google\n- button \"Facebook sign in unavailable\": f Facebook\n- text: New here? Sign up",
+    "violations": [
+      {
+        "id": "aria-required-attr",
+        "impact": "critical",
+        "nodes": [
+          {
+            "target": [
+              ".r-gap-1cmwbt1"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          }
+        ]
+      },
+      {
+        "id": "aria-required-parent",
+        "impact": "critical",
+        "nodes": [
+          {
+            "target": [
+              "div[aria-label=\"Log in with mobile number\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA parent role not present: tablist"
+          },
+          {
+            "target": [
+              "div[aria-label=\"Log in with email\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA parent role not present: tablist"
+          }
+        ]
+      },
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              ".r-color-1ysakl5"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.26 (foreground color: #727785, background color: #faf9fd, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ],
+    "events": []
+  },
+  {
+    "app": "plumber",
+    "screen": "facebook",
+    "snapshot": "- text: Welcome Back! Login to continue\n- tab \"Log in with mobile number\": Mobile\n- tab \"Log in with email\": Email\n- text: Mobile Number +91\n- textbox \"Mobile number\":\n  - /placeholder: Enter mobile number\n- checkbox \"Remember me\"\n- button \"Forgot password\": Forgot Password?\n- button \"Continue\"\n- text: or continue with\n- button \"Google sign in unavailable\": G Google\n- button \"Facebook sign in unavailable\": f Facebook\n- text: New here? Sign up\n- img",
+    "violations": [
+      {
+        "id": "aria-required-attr",
+        "impact": "critical",
+        "nodes": [
+          {
+            "target": [
+              ".r-gap-1cmwbt1"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          }
+        ]
+      },
+      {
+        "id": "aria-required-parent",
+        "impact": "critical",
+        "nodes": [
+          {
+            "target": [
+              "div[aria-label=\"Log in with mobile number\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA parent role not present: tablist"
+          },
+          {
+            "target": [
+              "div[aria-label=\"Log in with email\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA parent role not present: tablist"
+          }
+        ]
+      },
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              ".r-color-1ysakl5"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.26 (foreground color: #727785, background color: #faf9fd, font size: 9.0pt (12px), font weight: bold). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ],
+    "events": []
+  },
+  {
+    "app": "plumber",
+    "screen": "otp",
+    "snapshot": "- button \"Go back\": ←\n- text: Verify Number Verify Your Number Enter the 6-digit code sent to +91 5555500003\n- textbox\n- textbox\n- textbox\n- textbox\n- textbox\n- textbox\n- text: Resend OTP in 00:28\n- img\n- text: Your data is safe with us\n- button \"Verify & Continue\" [disabled]",
+    "violations": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": [
+          {
+            "target": [
+              ".r-color-1ysakl5.r-fontSize-1enofrn.r-fontWeight-majxgm"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.26 (foreground color: #727785, background color: #faf9fd, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      },
+      {
+        "id": "label",
+        "impact": "critical",
+        "nodes": [
+          {
+            "target": [
+              ".r-fontSize-adyw6z.r-width-rwqe4o[maxlength=\"1\"]:nth-child(1)"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+          },
+          {
+            "target": [
+              ".r-fontSize-adyw6z.r-width-rwqe4o[maxlength=\"1\"]:nth-child(2)"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+          },
+          {
+            "target": [
+              ".r-fontSize-adyw6z.r-width-rwqe4o[maxlength=\"1\"]:nth-child(3)"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+          },
+          {
+            "target": [
+              ".r-fontSize-adyw6z.r-width-rwqe4o[maxlength=\"1\"]:nth-child(4)"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+          },
+          {
+            "target": [
+              ".r-fontSize-adyw6z.r-width-rwqe4o[maxlength=\"1\"]:nth-child(5)"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+          },
+          {
+            "target": [
+              ".r-fontSize-adyw6z.r-width-rwqe4o[maxlength=\"1\"]:nth-child(6)"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+          }
+        ]
+      }
+    ],
+    "events": []
+  },
+  {
+    "app": "plumber",
+    "screen": "registration",
+    "snapshot": "- text: Become a FixKart Plumber Create your account. KYC can be completed after registration. Full name\n- textbox \"Full name\"\n- text: Email\n- textbox \"Email\"\n- text: Mobile number\n- textbox \"Mobile number\"\n- text: Password\n- textbox \"Password\"\n- text: Confirm password\n- textbox \"Confirm password\"\n- button \"Create Plumber Account\"\n- text: Already registered? Log in",
+    "violations": [],
+    "events": []
+  },
+  {
+    "app": "plumber",
+    "screen": "registration-responsive",
+    "width": 360,
+    "height": 800,
+    "scrollWidth": 360
+  },
+  {
+    "app": "plumber",
+    "screen": "registration-responsive",
+    "width": 390,
+    "height": 844,
+    "scrollWidth": 390
+  },
+  {
+    "app": "plumber",
+    "screen": "registration-responsive",
+    "width": 412,
+    "height": 915,
+    "scrollWidth": 412
+  },
+  {
+    "app": "plumber",
+    "screen": "registration-responsive",
+    "width": 768,
+    "height": 1024,
+    "scrollWidth": 768
+  },
+  {
+    "app": "plumber",
+    "screen": "registration-responsive",
+    "width": 1024,
+    "height": 768,
+    "scrollWidth": 1024
+  },
+  {
+    "app": "plumber",
+    "screen": "registration-responsive",
+    "width": 1366,
+    "height": 768,
+    "scrollWidth": 1366
+  },
+  {
+    "app": "plumber",
+    "screen": "registration-responsive",
+    "width": 1440,
+    "height": 900,
+    "scrollWidth": 1440
+  },
+  {
+    "app": "plumber",
+    "screen": "registration-responsive",
+    "width": 1920,
+    "height": 1080,
+    "scrollWidth": 1920
+  },
+  {
+    "app": "store",
+    "screen": "empty-login",
+    "snapshot": "- img\n- text: FixKart Store Partner App Welcome Back! Log in to manage and fulfill your inventory orders. Email Address\n- textbox \"store@plumbcommerce.com\"\n- text: Password\n- textbox \"••••••••\"\n- text: Remember me Forgot Password?\n- button \"Log In\"\n- text: Want to register a store? Register Store",
+    "violations": [],
+    "events": []
+  },
+  {
+    "app": "store",
+    "screen": "forgot-password",
+    "snapshot": "- img\n- text: FixKart Store Partner App Welcome Back! Log in to manage and fulfill your inventory orders. Email Address\n- textbox \"store@plumbcommerce.com\"\n- text: Password\n- textbox \"••••••••\"\n- text: Remember me Forgot Password?\n- button \"Log In\"\n- text: Want to register a store? Register Store",
+    "violations": [],
+    "events": []
+  },
+  {
+    "app": "store",
+    "screen": "registration",
+    "snapshot": "- text: Register your Store Create a Store manager account and business profile. Manager full name\n- textbox\n- text: Email\n- textbox\n- text: Mobile number\n- textbox\n- text: Store name\n- textbox\n- text: Store address\n- textbox\n- text: Latitude\n- textbox\n- text: Longitude\n- textbox\n- text: Password\n- textbox\n- text: Confirm password\n- textbox\n- button \"Create Store Account\"\n- text: Already registered? Log in",
+    "violations": [
+      {
+        "id": "label",
+        "impact": "critical",
+        "nodes": [
+          {
+            "target": [
+              ".r-padding-nsbfu8.r-backgroundColor-14lw9ot.r-borderRadius-1867qdf > .r-marginBottom-6gpygo.css-view-g5y9jx:nth-child(1) > .r-borderRadius-1dzdj1l.r-borderWidth-rs99b7[autocorrect=\"on\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+          },
+          {
+            "target": [
+              ".r-borderRadius-1dzdj1l.r-borderWidth-rs99b7[type=\"email\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+          },
+          {
+            "target": [
+              "input[type=\"tel\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+          },
+          {
+            "target": [
+              ".r-marginBottom-6gpygo.css-view-g5y9jx:nth-child(4) > .r-borderRadius-1dzdj1l.r-borderWidth-rs99b7[autocorrect=\"on\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+          },
+          {
+            "target": [
+              ".r-marginBottom-6gpygo.css-view-g5y9jx:nth-child(5) > .r-borderRadius-1dzdj1l.r-borderWidth-rs99b7[autocorrect=\"on\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+          },
+          {
+            "target": [
+              ".r-flex-13awgt0.css-view-g5y9jx:nth-child(1) > .r-marginBottom-6gpygo.css-view-g5y9jx > .r-borderRadius-1dzdj1l.r-borderWidth-rs99b7[type=\"text\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+          },
+          {
+            "target": [
+              ".r-flex-13awgt0.css-view-g5y9jx:nth-child(2) > .r-marginBottom-6gpygo.css-view-g5y9jx > .r-borderRadius-1dzdj1l.r-borderWidth-rs99b7[type=\"text\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+          },
+          {
+            "target": [
+              ".r-marginBottom-6gpygo.css-view-g5y9jx:nth-child(7) > .r-borderRadius-1dzdj1l.r-borderWidth-rs99b7[type=\"password\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+          },
+          {
+            "target": [
+              ".r-marginBottom-6gpygo.css-view-g5y9jx:nth-child(8) > .r-borderRadius-1dzdj1l.r-borderWidth-rs99b7[type=\"password\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+          }
+        ]
+      }
+    ],
+    "events": []
+  },
+  {
+    "app": "store",
+    "screen": "registration-responsive",
+    "width": 360,
+    "height": 800,
+    "scrollWidth": 360
+  },
+  {
+    "app": "store",
+    "screen": "registration-responsive",
+    "width": 390,
+    "height": 844,
+    "scrollWidth": 390
+  },
+  {
+    "app": "store",
+    "screen": "registration-responsive",
+    "width": 412,
+    "height": 915,
+    "scrollWidth": 412
+  },
+  {
+    "app": "store",
+    "screen": "registration-responsive",
+    "width": 768,
+    "height": 1024,
+    "scrollWidth": 768
+  },
+  {
+    "app": "store",
+    "screen": "registration-responsive",
+    "width": 1024,
+    "height": 768,
+    "scrollWidth": 1024
+  },
+  {
+    "app": "store",
+    "screen": "registration-responsive",
+    "width": 1366,
+    "height": 768,
+    "scrollWidth": 1366
+  },
+  {
+    "app": "store",
+    "screen": "registration-responsive",
+    "width": 1440,
+    "height": 900,
+    "scrollWidth": 1440
+  },
+  {
+    "app": "store",
+    "screen": "registration-responsive",
+    "width": 1920,
+    "height": 1080,
+    "scrollWidth": 1920
+  }
+]

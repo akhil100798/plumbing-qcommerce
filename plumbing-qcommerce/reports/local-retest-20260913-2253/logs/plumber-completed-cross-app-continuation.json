@@ -1,0 +1,4 @@
+{
+  "url": "http://localhost:8083/",
+  "snapshot": "- text: Jobs 1 assigned\n- button \"Open job QA continuation 2026-09-14T08:11:49.836Z leaking kitchen tap; isolated regression, status Unknown\": \"QA continuation 2026-09-14T08:11:49.836Z leaking kitchen tap; isolated regression Unknown Job #2 ₹200\"\n- tablist:\n  - tab \"Home\":\n    - img\n    - img\n    - text: Home\n  - tab \"Jobs\" [selected]:\n    - img\n    - img\n    - text: Jobs\n  - tab \"Earnings\":\n    - img\n    - img\n    - text: Earnings\n  - tab \"Materials\":\n    - img\n    - img\n    - text: Materials\n  - tab \"Profile\":\n    - img\n    - img\n    - text: Profile"
+}

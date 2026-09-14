@@ -1,0 +1,3 @@
+{
+  "snapshot": "- img\n- text: FixKart Store Partner App Welcome Back! Log in to manage and fulfill your inventory orders. Email Address\n- textbox \"store@plumbcommerce.com\"\n- text: Password\n- textbox \"••••••••\"\n- text: Remember me Forgot Password?\n- button \"Log In\"\n- text: Want to register a store? Register Store"
+}

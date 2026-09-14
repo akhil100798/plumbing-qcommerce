@@ -1,0 +1,35 @@
+{
+  "status": 200,
+  "data": {
+    "id": 1,
+    "serviceOrderId": 2,
+    "storeId": 1,
+    "storeName": "FixKart QA Staging Store",
+    "storeAddress": "1 QA Test Lane, Hyderabad",
+    "plumberId": 10,
+    "plumberName": "QA Plumber One",
+    "customerId": 8,
+    "customerName": "QA Customer One",
+    "status": "PREPARING",
+    "notes": null,
+    "totalAmount": 290,
+    "items": [
+      {
+        "productId": 1,
+        "productName": "CPVC Pipe 1/2 inch (QA)",
+        "sku": "QA-CPVC-PIPE-12",
+        "unitPrice": 145,
+        "requestedQuantity": 2,
+        "reservedQuantity": 2,
+        "packedQuantity": 2
+      }
+    ],
+    "createdAt": "2026-09-14T12:49:48.408322",
+    "storeConfirmedAt": "2026-09-14T12:53:03.52945",
+    "preparingStartedAt": "2026-09-14T12:53:04.346419",
+    "readyForPickupAt": null,
+    "plumberArrivedAt": null,
+    "plumberCollectedAt": null,
+    "collectionConfirmedAt": null
+  }
+}

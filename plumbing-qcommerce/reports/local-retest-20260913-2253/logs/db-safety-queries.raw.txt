@@ -1,0 +1,12 @@
+﻿-- CMD: \timing off
+-- CMD: SELECT version();
+-- CMD: SELECT inet_server_addr() as server_ip, inet_server_port() as server_port, current_database() as db;
+-- CMD: SELECT count(*) FROM information_schema.tables WHERE table_schema='public';
+-- CMD: SELECT string_agg(tablename, ', ') FROM pg_tables WHERE schemaname='public';
+-- CMD: SELECT count(*) FROM users;
+-- CMD: SELECT count(*) FILTER (WHERE role='CUSTOMER') as customers, count(*) FILTER (WHERE role='PLUMBER') as plumbers, count(*) FILTER (WHERE role='STORE_MANAGER') as store_managers, count(*) FILTER (WHERE role='SUPER_ADMIN') as admins FROM users;
+-- CMD: SELECT count(*) FROM stores;
+-- CMD: SELECT count(*) FROM products;
+-- CMD: SELECT count(*) FROM service_orders;
+-- CMD: SELECT count(*) FROM stocks;
+

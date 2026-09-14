@@ -1,0 +1,4 @@
+{
+  "url": "http://localhost:8083/",
+  "snapshot": "- button \"Go back\": ←\n- text: \"Inspection & Diagnosis #2 Plumbing Diagnosis & Inspection Q Customer QA Customer One Inspection Checklist\"\n- checkbox \"Explain the issue to customer\"\n- checkbox \"Show rate card for additional labor\"\n- checkbox \"Agree on total cost & work scope\"\n- checkbox \"I have explained the diagnosis to customer\"\n- text: Work & Material Decision\n- button \"Select materials required for this job\": Materials Required\n- button \"Start Direct Work\" [disabled]"
+}

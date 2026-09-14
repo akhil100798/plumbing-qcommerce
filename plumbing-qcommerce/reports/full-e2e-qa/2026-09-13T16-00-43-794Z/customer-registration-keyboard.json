@@ -1,0 +1,114 @@
+[
+  {
+    "tag": "DIV",
+    "role": null,
+    "label": null,
+    "text": "←",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "Enter full name",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "Enter email",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "10-digit mobile number",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "Create password",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "Confirm password",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "BUTTON",
+    "role": "button",
+    "label": "Create Account",
+    "text": "Create Account",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "label": null,
+    "text": "Already have an account? Login",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "BODY",
+    "role": null,
+    "label": null,
+    "text": "←\nCreate account\nRegister as a customer with email and password\nFull N",
+    "placeholder": null,
+    "outline": "rgb(0, 0, 0) none 3px"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "label": null,
+    "text": "←",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "Enter full name",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "Enter email",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "10-digit mobile number",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "Enter email",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  }
+]

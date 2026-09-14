@@ -1,0 +1,114 @@
+[
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "BUTTON",
+    "role": "button",
+    "label": "Create Store Account",
+    "text": "Create Store Account",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "label": null,
+    "text": "Already registered? Log in",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "BODY",
+    "role": null,
+    "label": null,
+    "text": "Register your Store\nCreate a Store manager account and business profil",
+    "placeholder": null,
+    "outline": "rgb(0, 0, 0) none 3px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "BODY",
+    "role": null,
+    "label": null,
+    "text": "Register your Store\nCreate a Store manager account and business profil",
+    "placeholder": null,
+    "outline": "rgb(0, 0, 0) none 3px"
+  }
+]

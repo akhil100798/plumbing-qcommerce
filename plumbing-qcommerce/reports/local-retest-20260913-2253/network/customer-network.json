@@ -1,0 +1,72 @@
+[
+  {
+    "method": "POST",
+    "url": "https://fixkart-dev2-backend.onrender.com/api/v1/auth/send-otp",
+    "failure": "net::ERR_FAILED"
+  },
+  {
+    "phase": "request",
+    "method": "POST",
+    "url": "http://localhost:8081/api/v1/auth/send-otp"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:8081/api/v1/auth/send-otp",
+    "status": 400,
+    "time": "2026-09-14T08:12:15.733Z"
+  },
+  {
+    "phase": "request",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/catalog/categories"
+  },
+  {
+    "phase": "request",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/catalog/products"
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/catalog/categories",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/catalog/products",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "request",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/catalog/products"
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/catalog/products",
+    "failure": "net::ERR_ABORTED"
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/catalog/categories",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/catalog/products",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/catalog/products",
+    "status": 200
+  },
+  {
+    "phase": "IPv4 browser",
+    "method": "GET",
+    "url": "http://localhost:8081/api/v1/catalog/products/1",
+    "status": 200
+  }
+]

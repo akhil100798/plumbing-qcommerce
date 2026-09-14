@@ -1,0 +1,44 @@
+{
+  "url": "https://fixkart-customer-web.vercel.app/",
+  "status": 200,
+  "headers": {
+    "access-control-allow-origin": "*",
+    "age": "406",
+    "cache-control": "public, max-age=0, must-revalidate",
+    "content-disposition": "inline",
+    "content-encoding": "br",
+    "content-type": "text/html; charset=utf-8",
+    "date": "Sun, 13 Sep 2026 15:53:52 GMT",
+    "etag": "W/\"cbe25493c1c898036b1f27f31d28613b\"",
+    "last-modified": "Sun, 13 Sep 2026 15:47:05 GMT",
+    "server": "Vercel",
+    "strict-transport-security": "max-age=63072000; includeSubDomains; preload",
+    "x-vercel-cache": "HIT",
+    "x-vercel-id": "bom1::v2rbs-1789314832410-3cc917f965ea"
+  },
+  "text": "Skip\nPlumbing Help\nIn Minutes\nBook expert plumbers, order materials, or get emergency solutions at your doorstep.\nNext",
+  "controls": [
+    {
+      "tag": "BUTTON",
+      "role": "button",
+      "type": "button",
+      "label": "Skip onboarding",
+      "text": "Skip",
+      "placeholder": null,
+      "href": null,
+      "visible": true,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "role": "button",
+      "type": "button",
+      "label": "Next",
+      "text": "Next",
+      "placeholder": null,
+      "href": null,
+      "visible": true,
+      "disabled": false
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "url": "https://fixkart-plumber-web.vercel.app/",
+  "status": 200,
+  "headers": {
+    "access-control-allow-origin": "*",
+    "age": "0",
+    "cache-control": "public, max-age=0, must-revalidate",
+    "content-disposition": "inline",
+    "content-encoding": "br",
+    "content-type": "text/html; charset=utf-8",
+    "date": "Sun, 13 Sep 2026 15:48:50 GMT",
+    "etag": "W/\"e2ee8c798df832ac527593e69f2f93d6\"",
+    "last-modified": "Sun, 13 Sep 2026 15:48:50 GMT",
+    "server": "Vercel",
+    "strict-transport-security": "max-age=63072000; includeSubDomains; preload",
+    "x-vercel-cache": "MISS",
+    "x-vercel-id": "bom1::bvlfc-1789314529666-ee06c566a0b3"
+  },
+  "text": "Welcome Back!\nLogin to continue\nMobile\nEmail\nMobile Number\n+91\nRemember me\nForgot Password?\nContinue\nor continue with\nG\nGoogle\nf\nFacebook\nNew here? Sign up",
+  "controls": [
+    {
+      "tag": "INPUT",
+      "role": null,
+      "type": "text",
+      "label": null,
+      "text": "",
+      "placeholder": "Enter mobile number",
+      "href": null,
+      "visible": true,
+      "disabled": false
+    },
+    {
+      "tag": "BUTTON",
+      "role": "button",
+      "type": "button",
+      "label": "Continue",
+      "text": "Continue",
+      "placeholder": null,
+      "href": null,
+      "visible": true,
+      "disabled": false
+    }
+  ]
+}

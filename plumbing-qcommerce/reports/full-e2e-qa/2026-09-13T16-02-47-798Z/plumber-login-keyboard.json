@@ -1,0 +1,114 @@
+[
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "plumber@plumbcommerce.com",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "********",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "label": null,
+    "text": "Remember me",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "label": null,
+    "text": "Forgot Password?",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "BUTTON",
+    "role": "button",
+    "label": "Continue",
+    "text": "Continue",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "label": null,
+    "text": "G\nGoogle",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "label": null,
+    "text": "f\nFacebook",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "BODY",
+    "role": null,
+    "label": null,
+    "text": "Welcome Back!\nLogin to continue\nMobile\nEmail\nEmail Address\nPassword\nRe",
+    "placeholder": null,
+    "outline": "rgb(0, 0, 0) none 3px"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "label": null,
+    "text": "Mobile",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "label": null,
+    "text": "Email",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "plumber@plumbcommerce.com",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "********",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "DIV",
+    "role": null,
+    "label": null,
+    "text": "Remember me",
+    "placeholder": null,
+    "outline": "rgb(16, 16, 16) auto 1px"
+  },
+  {
+    "tag": "INPUT",
+    "role": null,
+    "label": null,
+    "text": "",
+    "placeholder": "********",
+    "outline": "rgb(16, 16, 16) auto 1px"
+  }
+]

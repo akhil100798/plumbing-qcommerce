@@ -1,0 +1,47 @@
+{
+  "url": "https://fixkart-customer-web.vercel.app/",
+  "text": "←\nCreate account\nRegister as a customer with email and password\nFull Name\nEmail Address\nMobile Number\nPassword\nConfirm Password\nCreate Account\nAlready have an account? Login",
+  "aria": "- text: ← Create account Register as a customer with email and password Full Name\n- textbox \"Enter full name\": QA Validation\n- text: Email Address\n- textbox \"Enter email\": not-an-email\n- text: Mobile Number\n- textbox \"10-digit mobile number\"\n- text: Password\n- textbox \"Create password\"\n- text: Confirm Password\n- textbox \"Confirm password\"\n- button \"Create Account\"\n- text: Already have an account? Login",
+  "inputs": [
+    {
+      "type": "text",
+      "placeholder": "Enter full name",
+      "label": null,
+      "valueLength": 13
+    },
+    {
+      "type": "email",
+      "placeholder": "Enter email",
+      "label": null,
+      "valueLength": 12
+    },
+    {
+      "type": "tel",
+      "placeholder": "10-digit mobile number",
+      "label": null,
+      "valueLength": 0
+    },
+    {
+      "type": "password",
+      "placeholder": "Create password",
+      "label": null,
+      "valueLength": 0
+    },
+    {
+      "type": "password",
+      "placeholder": "Confirm password",
+      "label": null,
+      "valueLength": 0
+    }
+  ],
+  "events": [
+    {
+      "type": "dialog",
+      "text": "Validation Error\n\nPlease enter your email"
+    },
+    {
+      "type": "dialog",
+      "text": "Validation Error\n\nPlease enter a valid email"
+    }
+  ]
+}

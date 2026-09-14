@@ -1,0 +1,91 @@
+{
+  "url": "https://fixkart-plumber-web.vercel.app/",
+  "text": "Welcome Back!\nLogin to continue\nMobile\nEmail\nMobile Number\n+91\nRemember me\nForgot Password?\nContinue\nor continue with\nG\nGoogle\nf\nFacebook\nNew here? Sign up",
+  "aria": "- text: Welcome Back! Login to continue Mobile Email Mobile Number +91\n- textbox \"Enter mobile number\": \"9876543210\"\n- text: Remember me Forgot Password?\n- button \"Continue\"\n- text: or continue with G Google f Facebook New here? Sign up",
+  "inputs": [
+    {
+      "type": "text",
+      "placeholder": "Enter mobile number",
+      "label": null,
+      "labels": [],
+      "required": false,
+      "maxLength": 10,
+      "validity": true
+    }
+  ],
+  "controls": [
+    {
+      "tag": "DIV",
+      "role": null,
+      "text": "Mobile",
+      "label": null,
+      "placeholder": null
+    },
+    {
+      "tag": "DIV",
+      "role": null,
+      "text": "Email",
+      "label": null,
+      "placeholder": null
+    },
+    {
+      "tag": "INPUT",
+      "role": null,
+      "text": "",
+      "label": null,
+      "placeholder": "Enter mobile number",
+      "type": "text"
+    },
+    {
+      "tag": "DIV",
+      "role": null,
+      "text": "Remember me",
+      "label": null,
+      "placeholder": null
+    },
+    {
+      "tag": "DIV",
+      "role": null,
+      "text": "Forgot Password?",
+      "label": null,
+      "placeholder": null
+    },
+    {
+      "tag": "BUTTON",
+      "role": "button",
+      "text": "Continue",
+      "label": "Continue",
+      "placeholder": null,
+      "type": "button"
+    },
+    {
+      "tag": "DIV",
+      "role": null,
+      "text": "G\nGoogle",
+      "label": null,
+      "placeholder": null
+    },
+    {
+      "tag": "DIV",
+      "role": null,
+      "text": "f\nFacebook",
+      "label": null,
+      "placeholder": null
+    }
+  ],
+  "events": [
+    {
+      "type": "warning",
+      "text": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md"
+    },
+    {
+      "type": "request",
+      "url": "https://fixkart-dev2-backend.onrender.com/api/v1/auth/login",
+      "method": "POST"
+    },
+    {
+      "type": "warning",
+      "text": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md"
+    }
+  ]
+}

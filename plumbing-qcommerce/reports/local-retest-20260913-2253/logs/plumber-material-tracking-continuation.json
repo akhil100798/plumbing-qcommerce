@@ -1,0 +1,4 @@
+{
+  "url": "http://localhost:8083/",
+  "snapshot": "- button \"Go back\": ←\n- text: Material Status\n- img\n- text: Delivering Request ID MR1 Approved Items No material line items are available yet. Estimated Amount ₹0.00\n- button \"Open material tracking\":\n  - img\n  - text: Material will be delivered soon.\n  - img\n- img"
+}
