@@ -179,13 +179,12 @@ class CatalogAndInventoryIntegrationTest {
 
     @Test
     void getProducts_exposesLowStockFromPersistedThresholdWithoutHardcodedThreshold() throws Exception {
-        stockRepository.save(Stock.builder()
-                .store(store)
-                .product(product)
-                .availableQuantity(3)
-                .reservedQuantity(0)
-                .lowStockThreshold(5)
-                .build());
+        var existing = stockRepository
+                .findByStoreIdAndProductId(store.getId(), product.getId())
+                .orElseThrow();
+        existing.setAvailableQuantity(3);
+        existing.setLowStockThreshold(5);
+        stockRepository.save(existing);
 
         mvc.perform(get("/api/v1/catalog/products/" + product.getId()))
                 .andExpect(status().isOk())
