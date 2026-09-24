@@ -14,6 +14,7 @@ vi.mock("next/navigation", () => ({
 
 import AnalyticsPage from "./analytics/page";
 import HomePage from "./page";
+import { getBackendUrl } from "../services/apiClient";
 
 describe("admin portal pages", () => {
   it("renders the login loading shell on the home page", () => {
@@ -24,5 +25,11 @@ describe("admin portal pages", () => {
 
   it("redirects analytics to the dashboard", () => {
     expect(AnalyticsPage()).toBeUndefined();
+  });
+
+  it("targets the canonical production backend URL by default", () => {
+    expect(getBackendUrl()).toBe("https://plumbing-qcommerce.onrender.com");
+    expect(getBackendUrl()).not.toContain("localhost:8081");
+    expect(getBackendUrl()).not.toContain("fixkart-dev2-backend.onrender.com");
   });
 });

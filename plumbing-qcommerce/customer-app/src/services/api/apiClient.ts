@@ -14,7 +14,7 @@ const EXPLICIT_BACKEND_URL =
 const DEFAULT_BACKEND_URL =
   process.env.NODE_ENV === 'development'
     ? 'http://localhost:8081'
-    : 'https://fixkart-dev2-backend.onrender.com';
+    : 'https://plumbing-qcommerce.onrender.com';
 const RAW_BACKEND_URL = EXPLICIT_BACKEND_URL || DEFAULT_BACKEND_URL;
 export const BACKEND_URL = RAW_BACKEND_URL.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 export const API_BASE_URL = `${BACKEND_URL}/api/v1`;

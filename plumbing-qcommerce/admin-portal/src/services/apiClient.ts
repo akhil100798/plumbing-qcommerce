@@ -1,4 +1,7 @@
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8081";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  "https://plumbing-qcommerce.onrender.com";
 const TOKEN_KEY = "pqc_admin_token";
 
 export class ApiError extends Error {

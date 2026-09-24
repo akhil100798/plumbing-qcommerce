@@ -18,8 +18,12 @@ export function runCustomerUnitTests() {
 
   // Test 1: API Base URL and Endpoint structure
   assert(
-    BACKEND_URL === 'https://fixkart-dev2-backend.onrender.com' || BACKEND_URL.startsWith('http'),
+    BACKEND_URL === 'https://plumbing-qcommerce.onrender.com' || BACKEND_URL.startsWith('http'),
     'BACKEND_URL must be valid'
+  );
+  assert(
+    BACKEND_URL !== 'https://fixkart-dev2-backend.onrender.com',
+    'BACKEND_URL must not target stale backend'
   );
   assert(
     API_BASE_URL.endsWith('/api/v1'),
