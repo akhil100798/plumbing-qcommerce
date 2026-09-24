@@ -4,6 +4,7 @@ import com.pqc.core.entity.User;
 import com.pqc.core.entity.UserAddress;
 import com.pqc.core.repository.UserAddressRepository;
 import com.pqc.core.security.CurrentUser;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -28,8 +29,12 @@ public class UserAddressController {
     }
 
     @PostMapping
-    public ResponseEntity<UserAddress> addAddress(@RequestBody UserAddress address) {
+    public ResponseEntity<UserAddress> addAddress(@Valid @RequestBody UserAddress address) {
         User user = currentUser.require();
+        address.setLabel(address.getLabel().trim());
+        address.setName(address.getName().trim());
+        address.setAddressLine(address.getAddressLine().trim());
+        address.setPhone(address.getPhone().trim());
         address.setUser(user);
         return ResponseEntity.ok(userAddressRepository.save(address));
     }

@@ -20,6 +20,7 @@ import { storeService } from '../../services/store/storeService';
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
 import { InventoryItem } from '../../types';
 import { AppStackParamList } from '../../types/navigation';
+import { getAvailableStock, getStockStatus } from '../../utils/stockStatus';
 
 type Props = StackScreenProps<AppStackParamList, 'ProductDetails'>;
 
@@ -38,7 +39,7 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
         const found = inventory.find((i) => String(i.id) === String(productId));
         if (found) {
           setItem(found);
-          setNewStock(String(found.availableQuantity ?? found.quantity ?? 0));
+          setNewStock(String(getAvailableStock(found)));
         }
       } catch {
         // detail fetch fail
@@ -60,8 +61,12 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
     setUpdating(true);
     try {
       const currentStore = await storeService.getCurrentStoreProfile();
-      await inventoryService.updateStock(currentStore.id, Number(productId), qty);
-      setItem((prev) => (prev ? { ...prev, availableQuantity: qty, quantity: qty } : null));
+      await inventoryService.updateStock({
+        productId: Number(productId),
+        stockCount: qty,
+        storeId: currentStore.id,
+      });
+      setItem((prev) => (prev ? { ...prev, stock: qty, availableQuantity: qty, quantity: qty } : null));
       setShowEdit(false);
       Alert.alert('Stock Updated!', `Inventory quantity updated to ${qty} units.`);
     } catch (err: any) {
@@ -82,9 +87,10 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
     );
   }
 
-  const currentQty = item?.availableQuantity ?? item?.quantity ?? 0;
-  const statusLabel = currentQty === 0 ? 'Out of Stock' : currentQty <= 5 ? 'Low Stock' : 'In Stock';
-  const pillColor = currentQty === 0 ? colors.danger : currentQty <= 5 ? colors.warning : colors.success;
+  const currentQty = getAvailableStock(item || {});
+  const status = getStockStatus(item || {});
+  const statusLabel = status === 'OUT_OF_STOCK' ? 'Out of Stock' : status === 'LOW_STOCK' ? 'Low Stock' : 'In Stock';
+  const pillColor = status === 'OUT_OF_STOCK' ? colors.danger : status === 'LOW_STOCK' ? colors.warning : colors.success;
 
   return (
     <SafeAreaView style={styles.container}>

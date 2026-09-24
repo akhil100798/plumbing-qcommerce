@@ -8,6 +8,8 @@ import {
 } from './api/apiClient';
 import { tokenStorage } from './api/tokenStorage';
 import { AuthUserDto, UserAddress } from '../types/backend';
+import { isValidIndianPostalCode, normalizePostalCode, POSTAL_CODE_ERROR } from './addressValidation';
+import { extractLocalQaCode } from './qaOtp';
 
 export interface CustomerUser {
   id: string;
@@ -44,7 +46,7 @@ interface AuthContextType {
   isLoading: boolean;
   addresses: Address[];
   selectedAddress: Address;
-  loginWithPhone: (phone: string) => Promise<{ success: boolean; message?: string }>;
+  loginWithPhone: (phone: string) => Promise<{ success: boolean; message?: string; qaCode?: string }>;
   verifyOtp: (phone: string, otp: string) => Promise<{ success: boolean; message?: string }>;
   updateProfile: (data: { fullName?: string; phone?: string; addressLine?: string; city?: string; state?: string; pincode?: string }) => Promise<void>;
   addAddress: (address: Omit<Address, 'id'>) => Promise<Address>;
@@ -195,11 +197,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [refreshAddresses]);
 
-  const loginWithPhone = async (phone: string): Promise<{ success: boolean; message?: string }> => {
+  const loginWithPhone = async (phone: string): Promise<{ success: boolean; message?: string; qaCode?: string }> => {
     try {
-      const cleanPhone = phone.replace(/[^0-9]/g, '');
-      await apiClient.post('/auth/send-otp', { phone: cleanPhone });
-      return { success: true };
+      const cleanPhone = phone;
+      const response = await apiClient.post('/auth/send-otp', { phone: cleanPhone });
+      return { success: true, qaCode: extractLocalQaCode(response) };
     } catch (err: any) {
       return { success: false, message: err.message || 'Failed to send OTP' };
     }
@@ -207,7 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const verifyOtp = async (phone: string, otp: string): Promise<{ success: boolean; message?: string }> => {
     try {
-      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      const cleanPhone = phone;
       const response = await apiClient.post<{
         token: string;
         refreshToken?: string;
@@ -265,12 +267,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addAddress = async (addressData: Omit<Address, 'id'>): Promise<Address> => {
-    const fullLine = addressData.addressLine || `${addressData.flat}, ${addressData.area}, ${addressData.city} - ${addressData.pincode}`;
+    const normalizedPincode = normalizePostalCode(addressData.pincode || '');
+    if (!isValidIndianPostalCode(normalizedPincode)) {
+      throw new Error(POSTAL_CODE_ERROR);
+    }
+    const fullLine = addressData.addressLine || `${addressData.flat.trim()}, ${addressData.area.trim()}, ${addressData.city.trim()} - ${normalizedPincode}`;
     const payload = {
       label: addressData.type === 'work' ? 'Work' : addressData.type === 'other' ? 'Other' : 'Home',
       name: addressData.name || user?.name || 'Customer',
       phone: addressData.phone || user?.phone || '9876511223',
-      addressLine: fullLine,
+      addressLine: fullLine.trim(),
     };
 
     const saved = await apiClient.post<UserAddress>('/users/me/addresses', payload);

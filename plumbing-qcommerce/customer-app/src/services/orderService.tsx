@@ -21,7 +21,7 @@ interface OrderContextType {
   getOrderById: (id: string) => Order | undefined;
   refreshOrders: () => Promise<void>;
   fetchOrderDetails: (id: string) => Promise<ServiceOrder | null>;
-  createOrderFromCart: (
+  createServiceOrderFromCart: (
     items: CartItem[],
     subtotal: number,
     discount: number,
@@ -113,7 +113,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return null;
   };
 
-  const createOrderFromCart = async (
+  const createServiceOrderFromCart = async (
     items: CartItem[],
     subtotal: number,
     discount: number,
@@ -232,7 +232,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         getOrderById,
         refreshOrders,
         fetchOrderDetails,
-        createOrderFromCart,
+        createServiceOrderFromCart,
         confirmServiceCompletion,
         submitOrderRating,
         cancelServiceOrder,

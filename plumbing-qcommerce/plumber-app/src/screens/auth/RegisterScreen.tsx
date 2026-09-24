@@ -1,6 +1,6 @@
 import { StackScreenProps } from '@react-navigation/stack';
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useDispatch } from 'react-redux';
 
 import { PrimaryButton } from '../../components/common/PrimaryButton';
@@ -20,22 +20,24 @@ export function RegisterScreen({ navigation }: Props) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const register = async () => {
+    setErrorMessage('');
     if (!fullName.trim() || !email.trim() || !phone.trim() || !password || !confirmPassword) {
-      Alert.alert('Validation Error', 'Complete every field.');
+      setErrorMessage('Complete your name, email, mobile number, password, and password confirmation.');
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      Alert.alert('Validation Error', 'Enter a valid email address.');
+      setErrorMessage('Enter a valid email address.');
       return;
     }
     if (!/^[6-9]\d{9}$/.test(phone)) {
-      Alert.alert('Validation Error', 'Enter a valid 10-digit Indian mobile number.');
+      setErrorMessage('Enter a valid 10-digit Indian mobile number.');
       return;
     }
     if (password.length < 8 || password !== confirmPassword) {
-      Alert.alert('Validation Error', password.length < 8 ? 'Password must be at least 8 characters.' : 'Passwords do not match.');
+      setErrorMessage(password.length < 8 ? 'Password must be at least 8 characters.' : 'Passwords do not match.');
       return;
     }
 
@@ -53,7 +55,7 @@ export function RegisterScreen({ navigation }: Props) {
       navigation.replace('Main' as any);
     } catch (error: any) {
       dispatch(authFailure(error.message || 'Registration failed'));
-      Alert.alert('Registration Failed', error.message || 'Registration failed.');
+      setErrorMessage(error.message || 'Registration failed.');
     } finally {
       setLoading(false);
     }
@@ -66,6 +68,7 @@ export function RegisterScreen({ navigation }: Props) {
           <Text style={styles.title}>Become a FixKart Plumber</Text>
           <Text style={styles.subtitle}>Create your account. KYC can be completed after registration.</Text>
           <View style={styles.card}>
+            {errorMessage ? <Text accessibilityRole="alert" style={styles.feedback}>{errorMessage}</Text> : null}
             <Field label="Full name" value={fullName} onChangeText={setFullName} />
             <Field label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
             <Field label="Mobile number" value={phone} onChangeText={(v: string) => setPhone(v.replace(/\D/g, '').slice(0, 10))} keyboardType="phone-pad" />
@@ -89,5 +92,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '800', color: colors.textPrimary }, subtitle: { marginTop: 8, marginBottom: 20, color: colors.textSecondary },
   card: { backgroundColor: colors.surface, borderRadius: 16, padding: spacing.lg }, field: { marginBottom: 14 },
   label: { color: colors.textPrimary, fontWeight: '600', marginBottom: 6 }, input: { borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingHorizontal: 12, height: 48, color: colors.textPrimary },
+  feedback: { color: colors.error, backgroundColor: colors.errorContainer, borderRadius: 8, padding: 10, marginBottom: 12 },
   button: { marginTop: 8 }, link: { color: colors.primary, textAlign: 'center', marginTop: 18, fontWeight: '600' },
 });

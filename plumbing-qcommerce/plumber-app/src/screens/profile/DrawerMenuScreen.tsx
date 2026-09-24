@@ -15,6 +15,7 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { Avatar } from '../../components/common/Avatar';
 import { logout, setAvailability } from '../../redux/slices/authSlice';
+import { authService } from '../../services/auth/authService';
 import { profileService } from '../../services/profile/profileService';
 import { colors, spacing, typography, borderRadius } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
@@ -74,14 +75,15 @@ export function DrawerMenuScreen({ navigation }: Props) {
   };
 
   const handleLogout = () => {
-    const performLogout = () => {
+    const performLogout = async () => {
+      await authService.logout();
       dispatch(logout());
       navigation?.replace?.('Auth');
     };
 
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       if (window.confirm('Are you sure you want to logout of the FixKart Plumber app?')) {
-        performLogout();
+        void performLogout();
       }
       return;
     }
@@ -91,7 +93,7 @@ export function DrawerMenuScreen({ navigation }: Props) {
       {
         text: 'Logout',
         style: 'destructive',
-        onPress: performLogout,
+        onPress: () => { void performLogout(); },
       },
     ]);
   };

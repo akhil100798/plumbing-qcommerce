@@ -151,6 +151,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({
                 quantity={item.quantity}
                 onIncrease={() => updateQuantity(item.id, 1)}
                 onDecrease={() => updateQuantity(item.id, -1)}
+                canIncrease={item.availableQuantity === undefined || item.quantity < item.availableQuantity}
               />
             </View>
           ))}

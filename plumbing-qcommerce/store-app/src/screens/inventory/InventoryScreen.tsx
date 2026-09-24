@@ -19,6 +19,7 @@ import { inventoryService } from '../../services/inventory/inventoryService';
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
 import { InventoryItem } from '../../types';
 import { AppStackParamList } from '../../types/navigation';
+import { getAvailableStock, getStockStatus } from '../../utils/stockStatus';
 
 const tabs = [
   { key: 'all', label: 'All' },
@@ -68,11 +69,11 @@ export function InventoryScreen() {
     }
 
     if (activeTab === 'inStock') {
-      result = result.filter((i: any) => (i.stock ?? i.availableQuantity ?? i.quantity ?? 0) > 5);
+      result = result.filter((i: any) => getStockStatus(i) === 'IN_STOCK');
     } else if (activeTab === 'lowStock') {
-      result = result.filter((i: any) => (i.stock ?? i.availableQuantity ?? i.quantity ?? 0) > 0 && (i.stock ?? i.availableQuantity ?? i.quantity ?? 0) <= 5);
+      result = result.filter((i: any) => getStockStatus(i) === 'LOW_STOCK');
     } else if (activeTab === 'outOfStock') {
-      result = result.filter((i: any) => (i.stock ?? i.availableQuantity ?? i.quantity ?? 0) === 0);
+      result = result.filter((i: any) => getStockStatus(i) === 'OUT_OF_STOCK');
     }
 
     return result;
@@ -136,9 +137,10 @@ export function InventoryScreen() {
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }: { item: any }) => {
-            const qty = item.stock ?? item.availableQuantity ?? item.quantity ?? 0;
-            const statusLabel = qty === 0 ? 'Out of Stock' : qty <= 5 ? 'Low Stock' : 'In Stock';
-            const pillColor = qty === 0 ? colors.danger : qty <= 5 ? colors.warning : colors.success;
+            const qty = getAvailableStock(item);
+            const status = getStockStatus(item);
+            const statusLabel = status === 'OUT_OF_STOCK' ? 'Out of Stock' : status === 'LOW_STOCK' ? 'Low Stock' : 'In Stock';
+            const pillColor = status === 'OUT_OF_STOCK' ? colors.danger : status === 'LOW_STOCK' ? colors.warning : colors.success;
 
             return (
               <TouchableOpacity

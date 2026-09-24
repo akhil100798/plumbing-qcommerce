@@ -28,6 +28,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <Text style={styles.badgeText}>{product.badge}</Text>
           </View>
         )}
+        {product.lowStock && (
+          <View style={styles.lowStockBadge}>
+            <Text style={styles.lowStockBadgeText}>Low Stock</Text>
+          </View>
+        )}
       </View>
 
       <Text style={styles.brand}>{product.brand}</Text>
@@ -100,6 +105,20 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   badgeText: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: colors.onPrimary,
+  },
+  lowStockBadge: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    backgroundColor: colors.error,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  lowStockBadgeText: {
     fontSize: 9,
     fontWeight: "700",
     color: colors.onPrimary,

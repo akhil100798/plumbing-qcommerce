@@ -20,7 +20,7 @@ import { logout } from '../../redux/slices/authSlice';
 import { clearJobState } from '../../redux/slices/jobSlice';
 import { clearMaterialState } from '../../redux/slices/materialSlice';
 import { RootState } from '../../redux/store';
-import { tokenStorage } from '../../services/api/tokenStorage';
+import { authService } from '../../services/auth/authService';
 import { kycService, PlumberKyc } from '../../services/kyc/kycService';
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
 import { AppStackParamList, MainTabParamList } from '../../types/navigation';
@@ -66,8 +66,7 @@ export function ProfileScreen(_: Props) {
   const handleLogout = () => {
     const performLogout = async () => {
       try {
-        await tokenStorage.deleteItem('authToken');
-        await tokenStorage.deleteItem('refreshToken');
+        await authService.logout();
       } catch (err) {
         console.error('Error clearing tokens during logout:', err);
       } finally {

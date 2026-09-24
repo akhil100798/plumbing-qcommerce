@@ -2,16 +2,29 @@ import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
 import { apiClient, getAuthToken } from '../api/axiosClient';
 
-export type JobPhoto = { id: number; uri: string; contentType: string; sizeBytes: number };
+export type JobPhoto = { id: number; uri: string; headers?: Record<string, string>; contentType: string; sizeBytes: number };
 
 type PhotoResponse = { id: number; url: string; contentType: string; sizeBytes: number };
 
-const toPhoto = async (photo: PhotoResponse): Promise<JobPhoto> => ({
-  id: photo.id,
-  uri: `${apiClient.defaults.baseURL}${photo.url}`,
-  contentType: photo.contentType,
-  sizeBytes: photo.sizeBytes,
-});
+const toPhoto = async (photo: PhotoResponse): Promise<JobPhoto> => {
+  const url = new URL(photo.url, apiClient.defaults.baseURL).toString();
+  let uri = url;
+  let headers: Record<string, string> | undefined;
+  if (Platform.OS === 'web') {
+    // Browser image elements cannot send the protected endpoint's bearer header.
+    const response = await apiClient.get<Blob>(url, { responseType: 'blob' });
+    uri = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error('Unable to load photo preview.'));
+      reader.readAsDataURL(response.data);
+    });
+  } else {
+    const token = await getAuthToken();
+    if (token) headers = { Authorization: `Bearer ${token}` };
+  }
+  return { id: photo.id, uri, headers, contentType: photo.contentType, sizeBytes: photo.sizeBytes };
+};
 
 export const photoService = {
   list: async (jobId: string, phase: 'BEFORE' | 'AFTER'): Promise<JobPhoto[]> => {

@@ -39,7 +39,8 @@ export const colors = {
   text: '#0B1C30',
   textPrimary: '#0B1C30',
   textSecondary: '#42526E',
-  textMuted: '#727785',
+  // Keep secondary metadata readable on both white cards and the app background.
+  textMuted: '#626B7A',
   border: '#C1C6D6',
   borderDark: '#727785',
 

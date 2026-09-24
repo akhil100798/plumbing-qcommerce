@@ -100,6 +100,9 @@ vi.mock('@react-navigation/native', () => ({
     dispatch: vi.fn(),
     goBack: vi.fn(),
   }),
+  useFocusEffect: (callback: () => void | (() => void)) => {
+    React.useEffect(() => callback(), [callback]);
+  },
   useIsFocused: () => true,
 }));
 

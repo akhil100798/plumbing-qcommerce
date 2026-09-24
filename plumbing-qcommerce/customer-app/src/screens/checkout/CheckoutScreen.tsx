@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,13 @@ import { spacing } from '../../theme/spacing';
 import { useCart } from '../../services/cartService';
 import { useAuth } from '../../services/authService';
 import { useOrders } from '../../services/orderService';
+import { apiClient } from '../../services/api/apiClient';
+import {
+  isStoreCompatibleWithCart,
+  ProductOrderDetail,
+  reserveAndConfirmProductCheckout,
+} from '../../services/checkoutService';
+import { StoreInventorySummary, StoreSummary } from '../../types/backend';
 import {
   ChevronLeftIcon,
   LocationPinIcon,
@@ -22,7 +29,7 @@ import {
 
 interface CheckoutScreenProps {
   onBack: () => void;
-  onPaymentSuccess: (orderId: string) => void;
+  onPaymentSuccess: (orderId: string, productOrder?: ProductOrderDetail) => void;
 }
 
 export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
@@ -31,12 +38,76 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
 }) => {
   const { items, subtotal, discount, tax, visitingFee, total, clearCart } = useCart();
   const { selectedAddress } = useAuth();
-  const { createOrderFromCart } = useOrders();
+  const { createServiceOrderFromCart } = useOrders();
 
   const [selectedSlot, setSelectedSlot] = useState('Express (Within 45 Mins)');
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [stores, setStores] = useState<StoreSummary[]>([]);
+  const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null);
+  const [storesLoading, setStoresLoading] = useState(false);
+
+  const isProductCart = items.length > 0 && items.every((item) => item.itemType === 'product');
+  const isServiceCart = items.length > 0 && items.every((item) => item.itemType === 'service');
+  const isMixedCart = items.length > 0 && !isProductCart && !isServiceCart;
+  const productItems = items.filter((item) => item.itemType === 'product');
+
+  useEffect(() => {
+    if (!isProductCart) {
+      setStores([]);
+      setSelectedStoreId(null);
+      return;
+    }
+
+    let cancelled = false;
+    setStoresLoading(true);
+    setErrorMessage(null);
+
+    const loadCompatibleStores = async () => {
+      try {
+        const availableStores = await apiClient.get<StoreSummary[]>('/stores');
+        const compatibleStores: StoreSummary[] = [];
+
+        for (const store of Array.isArray(availableStores) ? availableStores : []) {
+          try {
+            const inventory = await apiClient.get<StoreInventorySummary[]>(`/stores/${store.id}/inventory`);
+            if (isStoreCompatibleWithCart(store, inventory || [], productItems)) {
+              compatibleStores.push(store);
+            }
+          } catch {
+            // An unavailable inventory feed must not make an unrelated store
+            // selectable for a product checkout.
+          }
+        }
+
+        if (!cancelled) {
+          setStores(compatibleStores);
+          setSelectedStoreId((current) =>
+            compatibleStores.some((store) => store.id === current)
+              ? current
+              : compatibleStores[0]?.id ?? null
+          );
+          if (compatibleStores.length === 0) {
+            setErrorMessage('This cart is not available at any Store right now.');
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          setStores([]);
+          setSelectedStoreId(null);
+          setErrorMessage('Unable to load Stores for this product checkout.');
+        }
+      } finally {
+        if (!cancelled) setStoresLoading(false);
+      }
+    };
+
+    loadCompatibleStores();
+    return () => {
+      cancelled = true;
+    };
+  }, [isProductCart, items]);
 
   const slots = [
     { id: 'express', label: 'Express (Within 45 Mins)', sub: 'Fastest response' },
@@ -56,6 +127,16 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
       return;
     }
 
+    if (isMixedCart) {
+      setErrorMessage('Checkout services and products separately. A single checkout cannot mix both domains.');
+      return;
+    }
+
+    if (isProductCart && (!selectedStoreId || storesLoading)) {
+      setErrorMessage('Select an available Store before placing the product order.');
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage(null);
 
@@ -64,22 +145,28 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
     const selectedPayName = paymentOptions.find((p) => p.id === paymentMethod)?.name || 'Pay After Service';
 
     try {
-      const created = await createOrderFromCart(
-        items,
-        subtotal,
-        discount,
-        tax,
-        visitingFee,
-        total,
-        fullAddress,
-        selectedPayName,
-        { latitude: 12.9141, longitude: 77.6411 }
-      );
+      if (isProductCart) {
+        const productOrder = await reserveAndConfirmProductCheckout(productItems, selectedStoreId as number);
+        clearCart();
+        onPaymentSuccess(String(productOrder.id), productOrder);
+      } else {
+        const created = await createServiceOrderFromCart(
+          items,
+          subtotal,
+          discount,
+          tax,
+          visitingFee,
+          total,
+          fullAddress,
+          selectedPayName,
+          { latitude: 12.9141, longitude: 77.6411 }
+        );
 
-      clearCart();
-      onPaymentSuccess(created.id);
+        clearCart();
+        onPaymentSuccess(created.id);
+      }
     } catch (err: any) {
-      console.error('Failed to create service order:', err);
+      console.error('Failed to complete checkout:', err);
       setErrorMessage(err.message || 'Failed to place order. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -101,20 +188,56 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Service Address Card */}
-        <View style={styles.card}>
+        {/* Address is part of the service-request contract, not product checkout. */}
+        {!isProductCart && <View style={styles.card}>
           <View style={styles.cardHeader}>
             <LocationPinIcon size={18} color={colors.primary} />
-            <Text style={styles.cardTitle}>Service Address</Text>
+            <Text style={styles.cardTitle}>{isProductCart ? 'Delivery Address' : 'Service Address'}</Text>
           </View>
           <Text style={styles.addressName}>{selectedAddress.name} • {selectedAddress.phone}</Text>
           <Text style={styles.addressDetails}>
             {selectedAddress.addressLine || `${selectedAddress.flat}, ${selectedAddress.area}, ${selectedAddress.city} - ${selectedAddress.pincode}`}
           </Text>
-        </View>
+        </View>}
+
+        {isProductCart && (
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <LocationPinIcon size={18} color={colors.primary} />
+              <Text style={styles.cardTitle}>Select Store</Text>
+            </View>
+            {storesLoading ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : stores.length === 0 ? (
+              <Text style={styles.errorText}>No compatible Store is available for every item in this cart.</Text>
+            ) : (
+              stores.map((store) => {
+                const selected = selectedStoreId === store.id;
+                return (
+                  <TouchableOpacity
+                    key={store.id}
+                    style={[styles.storeOption, selected && styles.selectedStoreOption]}
+                    onPress={() => setSelectedStoreId(store.id)}
+                    activeOpacity={0.8}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected }}
+                  >
+                    <View style={styles.slotRadio}>
+                      {selected && <View style={styles.slotRadioInner} />}
+                    </View>
+                    <View style={styles.slotInfo}>
+                      <Text style={[styles.slotLabel, selected && styles.selectedSlotLabel]}>{store.name}</Text>
+                      {!!store.address && <Text style={styles.slotSub}>{store.address}</Text>}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })
+            )}
+          </View>
+        )}
 
         {/* Arrival Slot */}
-        <View style={styles.card}>
+        {isServiceCart && <View style={styles.card}>
           <View style={styles.cardHeader}>
             <ClockIcon size={18} color={colors.primary} />
             <Text style={styles.cardTitle}>Plumber Arrival Slot</Text>
@@ -142,10 +265,10 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
               </TouchableOpacity>
             );
           })}
-        </View>
+        </View>}
 
         {/* Payment Methods */}
-        <View style={styles.card}>
+        {isServiceCart && <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Payment Method</Text>
           </View>
@@ -173,7 +296,13 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
               </TouchableOpacity>
             );
           })}
-        </View>
+        </View>}
+
+        {isMixedCart && (
+          <View style={styles.errorCard}>
+            <Text style={styles.errorText}>Checkout services and products separately.</Text>
+          </View>
+        )}
 
         {/* Error Message if any */}
         {errorMessage && (
@@ -184,7 +313,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
 
         {/* Order Summary Recap */}
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Payment Summary</Text>
+          <Text style={styles.summaryTitle}>{isProductCart ? 'Order Summary' : 'Payment Summary'}</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Total Payable</Text>
             <Text style={styles.summaryValue}>₹{total}</Text>
@@ -206,17 +335,17 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
         </View>
 
         <TouchableOpacity
-          style={[styles.payBtn, (isSubmitting || items.length === 0) && styles.disabledPayBtn]}
+          style={[styles.payBtn, (isSubmitting || items.length === 0 || (isProductCart && (!selectedStoreId || storesLoading))) && styles.disabledPayBtn]}
           onPress={handlePlaceOrder}
-          disabled={isSubmitting || items.length === 0}
+          disabled={isSubmitting || items.length === 0 || (isProductCart && (!selectedStoreId || storesLoading))}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel="Book and Dispatch Plumber"
+          accessibilityLabel={isProductCart ? 'Place product order' : 'Book and Dispatch Plumber'}
         >
           {isSubmitting ? (
             <ActivityIndicator color={colors.onPrimary} size="small" />
           ) : (
-            <Text style={styles.payBtnText}>Book & Dispatch Plumber</Text>
+            <Text style={styles.payBtnText}>{isProductCart ? 'Place Product Order' : 'Book & Dispatch Plumber'}</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -336,6 +465,20 @@ const styles = StyleSheet.create({
   selectedSlotLabel: {
     color: colors.primary,
     fontWeight: '700',
+  },
+  storeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.surfaceVariant,
+    padding: spacing.sm + 2,
+    borderRadius: 12,
+    marginBottom: spacing.xs + 2,
+  },
+  selectedStoreOption: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryFixed,
   },
   slotSub: {
     fontSize: 11,

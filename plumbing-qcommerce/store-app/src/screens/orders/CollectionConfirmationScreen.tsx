@@ -46,7 +46,7 @@ export function CollectionConfirmationScreen({ route, navigation }: Props) {
   const handleConfirmHandover = async () => {
     if (!request) return;
 
-    if (request.status !== 'PLUMBER_AT_STORE' && request.status !== 'READY_FOR_PICKUP') {
+    if ((request.rawStatus || request.status) !== 'PLUMBER_AT_STORE' || !request.plumberCollectedAt) {
       Alert.alert('Cannot Confirm', 'Plumber must record collection before store confirms handover.');
       return;
     }
@@ -78,7 +78,7 @@ export function CollectionConfirmationScreen({ route, navigation }: Props) {
     );
   }
 
-  const isCollected = request?.status === 'COLLECTED';
+  const isCollected = (request?.rawStatus || request?.status) === 'COLLECTED';
 
   return (
     <SafeAreaView style={styles.container}>

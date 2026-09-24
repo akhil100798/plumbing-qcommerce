@@ -204,4 +204,85 @@ class CheckoutIntegrationTest {
         assertEquals(50, updatedStock.getAvailableQuantity());
         assertEquals(0, updatedStock.getReservedQuantity());
     }
+
+    @Test
+    void testReserveStockRejectsZeroAndNegativeQuantitiesWithoutChangingStock() {
+        assertThrows(IllegalArgumentException.class, () ->
+                checkoutService.reserveStock(customer.getId(), store.getId(), List.of(new CartItemDTO(product.getId(), 0)))
+        );
+        assertThrows(IllegalArgumentException.class, () ->
+                checkoutService.reserveStock(customer.getId(), store.getId(), List.of(new CartItemDTO(product.getId(), -1)))
+        );
+
+        Stock updatedStock = stockRepository.findById(stock.getId()).orElseThrow();
+        assertEquals(50, updatedStock.getAvailableQuantity());
+        assertEquals(0, updatedStock.getReservedQuantity());
+    }
+
+    @Test
+    void testProductCheckoutUsesCatalogPriceAndNeverCreatesServiceOrder() {
+        long serviceOrdersBefore = serviceOrderRepository.count();
+
+        ProductOrder order = checkoutService.reserveStock(
+                customer.getId(), store.getId(), List.of(new CartItemDTO(product.getId(), 2)));
+
+        assertEquals(new BigDecimal("20.00"), order.getTotalAmount());
+        assertEquals(product.getPrice(), order.getItems().get(0).getPrice());
+        assertEquals(2, order.getItems().get(0).getQuantity());
+        assertNull(order.getServiceOrder());
+        assertEquals(serviceOrdersBefore, serviceOrderRepository.count());
+    }
+
+    @Test
+    void testConfirmPaymentIsIdempotentAndDoesNotDoubleConsumeStock() {
+        ProductOrder order = checkoutService.reserveStock(
+                customer.getId(), store.getId(), List.of(new CartItemDTO(product.getId(), 5)));
+
+        checkoutService.confirmPayment(order.getId());
+        checkoutService.confirmPayment(order.getId());
+
+        Stock updatedStock = stockRepository.findById(stock.getId()).orElseThrow();
+        assertEquals(45, updatedStock.getAvailableQuantity());
+        assertEquals(0, updatedStock.getReservedQuantity());
+        assertEquals(ProductOrderStatus.CONFIRMED,
+                orderRepository.findById(order.getId()).orElseThrow().getStatus());
+        assertEquals(1, reservationRepository.findByOrderId(order.getId()).size());
+        assertEquals(1, outboxEventRepository.count());
+    }
+
+    @Test
+    void testInvalidStoreDoesNotPersistOrderOrReservation() {
+        assertThrows(RuntimeException.class, () -> checkoutService.reserveStock(
+                customer.getId(), 999999L, List.of(new CartItemDTO(product.getId(), 1))));
+
+        assertEquals(0, orderRepository.count());
+        assertEquals(0, reservationRepository.count());
+        Stock unchanged = stockRepository.findById(stock.getId()).orElseThrow();
+        assertEquals(50, unchanged.getAvailableQuantity());
+        assertEquals(0, unchanged.getReservedQuantity());
+    }
+
+    @Test
+    void testExactAvailableQuantityIsAccepted() {
+        ProductOrder order = checkoutService.reserveStock(
+                customer.getId(), store.getId(), List.of(new CartItemDTO(product.getId(), 50)));
+
+        Stock updatedStock = stockRepository.findById(stock.getId()).orElseThrow();
+        assertEquals(0, updatedStock.getAvailableQuantity());
+        assertEquals(50, updatedStock.getReservedQuantity());
+        assertEquals(new BigDecimal("500.00"), order.getTotalAmount());
+    }
+
+    @Test
+    void testDuplicateProductLinesAreRejectedWithoutMutation() {
+        assertThrows(IllegalArgumentException.class, () -> checkoutService.reserveStock(
+                customer.getId(), store.getId(), List.of(
+                        new CartItemDTO(product.getId(), 1),
+                        new CartItemDTO(product.getId(), 1))));
+
+        assertEquals(0, orderRepository.count());
+        Stock unchanged = stockRepository.findById(stock.getId()).orElseThrow();
+        assertEquals(50, unchanged.getAvailableQuantity());
+        assertEquals(0, unchanged.getReservedQuantity());
+    }
 }

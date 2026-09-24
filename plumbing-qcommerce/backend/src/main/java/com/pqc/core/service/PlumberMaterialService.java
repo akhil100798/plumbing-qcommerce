@@ -415,8 +415,8 @@ public class PlumberMaterialService {
         if (request.getPlumberCollectedAt() != null || request.getStatus() == ProductOrderStatus.COLLECTED || request.getStatus() == ProductOrderStatus.DELIVERED) {
             return toDetail(request);
         }
-        if (request.getStatus() != ProductOrderStatus.PLUMBER_AT_STORE && request.getStatus() != ProductOrderStatus.READY_FOR_PICKUP) {
-            throw error(HttpStatus.CONFLICT, "Collection is not allowed or was already recorded");
+        if (request.getStatus() != ProductOrderStatus.PLUMBER_AT_STORE || request.getPlumberArrivedAt() == null) {
+            throw error(HttpStatus.CONFLICT, "Plumber must arrive at the store before collection");
         }
         ProductOrderStatus prev = request.getStatus();
         request.setStatus(ProductOrderStatus.PLUMBER_AT_STORE);

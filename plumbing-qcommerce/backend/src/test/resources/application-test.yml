@@ -23,7 +23,7 @@ spring:
       - org.springframework.boot.autoconfigure.kafka.KafkaAnnotationDrivenConfiguration
   # Use embedded Kafka broker address placeholder (overridden per test if needed)
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
     listener:
       auto-startup: false
     producer:

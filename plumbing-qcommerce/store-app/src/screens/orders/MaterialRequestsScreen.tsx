@@ -160,7 +160,11 @@ export function MaterialRequestsScreen() {
             return (
               <TouchableOpacity
                 style={[styles.requestCard, isActionNeeded && styles.requestCardHighlighted]}
-                onPress={() => navigation.navigate('MaterialRequestDetail', { requestId: Number(item.id) } as any)}
+                onPress={() => navigation.navigate(
+                  rawStatus === 'PLUMBER_AT_STORE' || rawStatus === 'COLLECTED'
+                    ? 'CollectionConfirmation' : 'MaterialRequestDetail',
+                  { requestId: Number(item.id) }
+                )}
               >
                 <View style={styles.requestTopRow}>
                   <Text style={styles.requestId}>Request #{item.id}</Text>

@@ -119,6 +119,15 @@ export const jobService = {
     }
   },
 
+  rejectJob: async (jobId: string): Promise<void> => {
+    try {
+      const cleanId = parseServiceOrderId(jobId);
+      await apiClient.patch<any>(ENDPOINTS.ORDERS.REJECT(cleanId));
+    } catch (error) {
+      throw createBackendUnavailableError('Reject plumber job', error);
+    }
+  },
+
   startNavigation: async (jobId: string): Promise<void> => {
     try {
       const cleanId = parseServiceOrderId(jobId);

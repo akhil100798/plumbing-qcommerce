@@ -18,7 +18,7 @@ import { FixKartLogo, ShieldCheckIcon } from '../../assets/svg/Icons';
 import { useAuth } from '../../services/authService';
 
 export interface LoginScreenProps {
-  onSendOtp: (phone: string) => void;
+  onSendOtp: (phone: string, qaCode?: string) => void;
   onSkip?: () => void;
 }
 
@@ -29,8 +29,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSendOtp, onSkip }) =
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleContinue = async () => {
-    const clean = phone.replace(/[^0-9]/g, '');
-    if (clean.length < 10) {
+    const clean = phone;
+    if (!/^(?:\d{10}|\+91 ?\d{10})$/.test(clean)) {
       setErrorMessage('Please enter a valid 10-digit mobile number');
       return;
     }
@@ -43,7 +43,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSendOtp, onSkip }) =
       setIsLoading(false);
 
       if (res.success) {
-        onSendOtp(clean);
+        onSendOtp(clean, res.qaCode);
       } else {
         setErrorMessage(res.message || 'Unable to send OTP. Please try again.');
       }
@@ -82,14 +82,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSendOtp, onSkip }) =
             <Text style={styles.inputLabel}>Mobile Number</Text>
             <View style={styles.inputRow}>
               <View style={styles.countryCode}>
-                <Text style={styles.flag}>🇮🇳</Text>
+                <Text style={styles.flag}>IN</Text>
                 <Text style={styles.codeText}>+91</Text>
               </View>
               <TextInput
                 style={styles.input}
                 value={phone}
                 onChangeText={(text: string) => {
-                  setPhone(text.replace(/[^0-9]/g, ''));
+                  setPhone(text);
                   if (errorMessage) {
                     setErrorMessage(null);
                   }
@@ -97,7 +97,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSendOtp, onSkip }) =
                 placeholder="Enter 10-digit number"
                 placeholderTextColor={colors.outline}
                 keyboardType="phone-pad"
-                maxLength={10}
                 editable={!isLoading}
                 onSubmitEditing={handleContinue}
                 returnKeyType="done"
@@ -110,7 +109,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSendOtp, onSkip }) =
           <TouchableOpacity
             style={[styles.continueBtn, (phone.length < 10 || isLoading) && styles.disabledBtn]}
             onPress={handleContinue}
-            disabled={phone.length < 10 || isLoading}
+            disabled={isLoading}
             activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel="Get OTP button"
@@ -130,7 +129,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onSendOtp, onSkip }) =
 
         <View style={styles.footer}>
           <Text style={styles.termsText}>
-            By continuing, you agree to FixKart’s{' '}
+            By continuing, you agree to FixKart's{' '}
             <Text style={styles.termsLink}>Terms of Service</Text> &{' '}
             <Text style={styles.termsLink}>Privacy Policy</Text>.
           </Text>

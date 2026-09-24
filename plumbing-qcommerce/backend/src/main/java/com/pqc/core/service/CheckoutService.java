@@ -13,8 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +40,23 @@ public class CheckoutService {
      */
     @Transactional
     public ProductOrder reserveStock(Long customerId, Long storeId, List<CartItemDTO> cartItems) {
+        if (storeId == null || storeId <= 0) {
+            throw new IllegalArgumentException("Store ID must be positive");
+        }
+        if (cartItems == null || cartItems.isEmpty()) {
+            throw new IllegalArgumentException("Items list cannot be empty");
+        }
+
+        Set<Long> productIds = new HashSet<>();
+        for (CartItemDTO item : cartItems) {
+            if (item == null || item.getProductId() == null || item.getQuantity() == null || item.getQuantity() <= 0) {
+                throw new IllegalArgumentException("Each checkout item requires a product and a positive quantity");
+            }
+            if (!productIds.add(item.getProductId())) {
+                throw new IllegalArgumentException("A product may appear only once in a checkout");
+            }
+        }
+
         User actor = currentUser.require();
         if (actor.getRole() != Role.CUSTOMER || !actor.getId().equals(customerId)) {
             if (actor.getRole() == Role.PLUMBER) {
@@ -72,7 +91,7 @@ public class CheckoutService {
             Product product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new RuntimeException("Product not found: " + item.getProductId()));
 
-            Stock stock = stockRepository.findByStoreIdAndProductId(storeId, item.getProductId())
+            Stock stock = stockRepository.findForUpdateByStoreIdAndProductId(storeId, item.getProductId())
                     .orElseThrow(() -> new RuntimeException("Product " + product.getName() + " is not available at store " + store.getName()));
 
             if (stock.getAvailableQuantity() < item.getQuantity()) {
@@ -134,6 +153,12 @@ public class CheckoutService {
     public void confirmPayment(Long orderId) {
         ProductOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        if (order.getStatus() == ProductOrderStatus.CONFIRMED) {
+            // Confirmation is intentionally idempotent: a repeated activation must not
+            // decrement reserved stock or emit a second dispatch event.
+            return;
+        }
 
         if (order.getStatus() != ProductOrderStatus.PENDING) {
             throw new IllegalStateException("Order #" + orderId + " is not pending payment.");
@@ -205,6 +230,10 @@ public class CheckoutService {
     public void releaseReservation(Long orderId) {
         ProductOrder order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        if (order.getStatus() == ProductOrderStatus.CANCELLED) {
+            return;
+        }
 
         if (order.getStatus() != ProductOrderStatus.PENDING) {
             throw new IllegalStateException("Cannot release stock for non-pending order: " + orderId);

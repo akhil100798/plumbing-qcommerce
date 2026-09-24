@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,13 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { useAuth, Address } from '../../services/authService';
+import { isValidIndianPostalCode, normalizePostalCode, POSTAL_CODE_ERROR } from '../../services/addressValidation';
 import {
   ChevronLeftIcon,
   CheckCircleIcon,
@@ -27,6 +29,9 @@ export const SavedAddressesScreen: React.FC<SavedAddressesScreenProps> = ({ onBa
   const { addresses, selectedAddress, selectAddress, addAddress, deleteAddress, refreshAddresses, user } = useAuth();
   const [showAddModal, setShowAddModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const addAddressTriggerRef = useRef<any>(null);
+  const modalContentRef = useRef<any>(null);
+  const modalInvokerRef = useRef<HTMLElement | null>(null);
 
   const [name, setName] = useState(user?.name || 'Customer');
   const [phone, setPhone] = useState(user?.phone || '9876511223');
@@ -35,12 +40,111 @@ export const SavedAddressesScreen: React.FC<SavedAddressesScreenProps> = ({ onBa
   const [city, setCity] = useState('Bengaluru');
   const [pincode, setPincode] = useState('560102');
   const [type, setType] = useState<'home' | 'work' | 'other'>('home');
+  const [pincodeError, setPincodeError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     refreshAddresses();
   }, [refreshAddresses]);
 
+  const closeAddModal = useCallback(() => {
+    setShowAddModal(false);
+    if (Platform.OS === 'web') {
+      const invoker = modalInvokerRef.current;
+      window.setTimeout(() => {
+        invoker?.focus();
+        modalInvokerRef.current = null;
+      }, 0);
+    }
+  }, []);
+
+  const openAddModal = useCallback(() => {
+    if (Platform.OS === 'web') {
+      modalInvokerRef.current = (addAddressTriggerRef.current as HTMLElement | null) || document.activeElement as HTMLElement | null;
+    }
+    setShowAddModal(true);
+  }, []);
+
+  useEffect(() => {
+    if (!showAddModal || Platform.OS !== 'web') return undefined;
+
+    const getModalElement = () => modalContentRef.current as HTMLElement | null;
+    const getFocusableElements = () => {
+      const modal = getModalElement();
+      if (!modal) return [];
+      return Array.from(modal.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )).filter((element) => {
+        const style = window.getComputedStyle(element);
+        return style.display !== 'none' && style.visibility !== 'hidden' && element.getAttribute('aria-hidden') !== 'true';
+      });
+    };
+
+    const focusFirstElement = () => {
+      getFocusableElements()[0]?.focus();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const modal = getModalElement();
+      if (!modal) return;
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        closeAddModal();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      const focusableElements = getFocusableElements();
+      if (focusableElements.length === 0) return;
+
+      const activeElement = document.activeElement as HTMLElement | null;
+      const activeIndex = activeElement ? focusableElements.indexOf(activeElement) : -1;
+      if (!modal.contains(activeElement) || activeIndex === -1) {
+        event.preventDefault();
+        (event.shiftKey ? focusableElements[focusableElements.length - 1] : focusableElements[0]).focus();
+        return;
+      }
+
+      if (event.shiftKey && activeIndex === 0) {
+        event.preventDefault();
+        focusableElements[focusableElements.length - 1].focus();
+      } else if (!event.shiftKey && activeIndex === focusableElements.length - 1) {
+        event.preventDefault();
+        focusableElements[0].focus();
+      }
+    };
+
+    const handleFocusIn = (event: FocusEvent) => {
+      const modal = getModalElement();
+      if (modal && !modal.contains(event.target as Node)) {
+        event.preventDefault();
+        focusFirstElement();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown, true);
+    document.addEventListener('focusin', handleFocusIn, true);
+    const focusTimer = window.setTimeout(focusFirstElement, 0);
+
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener('keydown', handleKeyDown, true);
+      document.removeEventListener('focusin', handleFocusIn, true);
+    };
+  }, [closeAddModal, showAddModal]);
+
   const handleSave = async () => {
+    const normalizedPincode = normalizePostalCode(pincode);
+    if (!flat || !area) return;
+    if (!isValidIndianPostalCode(normalizedPincode)) {
+      setPincodeError(POSTAL_CODE_ERROR);
+      return;
+    }
+    setPincodeError(null);
+    setSaveError(null);
     if (flat && area) {
       setIsSaving(true);
       try {
@@ -51,7 +155,7 @@ export const SavedAddressesScreen: React.FC<SavedAddressesScreenProps> = ({ onBa
           area,
           landmark: '',
           city: city || 'Bengaluru',
-          pincode: pincode || '560102',
+          pincode: normalizedPincode,
           type,
           isDefault: addresses.length === 0,
         });
@@ -60,6 +164,7 @@ export const SavedAddressesScreen: React.FC<SavedAddressesScreenProps> = ({ onBa
         setArea('');
       } catch (e) {
         console.error('Failed to save address:', e);
+        setSaveError(e instanceof Error ? e.message : 'Unable to save address. Please try again.');
       } finally {
         setIsSaving(false);
       }
@@ -91,8 +196,9 @@ export const SavedAddressesScreen: React.FC<SavedAddressesScreenProps> = ({ onBa
       >
         {/* Add Address CTA */}
         <TouchableOpacity
+          ref={addAddressTriggerRef}
           style={styles.addNewBtn}
-          onPress={() => setShowAddModal(true)}
+          onPress={openAddModal}
           activeOpacity={0.8}
           accessibilityRole="button"
           accessibilityLabel="Add New Service Address"
@@ -153,8 +259,14 @@ export const SavedAddressesScreen: React.FC<SavedAddressesScreenProps> = ({ onBa
       {/* Add Address Modal */}
       <Modal visible={showAddModal} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add New Address</Text>
+          <View
+            ref={modalContentRef}
+            style={styles.modalContent}
+            accessibilityRole={'dialog' as any}
+            accessibilityViewIsModal={true}
+            accessibilityLabelledBy="customer-address-modal-title"
+          >
+            <Text nativeID="customer-address-modal-title" style={styles.modalTitle}>Add New Address</Text>
 
             <View style={styles.typeSelectRow}>
               {(['home', 'work', 'other'] as const).map((t) => (
@@ -197,26 +309,33 @@ export const SavedAddressesScreen: React.FC<SavedAddressesScreenProps> = ({ onBa
               <TextInput
                 style={[styles.modalInput, styles.halfInput]}
                 value={pincode}
-                onChangeText={setPincode}
+                onChangeText={(value) => {
+                  setPincode(value);
+                  setPincodeError(null);
+                  setSaveError(null);
+                }}
                 placeholder="Pincode"
                 placeholderTextColor={colors.outline}
                 keyboardType="numeric"
               />
             </View>
 
+            {pincodeError ? <Text accessibilityRole="alert" style={styles.errorText}>{pincodeError}</Text> : null}
+            {saveError ? <Text accessibilityRole="alert" style={styles.errorText}>{saveError}</Text> : null}
+
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={styles.cancelBtn}
-                onPress={() => setShowAddModal(false)}
+                onPress={closeAddModal}
                 disabled={isSaving}
               >
                 <Text style={styles.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.saveBtn, (!flat || !area || isSaving) && styles.saveBtnDisabled]}
+                style={[styles.saveBtn, (!flat || !area || isSaving || !isValidIndianPostalCode(pincode)) && styles.saveBtnDisabled]}
                 onPress={handleSave}
-                disabled={!flat || !area || isSaving}
+                disabled={!flat || !area || isSaving || !isValidIndianPostalCode(pincode)}
               >
                 {isSaving ? (
                   <ActivityIndicator color="#ffffff" size="small" />
@@ -467,5 +586,10 @@ const styles = StyleSheet.create({
   saveBtnText: {
     color: '#ffffff',
     fontWeight: '700',
+  },
+  errorText: {
+    color: colors.error,
+    fontSize: 12,
+    marginTop: spacing.xs,
   },
 });

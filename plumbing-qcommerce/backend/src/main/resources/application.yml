@@ -37,7 +37,7 @@ spring:
 
   # Kafka Event Bus
   kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}}
     consumer:
       group-id: plumbing-core-group
       auto-offset-reset: earliest

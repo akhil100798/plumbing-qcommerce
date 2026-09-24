@@ -69,6 +69,13 @@ public class ServiceOrderController {
         return ResponseEntity.ok(orderService.acceptOrder(id, currentUser.require().getId()));
     }
 
+    /** PATCH/POST /api/v1/orders/{id}/reject - Plumber declines their offer */
+    @RequestMapping(value = "/{id}/reject", method = {RequestMethod.POST, RequestMethod.PATCH})
+    @PreAuthorize("hasRole('PLUMBER')")
+    public ResponseEntity<ServiceOrder> rejectOrder(@PathVariable Long id) {
+        return ResponseEntity.ok(orderService.rejectOrder(id, currentUser.require().getId()));
+    }
+
     /** PATCH/POST /api/v1/orders/{id}/arrive — Plumber marks arrival */
     @RequestMapping(value = "/{id}/arrive", method = {RequestMethod.POST, RequestMethod.PATCH})
     @PreAuthorize("hasRole('PLUMBER') and @orderAuthorization.isAssignedPlumber(#id, authentication)")

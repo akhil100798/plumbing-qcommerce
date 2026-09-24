@@ -116,14 +116,16 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({
           </View>
         ) : (
           displayedOrders.map((order) => (
-            <TouchableOpacity
+            <View
               key={order.id}
               style={styles.orderCard}
-              onPress={() => onNavigateToTracking(order.id)}
-              activeOpacity={0.9}
-              accessibilityRole="button"
-              accessibilityLabel={`Booking ${order.orderNumber}`}
             >
+              <TouchableOpacity
+                onPress={() => onNavigateToTracking(order.id)}
+                activeOpacity={0.9}
+                accessibilityRole="button"
+                accessibilityLabel={`Booking ${order.orderNumber}`}
+              >
               <View style={styles.cardTop}>
                 <View>
                   <Text style={styles.orderNumber}>{order.orderNumber}</Text>
@@ -168,6 +170,8 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({
                 </View>
               )}
 
+              </TouchableOpacity>
+
               <View style={styles.cardBottom}>
                 <View>
                   <Text style={styles.totalLabel}>Total Paid</Text>
@@ -186,7 +190,7 @@ export const OrdersScreen: React.FC<OrdersScreenProps> = ({
                   <ChevronRightIcon size={14} color={colors.onPrimary} />
                 </TouchableOpacity>
               </View>
-            </TouchableOpacity>
+            </View>
           ))
         )}
       </ScrollView>

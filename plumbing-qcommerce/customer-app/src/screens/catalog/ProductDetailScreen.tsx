@@ -94,7 +94,15 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
             </View>
             <Text style={styles.reviewsCount}>({product.reviewsCount} verified reviews)</Text>
             <View style={styles.stockBadge}>
-              <Text style={styles.stockText}>In Stock</Text>
+              <Text style={styles.stockText}>
+                {product.availableQuantity === undefined
+                  ? 'In Stock'
+                  : product.availableQuantity <= 0
+                  ? 'Out of Stock'
+                  : product.lowStock
+                  ? 'Low Stock'
+                  : `${product.availableQuantity} available`}
+              </Text>
             </View>
           </View>
 
@@ -147,15 +155,16 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
         </View>
 
         {qty === 0 ? (
-          <TouchableOpacity style={styles.addBtn} onPress={handleAdd} activeOpacity={0.8} accessibilityRole="button">
+          <TouchableOpacity style={styles.addBtn} onPress={handleAdd} disabled={product.availableQuantity === 0} activeOpacity={0.8} accessibilityRole="button">
             <Text style={styles.addBtnText}>Add to Cart</Text>
           </TouchableOpacity>
         ) : (
           <View style={styles.qtyContainer}>
             <QuantitySelector
               quantity={qty}
-              onIncrease={() => updateQuantity(product.id, 1)}
-              onDecrease={() => updateQuantity(product.id, -1)}
+               onIncrease={() => updateQuantity(product.id, 1)}
+               onDecrease={() => updateQuantity(product.id, -1)}
+               canIncrease={product.availableQuantity === undefined || qty < product.availableQuantity}
             />
             <TouchableOpacity
               style={styles.goToCartBtn}

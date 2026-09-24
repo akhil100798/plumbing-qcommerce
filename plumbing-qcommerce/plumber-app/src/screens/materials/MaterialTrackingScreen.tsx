@@ -152,14 +152,16 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
   };
 
   const handleConfirmCollection = async () => {
-    if (!detail) return;
+    if (!detail || actionLoading) return;
+    setActionLoading(true);
     try {
       await materialService.confirmCollection(productOrderId);
+      await fetchDetail();
     } catch (e: any) {
-      console.warn('Collection error:', e);
+      Alert.alert('Collection failed', e.message || 'Please try again.');
+    } finally {
+      setActionLoading(false);
     }
-    const destination = materialResumeRoute(String(jobId));
-    navigation.navigate(destination.name, destination.params);
   };
 
   const handleCancel = () => {
@@ -184,9 +186,18 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
     );
   };
 
-  const handleContinueWork = () => {
-    const destination = materialResumeRoute(String(jobId));
-    navigation.navigate(destination.name, destination.params);
+  const handleContinueWork = async () => {
+    if (actionLoading) return;
+    setActionLoading(true);
+    try {
+      await materialService.resumeWork(String(jobId));
+      const destination = materialResumeRoute(String(jobId));
+      navigation.navigate(destination.name, destination.params);
+    } catch (e: any) {
+      Alert.alert('Unable to resume work', e.message || 'Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   if (loading) {
@@ -217,7 +228,9 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
   const isCollected = detail.status === 'COLLECTED';
   const isRejected = detail.status === 'REJECTED';
   const canMarkArrived = detail.status === 'READY_FOR_PICKUP';
-  const canConfirmCollection = detail.status === 'PLUMBER_AT_STORE' || detail.status === 'READY_FOR_PICKUP';
+  const canConfirmCollection = !detail.plumberCollectedAt
+    && detail.status === 'PLUMBER_AT_STORE'
+    && Boolean(detail.plumberArrivedAt);
 
   const steps = buildSteps(detail);
 
@@ -386,6 +399,8 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
             <PrimaryButton
               title="Resume Work & Return to Job"
               onPress={handleContinueWork}
+              loading={actionLoading}
+              disabled={actionLoading}
               style={styles.actionBtn}
             />
           )}

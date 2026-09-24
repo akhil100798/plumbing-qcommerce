@@ -4,6 +4,7 @@ import { colors, borderRadius, spacing, typography, shadows } from '../../theme'
 import { Product, Category } from '../../types';
 import WarehouseIcon from '../../assets/icons/warehouse.svg';
 import ArrowRightIcon from '../../assets/icons/arrow-right.svg';
+import { isLowStock } from '../../utils/stockStatus';
 
 // ==========================================
 // INVENTORY CATEGORY CARD
@@ -55,7 +56,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onPress,
   onEditPress,
 }) => {
-  const isLowStock = product.stock <= 5;
+  const lowStock = isLowStock(product);
 
   return (
     <TouchableOpacity
@@ -84,8 +85,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
           <View style={styles.stockRow}>
             <Text style={styles.stockLabel}>Stock: </Text>
-            <Text style={[styles.stockVal, isLowStock && styles.lowStockVal]}>
-              {product.stock} Units {isLowStock ? '(Low)' : ''}
+            <Text style={[styles.stockVal, lowStock && styles.lowStockVal]}>
+              {product.stock} Units {lowStock ? '(Low)' : ''}
             </Text>
           </View>
         </View>

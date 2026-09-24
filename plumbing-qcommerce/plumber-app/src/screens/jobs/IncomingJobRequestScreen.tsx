@@ -39,17 +39,29 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
     return () => { active = false; };
   }, [jobId]);
 
-  const handleDecline = useCallback(() => {
-    dispatch(dismissIncomingJob(jobId));
-    navigation.goBack();
-  }, [dispatch, jobId, navigation]);
+  const handleDecline = useCallback(async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      await jobService.rejectJob(jobId);
+      dispatch(dismissIncomingJob(jobId));
+      navigation.goBack();
+    } catch (error: any) {
+      Alert.alert(
+        'Reject Job Failed',
+        error?.message || 'Could not reject this service request. Please retry.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [dispatch, jobId, loading, navigation]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setSeconds((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          handleDecline();
+          void handleDecline();
           return 0;
         }
         return prev - 1;
@@ -161,8 +173,9 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
                 disabled={loading}
                 accessibilityRole="button"
                 accessibilityLabel="Reject job offer"
+                accessibilityState={{ disabled: loading, busy: loading }}
               >
-                <Text style={styles.rejectBtnText}>Reject</Text>
+                <Text style={styles.rejectBtnText}>{loading ? 'Rejecting...' : 'Reject'}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity

@@ -5,20 +5,24 @@ import { typography } from '../../theme/typography';
 import { spacing } from '../../theme/spacing';
 import { useOrders } from '../../services/orderService';
 import { CheckCircleIcon, ShieldCheckIcon } from '../../assets/svg/Icons';
+import { ProductOrderDetail } from '../../services/checkoutService';
 
 export interface PaymentSuccessScreenProps {
   orderId: string;
+  productOrder?: ProductOrderDetail;
   onTrackOrder: (orderId: string) => void;
   onGoHome: () => void;
 }
 
 export const PaymentSuccessScreen: React.FC<PaymentSuccessScreenProps> = ({
   orderId,
+  productOrder,
   onTrackOrder,
   onGoHome,
 }) => {
   const { getOrderById } = useOrders();
   const order = getOrderById(orderId);
+  const isProductOrder = !!productOrder;
 
   return (
     <View style={styles.container}>
@@ -27,19 +31,39 @@ export const PaymentSuccessScreen: React.FC<PaymentSuccessScreenProps> = ({
           <CheckCircleIcon size={72} color={colors.success} />
         </View>
 
-        <Text style={styles.title}>Booking Confirmed!</Text>
+        <Text style={styles.title}>{isProductOrder ? 'Order Confirmed!' : 'Booking Confirmed!'}</Text>
         <Text style={styles.orderNumber}>
-          Order ID: {order?.orderNumber || `FK-${orderId}`}
+          Order ID: {order?.orderNumber || `FK-${String(orderId).padStart(6, '0')}`}
         </Text>
 
         <Text style={styles.subtitle}>
-          Your plumbing service has been scheduled.
-          {order?.plumber?.name
-            ? ` Plumber ${order.plumber.name} has accepted and is preparing to travel to your location.`
-            : ' Locating and dispatching the nearest certified plumber to your location.'}
+          {isProductOrder
+            ? `Your product order is confirmed for ${productOrder?.storeName || 'the selected Store'}.`
+            : `Your plumbing service has been scheduled.${order?.plumber?.name
+              ? ` Plumber ${order.plumber.name} has accepted and is preparing to travel to your location.`
+              : ' Locating and dispatching the nearest certified plumber to your location.'}`}
         </Text>
 
-        <View style={styles.summaryCard}>
+        {isProductOrder && (
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Store</Text>
+              <Text style={styles.summaryVal}>{productOrder?.storeName}</Text>
+            </View>
+            {productOrder?.items.map((item) => (
+              <View style={styles.summaryRow} key={item.productId}>
+                <Text style={styles.summaryLabel}>{item.productName} x{item.quantity}</Text>
+                <Text style={styles.summaryVal}>Rs {item.price * item.quantity}</Text>
+              </View>
+            ))}
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Total Amount</Text>
+              <Text style={styles.summaryVal}>Rs {productOrder?.totalAmount}</Text>
+            </View>
+          </View>
+        )}
+
+        <View style={[styles.summaryCard, isProductOrder && { display: 'none' }]}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Arrival Time</Text>
             <Text style={styles.summaryVal}>Within 30–45 Mins</Text>
@@ -65,12 +89,12 @@ export const PaymentSuccessScreen: React.FC<PaymentSuccessScreenProps> = ({
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.trackBtn}
-          onPress={() => onTrackOrder(orderId)}
+          onPress={() => isProductOrder ? onGoHome() : onTrackOrder(orderId)}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel="Live Track Plumber"
+          accessibilityLabel={isProductOrder ? 'Continue Shopping' : 'Live Track Plumber'}
         >
-          <Text style={styles.trackBtnText}>Live Track Plumber</Text>
+          <Text style={styles.trackBtnText}>{isProductOrder ? 'Continue Shopping' : 'Live Track Plumber'}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

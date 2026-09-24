@@ -6,6 +6,7 @@ interface QuantitySelectorProps {
   quantity: number;
   onIncrease: () => void;
   onDecrease: () => void;
+  canIncrease?: boolean;
   size?: "small" | "medium";
 }
 
@@ -13,6 +14,7 @@ export const QuantitySelector: React.FC<QuantitySelectorProps> = ({
   quantity,
   onIncrease,
   onDecrease,
+  canIncrease = true,
   size = "medium",
 }) => {
   const isSmall = size === "small";
@@ -30,7 +32,9 @@ export const QuantitySelector: React.FC<QuantitySelectorProps> = ({
       <TouchableOpacity
         style={[styles.btn, isSmall && styles.smallBtn]}
         onPress={onIncrease}
+        disabled={!canIncrease}
         activeOpacity={0.7}
+        accessibilityLabel="Increase quantity"
       >
         <Text style={styles.btnText}>+</Text>
       </TouchableOpacity>

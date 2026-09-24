@@ -119,3 +119,10 @@ playwright-report/
 test-results/
 store-app/.expo/
 
+# Local QA runtime/build output
+backend/uploads/
+**/dist-*/
+artifact_paths.txt
+tmp_artifact_*.txt
+
+.gstack/

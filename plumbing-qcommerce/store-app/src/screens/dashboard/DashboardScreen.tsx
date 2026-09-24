@@ -1,5 +1,5 @@
-import { NavigationProp, useNavigation } from '@react-navigation/native';
-import React, { useEffect, useState } from 'react';
+import { NavigationProp, useFocusEffect, useNavigation } from '@react-navigation/native';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -25,6 +25,7 @@ import { storeService } from '../../services/store/storeService';
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
 import { InventoryItem, MaterialRequest, Store } from '../../types';
 import { AppStackParamList } from '../../types/navigation';
+import { getAvailableStock, isLowStock } from '../../utils/stockStatus';
 
 export function DashboardScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
@@ -36,7 +37,7 @@ export function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const activeStore = await storeService.getCurrentStoreProfile();
       setStore(activeStore);
@@ -52,11 +53,13 @@ export function DashboardScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
-
-  useEffect(() => {
-    loadData();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData]),
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -69,7 +72,7 @@ export function DashboardScreen() {
   const readyRequests = requests.filter(r => r.status === 'READY_FOR_PICKUP');
   const awaitingHandover = requests.filter(r => r.status === 'PLUMBER_AT_STORE');
 
-  const lowStockItems = inventory.filter(i => (i.availableQuantity ?? i.quantity) <= 5);
+  const lowStockItems = inventory.filter(isLowStock);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -96,7 +99,7 @@ export function DashboardScreen() {
       >
         {loading && !refreshing ? (
           <View style={styles.centerLoading}>
-            <ActivityIndicator color={colors.primary} />
+            <ActivityIndicator color={colors.primary} accessibilityLabel="Loading store operations" />
             <Text style={styles.loadingText}>Fetching Store Operations...</Text>
           </View>
         ) : (
@@ -206,7 +209,7 @@ export function DashboardScreen() {
                 <View key={item.id} style={styles.lowStockCard}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.lowStockName}>{item.productName || item.name || 'Hardware Component'}</Text>
-                    <Text style={styles.lowStockQty}>Available: {item.availableQuantity ?? item.quantity} units</Text>
+                    <Text style={styles.lowStockQty}>Available: {getAvailableStock(item)} units</Text>
                   </View>
                   <TouchableOpacity
                     style={styles.reorderButton}
@@ -278,7 +281,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   overviewTitle: { color: '#FFFFFF', fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold },
-  overviewDate: { color: 'rgba(255,255,255,0.75)', fontSize: typography.fontSize.xs },
+  overviewDate: { color: '#FFFFFF', fontSize: typography.fontSize.xs },
   overviewStatsRow: { flexDirection: 'row', justifyContent: 'space-between' },
   overviewStat: { alignItems: 'center' },
   statIconWrap: {
@@ -291,7 +294,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   statValue: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  statLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 10, marginTop: 2 },
+  statLabel: { color: '#FFFFFF', fontSize: 10, marginTop: 2 },
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -8,6 +8,8 @@ export interface Product {
   rating: number;
   reviewsCount: number;
   inStock: boolean;
+  availableQuantity?: number;
+  lowStock?: boolean;
   unit: string;
   description: string;
   specs: Record<string, string>;

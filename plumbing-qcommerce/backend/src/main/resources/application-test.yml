@@ -20,7 +20,7 @@ spring:
       - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
   # Use embedded Kafka broker address placeholder (overridden per test if needed)
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
 
 # Disable Zipkin/tracing in tests to avoid connection errors
 management:

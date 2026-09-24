@@ -27,6 +27,7 @@ export function OtpScreen({ route, navigation }: Props) {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(28);
+  const [statusMessage, setStatusMessage] = useState('');
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -42,6 +43,7 @@ export function OtpScreen({ route, navigation }: Props) {
     }
 
     setLoading(true);
+    setStatusMessage('');
     try {
       const response = await authService.login(phone, code);
       dispatch(authSuccess(response));
@@ -49,8 +51,10 @@ export function OtpScreen({ route, navigation }: Props) {
       navigation.replace('Main' as any);
     } catch (err: any) {
       setLoading(false);
-      dispatch(authFailure(err.message || 'OTP verification failed'));
-       Alert.alert('Verification Failed', err.message || 'The OTP entered is incorrect. Please try again.');
+      const message = err.message || 'The OTP entered is incorrect or expired. Please try again.';
+      dispatch(authFailure(message));
+      setStatusMessage(message);
+      Alert.alert('Verification Failed', message);
     }
   };
 
@@ -59,9 +63,9 @@ export function OtpScreen({ route, navigation }: Props) {
     try {
       await authService.sendOtp(phone);
       setTimer(30);
-      Alert.alert('OTP Resent', 'A new verification code has been sent to your phone.');
+      setStatusMessage('A new verification code has been sent to your phone.');
     } catch (err: any) {
-      Alert.alert('Resend Failed', err.message || 'Could not resend OTP.');
+      setStatusMessage(err.message || 'Could not resend the verification code.');
     }
   };
 
@@ -84,6 +88,8 @@ export function OtpScreen({ route, navigation }: Props) {
         <View style={styles.otpWrapper}>
           <OTPInput length={6} onCodeChanged={setCode} />
         </View>
+
+        {statusMessage ? <Text accessibilityLiveRegion="polite" style={styles.statusMessage}>{statusMessage}</Text> : null}
 
         <View style={styles.resendRow}>
           {timer > 0 ? (
@@ -181,8 +187,13 @@ const styles = StyleSheet.create({
   },
   securityText: {
     fontSize: typography.fontSize.xs,
-    color: colors.textMuted,
+    color: colors.textSecondary,
     fontWeight: typography.fontWeight.medium,
+  },
+  statusMessage: {
+    color: colors.textSecondary,
+    fontSize: typography.fontSize.sm,
+    marginBottom: spacing.sm,
   },
   verifyButton: {
     marginBottom: spacing.xl,

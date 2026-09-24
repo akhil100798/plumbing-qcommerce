@@ -9,6 +9,7 @@ import com.pqc.core.repository.OutboxEventRepository;
 import com.pqc.core.repository.ProductOrderRepository;
 import com.pqc.core.repository.PlumberKycRepository;
 import com.pqc.core.repository.ServiceOrderRepository;
+import com.pqc.core.repository.ServiceOrderPlumberDispositionRepository;
 import com.pqc.core.repository.UserRepository;
 import com.pqc.core.repository.ServiceOrderStatusHistoryRepository;
 import com.pqc.core.security.CurrentUser;
@@ -41,6 +42,7 @@ public class ServiceOrderService {
     private final ProductOrderRepository productOrderRepository;
     private final ServiceOrderStatusHistoryRepository historyRepository;
     private final PlumberKycRepository plumberKycRepository;
+    private final ServiceOrderPlumberDispositionRepository dispositionRepository;
 
     private void recordHistory(Long orderId, OrderStatus prev, OrderStatus next, User actor, String reason) {
         historyRepository.save(ServiceOrderStatusHistory.builder()
@@ -109,7 +111,7 @@ public class ServiceOrderService {
         if (actor.getRole() != Role.PLUMBER || !actor.getId().equals(plumberId)) {
             throw new AccessDeniedException("Plumbers may accept orders only as themselves");
         }
-        ServiceOrder order = getOrderOrThrow(orderId);
+        ServiceOrder order = getOrderForMutationOrThrow(orderId);
 
         if (order.getStatus() == OrderStatus.ACCEPTED
                 && order.getPlumber() != null
@@ -127,6 +129,10 @@ public class ServiceOrderService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Assigned user is not a plumber");
         }
         requireOnlinePlumber(plumber);
+        if (dispositionRepository.existsByServiceOrderIdAndPlumberIdAndDisposition(
+                orderId, plumberId, PlumberJobDisposition.DECLINED)) {
+            throw conflict("Order #" + orderId + " was already declined by this plumber");
+        }
 
         OrderStatus prev = order.getStatus();
         order.setPlumber(plumber);
@@ -143,6 +149,35 @@ public class ServiceOrderService {
         log.info("Order #{} acceptance persisted in outbox.", orderId);
 
         return saved;
+    }
+
+    /**
+     * A plumber declines only their own offer. The service order remains PENDING
+     * so another eligible plumber can still receive it.
+     */
+    @Transactional
+    public ServiceOrder rejectOrder(Long orderId, Long plumberId) {
+        User actor = currentUser.require();
+        if (actor.getRole() != Role.PLUMBER || !actor.getId().equals(plumberId)) {
+            throw new AccessDeniedException("Plumbers may reject orders only as themselves");
+        }
+
+        requireOnlinePlumber(actor);
+        ServiceOrder order = getOrderForMutationOrThrow(orderId);
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw conflict("Order #" + orderId + " cannot be rejected. Status: " + order.getStatus());
+        }
+
+        if (!dispositionRepository.existsByServiceOrderIdAndPlumberIdAndDisposition(
+                orderId, plumberId, PlumberJobDisposition.DECLINED)) {
+            dispositionRepository.save(ServiceOrderPlumberDisposition.builder()
+                    .serviceOrderId(orderId)
+                    .plumberId(plumberId)
+                    .disposition(PlumberJobDisposition.DECLINED)
+                    .build());
+        }
+
+        return order;
     }
 
     /**
@@ -483,6 +518,10 @@ public class ServiceOrderService {
         if (role == Role.PLUMBER && status == OrderStatus.PENDING && !isOnlinePlumber(actor)) {
             return List.of();
         }
+        if (role == Role.PLUMBER && status == OrderStatus.PENDING) {
+            return orderRepository.findByStatusExcludingPlumberDisposition(
+                    status, actor.getId(), PlumberJobDisposition.DECLINED);
+        }
         return orderRepository.findByStatus(status);
     }
 
@@ -506,12 +545,21 @@ public class ServiceOrderService {
                 || actor.getRole() == Role.CUSTOMER && order.getCustomer().getId().equals(actor.getId())
                 || actor.getRole() == Role.PLUMBER && order.getPlumber() != null
                     && order.getPlumber().getId().equals(actor.getId())
+                || isEligiblePendingOffer(order, actor)
                 || actor.getRole() == Role.STORE_MANAGER && order.getStore() != null
                     && order.getStore().getManager().getId().equals(actor.getId());
         if (!allowed) {
             throw new AccessDeniedException("This order is not accessible to the current user");
         }
         return order;
+    }
+
+    private boolean isEligiblePendingOffer(ServiceOrder order, User actor) {
+        return actor.getRole() == Role.PLUMBER
+                && order.getStatus() == OrderStatus.PENDING
+                && isOnlinePlumber(actor)
+                && !dispositionRepository.existsByServiceOrderIdAndPlumberIdAndDisposition(
+                        order.getId(), actor.getId(), PlumberJobDisposition.DECLINED);
     }
 
     private void requireAssignedPlumber(ServiceOrder order) {
@@ -524,6 +572,11 @@ public class ServiceOrderService {
 
     private ServiceOrder getOrderOrThrow(Long id) {
         return orderRepository.findById(id)
+                .orElseThrow(() -> notFound("Service order not found: " + id));
+    }
+
+    private ServiceOrder getOrderForMutationOrThrow(Long id) {
+        return orderRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> notFound("Service order not found: " + id));
     }
 

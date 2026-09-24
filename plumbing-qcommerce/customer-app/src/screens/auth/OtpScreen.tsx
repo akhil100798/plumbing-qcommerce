@@ -17,16 +17,21 @@ import { useAuth } from '../../services/authService';
 
 export interface OtpScreenProps {
   phone: string;
+  qaCode?: string;
   onVerify: () => void;
   onBack: () => void;
 }
 
-export const OtpScreen: React.FC<OtpScreenProps> = ({ phone, onVerify, onBack }) => {
+export const OtpScreen: React.FC<OtpScreenProps> = ({ phone, qaCode, onVerify, onBack }) => {
   const { verifyOtp, loginWithPhone } = useAuth();
-  const [otp, setOtp] = useState<string>('123456');
+  const [otp, setOtp] = useState<string>('');
   const [timer, setTimer] = useState<number>(30);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setOtp(qaCode || '');
+  }, [qaCode]);
 
   useEffect(() => {
     if (timer > 0) {
@@ -117,10 +122,12 @@ export const OtpScreen: React.FC<OtpScreenProps> = ({ phone, onVerify, onBack })
           accessibilityLabel="OTP input"
         />
 
-        <View style={styles.demoNotice}>
-          <CheckCircleIcon size={16} color={colors.success} />
-          <Text style={styles.demoNoticeText}>Demo / QA test OTP: 123456</Text>
-        </View>
+        {qaCode ? (
+          <View style={styles.demoNotice}>
+            <CheckCircleIcon size={16} color={colors.success} />
+            <Text style={styles.demoNoticeText}>Local QA code supplied by the backend.</Text>
+          </View>
+        ) : null}
 
         {errorMessage ? (
           <Text style={styles.errorText}>{errorMessage}</Text>

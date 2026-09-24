@@ -268,6 +268,45 @@ class PlumberMaterialIntegrationTest {
                 .isInstanceOf(ResponseStatusException.class).hasMessageContaining("record collection first");
     }
 
+    @Test
+    void collectionRequiresPersistedArrivalBeforeItCanAdvance() {
+        Product product = productRepository.save(Product.builder().sku("PICKUP-GUARD-001").name("Pickup Guard Valve")
+                .price(new BigDecimal("100.00")).category(category).build());
+        stockRepository.save(Stock.builder().product(product).store(store).availableQuantity(10).reservedQuantity(0).build());
+        var request = plumberMaterialService.createMaterialRequest(serviceOrder.getId(), store.getId(),
+                List.of(new CartItemDTO(product.getId(), 1)));
+        plumberMaterialService.submit(request.id());
+        authenticate(manager);
+        plumberMaterialService.approve(request.id(), null);
+        plumberMaterialService.reserve(request.id());
+        plumberMaterialService.prepare(request.id());
+        plumberMaterialService.updatePackingProgress(request.id(), Map.of(product.getId(), 1));
+        plumberMaterialService.ready(request.id());
+
+        authenticate(plumber);
+        assertThatThrownBy(() -> plumberMaterialService.collect(request.id()))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode().value()).isEqualTo(409))
+                .hasMessageContaining("arrive at the store");
+        ProductOrder beforeArrival = productOrderRepository.findById(request.id()).orElseThrow();
+        assertThat(beforeArrival.getStatus()).isEqualTo(ProductOrderStatus.READY_FOR_PICKUP);
+        assertThat(beforeArrival.getPlumberArrivedAt()).isNull();
+        assertThat(beforeArrival.getPlumberCollectedAt()).isNull();
+
+        plumberMaterialService.arrived(request.id());
+        assertThat(productOrderRepository.findById(request.id()).orElseThrow().getStatus())
+                .isEqualTo(ProductOrderStatus.PLUMBER_AT_STORE);
+        assertThat(productOrderRepository.findById(request.id()).orElseThrow().getPlumberArrivedAt()).isNotNull();
+        assertThatThrownBy(() -> plumberMaterialService.arrived(request.id()))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("Invalid transition");
+
+        plumberMaterialService.collect(request.id());
+        ProductOrder collectedByPlumber = productOrderRepository.findById(request.id()).orElseThrow();
+        assertThat(collectedByPlumber.getStatus()).isEqualTo(ProductOrderStatus.PLUMBER_AT_STORE);
+        assertThat(collectedByPlumber.getPlumberCollectedAt()).isNotNull();
+    }
+
     private void authenticate(User user) {
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
                 user.getEmail(), null, List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))));

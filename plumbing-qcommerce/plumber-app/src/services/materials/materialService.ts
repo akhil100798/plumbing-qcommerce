@@ -188,6 +188,23 @@ export const materialService = {
     }
   },
 
+  resumeWork: async (jobId: string): Promise<void> => {
+    const route = `/orders/${parseServiceOrderId(jobId)}`;
+    const current = await apiClient.get<{ status: string }>(route);
+    let status = current.data.status;
+    if (status === 'PRODUCTS_COLLECTED') {
+      const returning = await apiClient.post<{ status: string }>(`${route}/return-to-customer`);
+      status = returning.data.status;
+    }
+    if (status === 'RETURNING_TO_CUSTOMER') {
+      const resumed = await apiClient.post<{ status: string }>(`${route}/resume`);
+      status = resumed.data.status;
+    }
+    if (status !== 'WORK_RESUMED') {
+      throw new Error('Store must confirm collection before work can resume.');
+    }
+  },
+
   confirmCollection: async (requestId: number): Promise<void> => {
     try {
       await apiClient.post(ENDPOINTS.DELIVERY.COLLECT(requestId));

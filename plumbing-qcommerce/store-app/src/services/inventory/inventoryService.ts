@@ -8,8 +8,15 @@ import {
   warnUsingDevMockFallback,
 } from '../mockPolicy';
 import { storeService } from '../store/storeService';
+import { isLowStock } from '../../utils/stockStatus';
 
 let localProducts: Product[] = [...mockProducts];
+
+export interface UpdateStockParams {
+  productId: number;
+  stockCount: number;
+  storeId?: number;
+}
 
 const mapStockToProduct = (stock: any): Product => {
   const product = stock.product || stock;
@@ -118,7 +125,7 @@ export const inventoryService = {
     }
   },
 
-  updateStock: async (productId: number, stockCount: number, storeId?: number): Promise<Product> => {
+  updateStock: async ({ productId, stockCount, storeId }: UpdateStockParams): Promise<Product> => {
     try {
       const storeProfile = storeId ? { id: storeId } : await storeService.getCurrentStoreProfile();
       const response = await apiClient.put(
@@ -160,9 +167,9 @@ export const inventoryService = {
   getLowStock: async (): Promise<Product[]> => {
     try {
       const inventory = await inventoryService.getInventory();
-      return inventory.products.filter((product) => product.stock <= (product.lowStockThreshold ?? 5));
+      return inventory.products.filter(isLowStock);
     } catch (e) {
-      return localProducts.filter((product) => product.stock <= (product.lowStockThreshold ?? 5));
+      return localProducts.filter(isLowStock);
     }
   },
 

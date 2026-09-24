@@ -50,6 +50,8 @@ export interface ProductDTO {
   imageUrl?: string;
   categoryId?: number;
   categoryName?: string;
+  availableQuantity?: number;
+  lowStock?: boolean;
 }
 
 export type OrderStatus =
@@ -89,6 +91,13 @@ export interface StoreSummary {
   address?: string;
   latitude?: number;
   longitude?: number;
+}
+
+export interface StoreInventorySummary {
+  id: number;
+  product?: { id?: number; name?: string };
+  availableQuantity?: number;
+  reservedQuantity?: number;
 }
 
 export interface ServiceOrder {

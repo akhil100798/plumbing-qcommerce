@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -33,21 +32,37 @@ export function LoginScreen({ navigation }: Props) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [statusMessage, setStatusMessage] = useState('');
 
   const handleContinue = async () => {
+    setErrorMessage('');
+    setStatusMessage('');
     if (activeTab === 'mobile') {
-      if (phone.length !== 10) {
-        Alert.alert('Invalid Mobile Number', 'Please enter a valid 10-digit mobile number');
+      if (!/^\d{10}$/.test(phone)) {
+        setErrorMessage('Enter a valid 10-digit mobile number.');
         return;
       }
-      // Navigate to OTP Screen
-      navigation.navigate('Otp', { phone: `+91 ${phone}` });
+      setLoading(true);
+      try {
+        const formattedPhone = `+91 ${phone}`;
+        await authService.sendOtp(formattedPhone);
+        navigation.navigate('Otp', { phone: formattedPhone });
+      } catch (err: any) {
+        setErrorMessage(err.message || 'We could not send an OTP. Check your number and try again.');
+      } finally {
+        setLoading(false);
+      }
       return;
     }
 
     if (!email.trim() || !password.trim()) {
       dispatch(authFailure('Please fill in all credentials fields'));
-      Alert.alert('Invalid Input', 'Please fill in all credentials fields');
+      setErrorMessage('Enter both your email address and password.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setErrorMessage('Enter a valid email address.');
       return;
     }
 
@@ -60,7 +75,7 @@ export function LoginScreen({ navigation }: Props) {
       navigation.replace('Main' as any);
     } catch (err: any) {
       dispatch(authFailure(err.message || 'Could not authenticate'));
-      Alert.alert('Login Failed', err.message || 'Could not log in. Please try again.');
+      setErrorMessage(err.message || 'Could not log in. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -79,10 +94,10 @@ export function LoginScreen({ navigation }: Props) {
           </View>
 
           {/* Tab Switcher */}
-          <View style={styles.tabContainer}>
+          <View style={styles.tabContainer} accessibilityRole="tablist">
             <TouchableOpacity
               style={[styles.tabButton, activeTab === 'mobile' && styles.tabButtonActive]}
-              onPress={() => setActiveTab('mobile')}
+              onPress={() => { setActiveTab('mobile'); setErrorMessage(''); setStatusMessage(''); }}
               accessibilityRole="tab"
               accessibilityState={{ selected: activeTab === 'mobile' }}
               accessibilityLabel="Log in with mobile number"
@@ -93,7 +108,7 @@ export function LoginScreen({ navigation }: Props) {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.tabButton, activeTab === 'email' && styles.tabButtonActive]}
-              onPress={() => setActiveTab('email')}
+              onPress={() => { setActiveTab('email'); setErrorMessage(''); setStatusMessage(''); }}
               accessibilityRole="tab"
               accessibilityState={{ selected: activeTab === 'email' }}
               accessibilityLabel="Log in with email"
@@ -103,6 +118,16 @@ export function LoginScreen({ navigation }: Props) {
               </Text>
             </TouchableOpacity>
           </View>
+
+          {(errorMessage || statusMessage) ? (
+            <Text
+              accessibilityRole={errorMessage ? 'alert' : undefined}
+              accessibilityLiveRegion="polite"
+              style={errorMessage ? styles.feedbackError : styles.feedbackStatus}
+            >
+              {errorMessage || statusMessage}
+            </Text>
+          ) : null}
 
           <View style={styles.form}>
             {activeTab === 'mobile' ? (
@@ -118,7 +143,7 @@ export function LoginScreen({ navigation }: Props) {
                     keyboardType="number-pad"
                     maxLength={10}
                     value={phone}
-                    onChangeText={(val) => setPhone(val.replace(/\D/g, ''))}
+                    onChangeText={(val) => { setPhone(val.replace(/\D/g, '')); setErrorMessage(''); }}
                     accessibilityLabel="Mobile number"
                     textContentType="telephoneNumber"
                     autoComplete="tel"
@@ -138,7 +163,7 @@ export function LoginScreen({ navigation }: Props) {
                       autoCapitalize="none"
                       autoCorrect={false}
                       value={email}
-                      onChangeText={setEmail}
+                      onChangeText={(value) => { setEmail(value); setErrorMessage(''); }}
                       accessibilityLabel="Email address"
                       textContentType="emailAddress"
                       autoComplete="email"
@@ -155,10 +180,10 @@ export function LoginScreen({ navigation }: Props) {
                       placeholderTextColor={colors.textMuted}
                       secureTextEntry
                       value={password}
-                      onChangeText={setPassword}
+                      onChangeText={(value) => { setPassword(value); setErrorMessage(''); }}
                       accessibilityLabel="Password"
                       textContentType="password"
-                      autoComplete="password"
+                      autoComplete="current-password"
                     />
                   </View>
                 </View>
@@ -172,6 +197,7 @@ export function LoginScreen({ navigation }: Props) {
                 accessibilityRole="checkbox"
                 accessibilityLabel="Remember me"
                 accessibilityState={{ checked: rememberMe }}
+                aria-checked={rememberMe}
               >
                 <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
                   {rememberMe && <Text style={styles.checkmark}>✓</Text>}
@@ -179,7 +205,7 @@ export function LoginScreen({ navigation }: Props) {
                 <Text style={styles.rememberText}>Remember me</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => Alert.alert('Forgot Password', 'Password reset is not available yet. Please contact support.')} accessibilityRole="button" accessibilityLabel="Forgot password">
+              <TouchableOpacity onPress={() => { setErrorMessage(''); setStatusMessage('Password reset is not configured for the Plumber app. Please contact support.'); }} accessibilityRole="button" accessibilityLabel="Forgot password">
                 <Text style={styles.forgotText}>Forgot Password?</Text>
               </TouchableOpacity>
             </View>
@@ -200,7 +226,7 @@ export function LoginScreen({ navigation }: Props) {
             <View style={styles.socialRow}>
               <TouchableOpacity
                 style={styles.socialButton}
-                onPress={() => Alert.alert('Google login', 'Google sign-in is not configured for the plumber app staging build yet.')}
+                onPress={() => { setErrorMessage(''); setStatusMessage('Google sign-in is not configured for the Plumber app staging build.'); }}
                 accessibilityRole="button"
                 accessibilityLabel="Google sign in unavailable"
               >
@@ -210,7 +236,7 @@ export function LoginScreen({ navigation }: Props) {
 
               <TouchableOpacity
                 style={styles.socialButton}
-                onPress={() => Alert.alert('Facebook login', 'Facebook sign-in is not configured for the plumber app staging build yet.')}
+                onPress={() => { setErrorMessage(''); setStatusMessage('Facebook sign-in is not configured for the Plumber app staging build.'); }}
                 accessibilityRole="button"
                 accessibilityLabel="Facebook sign in unavailable"
               >
@@ -221,17 +247,19 @@ export function LoginScreen({ navigation }: Props) {
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              New here?{' '}
-              <Text
+            <View style={styles.footerRow}>
+              <Text style={styles.footerText}>New here? </Text>
+              <TouchableOpacity
                 style={styles.signUpLink}
                 onPress={() => {
                   navigation.navigate('Register');
                 }}
+                accessibilityRole="button"
+                accessibilityLabel="Sign up"
               >
-                Sign up
-              </Text>
-            </Text>
+                <Text style={styles.signUpLinkText}>Sign up</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -395,7 +423,7 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md,
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.bold,
-    color: colors.textMuted,
+    color: colors.textSecondary,
   },
   socialRow: {
     flexDirection: 'row',
@@ -439,7 +467,30 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.medium,
   },
   signUpLink: {
+    marginLeft: 4,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  signUpLinkText: {
     color: colors.primary,
     fontWeight: typography.fontWeight.bold,
+  },
+  feedbackError: {
+    color: colors.error,
+    backgroundColor: colors.errorContainer,
+    borderRadius: borderRadius.sm,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
+    fontSize: typography.fontSize.sm,
+  },
+  feedbackStatus: {
+    color: colors.textSecondary,
+    backgroundColor: colors.surfaceContainerLow,
+    borderRadius: borderRadius.sm,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
+    fontSize: typography.fontSize.sm,
   },
 });

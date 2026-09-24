@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   View,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -30,13 +29,19 @@ export function LoginScreen({ navigation }: Props) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [feedback, setFeedback] = useState('');
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Validation Error', 'Please fill in both email and password.');
+      setFeedback(!email.trim() ? 'Enter your email address.' : 'Enter your password.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setFeedback('Enter a valid email address.');
       return;
     }
 
+    setFeedback('');
     setLoading(true);
     try {
       const response = await authService.login(email.trim(), password);
@@ -45,7 +50,7 @@ export function LoginScreen({ navigation }: Props) {
       navigation.replace('Main');
     } catch (error: any) {
       setLoading(false);
-      Alert.alert('Login Failed', error.message || 'Invalid email or password.');
+      setFeedback(error.message || 'Invalid email or password.');
     }
   };
 
@@ -69,6 +74,7 @@ export function LoginScreen({ navigation }: Props) {
           <View style={styles.card}>
             <Text style={styles.welcomeText}>Welcome Back!</Text>
             <Text style={styles.subtext}>Log in to manage and fulfill your inventory orders.</Text>
+            {feedback ? <Text accessibilityRole="alert" style={styles.feedback}>{feedback}</Text> : null}
 
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Email Address</Text>
@@ -78,6 +84,7 @@ export function LoginScreen({ navigation }: Props) {
                 placeholderTextColor={colors.textMuted}
                 value={email}
                 onChangeText={setEmail}
+                accessibilityLabel="Email address"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -92,6 +99,7 @@ export function LoginScreen({ navigation }: Props) {
                 placeholderTextColor={colors.textMuted}
                 value={password}
                 onChangeText={setPassword}
+                accessibilityLabel="Password"
                 secureTextEntry
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -104,6 +112,10 @@ export function LoginScreen({ navigation }: Props) {
                 style={styles.checkboxRow}
                 onPress={() => setRememberMe(!rememberMe)}
                 activeOpacity={0.7}
+                accessibilityRole="checkbox"
+                accessibilityLabel="Remember me"
+                accessibilityState={{ checked: rememberMe }}
+                aria-checked={rememberMe}
               >
                 <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
                   {rememberMe && <Text style={styles.checkMark}>✓</Text>}
@@ -111,7 +123,7 @@ export function LoginScreen({ navigation }: Props) {
                 <Text style={styles.checkboxLabel}>Remember me</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => Alert.alert('Reset Password', 'Please contact admin to reset your password.')}>
+              <TouchableOpacity onPress={() => setFeedback('Password reset is not configured for the Store app. Please contact an administrator.')} accessibilityRole="button" accessibilityLabel="Forgot password">
                 <Text style={styles.forgotText}>Forgot Password?</Text>
               </TouchableOpacity>
             </View>
@@ -125,7 +137,11 @@ export function LoginScreen({ navigation }: Props) {
 
             <View style={styles.footerLinkRow}>
               <Text style={styles.footerText}>Want to register a store? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Register' as any)}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Register' as any)}
+                accessibilityRole="button"
+                accessibilityLabel="Register Store"
+              >
                 <Text style={styles.registerLink}>Register Store</Text>
               </TouchableOpacity>
             </View>
@@ -277,5 +293,12 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     color: colors.primary,
     fontWeight: typography.fontWeight.bold,
+  },
+  feedback: {
+    color: colors.error,
+    backgroundColor: colors.errorContainer,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: spacing.md,
   },
 });

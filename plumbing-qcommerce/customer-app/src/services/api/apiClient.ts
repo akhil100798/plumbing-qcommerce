@@ -1,16 +1,21 @@
 import { tokenStorage } from './tokenStorage';
 
-const env: Record<string, string | undefined> =
-  typeof process !== 'undefined' && process.env
-    ? (process.env as Record<string, string | undefined>)
-    : {};
+declare const process: { env: Record<string, string | undefined> };
 
+// Expo inlines public variables only when accessed directly through process.env.
 const EXPLICIT_BACKEND_URL =
-  env.EXPO_PUBLIC_API_BASE_URL ||
-  env.EXPO_PUBLIC_BACKEND_URL ||
-  env.NEXT_PUBLIC_API_BASE_URL;
+  process.env.EXPO_PUBLIC_API_BASE_URL ||
+  process.env.EXPO_PUBLIC_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL;
 
-const RAW_BACKEND_URL = EXPLICIT_BACKEND_URL || 'https://fixkart-dev2-backend.onrender.com';
+// Keep explicit deployment configuration authoritative. When a local Expo
+// development server is started without an .env file, use the local QA
+// backend instead of silently sending browser traffic to a remote service.
+const DEFAULT_BACKEND_URL =
+  process.env.NODE_ENV === 'development'
+    ? 'http://localhost:8081'
+    : 'https://fixkart-dev2-backend.onrender.com';
+const RAW_BACKEND_URL = EXPLICIT_BACKEND_URL || DEFAULT_BACKEND_URL;
 export const BACKEND_URL = RAW_BACKEND_URL.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 export const API_BASE_URL = `${BACKEND_URL}/api/v1`;
 

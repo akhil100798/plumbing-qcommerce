@@ -24,6 +24,7 @@ import { ProductDetailScreen } from './src/screens/catalog/ProductDetailScreen';
 import { CartScreen } from './src/screens/cart/CartScreen';
 import { CheckoutScreen } from './src/screens/checkout/CheckoutScreen';
 import { PaymentSuccessScreen } from './src/screens/checkout/PaymentSuccessScreen';
+import { ProductOrderDetail } from './src/services/checkoutService';
 import { OrdersScreen } from './src/screens/orders/OrdersScreen';
 import { OrderTrackingScreen } from './src/screens/orders/OrderTrackingScreen';
 import { ProfileScreen } from './src/screens/profile/ProfileScreen';
@@ -54,7 +55,9 @@ function MainAppNavigator() {
   const [selectedServiceId, setSelectedServiceId] = useState<string>('srv_1');
   const [selectedProductId, setSelectedProductId] = useState<string>('prod_1');
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
+  const [selectedProductOrder, setSelectedProductOrder] = useState<ProductOrderDetail | undefined>();
   const [tempPhone, setTempPhone] = useState<string>('9876511223');
+  const [tempQaCode, setTempQaCode] = useState<string | undefined>();
   const [searchInitialQuery, setSearchInitialQuery] = useState<string>('');
 
   const isMainTab =
@@ -103,8 +106,9 @@ function MainAppNavigator() {
       case 'login':
         return (
           <LoginScreen
-            onSendOtp={(phone) => {
+            onSendOtp={(phone, qaCode) => {
               setTempPhone(phone);
+              setTempQaCode(qaCode);
               setCurrentRoute('otp');
             }}
             onSkip={() => {
@@ -118,11 +122,15 @@ function MainAppNavigator() {
         return (
           <OtpScreen
             phone={tempPhone}
+            qaCode={tempQaCode}
             onVerify={() => {
               setCurrentRoute('home');
               setActiveTab('home');
             }}
-            onBack={() => setCurrentRoute('login')}
+            onBack={() => {
+              setTempQaCode(undefined);
+              setCurrentRoute('login');
+            }}
           />
         );
 
@@ -208,8 +216,9 @@ function MainAppNavigator() {
         return (
           <CheckoutScreen
             onBack={() => setCurrentRoute('cart')}
-            onPaymentSuccess={(newOrderId) => {
+            onPaymentSuccess={(newOrderId, productOrder) => {
               setSelectedOrderId(newOrderId);
+              setSelectedProductOrder(productOrder);
               setCurrentRoute('payment_success');
             }}
           />
@@ -219,6 +228,7 @@ function MainAppNavigator() {
         return (
           <PaymentSuccessScreen
             orderId={selectedOrderId}
+            productOrder={selectedProductOrder}
             onTrackOrder={navigateToTracking}
             onGoHome={() => {
               setActiveTab('home');
