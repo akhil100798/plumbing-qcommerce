@@ -267,6 +267,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const addAddress = async (addressData: Omit<Address, 'id'>): Promise<Address> => {
+    if (!isAuthenticated) {
+      throw new Error('Please sign in to save an address.');
+    }
     const normalizedPincode = normalizePostalCode(addressData.pincode || '');
     if (!isValidIndianPostalCode(normalizedPincode)) {
       throw new Error(POSTAL_CODE_ERROR);
@@ -275,7 +278,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const payload = {
       label: addressData.type === 'work' ? 'Work' : addressData.type === 'other' ? 'Other' : 'Home',
       name: addressData.name || user?.name || 'Customer',
-      phone: addressData.phone || user?.phone || '9876511223',
+      phone: addressData.phone || user?.phone || '',
       addressLine: fullLine.trim(),
     };
 
