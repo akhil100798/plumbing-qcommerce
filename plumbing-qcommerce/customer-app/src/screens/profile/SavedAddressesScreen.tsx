@@ -34,7 +34,7 @@ export const SavedAddressesScreen: React.FC<SavedAddressesScreenProps> = ({ onBa
   const modalInvokerRef = useRef<HTMLElement | null>(null);
 
   const [name, setName] = useState(user?.name || 'Customer');
-  const [phone, setPhone] = useState(user?.phone || '9876511223');
+  const [phone, setPhone] = useState(user?.phone || '');
   const [flat, setFlat] = useState('');
   const [area, setArea] = useState('');
   const [city, setCity] = useState('Bengaluru');
@@ -150,7 +150,7 @@ export const SavedAddressesScreen: React.FC<SavedAddressesScreenProps> = ({ onBa
       try {
         await addAddress({
           name: name || user?.name || 'Customer',
-          phone: phone || user?.phone || '9876511223',
+          phone: phone || user?.phone || '',
           flat,
           area,
           landmark: '',
