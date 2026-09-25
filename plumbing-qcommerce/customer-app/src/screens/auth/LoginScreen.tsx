@@ -24,12 +24,12 @@ export interface LoginScreenProps {
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onSendOtp, onSkip }) => {
   const { loginWithPhone } = useAuth();
-  const [phone, setPhone] = useState<string>('9876511223');
+  const [phone, setPhone] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleContinue = async () => {
-    const clean = phone;
+    const clean = phone.trim();
     if (!/^(?:\d{10}|\+91 ?\d{10})$/.test(clean)) {
       setErrorMessage('Please enter a valid 10-digit mobile number');
       return;
