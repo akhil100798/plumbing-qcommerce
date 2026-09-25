@@ -40,7 +40,6 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
   const { selectedAddress } = useAuth();
   const { createServiceOrderFromCart } = useOrders();
 
-  const [selectedSlot, setSelectedSlot] = useState('Express (Within 45 Mins)');
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -108,12 +107,6 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
       cancelled = true;
     };
   }, [isProductCart, items]);
-
-  const slots = [
-    { id: 'express', label: 'Express (Within 45 Mins)', sub: 'Fastest response' },
-    { id: 'today_afternoon', label: 'Today, 02:00 PM - 04:00 PM', sub: 'Standard' },
-    { id: 'today_evening', label: 'Today, 05:00 PM - 07:00 PM', sub: 'Standard' },
-  ];
 
   const paymentOptions = [
     { id: 'cod', name: 'Pay After Service (Cash / QR)', icon: '💵', tag: 'Recommended' },
@@ -236,35 +229,15 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({
           </View>
         )}
 
-        {/* Arrival Slot */}
         {isServiceCart && <View style={styles.card}>
           <View style={styles.cardHeader}>
             <ClockIcon size={18} color={colors.primary} />
-            <Text style={styles.cardTitle}>Plumber Arrival Slot</Text>
+            <Text style={styles.cardTitle}>On-demand service</Text>
           </View>
-
-          {slots.map((slot) => {
-            const isSelected = selectedSlot === slot.label;
-            return (
-              <TouchableOpacity
-                key={slot.id}
-                style={[styles.slotOption, isSelected && styles.selectedSlotOption]}
-                onPress={() => setSelectedSlot(slot.label)}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-              >
-                <View style={styles.slotRadio}>
-                  {isSelected && <View style={styles.slotRadioInner} />}
-                </View>
-                <View style={styles.slotInfo}>
-                  <Text style={[styles.slotLabel, isSelected && styles.selectedSlotLabel]}>
-                    {slot.label}
-                  </Text>
-                  <Text style={styles.slotSub}>{slot.sub}</Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
+          <Text style={styles.addressDetails}>
+            Your request will be sent to nearby plumbers. Arrival depends on availability;
+            track your plumber after the request is accepted.
+          </Text>
         </View>}
 
         {/* Payment Methods */}
@@ -423,20 +396,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.secondary,
     lineHeight: 16,
-  },
-  slotOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.surfaceVariant,
-    padding: spacing.sm + 2,
-    borderRadius: 12,
-    marginBottom: spacing.xs + 2,
-  },
-  selectedSlotOption: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryFixed,
   },
   slotRadio: {
     width: 18,

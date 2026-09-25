@@ -36,7 +36,6 @@ export const ServiceDetailScreen: React.FC<ServiceDetailScreenProps> = ({
     fallbackServices.find((s) => s.id === serviceId) || fallbackServices[0]
   );
   const { addItem, items } = useCart();
-  const [selectedSlot, setSelectedSlot] = useState('Today, 11:30 AM');
 
   useEffect(() => {
     let isMounted = true;
@@ -51,13 +50,6 @@ export const ServiceDetailScreen: React.FC<ServiceDetailScreenProps> = ({
   }, [serviceId]);
 
   const isAdded = items.some((i) => i.id === service.id);
-
-  const slots = [
-    'Today, 11:30 AM',
-    'Today, 02:00 PM',
-    'Today, 04:30 PM',
-    'Tomorrow, 10:00 AM',
-  ];
 
   const handleBook = () => {
     if (!isAdded) {
@@ -122,27 +114,12 @@ export const ServiceDetailScreen: React.FC<ServiceDetailScreenProps> = ({
           <Text style={styles.visitingFeeNote}>+ ₹49 Standard Visiting / Inspection Fee</Text>
         </View>
 
-        {/* Arrival Slot Selector */}
         <View style={styles.slotCard}>
-          <Text style={styles.slotCardTitle}>Select Plumber Arrival Time</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.slotScroll}>
-            {slots.map((slot, idx) => {
-              const isSelected = selectedSlot === slot;
-              return (
-                <TouchableOpacity
-                  key={idx}
-                  style={[styles.slotChip, isSelected && styles.selectedSlotChip]}
-                  onPress={() => setSelectedSlot(slot)}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                >
-                  <Text style={[styles.slotText, isSelected && styles.selectedSlotText]}>
-                    {slot}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+          <Text style={styles.slotCardTitle}>On-demand service</Text>
+          <Text style={styles.arrivalDescription}>
+            Request a nearby plumber at checkout. Arrival depends on plumber availability;
+            track your plumber after the request is accepted.
+          </Text>
         </View>
 
         {/* Included Tasks */}
@@ -365,30 +342,10 @@ const styles = StyleSheet.create({
     color: colors.onBackground,
     marginBottom: spacing.sm,
   },
-  slotScroll: {
-    flexDirection: 'row',
-  },
-  slotChip: {
-    backgroundColor: colors.background,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    marginRight: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.surfaceVariant,
-  },
-  selectedSlotChip: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  slotText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.onBackground,
-  },
-  selectedSlotText: {
-    color: colors.onPrimary,
-    fontWeight: '700',
+  arrivalDescription: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: colors.secondary,
   },
   sectionCard: {
     backgroundColor: colors.surface,
