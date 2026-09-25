@@ -48,7 +48,7 @@ function mapProductDTOToUI(dto: ProductDTO): Product {
 
 export class CatalogService {
   static async getCategories(): Promise<Category[]> {
-    const dtos = await apiClient.get<CategoryDTO[]>('/catalog/categories', { timeoutMs: 8000 });
+    const dtos = await apiClient.get<CategoryDTO[]>('/catalog/categories', { timeoutMs: 30000 });
     return Array.isArray(dtos) ? dtos.map(mapCategoryDTOToUI) : [];
   }
 
@@ -74,7 +74,7 @@ export class CatalogService {
 
   static async getProducts(categoryId?: number): Promise<Product[]> {
     const url = categoryId ? `/catalog/products?categoryId=${categoryId}` : '/catalog/products';
-    const dtos = await apiClient.get<ProductDTO[]>(url, { timeoutMs: 8000 });
+    const dtos = await apiClient.get<ProductDTO[]>(url, { timeoutMs: 30000 });
     return Array.isArray(dtos) ? dtos.map(mapProductDTOToUI) : [];
   }
 
@@ -82,7 +82,7 @@ export class CatalogService {
     const numericId = id.replace(/[^0-9]/g, '');
     if (numericId) {
       try {
-        const dto = await apiClient.get<ProductDTO>(`/catalog/products/${numericId}`, { timeoutMs: 8000 });
+        const dto = await apiClient.get<ProductDTO>(`/catalog/products/${numericId}`, { timeoutMs: 30000 });
         if (dto) {
           return mapProductDTOToUI(dto);
         }
@@ -102,7 +102,7 @@ export class CatalogService {
 
     let searchedProducts: Product[] = [];
     try {
-      const dtos = await apiClient.get<ProductDTO[]>(`/catalog/search?q=${encodeURIComponent(q)}`, { timeoutMs: 8000 });
+      const dtos = await apiClient.get<ProductDTO[]>(`/catalog/search?q=${encodeURIComponent(q)}`, { timeoutMs: 30000 });
       if (Array.isArray(dtos) && dtos.length > 0) {
         searchedProducts = dtos.map(mapProductDTOToUI);
       }
