@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View, StyleProp, ViewStyle } from 'react-native';
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
 import { SecondaryButton } from './SecondaryButton';
+import { useNativeDriver } from '../../theme/animation';
 
 interface AnimatedBannerProps {
   title: string;
@@ -35,13 +36,13 @@ export function AnimatedBanner({
       Animated.timing(entranceFade, {
         toValue: 1,
         duration: 400,
-        useNativeDriver: true,
+        useNativeDriver,
       }),
       Animated.spring(entranceSlide, {
         toValue: 0,
         tension: 40,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver,
       }),
     ]).start();
 
@@ -50,12 +51,12 @@ export function AnimatedBanner({
         Animated.timing(floatAnim, {
           toValue: -6,
           duration: 1500,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
         Animated.timing(floatAnim, {
           toValue: 0,
           duration: 1500,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
       ])
     ).start();

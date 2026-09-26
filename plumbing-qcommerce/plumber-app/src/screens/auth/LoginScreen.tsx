@@ -161,7 +161,7 @@ export function LoginScreen({ navigation }: Props) {
                 <Text style={styles.rememberText}>Remember me</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => Alert.alert('Forgot Password', 'Password reset is not configured in staging. Use plumber@plumbcommerce.com / password.')}>
+              <TouchableOpacity onPress={() => Alert.alert('Forgot Password', 'Password reset is not configured for this deployment. Please contact FixKart support.')}>
                 <Text style={styles.forgotText}>Forgot Password?</Text>
               </TouchableOpacity>
             </View>

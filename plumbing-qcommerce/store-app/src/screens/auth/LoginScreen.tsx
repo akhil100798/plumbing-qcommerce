@@ -34,14 +34,31 @@ export function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    const identifier = mobile.trim();
+    const loginPassword = password.trim();
+    if (!identifier || !loginPassword) {
+      Alert.alert('Validation error', 'Email/mobile number and password are required.');
+      return;
+    }
+    if (identifier.includes('@')) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier)) {
+        Alert.alert('Validation error', 'Enter a valid email address.');
+        return;
+      }
+    } else if (!/^[6-9]\d{9}$/.test(identifier)) {
+      Alert.alert('Validation error', 'Enter a valid 10-digit Indian mobile number.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const identifier = mobile.trim() || 'store@plumbcommerce.com';
-      const loginPassword = password.trim() || 'password';
       const email = identifier.includes('@') ? identifier : `${identifier}@plumbcommerce.com`;
 
       const response = await authService.login(email, loginPassword);
       const { token, refreshToken, user } = response;
+      if (!['STORE_OWNER', 'STORE_MANAGER', 'STORE_STAFF'].includes(String(user.role))) {
+        throw new Error('This account is not authorized for the Store application.');
+      }
       await setAuthToken(token);
       await setRefreshToken(refreshToken);
       await tokenStorage.setItem('storeRefreshToken', refreshToken);
@@ -49,15 +66,8 @@ export function LoginScreen() {
       dispatch(authSuccess({ user, token, refreshToken }));
       navigation.navigate('Main', { screen: 'HomeTab' });
     } catch (error: any) {
-      console.warn('Store auth error, using demo bypass login:', error);
-      const demoUser = {
-        id: 'STORE1001',
-        email: 'store@plumbcommerce.com',
-        role: 'STORE_OWNER',
-        name: 'FixKart Store Partner',
-      };
-      dispatch(authSuccess({ user: demoUser as any, token: 'demo-token', refreshToken: 'demo-refresh' }));
-      navigation.navigate('Main', { screen: 'HomeTab' });
+      console.warn('Store auth error:', error);
+      Alert.alert('Sign in failed', error?.message || 'Unable to sign in. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -112,7 +122,7 @@ export function LoginScreen() {
               </View>
               <Text style={styles.rememberText}>Remember Me</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => Alert.alert('Reset Password', 'Password reset instructions sent.')}>
+            <TouchableOpacity onPress={() => Alert.alert('Reset Password', 'Password reset is not configured for the Store app. Please contact an administrator.')}>
               <Text style={styles.forgotText}>Forgot Password?</Text>
             </TouchableOpacity>
           </View>

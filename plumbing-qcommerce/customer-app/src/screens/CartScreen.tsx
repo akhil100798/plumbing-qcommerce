@@ -23,6 +23,7 @@ type Props = StackScreenProps<AppStackParamList, 'Cart'>;
 export function CartScreen({ navigation }: Props) {
   const dispatch = useDispatch();
   const cartItems = useSelector((state: RootState) => state.cart.items);
+  const authToken = useSelector((state: RootState) => state.auth.token);
   const [coupon, setCoupon] = useState('');
 
   const staticProductDetails: { [key: number]: { name: string; price: number; specs: string } } = {
@@ -151,7 +152,17 @@ export function CartScreen({ navigation }: Props) {
       <View style={styles.footer}>
         <PrimaryButton
           title="Proceed to Checkout"
-          onPress={() => navigation.navigate('Address', { totalAmount: grandTotal })}
+          onPress={() => {
+            if (!authToken) {
+              Alert.alert(
+                'Sign in required',
+                'Please sign in before checking out.',
+                [{ text: 'Sign in', onPress: () => navigation.navigate('Auth') }]
+              );
+              return;
+            }
+            navigation.navigate('Address', { totalAmount: grandTotal });
+          }}
           disabled={items.length === 0}
           style={styles.checkoutBtn}
         />

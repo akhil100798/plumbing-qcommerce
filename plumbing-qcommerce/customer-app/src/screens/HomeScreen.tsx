@@ -182,10 +182,15 @@ export function HomeScreen({ navigation }: any) {
 
   // Load nearby stores from backend
   useEffect(() => {
+    if (!token) {
+      setNearbyStores([]);
+      return;
+    }
+
     StoreRepository.getAllStores()
       .then(data => setNearbyStores(data.filter(s => s.active)))
       .catch(err => console.log('Failed to fetch stores:', err));
-  }, []);
+  }, [token]);
 
   // WebSockets Setup
   useEffect(() => {
@@ -307,19 +312,28 @@ export function HomeScreen({ navigation }: any) {
     }
 
     if (!token) {
-      Alert.alert('Authentication Error', 'Not logged in. Please try again.');
+      Alert.alert(
+        'Sign in required',
+        'Please sign in before checking out your materials.',
+        [{ text: 'Sign in', onPress: () => navigation.navigate('Auth', { screen: 'Login' }) }]
+      );
+      return;
+    }
+
+    const selectedStoreId = cartStoreId ?? nearbyStores[0]?.id;
+    if (!selectedStoreId) {
+      Alert.alert('No store selected', 'Please select a store and add items to your cart before checking out.');
       return;
     }
 
     if (!cartStoreId) {
-      Alert.alert('No store selected', 'Please select a store and add items to your cart before checking out.');
-      return;
+      dispatch(setStoreIdAction(selectedStoreId));
     }
 
     setIsCheckingOut(true);
     try {
       const result = await CartRepository.reserveStock({
-        storeId: cartStoreId,
+        storeId: selectedStoreId,
         items: items
       });
 
@@ -393,6 +407,15 @@ export function HomeScreen({ navigation }: any) {
   };
 
   const requestNearbyPlumber = async () => {
+    if (!token) {
+      Alert.alert(
+        'Sign in required',
+        'Please sign in before requesting a plumber.',
+        [{ text: 'Sign in', onPress: () => navigation.navigate('Auth', { screen: 'Login' }) }]
+      );
+      return;
+    }
+
     dispatch(startSearching());
     try {
       if (!edgeServerUrl) {

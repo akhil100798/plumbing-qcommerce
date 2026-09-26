@@ -55,6 +55,8 @@ export function StoreScreen({ navigation }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [stores, setStores] = useState<StoreItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [retryNonce, setRetryNonce] = useState(0);
   const isFocused = useIsFocused();
 
   const userLat = 17.4485;
@@ -64,6 +66,7 @@ export function StoreScreen({ navigation }: Props) {
     if (!isFocused) return;
     const fetchStores = async () => {
       setLoading(true);
+      setError('');
       try {
         const response = await apiClient.get<any[]>('/stores/nearby', {
           params: { lat: userLat, lng: userLng },
@@ -86,12 +89,13 @@ export function StoreScreen({ navigation }: Props) {
         setStores(mapped);
       } catch (err) {
         console.error('Failed to load nearby stores', err);
+        setError('We could not load partner stores. Please retry.');
       } finally {
         setLoading(false);
       }
     };
     fetchStores();
-  }, [isFocused]);
+  }, [isFocused, retryNonce]);
 
   const filteredStores = stores.filter((store) =>
     store.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -118,6 +122,13 @@ export function StoreScreen({ navigation }: Props) {
         {loading ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : error ? (
+          <View style={styles.centerContainer}>
+            <Text style={styles.emptyText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={() => setRetryNonce((value) => value + 1)}>
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
           </View>
         ) : filteredStores.length === 0 ? (
           <EmptyStateCard
@@ -202,5 +213,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.huge,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  retryButton: {
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.primary,
+  },
+  retryButtonText: {
+    color: colors.surface,
+    fontWeight: typography.fontWeight.bold,
   },
 });

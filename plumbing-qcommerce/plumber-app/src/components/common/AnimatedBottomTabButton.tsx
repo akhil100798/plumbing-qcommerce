@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet } from 'react-native';
+import { useNativeDriver } from '../../theme/animation';
 
 interface AnimatedBottomTabButtonProps {
   onPress?: () => void;
@@ -23,14 +24,14 @@ export function AnimatedBottomTabButton({
         toValue: 1.1,
         tension: 100,
         friction: 6,
-        useNativeDriver: true,
+        useNativeDriver,
       }).start();
     } else {
       Animated.spring(scale, {
         toValue: 1,
         tension: 100,
         friction: 6,
-        useNativeDriver: true,
+        useNativeDriver,
       }).start();
     }
   }, [focused, scale]);

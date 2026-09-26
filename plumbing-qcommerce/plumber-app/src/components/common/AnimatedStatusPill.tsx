@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text } from 'react-native';
 import { borderRadius, colors, spacing, typography } from '../../theme';
+import { useNativeDriver } from '../../theme/animation';
 
 interface AnimatedStatusPillProps {
   text: string;
@@ -18,12 +19,12 @@ export function AnimatedStatusPill({ text, status, style }: AnimatedStatusPillPr
           Animated.timing(pulseAnim, {
             toValue: 0.6,
             duration: 1000,
-            useNativeDriver: true,
+            useNativeDriver,
           }),
           Animated.timing(pulseAnim, {
             toValue: 1,
             duration: 1000,
-            useNativeDriver: true,
+            useNativeDriver,
           }),
         ])
       ).start();

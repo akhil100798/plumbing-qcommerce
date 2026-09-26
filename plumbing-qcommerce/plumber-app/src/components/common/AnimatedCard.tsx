@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet } from 'react-native';
 import { borderRadius, colors, shadows } from '../../theme';
-import { animation } from '../../theme/animation';
+import { animation, useNativeDriver } from '../../theme/animation';
 
 interface AnimatedCardProps {
   children: React.ReactNode;
@@ -22,13 +22,13 @@ export function AnimatedCard({ children, onPress, style, delay = 0 }: AnimatedCa
         Animated.timing(fadeAnim, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
         Animated.spring(slideAnim, {
           toValue: 0,
           tension: 50,
           friction: 8,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
       ]),
     ]).start();
@@ -38,7 +38,7 @@ export function AnimatedCard({ children, onPress, style, delay = 0 }: AnimatedCa
     if (!onPress) return;
     Animated.spring(scaleAnim, {
       toValue: animation.pressScale,
-      useNativeDriver: true,
+      useNativeDriver,
       speed: 100,
       bounciness: 0,
     }).start();
@@ -48,7 +48,7 @@ export function AnimatedCard({ children, onPress, style, delay = 0 }: AnimatedCa
     if (!onPress) return;
     Animated.spring(scaleAnim, {
       toValue: 1,
-      useNativeDriver: true,
+      useNativeDriver,
       speed: 100,
       bounciness: 4,
     }).start();

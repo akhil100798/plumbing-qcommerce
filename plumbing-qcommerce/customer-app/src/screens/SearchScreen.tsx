@@ -39,15 +39,19 @@ export function SearchScreen({ navigation }: Props) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
+      setError('');
       return;
     }
 
     const delayDebounce = setTimeout(async () => {
       setLoading(true);
+      setError('');
       try {
         const response = await apiClient.get<any[]>('/catalog/search', {
           params: { q: query },
@@ -55,13 +59,14 @@ export function SearchScreen({ navigation }: Props) {
         setResults(response.data);
       } catch (err) {
         console.error('Failed to search products', err);
+        setError('Search is temporarily unavailable. Please retry.');
       } finally {
         setLoading(false);
       }
     }, 300);
 
     return () => clearTimeout(delayDebounce);
-  }, [query]);
+  }, [query, retryNonce]);
 
   const handleSelectSearch = (term: string) => {
     setQuery(term);
@@ -87,6 +92,13 @@ export function SearchScreen({ navigation }: Props) {
           {loading ? (
             <View style={styles.centerContainer}>
               <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : error ? (
+            <View style={styles.centerContainer}>
+              <Text style={styles.emptyText}>{error}</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={() => setRetryNonce((value) => value + 1)}>
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
             </View>
           ) : results.length === 0 ? (
             <View style={styles.centerContainer}>
@@ -256,5 +268,16 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: typography.fontSize.sm,
     color: colors.textMuted,
+  },
+  retryButton: {
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+  },
+  retryButtonText: {
+    color: colors.surface,
+    fontWeight: typography.fontWeight.bold,
   },
 });

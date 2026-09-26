@@ -1,6 +1,7 @@
 import { StackScreenProps } from '@react-navigation/stack';
 import React, { useEffect } from 'react';
 import {
+  Alert,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -15,6 +16,7 @@ import { AddressCard } from '../components/cards/AddressCard';
 import { PrimaryButton } from '../components/common/PrimaryButton';
 import { addAddress, setSelectedAddress, setAddresses } from '../redux/slices/addressSlice';
 import { AddressRepository } from '../services/address/addressRepository';
+import { getAuthToken } from '../services/apiClient';
 import { RootState } from '../redux/store';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
@@ -25,9 +27,15 @@ export function AddressScreen({ navigation, route }: Props) {
   const dispatch = useDispatch();
   const { addresses, selectedId } = useSelector((state: RootState) => state.address);
   const totalAmount = route.params?.totalAmount || 0;
+  const [accessMessage, setAccessMessage] = React.useState('');
 
   useEffect(() => {
     const fetchAddresses = async () => {
+      const token = await getAuthToken();
+      if (!token) {
+        setAccessMessage('Sign in is required before selecting or adding a delivery address.');
+        return;
+      }
       try {
         const list = await AddressRepository.getAddresses();
         dispatch(setAddresses(list.map((addr) => ({
@@ -39,12 +47,19 @@ export function AddressScreen({ navigation, route }: Props) {
         }))));
       } catch (err) {
         console.error('Failed to fetch addresses', err);
+        setAccessMessage('Unable to load addresses. Please retry after signing in.');
       }
     };
     fetchAddresses();
   }, [dispatch]);
 
   const handleAddNew = async () => {
+    const token = await getAuthToken();
+    if (!token) {
+      Alert.alert('Sign in required', 'Please sign in before adding a delivery address.');
+      setAccessMessage('Sign in is required before selecting or adding a delivery address.');
+      return;
+    }
     try {
       const saved = await AddressRepository.addAddress({
         label: 'Other',
@@ -63,6 +78,7 @@ export function AddressScreen({ navigation, route }: Props) {
       );
     } catch (err) {
       console.error('Failed to add address', err);
+      Alert.alert('Address unavailable', 'We could not save this address. Please try again.');
     }
   };
 
@@ -101,6 +117,7 @@ export function AddressScreen({ navigation, route }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {accessMessage ? <Text style={styles.accessMessage}>{accessMessage}</Text> : null}
         <Text style={styles.sectionHeader}>DELIVERY ADDRESS</Text>
         {addresses
           .filter((a) => a.id === selectedId)
@@ -257,6 +274,12 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
+  },
+  accessMessage: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.md,
   },
   footer: {
     padding: spacing.layout,

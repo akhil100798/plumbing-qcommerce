@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 
 import { borderRadius, colors, spacing, typography } from '../../theme';
-import { animation } from '../../theme/animation';
+import { animation, useNativeDriver } from '../../theme/animation';
 
 interface SecondaryButtonProps {
   title: string;
@@ -44,7 +44,7 @@ export function SecondaryButton({
   const handlePressIn = () => {
     Animated.spring(scale, {
       toValue: animation.pressScale,
-      useNativeDriver: true,
+      useNativeDriver,
       speed: 100,
       bounciness: 0,
     }).start();
@@ -53,7 +53,7 @@ export function SecondaryButton({
   const handlePressOut = () => {
     Animated.spring(scale, {
       toValue: 1,
-      useNativeDriver: true,
+      useNativeDriver,
       speed: 100,
       bounciness: 4,
     }).start();
