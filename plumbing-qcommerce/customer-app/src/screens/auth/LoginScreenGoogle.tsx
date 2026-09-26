@@ -254,9 +254,10 @@ export function LoginScreen({ navigation }: Props) {
             </TouchableOpacity>
 
             <View style={styles.futureCard}>
-              <Text style={styles.futureTitle}>OTP login coming later</Text>
+              <Text style={styles.futureTitle}>Email login is enabled</Text>
               <Text style={styles.futureText}>
-                Phase 1 uses email/password login and registration for customers.
+                Customer accounts use email and password. Mobile number is collected during
+                registration for service contact only; SMS verification is disabled.
               </Text>
             </View>
 
