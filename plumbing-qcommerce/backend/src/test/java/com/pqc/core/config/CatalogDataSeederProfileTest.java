@@ -59,6 +59,16 @@ class CatalogDataSeederProfileTest {
                 });
     }
 
+    @Test
+    void whenStagingProfileAndSeederEnabled_shouldRegisterBean() {
+        this.contextRunner
+                .withPropertyValues("app.seed.catalog-enabled=true")
+                .withSystemProperties("spring.profiles.active=staging")
+                .run(context -> {
+                    assertThat(context).hasSingleBean(CatalogDataSeeder.class);
+                });
+    }
+
     @Configuration
     static class MockRepositoriesConfiguration {
         @Bean CategoryRepository categoryRepository() { return Mockito.mock(CategoryRepository.class); }
