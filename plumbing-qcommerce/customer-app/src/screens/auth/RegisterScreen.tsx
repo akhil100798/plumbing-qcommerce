@@ -113,7 +113,10 @@ export function RegisterScreen({ navigation }: Props) {
 
           <View style={styles.header}>
             <Text style={styles.title}>Create account</Text>
-            <Text style={styles.subtitle}>Register as a customer with email and password</Text>
+            <Text style={styles.subtitle}>
+              Register with email and password. Mobile number is required for service contact;
+              SMS verification is disabled.
+            </Text>
           </View>
 
           <View style={styles.form}>
@@ -140,6 +143,7 @@ export function RegisterScreen({ navigation }: Props) {
               value={phone}
               onChangeText={(value) => setPhone(value.replace(/[^0-9]/g, ''))}
             />
+            <Text style={styles.helperText}>No SMS or OTP is required for customer registration.</Text>
 
             <Text style={styles.inputLabel}>Password</Text>
             <TextInput
@@ -241,6 +245,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     marginBottom: spacing.xs,
     fontFamily: typography.fontFamily.medium,
+  },
+  helperText: {
+    marginTop: spacing.xs,
+    color: '#64748B',
+    fontSize: 12,
+    fontFamily: typography.fontFamily.regular,
   },
   textInput: {
     height: 48,
