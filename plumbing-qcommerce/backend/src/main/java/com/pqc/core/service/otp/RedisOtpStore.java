@@ -2,11 +2,13 @@ package com.pqc.core.service.otp;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
 
 @Service
+@Profile("redis")
 @RequiredArgsConstructor
 public class RedisOtpStore implements OtpStore {
 

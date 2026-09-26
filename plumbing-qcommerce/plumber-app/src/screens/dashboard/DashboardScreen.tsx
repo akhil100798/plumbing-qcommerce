@@ -24,6 +24,7 @@ import { jobService } from '../../services/jobs/jobService';
 import { materialService } from '../../services/materials/materialService';
 import { profileService } from '../../services/profile/profileService';
 import { borderRadius, colors, motion, spacing, typography } from '../../theme';
+import { useNativeDriver } from '../../theme/animation';
 import { JobOffer, ActiveJob } from '../../types';
 import { AppStackParamList } from '../../types/navigation';
 
@@ -51,7 +52,7 @@ export function DashboardScreen({ navigation }: Props) {
     Animated.timing(contentOpacity, {
       toValue: 1,
       duration: motion.duration.normal,
-      useNativeDriver: true,
+      useNativeDriver,
     }).start();
   }, [contentOpacity]);
 

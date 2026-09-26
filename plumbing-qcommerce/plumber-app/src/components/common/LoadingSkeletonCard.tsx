@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import { borderRadius, spacing } from '../../theme';
+import { useNativeDriver } from '../../theme/animation';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface LoadingSkeletonCardProps {
@@ -22,12 +23,12 @@ export function LoadingSkeletonCard({ height = 100, style }: LoadingSkeletonCard
         Animated.timing(pulseAnim, {
           toValue: 0.7,
           duration: 800,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
         Animated.timing(pulseAnim, {
           toValue: 0.3,
           duration: 800,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
       ])
     );

@@ -18,6 +18,7 @@ import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 import LogoMark from '../../assets/icons/logo-mark.svg';
 import PlumberHero from '../../assets/illustrations/plumber-splash-hero.svg';
+import { useNativeDriver } from '../../theme/animation';
 
 type Props = StackScreenProps<AuthStackParamList, 'Splash'>;
 
@@ -36,8 +37,8 @@ export function SplashScreen({ navigation }: Props) {
       scaleAnim.setValue(1);
     } else {
       Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-        Animated.spring(scaleAnim, { toValue: 1, friction: 6, tension: 40, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver }),
+        Animated.spring(scaleAnim, { toValue: 1, friction: 6, tension: 40, useNativeDriver }),
       ]).start();
     }
 
@@ -47,12 +48,12 @@ export function SplashScreen({ navigation }: Props) {
         Animated.timing(floatAnim, {
           toValue: -8,
           duration: 1500,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
         Animated.timing(floatAnim, {
           toValue: 0,
           duration: 1500,
-          useNativeDriver: true,
+          useNativeDriver,
         }),
       ])
     );

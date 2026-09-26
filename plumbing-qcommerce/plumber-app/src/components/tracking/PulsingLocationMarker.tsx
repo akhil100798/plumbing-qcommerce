@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import { colors } from '../../theme';
+import { useNativeDriver } from '../../theme/animation';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface PulsingLocationMarkerProps {
@@ -24,7 +25,7 @@ export function PulsingLocationMarker({
       Animated.timing(pulseAnim, {
         toValue: 1,
         duration: 1500,
-        useNativeDriver: true,
+        useNativeDriver,
       })
     );
     animation.start();

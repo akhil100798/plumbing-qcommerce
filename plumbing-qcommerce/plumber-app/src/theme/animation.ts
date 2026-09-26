@@ -4,3 +4,5 @@ export const animation = {
   slow: 400,
   pressScale: 0.96,
 };
+
+export const useNativeDriver = typeof document === 'undefined';

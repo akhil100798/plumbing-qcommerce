@@ -7,6 +7,7 @@ const BACKEND_URL = RAW_BACKEND_URL.replace(/\/api\/v1\/?$/, '').replace(/\/$/, 
 
 export const apiClient = axios.create({
   baseURL: `${BACKEND_URL}/api/v1`,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },

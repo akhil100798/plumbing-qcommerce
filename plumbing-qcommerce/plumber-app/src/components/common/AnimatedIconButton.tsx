@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { Animated, Pressable, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import { colors } from '../../theme';
-import { animation } from '../../theme/animation';
+import { animation, useNativeDriver } from '../../theme/animation';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface AnimatedIconButtonProps {
@@ -28,7 +28,7 @@ export function AnimatedIconButton({
     if (reduceMotion) return;
     Animated.spring(scale, {
       toValue: animation.pressScale,
-      useNativeDriver: true,
+      useNativeDriver,
       speed: 50,
       bounciness: 0,
     }).start();
@@ -38,7 +38,7 @@ export function AnimatedIconButton({
     if (reduceMotion) return;
     Animated.spring(scale, {
       toValue: 1,
-      useNativeDriver: true,
+      useNativeDriver,
       speed: 50,
       bounciness: 4,
     }).start();
