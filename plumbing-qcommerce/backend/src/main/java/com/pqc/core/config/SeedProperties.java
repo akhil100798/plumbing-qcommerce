@@ -16,6 +16,10 @@ public class SeedProperties {
     private boolean demoEnabled = false;
     private boolean catalogEnabled = false;
     private boolean adminDemoEnabled = false;
+    /** Activates {@code StagingDemoMobileUserSeeder} — env: {@code APP_SEED_MOBILE_QA_ENABLED}. Staging only. */
+    private boolean mobileQaEnabled = false;
+    /** Activates {@code StagingDemoAdminUserSeeder} — env: {@code APP_SEED_STAGING_ADMIN_ENABLED}. Staging only. */
+    private boolean stagingAdminEnabled = false;
     private boolean failIfProdDemoEnabled = true;
     private String demoPassword = "password";
 
