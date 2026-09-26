@@ -51,10 +51,22 @@ export default function LoginScreen() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail || !password) {
+      setError("Email and password are required.");
+      return;
+    }
+
+    if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const response = await login(email.trim(), password);
+      const response = await login(normalizedEmail, password);
       if (!PORTAL_ROLES.includes(response.role as (typeof PORTAL_ROLES)[number])) {
         clearStoredToken();
         setError("Only admin roles can use this portal.");

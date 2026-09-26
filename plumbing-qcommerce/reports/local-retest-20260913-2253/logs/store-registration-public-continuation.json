@@ -1,3 +1,0 @@
-{
-  "snapshot": "- text: Register your Store Create a Store manager account and business profile. Manager full name\n- textbox\n- text: Email\n- textbox\n- text: Mobile number\n- textbox\n- text: Store name\n- textbox\n- text: Store address\n- textbox\n- text: Latitude\n- textbox\n- text: Longitude\n- textbox\n- text: Password\n- textbox\n- text: Confirm password\n- textbox\n- button \"Create Store Account\"\n- text: Already registered? Log in"
-}

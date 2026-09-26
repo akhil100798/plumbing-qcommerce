@@ -2,7 +2,6 @@ import React, { useRef } from 'react';
 import { Animated, Pressable, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import { colors } from '../../theme';
 import { animation, useNativeDriver } from '../../theme/animation';
-import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface AnimatedIconButtonProps {
   children: React.ReactNode;
@@ -22,10 +21,8 @@ export function AnimatedIconButton({
   accessibilityLabel,
 }: AnimatedIconButtonProps) {
   const scale = useRef(new Animated.Value(1)).current;
-  const reduceMotion = useReducedMotion();
 
   const handlePressIn = () => {
-    if (reduceMotion) return;
     Animated.spring(scale, {
       toValue: animation.pressScale,
       useNativeDriver,
@@ -35,7 +32,6 @@ export function AnimatedIconButton({
   };
 
   const handlePressOut = () => {
-    if (reduceMotion) return;
     Animated.spring(scale, {
       toValue: 1,
       useNativeDriver,
@@ -52,7 +48,6 @@ export function AnimatedIconButton({
       disabled={disabled || loading}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ disabled: disabled || loading, busy: loading }}
       style={[
         styles.container,
         disabled && styles.disabled,

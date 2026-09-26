@@ -5,7 +5,6 @@ import com.pqc.core.entity.User;
 import com.pqc.core.entity.UserStatus;
 import com.pqc.core.repository.*;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,27 +17,12 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Unit tests for {@link StagingDemoMobileUserSeeder}.
- *
- * <p>Validates:
- * <ol>
- *   <li>Correct FixKart QA emails and roles are seeded</li>
- *   <li>Passwords come from SeedProperties (not hardcoded)</li>
- *   <li>Run is idempotent — no duplicates on second execution</li>
- *   <li>Bean loads ONLY for {@code staging} profile</li>
- *   <li>Bean does NOT load for {@code prod} profile only</li>
- *   <li>Bean does NOT load for default profile</li>
- * </ol>
- */
 class StagingDemoMobileUserSeederTest {
-
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
     private StoreRepository storeRepository;
@@ -47,7 +31,6 @@ class StagingDemoMobileUserSeederTest {
     private StockRepository stockRepository;
     private ServiceOrderRepository serviceOrderRepository;
     private PlumberKycRepository plumberKycRepository;
-    private SeedProperties seedProperties;
 
     private Map<String, User> users;
     private List<User> savedUsers;
@@ -62,16 +45,14 @@ class StagingDemoMobileUserSeederTest {
         stockRepository = mock(StockRepository.class);
         serviceOrderRepository = mock(ServiceOrderRepository.class);
         plumberKycRepository = mock(PlumberKycRepository.class);
-        seedProperties = mock(SeedProperties.class);
 
         users = new HashMap<>();
         savedUsers = new ArrayList<>();
 
-        when(seedProperties.getDemoPassword()).thenReturn("QaStagingSecret!");
-        when(passwordEncoder.encode("QaStagingSecret!")).thenReturn("bcrypt-qa-password");
-        when(userRepository.findByEmail(any())).thenAnswer(inv -> Optional.ofNullable(users.get(inv.getArgument(0))));
-        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
-            User user = inv.getArgument(0);
+        when(passwordEncoder.encode("password")).thenReturn("bcrypt-password");
+        when(userRepository.findByEmail(any())).thenAnswer(invocation -> Optional.ofNullable(users.get(invocation.getArgument(0))));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User user = invocation.getArgument(0);
             if (user.getId() == null) {
                 user.setId((long) (users.size() + 1));
             }
@@ -80,6 +61,7 @@ class StagingDemoMobileUserSeederTest {
             return user;
         });
 
+        // Setup default mocks for new repos to prevent NPEs
         when(plumberKycRepository.findByPlumberId(any())).thenReturn(Optional.empty());
         when(plumberKycRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -102,82 +84,62 @@ class StagingDemoMobileUserSeederTest {
         when(serviceOrderRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
 
-    private StagingDemoMobileUserSeeder buildSeeder() {
-        return new StagingDemoMobileUserSeeder(
-                userRepository, passwordEncoder, storeRepository, categoryRepository,
-                productRepository, stockRepository, serviceOrderRepository, plumberKycRepository,
-                seedProperties
-        );
-    }
-
     @Test
-    @DisplayName("run() creates all six FixKart QA accounts with hashed password and ACTIVE status")
-    void runCreatesAllSixFixKartQaAccountsWithCorrectRolesAndActiveStatus() throws Exception {
-        buildSeeder().run();
+    void runCreatesExpectedMobileUsersWithHashedPasswordAndActiveStatus() throws Exception {
+        StagingDemoMobileUserSeeder seeder = new StagingDemoMobileUserSeeder(
+                userRepository, passwordEncoder, storeRepository, categoryRepository,
+                productRepository, stockRepository, serviceOrderRepository, plumberKycRepository
+        );
+
+        seeder.run();
 
         assertThat(users).containsOnlyKeys(
-                "customer.qa@fixkart.com",
-                "customer2.qa@fixkart.com",
-                "plumber.qa@fixkart.com",
-                "plumber2.qa@fixkart.com",
-                "store.qa@fixkart.com",
-                "admin.qa@fixkart.com"
+                "customer@plumbcommerce.com",
+                "plumber@plumbcommerce.com",
+                "store@plumbcommerce.com",
+                "rider@plumbcommerce.com"
         );
-        assertThat(users.get("customer.qa@fixkart.com").getRole()).isEqualTo(Role.CUSTOMER);
-        assertThat(users.get("customer2.qa@fixkart.com").getRole()).isEqualTo(Role.CUSTOMER);
-        assertThat(users.get("plumber.qa@fixkart.com").getRole()).isEqualTo(Role.PLUMBER);
-        assertThat(users.get("plumber2.qa@fixkart.com").getRole()).isEqualTo(Role.PLUMBER);
-        assertThat(users.get("store.qa@fixkart.com").getRole()).isEqualTo(Role.STORE_MANAGER);
-        assertThat(users.get("admin.qa@fixkart.com").getRole()).isEqualTo(Role.SUPER_ADMIN);
-
+        assertThat(users.get("customer@plumbcommerce.com").getRole()).isEqualTo(Role.CUSTOMER);
+        assertThat(users.get("plumber@plumbcommerce.com").getRole()).isEqualTo(Role.PLUMBER);
+        assertThat(users.get("store@plumbcommerce.com").getRole()).isEqualTo(Role.STORE_MANAGER);
+        assertThat(users.get("rider@plumbcommerce.com").getRole()).isEqualTo(Role.DELIVERY_PARTNER);
         assertThat(users.values()).allSatisfy(user -> {
-            assertThat(user.getPassword()).isEqualTo("bcrypt-qa-password");
+            assertThat(user.getPassword()).isEqualTo("bcrypt-password");
             assertThat(user.getStatus()).isEqualTo(UserStatus.ACTIVE);
         });
-        assertThat(savedUsers).hasSize(6);
+        assertThat(savedUsers).hasSize(4);
     }
 
     @Test
-    @DisplayName("run() uses SeedProperties.getDemoPassword(), not a hardcoded constant")
-    void runUsesSeedPropertiesPasswordNotHardcodedConstant() throws Exception {
-        buildSeeder().run();
-
-        // Password must come from seedProperties.getDemoPassword() — called once per QA user (6 users)
-        verify(seedProperties, atLeast(6)).getDemoPassword();
-        verify(passwordEncoder, atLeast(1)).encode("QaStagingSecret!");
-        assertThat(users.values()).allSatisfy(u -> assertThat(u.getPassword()).isEqualTo("bcrypt-qa-password"));
-    }
-
-    @Test
-    @DisplayName("run() is idempotent — no duplicates when called twice")
-    void runIsIdempotentNoDuplicatesOnRestart() throws Exception {
-        User existingCustomer = User.builder()
+    void runUpdatesExistingUsersWithoutCreatingDuplicates() throws Exception {
+        User existing = User.builder()
                 .id(100L)
-                .email("customer.qa@fixkart.com")
-                .fullName("Old Name")
+                .email("customer@plumbcommerce.com")
+                .fullName("Old Customer")
                 .phone("old-phone")
                 .password("old-hash")
                 .role(Role.ADMIN)
                 .status(UserStatus.BLOCKED)
                 .build();
-        users.put(existingCustomer.getEmail(), existingCustomer);
+        users.put(existing.getEmail(), existing);
 
-        StagingDemoMobileUserSeeder seeder = buildSeeder();
+        StagingDemoMobileUserSeeder seeder = new StagingDemoMobileUserSeeder(
+                userRepository, passwordEncoder, storeRepository, categoryRepository,
+                productRepository, stockRepository, serviceOrderRepository, plumberKycRepository
+        );
+
         seeder.run();
         seeder.run();
 
-        assertThat(users).hasSize(6);
-        assertThat(users.get("customer.qa@fixkart.com").getRole()).isEqualTo(Role.CUSTOMER);
-        assertThat(users.get("customer.qa@fixkart.com").getStatus()).isEqualTo(UserStatus.ACTIVE);
-        assertThat(users.get("customer.qa@fixkart.com").getPassword()).isEqualTo("bcrypt-qa-password");
+        assertThat(users).hasSize(4);
+        assertThat(users.get("customer@plumbcommerce.com").getRole()).isEqualTo(Role.CUSTOMER);
+        assertThat(users.get("customer@plumbcommerce.com").getStatus()).isEqualTo(UserStatus.ACTIVE);
+        assertThat(users.get("customer@plumbcommerce.com").getPassword()).isEqualTo("bcrypt-password");
     }
 
-    // ------------------------------------------------------------------ Profile tests
-
     @Test
-    @DisplayName("Bean loads when profile=staging AND app.seed.mobile-qa-enabled=true")
-    void beanLoadsWhenStagingProfileAndMobileQaEnabled() {
-        new ApplicationContextRunner()
+    void beanLoadsForProdStagingWhenMobileDemoSeedEnabled() {
+        ApplicationContextRunner runner = new ApplicationContextRunner()
                 .withBean(UserRepository.class, () -> userRepository)
                 .withBean(PasswordEncoder.class, () -> passwordEncoder)
                 .withBean(StoreRepository.class, () -> storeRepository)
@@ -186,17 +148,16 @@ class StagingDemoMobileUserSeederTest {
                 .withBean(StockRepository.class, () -> stockRepository)
                 .withBean(ServiceOrderRepository.class, () -> serviceOrderRepository)
                 .withBean(PlumberKycRepository.class, () -> plumberKycRepository)
-                .withBean(SeedProperties.class, () -> seedProperties)
                 .withBean(StagingDemoMobileUserSeeder.class)
-                .withPropertyValues("app.seed.mobile-qa-enabled=true")
-                .withSystemProperties("spring.profiles.active=staging")
-                .run(context -> assertThat(context).hasSingleBean(StagingDemoMobileUserSeeder.class));
+                .withPropertyValues("app.mobile-demo-seed.enabled=true")
+                .withSystemProperties("spring.profiles.active=prod,staging");
+
+        runner.run(context -> assertThat(context).hasSingleBean(StagingDemoMobileUserSeeder.class));
     }
 
     @Test
-    @DisplayName("Bean does NOT load when profile=prod only (staging seeder must not activate in prod)")
-    void beanDoesNotLoadForProdProfileOnly() {
-        new ApplicationContextRunner()
+    void beanIsNotLoadedForRealProdWhenStagingProfileMissing() {
+        ApplicationContextRunner runner = new ApplicationContextRunner()
                 .withBean(UserRepository.class, () -> userRepository)
                 .withBean(PasswordEncoder.class, () -> passwordEncoder)
                 .withBean(StoreRepository.class, () -> storeRepository)
@@ -205,57 +166,11 @@ class StagingDemoMobileUserSeederTest {
                 .withBean(StockRepository.class, () -> stockRepository)
                 .withBean(ServiceOrderRepository.class, () -> serviceOrderRepository)
                 .withBean(PlumberKycRepository.class, () -> plumberKycRepository)
-                .withBean(SeedProperties.class, () -> seedProperties)
                 .withBean(StagingDemoMobileUserSeeder.class)
-                .withPropertyValues("app.seed.mobile-qa-enabled=true")
-                .withSystemProperties("spring.profiles.active=prod")
-                .run(context -> {
-                    assertThat(context).doesNotHaveBean(StagingDemoMobileUserSeeder.class);
-                    verify(userRepository, never()).save(any(User.class));
-                });
-    }
+                .withPropertyValues("app.mobile-demo-seed.enabled=true")
+                .withSystemProperties("spring.profiles.active=prod");
 
-    @Test
-    @DisplayName("Bean does NOT load for default (no profile) — seeder is staging-only")
-    void beanDoesNotLoadForDefaultProfile() {
-        new ApplicationContextRunner()
-                .withBean(UserRepository.class, () -> userRepository)
-                .withBean(PasswordEncoder.class, () -> passwordEncoder)
-                .withBean(StoreRepository.class, () -> storeRepository)
-                .withBean(CategoryRepository.class, () -> categoryRepository)
-                .withBean(ProductRepository.class, () -> productRepository)
-                .withBean(StockRepository.class, () -> stockRepository)
-                .withBean(ServiceOrderRepository.class, () -> serviceOrderRepository)
-                .withBean(PlumberKycRepository.class, () -> plumberKycRepository)
-                .withBean(SeedProperties.class, () -> seedProperties)
-                .withBean(StagingDemoMobileUserSeeder.class)
-                .withPropertyValues("app.seed.mobile-qa-enabled=true")
-                // No spring.profiles.active — default profile
-                .run(context -> {
-                    assertThat(context).doesNotHaveBean(StagingDemoMobileUserSeeder.class);
-                    verify(userRepository, never()).save(any(User.class));
-                });
-    }
-
-    @Test
-    @DisplayName("Bean does NOT load when mobile-qa-enabled=false even with staging profile")
-    void beanDoesNotLoadWhenPropertyDisabled() {
-        new ApplicationContextRunner()
-                .withBean(UserRepository.class, () -> userRepository)
-                .withBean(PasswordEncoder.class, () -> passwordEncoder)
-                .withBean(StoreRepository.class, () -> storeRepository)
-                .withBean(CategoryRepository.class, () -> categoryRepository)
-                .withBean(ProductRepository.class, () -> productRepository)
-                .withBean(StockRepository.class, () -> stockRepository)
-                .withBean(ServiceOrderRepository.class, () -> serviceOrderRepository)
-                .withBean(PlumberKycRepository.class, () -> plumberKycRepository)
-                .withBean(SeedProperties.class, () -> seedProperties)
-                .withBean(StagingDemoMobileUserSeeder.class)
-                .withPropertyValues("app.seed.mobile-qa-enabled=false")
-                .withSystemProperties("spring.profiles.active=staging")
-                .run(context -> {
-                    assertThat(context).doesNotHaveBean(StagingDemoMobileUserSeeder.class);
-                    verify(userRepository, never()).save(any(User.class));
-                });
+        runner.run(context -> assertThat(context).doesNotHaveBean(StagingDemoMobileUserSeeder.class));
+        verify(userRepository, never()).save(any(User.class));
     }
 }

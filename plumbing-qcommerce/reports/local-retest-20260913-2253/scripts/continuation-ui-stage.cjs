@@ -1,6 +1,0 @@
-module.exports=async c=>{c.snap=async(app,name)=>{const p=c.pages[app];await p.waitForTimeout(1200);c.save('logs/'+app+'-'+name+'-continuation.json',{url:p.url(),snapshot:await p.locator('body').ariaSnapshot()});await p.screenshot({path:c.report+'/screenshots/'+app+'-'+name+'-continuation.png',fullPage:true});};
- const p=c.pages.plumber;await p.getByRole('button',{name:new RegExp('Job offer for QA continuation')}).click();await c.snap('plumber','new-job-detail');
- await c.pages.store.getByRole('tab',{name:'Inventory',exact:true}).click();await c.snap('store','inventory');
- await c.pages.customer.getByRole('button',{name:'Skip login',exact:true}).click();await c.snap('customer','guest-home');
- await c.snap('admin','login-retry-settled');
- const cors=[];for(const origin of ['http://localhost:8082','http://localhost:8083','http://localhost:8084','http://localhost:3001','https://untrusted.invalid']){const r=await fetch('http://localhost:8081/api/v1/auth/login',{method:'OPTIONS',headers:{Origin:origin,'Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'content-type'},signal:AbortSignal.timeout(10000)});cors.push({origin,status:r.status,allowOrigin:r.headers.get('access-control-allow-origin')});}c.save('logs/cors-continuation.json',cors);c.flush();};

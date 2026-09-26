@@ -26,13 +26,7 @@ export function AppHeader({
   return (
     <View style={styles.container}>
       {showBack && onBackPress ? (
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={onBackPress}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          hitSlop={4}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
       ) : (
@@ -70,10 +64,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   backButton: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: spacing.xs,
   },
   backIcon: {
     fontSize: 24,

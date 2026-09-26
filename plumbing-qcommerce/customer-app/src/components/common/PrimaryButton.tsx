@@ -1,16 +1,17 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
   ActivityIndicator,
   Animated,
+  Pressable,
+  StyleProp,
+  StyleSheet,
+  Text,
+  View,
   ViewStyle,
 } from 'react-native';
-import { colors } from '../../theme/colors';
-import { typography } from '../../theme/typography';
-import { spacing } from '../../theme/spacing';
-import { motion } from '../../theme/motion';
+
+import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
+import { animation } from '../../theme/animation';
 
 interface PrimaryButtonProps {
   title: string;
@@ -18,27 +19,32 @@ interface PrimaryButtonProps {
   loading?: boolean;
   disabled?: boolean;
   success?: boolean;
-  style?: ViewStyle;
+  iconLeft?: React.ReactNode;
+  iconRight?: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
 }
 
-export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
+export function PrimaryButton({
   title,
   onPress,
   loading = false,
   disabled = false,
   success = false,
+  iconLeft,
+  iconRight,
   style,
   accessibilityLabel,
-}) => {
+}: PrimaryButtonProps) {
   const scale = useRef(new Animated.Value(1)).current;
-  const isDisabled = disabled || loading;
+  const isInteractionDisabled = disabled || loading || success;
 
   const handlePressIn = () => {
-    Animated.timing(scale, {
-      toValue: 0.97,
-      duration: motion.duration.micro,
+    Animated.spring(scale, {
+      toValue: animation.pressScale,
       useNativeDriver: true,
+      speed: 100,
+      bounciness: 0,
     }).start();
   };
 
@@ -46,52 +52,81 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     Animated.spring(scale, {
       toValue: 1,
       useNativeDriver: true,
-      speed: 24,
-      bounciness: 0,
+      speed: 100,
+      bounciness: 4,
     }).start();
   };
 
-  const bgColor = success
-    ? colors.success
-    : isDisabled
-    ? colors.outlineVariant
-    : colors.primary;
-
   return (
-    <Animated.View style={{ transform: [{ scale }] }}>
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: bgColor }, style]}
+    <Animated.View style={{ transform: [{ scale }], width: style ? undefined : 'auto' }}>
+      <Pressable
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        disabled={isDisabled}
-        activeOpacity={0.9}
+        disabled={isInteractionDisabled}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel || title}
+        style={({ pressed }) => [
+          styles.button,
+          success && styles.successButton,
+          style,
+          isInteractionDisabled && !success && styles.disabledButton,
+          pressed && !isInteractionDisabled && styles.pressedButton,
+        ]}
       >
         {loading ? (
-          <ActivityIndicator color={isDisabled ? colors.secondary : colors.onPrimary} size="small" />
+          <ActivityIndicator color={colors.surface} size="small" />
+        ) : success ? (
+          <View style={styles.contentRow}>
+            <Text style={styles.text}>✓ Success</Text>
+          </View>
         ) : (
-          <Text style={[styles.text, isDisabled && styles.disabledText]}>{title}</Text>
+          <View style={styles.contentRow}>
+            {iconLeft && <View style={styles.iconLeftContainer}>{iconLeft}</View>}
+            <Text style={styles.text}>{title}</Text>
+            {iconRight && <View style={styles.iconRightContainer}>{iconRight}</View>}
+          </View>
         )}
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   button: {
-    height: 52,
-    borderRadius: 12,
-    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
+    justifyContent: 'center',
+    height: 52,
+    minWidth: 132,
+    ...shadows.sm,
+  },
+  successButton: {
+    backgroundColor: colors.success,
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  pressedButton: {
+    backgroundColor: colors.primaryDark,
   },
   text: {
-    ...typography.button,
-    color: colors.onPrimary,
+    color: colors.surface,
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
   },
-  disabledText: {
-    color: colors.secondary,
+  contentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconLeftContainer: {
+    marginRight: spacing.xs,
+  },
+  iconRightContainer: {
+    marginLeft: spacing.xs,
   },
 });

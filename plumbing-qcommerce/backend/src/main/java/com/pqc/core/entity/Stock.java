@@ -17,13 +17,13 @@ public class Stock {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Store store;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
@@ -34,8 +34,4 @@ public class Stock {
 
     @Column(nullable = false)
     private Integer reservedQuantity;
-
-    @Column(name = "low_stock_threshold", nullable = false)
-    @Builder.Default
-    private Integer lowStockThreshold = 5;
 }

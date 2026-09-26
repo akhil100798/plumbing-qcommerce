@@ -1,4 +1,3 @@
-(globalThis as any).__DEV__ = true;
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import { describe, expect, it, vi } from 'vitest';
@@ -8,11 +7,6 @@ import App from './App';
 import { DashboardScreen } from './src/screens/dashboard/DashboardScreen';
 import { ProfileScreen } from './src/screens/profile/ProfileScreen';
 import { store } from './src/redux/store';
-
-vi.mock('expo-image-picker', () => ({
-  requestMediaLibraryPermissionsAsync: vi.fn(() => Promise.resolve({ granted: true })),
-  launchImageLibraryAsync: vi.fn(() => Promise.resolve({ canceled: true, assets: [] })),
-}));
 
 vi.mock('react-native', async () => {
   function AnimatedValue(this: any) {
@@ -28,7 +22,6 @@ vi.mock('react-native', async () => {
     Pressable: 'Pressable',
     SafeAreaView: 'SafeAreaView',
     ScrollView: 'ScrollView',
-    RefreshControl: 'RefreshControl',
     StyleSheet: { create: (styles: unknown) => styles, flatten: (s: unknown) => s },
     Switch: 'Switch',
     Text: 'Text',
@@ -56,7 +49,6 @@ vi.mock('react-native', async () => {
       Text: 'Text',
       Image: 'Image',
       ScrollView: 'ScrollView',
-    RefreshControl: 'RefreshControl',
       FlatList: 'FlatList',
       createAnimatedComponent: vi.fn((c: any) => c),
       event: vi.fn(() => vi.fn()),
@@ -94,7 +86,6 @@ vi.mock('expo-secure-store', () => ({
 
 vi.mock('@react-navigation/native', () => ({
   NavigationContainer: ({ children }: any) => children,
-  useIsFocused: () => true,
   useNavigation: () => ({
     navigate: vi.fn(),
     dispatch: vi.fn(),
@@ -137,7 +128,7 @@ describe('plumber app tests', () => {
     });
     const tree = renderer!.toJSON();
 
-    expect(JSON.stringify(tree)).toBeDefined();
+    expect(JSON.stringify(tree)).toContain('Loading dashboard…');
   });
 
   it('renders the ProfileScreen with KYC section', () => {
@@ -152,7 +143,7 @@ describe('plumber app tests', () => {
     const tree = renderer!.toJSON();
 
     expect(JSON.stringify(tree)).toContain('Profile');
-    expect(JSON.stringify(tree)).toContain('Verification Status');
+    expect(JSON.stringify(tree)).toContain('KYC');
   });
 });
 

@@ -1,4 +1,0 @@
-{
-  "url": "http://localhost:8084/",
-  "snapshot": "- text: Hardware Store Partner FixKart QA Staging Store 📍 1 QA Test Lane, Hyderabad\n- img\n- text: Operations Overview Live Store Feed\n- img\n- text: 0 New Requests\n- img\n- text: 0 Preparing\n- img\n- text: 0 Ready Pickup\n- img\n- text: 0 At Counter Material Workflows View All\n- img\n- text: Incoming 0\n- img\n- text: Packing 0\n- img\n- text: Ready 0\n- img\n- text: Handover 0 Inventory Stock Alerts Manage Stock (4) ✓ All inventory items are adequately stocked.\n- tablist:\n  - tab \"Home\" [selected]:\n    - img\n    - img\n    - text: Home\n  - tab \"Orders\":\n    - img\n    - img\n    - text: Orders\n  - tab \"Inventory\":\n    - img\n    - img\n    - text: Inventory\n  - tab \"Materials\":\n    - img\n    - img\n    - text: Materials\n  - tab \"Account\":\n    - img\n    - img\n    - text: Account"
-}

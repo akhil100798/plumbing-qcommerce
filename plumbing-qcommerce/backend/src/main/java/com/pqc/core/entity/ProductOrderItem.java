@@ -17,14 +17,14 @@ public class ProductOrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @JsonIgnore
     private ProductOrder order;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
@@ -36,10 +36,6 @@ public class ProductOrderItem {
     @Column(name = "reserved_quantity", nullable = false)
     @Builder.Default
     private Integer reservedQuantity = 0;
-
-    @Column(name = "packed_quantity", nullable = false)
-    @Builder.Default
-    private Integer packedQuantity = 0;
 
     @Column(nullable = false)
     private BigDecimal price; // price at the time of purchase

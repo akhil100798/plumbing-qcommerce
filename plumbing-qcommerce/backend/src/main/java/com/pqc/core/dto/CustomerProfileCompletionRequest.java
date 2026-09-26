@@ -29,7 +29,7 @@ public class CustomerProfileCompletionRequest {
     private String state;
 
     @NotBlank(message = "pincode is required")
-    @Pattern(regexp = "^[0-9]{6}$", message = "Pincode must be exactly 6 digits")
+    @Pattern(regexp = "^\\d{6}$", message = "Pincode must be exactly 6 digits")
     private String pincode;
 
     private String landmark;

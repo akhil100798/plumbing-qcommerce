@@ -1,4 +1,0 @@
-{
-  "url": "http://localhost:8083/",
-  "snapshot": "- button \"Go back\": ←\n- text: \"Active Job #2 Accepted Service job\"\n- img\n- text: Lat 17.4485, Lng 78.3741 Customer QA Customer One\n- button \"Call customer\":\n  - img\n- button \"Chat with customer\":\n  - img\n- text: Job Progress\n- img\n- text: Accepted 2 On the Way 3 Reached 4 In Progress 5 Completed Job Details QA continuation 2026-09-14T08:11:49.836Z leaking kitchen tap; isolated regression Work Type Repair\n- button \"Start Navigation\""
-}

@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text } from 'react-native';
 import { borderRadius, colors, spacing, typography } from '../../theme';
 import { useNativeDriver } from '../../theme/animation';
-import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface AnimatedStatusPillProps {
   text: string;
@@ -12,11 +11,10 @@ interface AnimatedStatusPillProps {
 
 export function AnimatedStatusPill({ text, status, style }: AnimatedStatusPillProps) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    if (!reduceMotion && (status === 'active' || status === 'info')) {
-      const animation = Animated.loop(
+    if (status === 'active' || status === 'info') {
+      Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
             toValue: 0.6,
@@ -29,13 +27,11 @@ export function AnimatedStatusPill({ text, status, style }: AnimatedStatusPillPr
             useNativeDriver,
           }),
         ])
-      );
-      animation.start();
-      return () => animation.stop();
+      ).start();
     } else {
       pulseAnim.setValue(1);
     }
-  }, [status, pulseAnim, reduceMotion]);
+  }, [status, pulseAnim]);
 
   let bg = colors.border;
   let fg = colors.textSecondary;

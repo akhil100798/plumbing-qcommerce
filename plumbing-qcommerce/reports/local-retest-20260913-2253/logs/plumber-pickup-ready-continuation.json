@@ -1,4 +1,0 @@
-{
-  "url": "http://localhost:8083/",
-  "snapshot": "- button \"Go back\": ←\n- text: Material Pickup Status 🛵 Materials Ready for Pickup! Travel to the hardware store. Click \"I've Arrived at the Store\" when you arrive. Pickup from FixKart QA Staging Store 1 QA Test Lane, Hyderabad Pickup Progress Request Submitted Waiting for store review Store Accepted 12:53 PM Store confirmed available materials Being Prepared 12:53 PM Materials packed and ready Ready for Pickup Head to the store to collect Collection Confirmed Pending store confirmation Items CPVC Pipe 1/2 inch (QA) 2 / 2 reserved Total ₹290.00\n- button \"I've Collected Materials from Store\"\n- text: Cancel Request\n- img"
-}

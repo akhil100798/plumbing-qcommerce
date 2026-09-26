@@ -1,4 +1,0 @@
-{
-  "url": "http://localhost:8083/",
-  "snapshot": "- text: DASHBOARD QA Plumber One ONLINE\n- switch \"Toggle availability\" [checked]\n- text: Today 0 Assigned 0 Completed 5.0 Rating Active Job 🔧 No Active Job Accept an incoming request to start working. Incoming Offers (1)\n- 'button \"Job offer for QA: Leaking kitchen sink faucet repair, estimated ₹299\"': \"NEARBY_AUTO #1 QA: Leaking kitchen sink faucet repair Lat 17.4485, Lng 78.3741 ₹299 Review\"\n- tablist:\n  - tab \"Home\" [selected]:\n    - img\n    - img\n    - text: Home\n  - tab \"Jobs\":\n    - img\n    - img\n    - text: Jobs\n  - tab \"Earnings\":\n    - img\n    - img\n    - text: Earnings\n  - tab \"Materials\":\n    - img\n    - img\n    - text: Materials\n  - tab \"Profile\":\n    - img\n    - img\n    - text: Profile"
-}

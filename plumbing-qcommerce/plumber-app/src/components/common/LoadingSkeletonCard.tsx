@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import { borderRadius, spacing } from '../../theme';
 import { useNativeDriver } from '../../theme/animation';
-import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface LoadingSkeletonCardProps {
   height?: number;
@@ -11,14 +10,9 @@ interface LoadingSkeletonCardProps {
 
 export function LoadingSkeletonCard({ height = 100, style }: LoadingSkeletonCardProps) {
   const pulseAnim = useRef(new Animated.Value(0.3)).current;
-  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    if (reduceMotion) {
-      pulseAnim.setValue(0.5);
-      return;
-    }
-    const animation = Animated.loop(
+    Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
           toValue: 0.7,
@@ -31,10 +25,8 @@ export function LoadingSkeletonCard({ height = 100, style }: LoadingSkeletonCard
           useNativeDriver,
         }),
       ])
-    );
-    animation.start();
-    return () => animation.stop();
-  }, [pulseAnim, reduceMotion]);
+    ).start();
+  }, [pulseAnim]);
 
   return (
     <View style={[styles.card, { height }, style]}>

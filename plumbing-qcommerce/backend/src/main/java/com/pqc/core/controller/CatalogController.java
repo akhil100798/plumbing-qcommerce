@@ -4,15 +4,11 @@ import com.pqc.core.dto.CategoryDTO;
 import com.pqc.core.dto.ProductDTO;
 import com.pqc.core.entity.Category;
 import com.pqc.core.entity.Product;
-import com.pqc.core.entity.Stock;
 import com.pqc.core.repository.CategoryRepository;
 import com.pqc.core.repository.ProductRepository;
-import com.pqc.core.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,12 +16,10 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1/catalog")
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class CatalogController {
 
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
-    private final StockRepository stockRepository;
 
     @GetMapping("/categories")
     public ResponseEntity<List<CategoryDTO>> getCategories() {
@@ -70,14 +64,6 @@ public class CatalogController {
     }
 
     private ProductDTO mapToDto(Product p) {
-        List<Stock> stocks = stockRepository.findByProductId(p.getId());
-        int availableQuantity = stocks.stream()
-                .mapToInt(stock -> Math.max(0, stock.getAvailableQuantity() == null ? 0 : stock.getAvailableQuantity()))
-                .sum();
-        int lowStockThreshold = stocks.stream()
-                .mapToInt(stock -> Math.max(0, stock.getLowStockThreshold() == null ? 0 : stock.getLowStockThreshold()))
-                .sum();
-
         return ProductDTO.builder()
                 .id(p.getId())
                 .sku(p.getSku())
@@ -87,8 +73,6 @@ public class CatalogController {
                 .imageUrl(p.getImageUrl())
                 .categoryId(p.getCategory().getId())
                 .categoryName(p.getCategory().getName())
-                .availableQuantity(availableQuantity)
-                .lowStock(availableQuantity > 0 && availableQuantity <= lowStockThreshold)
                 .build();
     }
 }

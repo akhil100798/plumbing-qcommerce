@@ -28,7 +28,7 @@ const mapServiceOrderToOffer = (order: any): JobOffer => ({
   jobId: String(order.id),
   customerId: String(order.customer?.id || order.customerId || ''),
   customerName: order.customer?.fullName || order.customerName || 'Customer',
-  customerRating: order.customer?.rating ?? order.customerRating,
+  customerRating: 4.8,
   distance: 2.4,
   location: fallbackLocation(order),
   latitude: Number(order.customerLatitude ?? order.latitude ?? 17.4485),
@@ -43,15 +43,7 @@ const mapServiceOrderToActiveJob = (order: any, status?: ActiveJob['status']): A
   if (!status) {
     if (order.status === 'ACCEPTED') {
       mappedStatus = order.arrivedAt != null ? 'reached' : 'accepted';
-    } else if (
-      order.status === 'IN_PROGRESS' ||
-      order.status === 'COMBINED_ORDER' ||
-      order.status === 'WORK_RESUMED' ||
-      order.status === 'READY_FOR_PRODUCT_PICKUP' ||
-      order.status === 'PLUMBER_COLLECTING_PRODUCTS' ||
-      order.status === 'PRODUCTS_COLLECTED' ||
-      order.status === 'RETURNING_TO_CUSTOMER'
-    ) {
+    } else if (order.status === 'IN_PROGRESS' || order.status === 'COMBINED_ORDER') {
       mappedStatus = 'started';
     } else if (order.status === 'COMPLETED' || order.status === 'PAID') {
       mappedStatus = 'completed';
@@ -66,7 +58,7 @@ const mapServiceOrderToActiveJob = (order: any, status?: ActiveJob['status']): A
       id: String(order.customer?.id || order.customerId || ''),
       fullName: order.customer?.fullName || order.customerName || 'Customer',
       phone: order.customer?.phone || order.customerPhone || '',
-      rating: order.customer?.rating ?? order.customerRating,
+      rating: 4.8,
     },
     status: mappedStatus,
     address: fallbackLocation(order),
@@ -116,15 +108,6 @@ export const jobService = {
         };
       }
       throw createBackendUnavailableError('Accept plumber job', error);
-    }
-  },
-
-  rejectJob: async (jobId: string): Promise<void> => {
-    try {
-      const cleanId = parseServiceOrderId(jobId);
-      await apiClient.patch<any>(ENDPOINTS.ORDERS.REJECT(cleanId));
-    } catch (error) {
-      throw createBackendUnavailableError('Reject plumber job', error);
     }
   },
 
@@ -206,12 +189,7 @@ export const jobService = {
         (order) =>
           order.status === 'ACCEPTED' ||
           order.status === 'IN_PROGRESS' ||
-          order.status === 'COMBINED_ORDER' ||
-          order.status === 'WORK_RESUMED' ||
-          order.status === 'READY_FOR_PRODUCT_PICKUP' ||
-          order.status === 'PLUMBER_COLLECTING_PRODUCTS' ||
-          order.status === 'PRODUCTS_COLLECTED' ||
-          order.status === 'RETURNING_TO_CUSTOMER'
+          order.status === 'COMBINED_ORDER'
       );
       if (!activeOrder) return null;
 

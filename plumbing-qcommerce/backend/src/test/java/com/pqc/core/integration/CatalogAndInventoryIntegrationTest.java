@@ -178,30 +178,6 @@ class CatalogAndInventoryIntegrationTest {
     }
 
     @Test
-    void getProducts_exposesLowStockFromPersistedThresholdWithoutHardcodedThreshold() throws Exception {
-        var existing = stockRepository
-                .findByStoreIdAndProductId(store.getId(), product.getId())
-                .orElseThrow();
-        existing.setAvailableQuantity(3);
-        existing.setLowStockThreshold(5);
-        stockRepository.save(existing);
-
-        mvc.perform(get("/api/v1/catalog/products/" + product.getId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.availableQuantity").value(3))
-                .andExpect(jsonPath("$.lowStock").value(true));
-
-        var stock = stockRepository.findByStoreIdAndProductId(store.getId(), product.getId()).orElseThrow();
-        stock.setLowStockThreshold(2);
-        stockRepository.save(stock);
-
-        mvc.perform(get("/api/v1/catalog/products/" + product.getId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.availableQuantity").value(3))
-                .andExpect(jsonPath("$.lowStock").value(false));
-    }
-
-    @Test
     void searchProducts_matchingQuery_returnsResults() throws Exception {
         mvc.perform(get("/api/v1/catalog/search")
                         .param("q", "elbow"))

@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 export const animation = {
   fast: 150,
   normal: 250,
@@ -5,4 +7,4 @@ export const animation = {
   pressScale: 0.96,
 };
 
-export const useNativeDriver = typeof document === 'undefined';
+export const useNativeDriver = Platform.OS !== 'web';

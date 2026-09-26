@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet } from 'react-native';
 import { useNativeDriver } from '../../theme/animation';
-import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface AnimatedBottomTabButtonProps {
   onPress?: () => void;
@@ -18,12 +17,9 @@ export function AnimatedBottomTabButton({
 }: AnimatedBottomTabButtonProps) {
   const focused = accessibilityState?.selected;
   const scale = useRef(new Animated.Value(1)).current;
-  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    if (reduceMotion) {
-      scale.setValue(1);
-    } else if (focused) {
+    if (focused) {
       Animated.spring(scale, {
         toValue: 1.1,
         tension: 100,
@@ -38,13 +34,11 @@ export function AnimatedBottomTabButton({
         useNativeDriver,
       }).start();
     }
-  }, [focused, scale, reduceMotion]);
+  }, [focused, scale]);
 
   return (
     <Pressable
       onPress={onPress}
-      accessibilityRole="tab"
-      accessibilityState={accessibilityState}
       style={[styles.container, style]}
     >
       <Animated.View style={{ transform: [{ scale }], alignItems: 'center', justifyContent: 'center', flex: 1 }}>

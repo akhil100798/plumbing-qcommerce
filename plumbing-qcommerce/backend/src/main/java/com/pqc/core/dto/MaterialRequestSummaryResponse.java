@@ -20,8 +20,6 @@ public record MaterialRequestSummaryResponse(
         BigDecimal totalAmount,
         LocalDateTime createdAt,
         LocalDateTime storeConfirmedAt,
-        LocalDateTime preparingStartedAt,
-        LocalDateTime readyForPickupAt,
         LocalDateTime plumberArrivedAt,
         LocalDateTime plumberCollectedAt,
         LocalDateTime collectionConfirmedAt

@@ -25,7 +25,6 @@ vi.mock('react-native', async () => {
     Pressable: 'Pressable',
     SafeAreaView: 'SafeAreaView',
     ScrollView: 'ScrollView',
-    RefreshControl: 'RefreshControl',
     StyleSheet: { create: (styles: unknown) => styles, flatten: (s: unknown) => s },
     Switch: 'Switch',
     Text: 'Text',
@@ -100,9 +99,6 @@ vi.mock('@react-navigation/native', () => ({
     dispatch: vi.fn(),
     goBack: vi.fn(),
   }),
-  useFocusEffect: (callback: () => void | (() => void)) => {
-    React.useEffect(() => callback(), [callback]);
-  },
   useIsFocused: () => true,
 }));
 

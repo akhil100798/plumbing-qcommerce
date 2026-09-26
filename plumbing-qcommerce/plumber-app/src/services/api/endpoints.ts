@@ -8,7 +8,6 @@ export const ENDPOINTS = {
   },
   ORDERS: {
     ACCEPT: (id: string | number) => `/orders/${id}/accept`,
-    REJECT: (id: string | number) => `/orders/${id}/reject`,
     ARRIVE: (id: string | number) => `/orders/${id}/arrive`,
     START: (id: string | number) => `/orders/${id}/start`,
     COMPLETE: (id: string | number) => `/orders/${id}/complete`,

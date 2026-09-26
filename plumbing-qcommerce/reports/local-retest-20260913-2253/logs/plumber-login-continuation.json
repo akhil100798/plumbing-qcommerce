@@ -1,5 +1,0 @@
-{
-  "url": "http://localhost:8083/",
-  "snapshot": "- progressbar:\n  - img\n- text: Syncing dashboard...\n- tablist:\n  - tab \"Home\" [selected]:\n    - img\n    - img\n    - text: Home\n  - tab \"Jobs\":\n    - img\n    - img\n    - text: Jobs\n  - tab \"Earnings\":\n    - img\n    - img\n    - text: Earnings\n  - tab \"Materials\":\n    - img\n    - img\n    - text: Materials\n  - tab \"Profile\":\n    - img\n    - img\n    - text: Profile",
-  "text": "Syncing dashboard...\nHome\nJobs\nEarnings\nMaterials\nProfile"
-}

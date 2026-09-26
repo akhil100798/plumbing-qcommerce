@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.server.ResponseStatusException;
-import jakarta.validation.ConstraintViolationException;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -90,16 +89,6 @@ public class GlobalExceptionHandler {
             "status", 400,
             "error", "Bad Request",
             "message", ex.getMessage()
-        ));
-    }
-
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<Map<String, Object>> handleConstraintViolation(ConstraintViolationException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
-            "timestamp", LocalDateTime.now().toString(),
-            "status", 400,
-            "error", "Bad Request",
-            "message", "Address validation failed"
         ));
     }
 

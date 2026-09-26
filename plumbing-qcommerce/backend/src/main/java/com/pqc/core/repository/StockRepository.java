@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.Lock;
 
 public interface StockRepository extends JpaRepository<Stock, Long> {
     Optional<Stock> findByStoreIdAndProductId(Long storeId, Long productId);
-    List<Stock> findByProductId(Long productId);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Stock> findForUpdateByStoreIdAndProductId(Long storeId, Long productId);
     List<Stock> findByStoreId(Long storeId);

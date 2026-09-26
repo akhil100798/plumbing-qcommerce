@@ -9,7 +9,7 @@ import lombok.Data;
 public class OtpRequest {
 
     @NotBlank(message = "Phone number is required")
-    @Pattern(regexp = "^(?:\\d{10}|\\+91 ?\\d{10})$", message = "Phone number must be a ten-digit Indian number, optionally prefixed with +91")
+    @Pattern(regexp = "^\\+91\\s\\d{10}$", message = "Phone number must match format '+91 XXXXXXXXXX'")
     private String phone;
 
     private String code;

@@ -81,12 +81,6 @@ public class MaterialPickupController {
         return service.prepare(id);
     }
 
-    @PostMapping({"/store/material-requests/{id}/packing", "/stores/material-requests/{id}/packing"})
-    @PreAuthorize("hasRole('STORE_MANAGER')")
-    public MaterialRequestDetailResponse updatePackingProgress(@PathVariable Long id, @RequestBody(required=false) PackingRequestBody body) {
-        return service.updatePackingProgress(id, body == null ? null : body.packedQuantities());
-    }
-
     @PostMapping({"/store/material-requests/{id}/ready-for-pickup", "/store/material-requests/{id}/ready", "/stores/material-requests/{id}/ready", "/stores/material-requests/{id}/ready-for-pickup"})
     @PreAuthorize("hasRole('STORE_MANAGER')")
     public MaterialRequestDetailResponse ready(@PathVariable Long id) {
@@ -125,5 +119,4 @@ public class MaterialPickupController {
 
     public record PartialApproval(Map<Long,Integer> quantities) {}
     public record Reason(String reason) {}
-    public record PackingRequestBody(Map<Long, Integer> packedQuantities) {}
 }

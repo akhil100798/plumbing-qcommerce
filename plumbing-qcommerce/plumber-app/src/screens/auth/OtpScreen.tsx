@@ -23,11 +23,10 @@ type Props = StackScreenProps<AuthStackParamList, 'Otp'>;
 
 export function OtpScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
-  const phone = route.params?.phone || '';
+  const phone = route.params?.phone || '+91 98765 43210';
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(28);
-  const [statusMessage, setStatusMessage] = useState('');
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -43,7 +42,6 @@ export function OtpScreen({ route, navigation }: Props) {
     }
 
     setLoading(true);
-    setStatusMessage('');
     try {
       const response = await authService.login(phone, code);
       dispatch(authSuccess(response));
@@ -51,10 +49,8 @@ export function OtpScreen({ route, navigation }: Props) {
       navigation.replace('Main' as any);
     } catch (err: any) {
       setLoading(false);
-      const message = err.message || 'The OTP entered is incorrect or expired. Please try again.';
-      dispatch(authFailure(message));
-      setStatusMessage(message);
-      Alert.alert('Verification Failed', message);
+      dispatch(authFailure(err.message || 'OTP verification failed'));
+      Alert.alert('Verification Failed', err.message || 'The OTP entered is incorrect. Try 123456.');
     }
   };
 
@@ -63,9 +59,9 @@ export function OtpScreen({ route, navigation }: Props) {
     try {
       await authService.sendOtp(phone);
       setTimer(30);
-      setStatusMessage('A new verification code has been sent to your phone.');
+      Alert.alert('OTP Resent', 'A new verification code has been sent to your phone.');
     } catch (err: any) {
-      setStatusMessage(err.message || 'Could not resend the verification code.');
+      Alert.alert('Resend Failed', err.message || 'Could not resend OTP.');
     }
   };
 
@@ -89,15 +85,13 @@ export function OtpScreen({ route, navigation }: Props) {
           <OTPInput length={6} onCodeChanged={setCode} />
         </View>
 
-        {statusMessage ? <Text accessibilityLiveRegion="polite" style={styles.statusMessage}>{statusMessage}</Text> : null}
-
         <View style={styles.resendRow}>
           {timer > 0 ? (
             <Text style={styles.timerText}>
               Resend OTP in <Text style={styles.timerHighlight}>{mm}:{ss}</Text>
             </Text>
           ) : (
-            <TouchableOpacity onPress={handleResend} accessibilityRole="button" accessibilityLabel="Resend verification code">
+            <TouchableOpacity onPress={handleResend}>
               <Text style={styles.resendLink}>Resend OTP</Text>
             </TouchableOpacity>
           )}
@@ -187,13 +181,8 @@ const styles = StyleSheet.create({
   },
   securityText: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    color: colors.textMuted,
     fontWeight: typography.fontWeight.medium,
-  },
-  statusMessage: {
-    color: colors.textSecondary,
-    fontSize: typography.fontSize.sm,
-    marginBottom: spacing.sm,
   },
   verifyButton: {
     marginBottom: spacing.xl,

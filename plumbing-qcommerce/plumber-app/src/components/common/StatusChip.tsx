@@ -9,7 +9,7 @@ import {
 
 import { borderRadius, colors, spacing, typography } from '../../theme';
 
-type StatusType = 'success' | 'warning' | 'error' | 'primary' | 'muted' | 'info';
+type StatusType = 'success' | 'warning' | 'error' | 'primary' | 'muted';
 
 interface StatusChipProps {
   label: string;
@@ -32,8 +32,6 @@ export function StatusChip({
         return { bg: colors.errorLight, text: colors.error };
       case 'muted':
         return { bg: colors.background, text: colors.textSecondary };
-      case 'info':
-        return { bg: colors.primaryLight, text: colors.primary };
       case 'primary':
       default:
         return { bg: colors.primaryLight, text: colors.primary };

@@ -8,7 +8,6 @@ import StatCard from "@/components/admin-shell/StatCard";
 import StatusBadge from "@/components/admin-shell/StatusBadge";
 import { ApiError, clearStoredToken } from "@/services/apiClient";
 import { getDashboard, type SuperAdminDashboardResponse } from "@/services/superAdminService";
-import { currency } from "@/lib/helpers";
 
 const statAccentColors = [
   "#2563eb",
@@ -23,6 +22,14 @@ const statAccentColors = [
   "#f59e0b",
   "#dc2626",
 ];
+
+function currency(value: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
 
 export default function DashboardPage() {
   const router = useRouter();

@@ -19,13 +19,13 @@ public class ProductOrder {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private User customer;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
@@ -38,14 +38,14 @@ public class ProductOrder {
     @Column(nullable = false)
     private ProductOrderStatus status;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "delivery_partner_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private User deliveryPartner;
 
     // Optional: linked service order if materials were requested by a plumber mid-job
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "service_order_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
@@ -57,13 +57,13 @@ public class ProductOrder {
     @Column(name = "estimated_delivery_at")
     private LocalDateTime estimatedDeliveryAt;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "requested_by_plumber_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private User requestedByPlumber;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collected_by_plumber_id")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
@@ -74,12 +74,6 @@ public class ProductOrder {
 
     @Column(name = "store_confirmed_at")
     private LocalDateTime storeConfirmedAt;
-
-    @Column(name = "preparing_started_at")
-    private LocalDateTime preparingStartedAt;
-
-    @Column(name = "ready_for_pickup_at")
-    private LocalDateTime readyForPickupAt;
 
     @Column(name = "plumber_arrived_at")
     private LocalDateTime plumberArrivedAt;

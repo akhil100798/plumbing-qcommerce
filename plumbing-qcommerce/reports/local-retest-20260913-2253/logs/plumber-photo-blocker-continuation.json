@@ -1,4 +1,0 @@
-{
-  "url": "http://localhost:8083/",
-  "snapshot": "- button \"Go back\": ←\n- text: After Photos Capture clear photos after completing the work.\n- button \"Add photo 1\":\n  - img\n  - text: Add Photo\n- button \"Add photo 2\":\n  - img\n  - text: Add Photo\n- button \"Add photo 3\":\n  - img\n  - text: Add Photo\n- button \"Add photo 4\":\n  - img\n  - text: Add Photo\n- text: Photo capture is required before continuing.\n- button \"Next\" [disabled]"
-}

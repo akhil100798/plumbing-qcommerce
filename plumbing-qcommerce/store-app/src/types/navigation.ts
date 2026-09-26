@@ -21,7 +21,6 @@ export type AppStackParamList = {
   // Dashboard & Quick Actions
   Dashboard: undefined;
   SalesAnalytics: undefined;
-  WeeklySummary: undefined;
   Wallet: undefined;
   LowStockAlert: undefined;
   Notifications: undefined;
@@ -29,9 +28,8 @@ export type AppStackParamList = {
   // Orders Stack
   Orders: undefined;
   OrderDetails: { orderId: number };
-  Packing: { orderId: number; requestId?: number };
-  ReadyForPickup: { orderId?: number; requestId?: number };
-  CollectionConfirmation: { requestId: number };
+  Packing: { orderId: number };
+  ReadyForPickup: { orderId: number };
   
   // Inventory Stack
   Inventory: undefined;

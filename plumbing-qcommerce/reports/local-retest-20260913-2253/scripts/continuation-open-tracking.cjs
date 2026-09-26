@@ -1,1 +1,0 @@
-module.exports=async c=>{const p=c.pages.plumber;await p.getByRole('button',{name:new RegExp('Open material request '+c.material.id+',')}).click();await c.snap('plumber','material-tracking');c.flush();};

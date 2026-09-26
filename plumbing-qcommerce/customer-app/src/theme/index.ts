@@ -1,18 +1,15 @@
-import { colors } from "./colors";
-import { typography, fonts } from "./typography";
-import { spacing } from "./spacing";
-import { radii } from "./radii";
-import { shadows } from "./shadows";
-import { motion } from "./motion";
+import { borderRadius } from './borderRadius';
+import { colors } from './colors';
+import { shadows } from './shadows';
+import { spacing } from './spacing';
+import { typography } from './typography';
+
+export { colors, typography, spacing, shadows, borderRadius };
 
 export const theme = {
   colors,
   typography,
-  fonts,
   spacing,
-  radii,
   shadows,
-  motion,
+  borderRadius,
 };
-
-export { colors, typography, fonts, spacing, radii, shadows, motion };

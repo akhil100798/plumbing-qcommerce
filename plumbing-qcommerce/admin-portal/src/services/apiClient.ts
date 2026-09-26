@@ -1,7 +1,4 @@
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.NEXT_PUBLIC_BACKEND_URL ||
-  "https://plumbing-qcommerce.onrender.com";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8081";
 const TOKEN_KEY = "pqc_admin_token";
 
 export class ApiError extends Error {
@@ -72,11 +69,25 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     headers.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(`${BACKEND_URL}${path}`, {
-    ...options,
-    headers,
-    body,
-  });
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(), 15000);
+  let response: Response;
+
+  try {
+    response = await fetch(`${BACKEND_URL}${path}`, {
+      ...options,
+      headers,
+      body,
+      signal: options.signal ?? timeoutController.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new ApiError("Request timed out. Please try again.", 408);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     const payload = await readErrorPayload(response);

@@ -1,14 +1,8 @@
 package com.pqc.core.security;
 
 import com.pqc.core.entity.Role;
-import com.pqc.core.entity.OrderStatus;
-import com.pqc.core.entity.PlumberJobDisposition;
-import com.pqc.core.entity.PlumberAvailabilityStatus;
-import com.pqc.core.entity.PlumberKycStatus;
 import com.pqc.core.entity.ServiceOrder;
 import com.pqc.core.entity.User;
-import com.pqc.core.repository.PlumberKycRepository;
-import com.pqc.core.repository.ServiceOrderPlumberDispositionRepository;
 import com.pqc.core.repository.ServiceOrderRepository;
 import com.pqc.core.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,8 +16,6 @@ public class OrderAuthorization {
 
     private final ServiceOrderRepository orderRepository;
     private final UserRepository userRepository;
-    private final PlumberKycRepository plumberKycRepository;
-    private final ServiceOrderPlumberDispositionRepository dispositionRepository;
 
     @Transactional(readOnly = true)
     public boolean canRead(Long orderId, Authentication authentication) {
@@ -36,7 +28,6 @@ public class OrderAuthorization {
                 || actor.getRole() == Role.CUSTOMER && order.getCustomer().getId().equals(actor.getId())
                 || actor.getRole() == Role.PLUMBER && order.getPlumber() != null
                     && order.getPlumber().getId().equals(actor.getId())
-                || isEligiblePendingOffer(order, actor)
                 || actor.getRole() == Role.STORE_MANAGER && order.getStore() != null
                     && order.getStore().getManager().getId().equals(actor.getId());
     }
@@ -76,16 +67,5 @@ public class OrderAuthorization {
             return null;
         }
         return userRepository.findByEmail(authentication.getName()).orElse(null);
-    }
-
-    private boolean isEligiblePendingOffer(ServiceOrder order, User actor) {
-        return actor.getRole() == Role.PLUMBER
-                && order.getStatus() == OrderStatus.PENDING
-                && plumberKycRepository.findByPlumberId(actor.getId())
-                    .map(kyc -> kyc.getStatus() == PlumberKycStatus.APPROVED
-                            && kyc.getAvailabilityStatus() == PlumberAvailabilityStatus.ONLINE)
-                    .orElse(false)
-                && !dispositionRepository.existsByServiceOrderIdAndPlumberIdAndDisposition(
-                        order.getId(), actor.getId(), PlumberJobDisposition.DECLINED);
     }
 }

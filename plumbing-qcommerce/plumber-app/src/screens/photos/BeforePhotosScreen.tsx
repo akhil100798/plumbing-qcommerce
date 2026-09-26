@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 
@@ -8,7 +8,6 @@ import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { SecondaryButton } from '../../components/common/SecondaryButton';
 import { colors, spacing, typography, borderRadius } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
-import { JobPhoto, photoService } from '../../services/photos/photoService';
 
 const MIN_PHOTOS = 3;
 
@@ -16,40 +15,21 @@ type Props = StackScreenProps<AppStackParamList, 'BeforePhotos'>;
 
 export function BeforePhotosScreen({ route, navigation }: Props) {
   const { jobId } = route.params;
-  const [photos, setPhotos] = useState<JobPhoto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-    photoService
-      .list(jobId, 'BEFORE')
-      .then((loadedPhotos) => {
-        if (mounted) setPhotos(loadedPhotos);
-      })
-      .catch((error: Error) => {
-        if (mounted) Alert.alert('Unable to load photos', error.message || 'Please try again.');
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [jobId]);
+  const [photos, setPhotos] = useState<string[]>([]);
 
   const handleAddPhoto = async () => {
-    if (uploading) return;
-    setUploading(true);
-    try {
-      const photo = await photoService.pickAndUpload(jobId, 'BEFORE');
-      if (photo) setPhotos((current) => [...current, photo]);
-    } catch (error: any) {
-      Alert.alert('Upload failed', error.message || 'Unable to upload this image. Please try again.');
-    } finally {
-      setUploading(false);
-    }
+    // Add mock captured photo uri or camera asset
+    const mockPhotos = [
+      'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=400',
+      'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&q=80&w=400',
+      'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=400',
+    ];
+    const nextUri = mockPhotos[photos.length % mockPhotos.length];
+    setPhotos((prev) => [...prev, nextUri]);
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
   const canProceed = photos.length >= MIN_PHOTOS;
@@ -82,27 +62,28 @@ export function BeforePhotosScreen({ route, navigation }: Props) {
             photos={photos}
             minPhotos={MIN_PHOTOS}
             onAddPhoto={handleAddPhoto}
+            onRemovePhoto={handleRemovePhoto}
           />
         </View>
 
         {!canProceed && (
-            <Text style={styles.hint}>Photo capture is required before continuing.</Text>
+          <Text style={styles.hint}>Add at least {MIN_PHOTOS} photos to continue.</Text>
         )}
 
         <View style={styles.spacer} />
 
         <View style={styles.actionBlock}>
           <SecondaryButton
-            title={uploading ? 'Uploading...' : 'Request Parts from Store'}
+            title="Request Parts from Store"
             onPress={handleNextWithMaterials}
-            disabled={!canProceed || loading || uploading}
+            disabled={!canProceed}
             style={styles.partsBtn}
             textColor={colors.primary}
           />
           <PrimaryButton
             title="Proceed to After Photos"
             onPress={handleNextNoMaterials}
-            disabled={!canProceed || loading || uploading}
+            disabled={!canProceed}
             style={canProceed ? styles.nextButton : styles.nextButtonDisabled}
           />
         </View>

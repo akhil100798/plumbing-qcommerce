@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
@@ -24,44 +23,43 @@ type Props = StackScreenProps<AppStackParamList, 'StartWork'>;
 
 const CHECKLIST = [
   { id: 'explain', label: 'Explain the issue to customer' },
-  { id: 'rate', label: 'Show rate card for additional labor' },
-  { id: 'estimate', label: 'Agree on total cost & work scope' },
+  { id: 'check', label: 'Check the problem clearly' },
+  { id: 'confirm', label: 'Confirm the work & charges' },
 ];
 
 export function StartWorkScreen({ route, navigation }: Props) {
-  const { jobId } = route.params;
   const dispatch = useDispatch();
-  const activeJob = useSelector((state: RootState) => state.job.activeJob);
-
-  const [checked, setChecked] = useState<Record<string, boolean>>({});
-  const [discussed, setDiscussed] = useState(false);
+  const { jobId } = route.params;
+  const { activeJob } = useSelector((state: RootState) => state.job);
   const [loading, setLoading] = useState(false);
 
-  const toggle = (id: string) => {
-    setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+  const [checked, setChecked] = useState<{ [key: string]: boolean }>({
+    explain: true,
+    check: true,
+    confirm: true,
+  });
+  const [discussed, setDiscussed] = useState(true);
 
-  const canStart = useMemo(() => {
-    return (
-      CHECKLIST.every((item) => !!checked[item.id]) && discussed
-    );
-  }, [checked, discussed]);
+  const toggle = (id: string) => setChecked((c) => ({ ...c, [id]: !c[id] }));
 
-  const customerName = activeJob?.customer.fullName || 'Customer';
+  const canStart = useMemo(
+    () => CHECKLIST.every((i) => checked[i.id]) && discussed,
+    [checked, discussed]
+  );
+
+  const customerName = activeJob?.customer.fullName || 'Anil Kumar';
   const customerInitial = customerName.charAt(0).toUpperCase();
 
-  const persistWorkStart = async (): Promise<boolean> => {
+  const handleStartWork = async () => {
     if (!canStart) {
-      Alert.alert(
-        'Checklist Incomplete',
-        'Please complete all inspection checklist items and confirm diagnosis with customer.'
-      );
-      return false;
+      Alert.alert('Checklist Incomplete', 'Please check all items and confirm discussion with customer.');
+      return;
     }
+
     setLoading(true);
     try {
-      const startedJob = await jobService.startWork(jobId);
-      dispatch(setActiveJob(startedJob));
+      const updatedJob = await jobService.startWork(jobId);
+      dispatch(setActiveJob(updatedJob));
       dispatch(
         updateJobStatus({
           status: 'started',
@@ -69,35 +67,30 @@ export function StartWorkScreen({ route, navigation }: Props) {
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         })
       );
-      return true;
+      navigation.replace('BeforePhotos', { jobId });
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to start job.');
-      return false;
+      // Proceed to photo capture fallback
+      dispatch(
+        updateJobStatus({
+          status: 'started',
+          timelineField: 'started',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        })
+      );
+      navigation.replace('BeforePhotos', { jobId });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleStartWorkDirect = async () => {
-    if (await persistWorkStart()) {
-      navigation.navigate('ActiveJob', { jobId });
-    }
-  };
-
-  const handleMaterialsRequired = async () => {
-    if (await persistWorkStart()) {
-      navigation.navigate('StoreSelection', { jobId });
-    }
-  };
-
   return (
     <SafeAreaView style={styles.flex}>
-      <AppHeader title="Inspection & Diagnosis" onBackPress={() => navigation.goBack()} />
+      <AppHeader title="Start Work" onBackPress={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.body}>
         <Text style={styles.jobId}>#{jobId}</Text>
         <Text style={styles.jobTitle}>
-          {activeJob?.issueDescription || 'Plumbing Diagnosis & Inspection'}
+          {activeJob ? 'Bathroom Pipe Leakage' : 'Bathroom Pipe Leakage'}
         </Text>
 
         <View style={styles.customerCard}>
@@ -110,7 +103,7 @@ export function StartWorkScreen({ route, navigation }: Props) {
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Inspection Checklist</Text>
+        <Text style={styles.sectionTitle}>Before you start</Text>
         <View style={styles.checklistCard}>
           {CHECKLIST.map((item) => (
             <ChecklistItem
@@ -124,7 +117,7 @@ export function StartWorkScreen({ route, navigation }: Props) {
 
         <View style={styles.confirmRow}>
           <ChecklistItem
-            label="I have explained the diagnosis to customer"
+            label="I have discussed with customer"
             checked={discussed}
             onToggle={() => setDiscussed((d) => !d)}
           />
@@ -132,26 +125,13 @@ export function StartWorkScreen({ route, navigation }: Props) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Text style={styles.decisionLabel}>Work & Material Decision</Text>
-        <View style={styles.decisionRow}>
-          <TouchableOpacity
-            style={[styles.materialsBtn, (!canStart || loading) && styles.materialsBtnDisabled]}
-            onPress={handleMaterialsRequired}
-            disabled={!canStart || loading}
-            accessibilityRole="button"
-            accessibilityLabel="Select materials required for this job"
-          >
-            <Text style={styles.materialsBtnText}>Materials Required</Text>
-          </TouchableOpacity>
-
-          <PrimaryButton
-            title={loading ? 'Starting...' : 'Start Direct Work'}
-            onPress={handleStartWorkDirect}
-            loading={loading}
-            disabled={!canStart}
-            style={canStart ? styles.startBtn : styles.disabledBtn}
-          />
-        </View>
+        <PrimaryButton
+          title="Start Work"
+          onPress={handleStartWork}
+          loading={loading}
+          disabled={!canStart}
+          style={canStart ? styles.startBtn : styles.disabledBtn}
+        />
       </View>
     </SafeAreaView>
   );
@@ -209,42 +189,10 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     backgroundColor: colors.surface,
   },
-  decisionLabel: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textMuted,
-    marginBottom: spacing.xs,
-    textTransform: 'uppercase',
-  },
-  decisionRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    alignItems: 'center',
-  },
-  materialsBtn: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.warningContainer || '#FFDDBA',
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.warning || '#865200',
-  },
-  materialsBtnText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.warning || '#865200',
-  },
-  materialsBtnDisabled: {
-    opacity: 0.5,
-  },
   startBtn: {
-    flex: 1.2,
     backgroundColor: colors.primary,
   },
   disabledBtn: {
-    flex: 1.2,
     opacity: 0.5,
   },
 });

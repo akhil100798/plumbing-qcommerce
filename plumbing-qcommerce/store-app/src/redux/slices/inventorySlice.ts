@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Product, Category } from '../../types';
-import { isLowStock } from '../../utils/stockStatus';
 
 interface InventoryState {
   totalProducts: number;
@@ -60,7 +59,7 @@ const inventorySlice = createSlice({
       state.products.push(action.payload);
       state.totalProducts += 1;
       if (action.payload.stock > 0) state.inStock += 1;
-      if (isLowStock(action.payload)) state.lowStock += 1;
+      if (action.payload.stock <= 5) state.lowStock += 1;
     },
     updateProductInSlice: (state, action: PayloadAction<Product>) => {
       const idx = state.products.findIndex(p => p.id === action.payload.id);
@@ -73,7 +72,7 @@ const inventorySlice = createSlice({
       // Re-recalculate totals
       state.totalProducts = state.products.length;
       state.inStock = state.products.filter(p => p.stock > 0).length;
-      state.lowStock = state.products.filter(isLowStock).length;
+      state.lowStock = state.products.filter(p => p.stock <= 5).length;
     }
   },
 });

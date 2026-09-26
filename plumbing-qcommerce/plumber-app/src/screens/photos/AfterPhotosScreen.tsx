@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 
@@ -7,7 +7,6 @@ import { PhotoGrid } from '../../components/common/PhotoGrid';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { colors, spacing, typography } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
-import { photoService, JobPhoto } from '../../services/photos/photoService';
 
 const MIN_PHOTOS = 3;
 
@@ -15,27 +14,20 @@ type Props = StackScreenProps<AppStackParamList, 'AfterPhotos'>;
 
 export function AfterPhotosScreen({ route, navigation }: Props) {
   const { jobId } = route.params;
-  const [photos, setPhotos] = useState<JobPhoto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-
-  useEffect(() => {
-    photoService.list(jobId, 'AFTER').then(setPhotos).catch((error: Error) =>
-      Alert.alert('Unable to load photos', error.message || 'Please try again.')
-    ).finally(() => setLoading(false));
-  }, [jobId]);
+  const [photos, setPhotos] = useState<string[]>([]);
 
   const handleAddPhoto = async () => {
-    if (uploading) return;
-    setUploading(true);
-    try {
-      const photo = await photoService.pickAndUpload(jobId, 'AFTER');
-      if (photo) setPhotos((current) => [...current, photo]);
-    } catch (error: any) {
-      Alert.alert('Upload failed', error.message || 'Unable to upload this image. Please try again.');
-    } finally {
-      setUploading(false);
-    }
+    const mockPhotos = [
+      'https://images.unsplash.com/photo-1542013936693-8848e574047a?auto=format&fit=crop&q=80&w=400',
+      'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&q=80&w=400',
+      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=400',
+    ];
+    const nextUri = mockPhotos[photos.length % mockPhotos.length];
+    setPhotos((prev) => [...prev, nextUri]);
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
   const canProceed = photos.length >= MIN_PHOTOS;
@@ -60,19 +52,20 @@ export function AfterPhotosScreen({ route, navigation }: Props) {
             photos={photos}
             minPhotos={MIN_PHOTOS}
             onAddPhoto={handleAddPhoto}
+            onRemovePhoto={handleRemovePhoto}
           />
         </View>
 
         {!canProceed && (
-          <Text style={styles.hint}>Photo capture is required before continuing.</Text>
+          <Text style={styles.hint}>Add at least {MIN_PHOTOS} photos to continue.</Text>
         )}
 
         <View style={styles.spacer} />
 
         <PrimaryButton
-          title={uploading ? 'Uploading...' : 'Next'}
+          title="Next"
           onPress={handleContinue}
-          disabled={!canProceed || uploading || loading}
+          disabled={!canProceed}
           style={canProceed ? styles.nextButton : styles.nextButtonDisabled}
         />
       </ScrollView>

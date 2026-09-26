@@ -29,7 +29,6 @@ export const materialService = {
       throw createBackendUnavailableError('Material requests', error);
     }
   },
-
   // ── Store Discovery ──────────────────────────────────────────────────────
 
   getAvailableStores: async (): Promise<Store[]> => {
@@ -70,7 +69,7 @@ export const materialService = {
   searchMaterials: async (query: string): Promise<MaterialItem[]> => {
     try {
       const response = await apiClient.get<any[]>(`${ENDPOINTS.CATALOG.SEARCH}?q=${query}`);
-      return response.data.map((item: any) => ({
+      return response.data.map((item) => ({
         productId: item.id,
         name: item.name,
         price: item.price,
@@ -95,12 +94,9 @@ export const materialService = {
         ENDPOINTS.DELIVERY.MATERIAL_REQUEST(numericOrderId),
         { storeId, items }
       );
+      await apiClient.post(ENDPOINTS.DELIVERY.SUBMIT(response.data.id));
 
-      // A draft material request is not visible to the store for approval
-      // until it is submitted. Submit it as part of the plumber's final
-      // material-request action so the store receives an actionable offer.
-      const submittedResponse = await apiClient.post<any>(ENDPOINTS.DELIVERY.SUBMIT(response.data.id));
-      const order = submittedResponse.data;
+      const order = response.data;
       const mappedItems: MaterialItem[] = (order.items || items).map((reqItem: any) => {
         const matchingRequest =
           'productId' in reqItem
@@ -185,23 +181,6 @@ export const materialService = {
       await apiClient.post(ENDPOINTS.DELIVERY.ARRIVED(requestId));
     } catch (error) {
       throw createBackendUnavailableError('Mark arrived at store', error);
-    }
-  },
-
-  resumeWork: async (jobId: string): Promise<void> => {
-    const route = `/orders/${parseServiceOrderId(jobId)}`;
-    const current = await apiClient.get<{ status: string }>(route);
-    let status = current.data.status;
-    if (status === 'PRODUCTS_COLLECTED') {
-      const returning = await apiClient.post<{ status: string }>(`${route}/return-to-customer`);
-      status = returning.data.status;
-    }
-    if (status === 'RETURNING_TO_CUSTOMER') {
-      const resumed = await apiClient.post<{ status: string }>(`${route}/resume`);
-      status = resumed.data.status;
-    }
-    if (status !== 'WORK_RESUMED') {
-      throw new Error('Store must confirm collection before work can resume.');
     }
   },
 

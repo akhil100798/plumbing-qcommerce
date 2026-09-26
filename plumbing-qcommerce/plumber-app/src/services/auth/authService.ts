@@ -1,4 +1,4 @@
-import { apiClient, clearAuthSession, persistAuthSession } from '../api/axiosClient';
+import { apiClient, setAuthToken, setRefreshToken } from '../api/axiosClient';
 import { ENDPOINTS } from '../api/endpoints';
 import { MOCK_PLUMBER } from '../mocks/mockData';
 import {
@@ -10,9 +10,8 @@ import { PlumberProfile } from '../../types';
 import { profileService } from '../profile/profileService';
 
 export interface LoginResponse {
-  token?: string;
-  accessToken?: string;
-  refreshToken?: string;
+  token: string;
+  refreshToken: string;
   userId: string;
   role: string;
   email: string;
@@ -32,29 +31,15 @@ export interface PlumberRegistrationRequest {
   confirmPassword: string;
 }
 
-interface BackendAuthResponse {
-  token?: string;
-  accessToken?: string;
-  refreshToken?: string;
-}
-
-function authTokens(response: BackendAuthResponse): { token: string; refreshToken: string } {
-  const token = response.accessToken || response.token;
-  const refreshToken = response.refreshToken;
-  if (!token || !refreshToken) {
-    throw new Error('Registration/login did not return a complete authenticated session.');
-  }
-  return { token, refreshToken };
-}
-
 export const authService = {
   register: async (request: PlumberRegistrationRequest): Promise<CredentialLoginResponse> => {
-    const response = await apiClient.post<BackendAuthResponse>(
+    const response = await apiClient.post<{ token: string; refreshToken: string }>(
       ENDPOINTS.AUTH.REGISTER,
       request
     );
-    const { token, refreshToken } = authTokens(response.data);
-    await persistAuthSession(token, refreshToken);
+    const { token, refreshToken } = response.data;
+    setAuthToken(token);
+    setRefreshToken(refreshToken);
     const plumber = await profileService.fetchProfile();
     return { plumber, token, refreshToken };
   },
@@ -64,12 +49,14 @@ export const authService = {
     password: string
   ): Promise<CredentialLoginResponse> => {
     try {
-      const response = await apiClient.post<BackendAuthResponse>(ENDPOINTS.AUTH.LOGIN, {
+      const response = await apiClient.post<{ token: string; refreshToken: string }>(ENDPOINTS.AUTH.LOGIN, {
         email,
         password,
       });
-      const { token, refreshToken } = authTokens(response.data);
-      await persistAuthSession(token, refreshToken);
+      const { token, refreshToken } = response.data;
+
+      setAuthToken(token);
+      setRefreshToken(refreshToken);
 
       const plumber = await profileService.fetchProfile();
       return { plumber, token, refreshToken };
@@ -81,10 +68,10 @@ export const authService = {
   login: async (phone: string, code: string): Promise<{ plumber: PlumberProfile; token: string; refreshToken: string }> => {
     try {
       const response = await apiClient.post<LoginResponse>(ENDPOINTS.AUTH.VERIFY_OTP, { phone, code });
-      const { token, refreshToken } = authTokens(response.data);
-      const { email, userId } = response.data;
-
-      await persistAuthSession(token, refreshToken);
+      const { token, refreshToken, email, userId } = response.data;
+      
+      setAuthToken(token);
+      setRefreshToken(refreshToken);
 
       const plumberProfile: PlumberProfile = {
         id: userId,
@@ -103,7 +90,8 @@ export const authService = {
         warnUsingDevMockFallback('Plumber login', error);
         const token = 'mock_jwt_token';
         const refreshToken = 'mock_refresh_token';
-        await persistAuthSession(token, refreshToken);
+        setAuthToken(token);
+        setRefreshToken(refreshToken);
         return {
           plumber: { ...MOCK_PLUMBER, availability: true },
           token,
@@ -129,17 +117,12 @@ export const authService = {
 
   logout: async (): Promise<void> => {
     try {
-      await clearAuthSession();
+      setAuthToken(null);
+      setRefreshToken(null);
     } catch (error) {
       console.error('Logout error:', error);
-      // The session must be invalidated in memory even if durable storage is
-      // unavailable during logout.
-      try {
-        await clearAuthSession();
-      } catch {
-        // Nothing else can safely be done here; callers still leave the
-        // authenticated route.
-      }
+      setAuthToken(null);
+      setRefreshToken(null);
     }
   },
 };

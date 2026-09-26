@@ -1,3 +1,0 @@
-{
-  "snapshot": "- text: P\n- heading \"PlumbCommerce\" [level=1]\n- paragraph: Admin Portal\n- text: Email\n- textbox \"Email\":\n  - /placeholder: admin@plumbcommerce.com\n- text: Password\n- textbox \"Password\"\n- button \"Sign in\"\n- alert"
-}

@@ -73,15 +73,10 @@ desktop.ini
 
 # Temporary & Build Files
 *.log
-*.tsbuildinfo
 hs_err_pid*.log
 *.tmp
 *.temp
 *.bak
-.expo/
-.cache/
-tmp/
-temp/
 dist/
 /nbproject/private/
 /nbbuild/
@@ -113,16 +108,9 @@ test_run.txt
 # Generated evidence artifacts
 qa-evidence/
 evidence/
-!docs/
-!reports/
+docs/
+reports/
 playwright-report/
 test-results/
 store-app/.expo/
 
-# Local QA runtime/build output
-backend/uploads/
-**/dist-*/
-artifact_paths.txt
-tmp_artifact_*.txt
-
-.gstack/

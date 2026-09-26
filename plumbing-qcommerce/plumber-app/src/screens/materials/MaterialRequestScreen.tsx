@@ -5,7 +5,6 @@ import {
   Text,
   View,
   Alert,
-  Platform,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
@@ -99,10 +98,20 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
         })
       );
 
-      navigation.replace('MaterialTracking', {
-        jobId,
-        productOrderId: response.id,
-      });
+      Alert.alert(
+        'Request Sent!',
+        `Material request raised with ${storeName}. Waiting for store approval.`,
+        [
+          {
+            text: 'Track Status',
+            onPress: () =>
+              navigation.replace('MaterialApprovalStatus', {
+                jobId,
+                productOrderId: response.id,
+              }),
+          },
+        ]
+      );
     } catch (error) {
       dispatch(setMaterialLoading(false));
       Alert.alert('Submission Failed', 'Could not create material request. Please try again.');
@@ -110,7 +119,7 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
   };
 
   return (
-    <ScreenWrapper safeAreaStyle={styles.safeArea}>
+    <ScreenWrapper>
       <AppHeader
         title="Select Materials"
         subtitle={`From: ${storeName}`}
@@ -118,9 +127,7 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
       />
 
       <View style={styles.container}>
-        <View style={styles.searchHeader}>
-          <SearchInput value={query} onChangeText={setQuery} placeholder="Search inventory…" />
-        </View>
+        <SearchInput value={query} onChangeText={setQuery} placeholder="Search inventory…" />
 
         {filtered.length === 0 && !query ? (
           <View style={styles.emptyCard}>
@@ -133,7 +140,6 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
           <FlatList
             data={filtered}
             keyExtractor={item => String(item.productId)}
-            style={styles.flatList}
             renderItem={({ item }) => (
               <MaterialCard
                 name={item.name}
@@ -144,7 +150,7 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
               />
             )}
             contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={true}
+            showsVerticalScrollIndicator={false}
           />
         )}
 
@@ -161,7 +167,7 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
           </View>
 
           <PrimaryButton
-            title={totalCount > 0 ? `Submit Material Request (${totalCount})` : 'Select Items to Submit'}
+            title="Submit Request"
             onPress={handleSubmit}
             loading={loading}
             style={styles.actionBtn}
@@ -174,25 +180,10 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    height: Platform.OS === 'web' ? ('100vh' as any) : '100%',
-    maxHeight: Platform.OS === 'web' ? ('100vh' as any) : '100%',
-    overflow: 'hidden',
-  },
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-    overflow: 'hidden',
-  },
-  searchHeader: {
     paddingHorizontal: spacing.layout,
-    paddingTop: spacing.xs,
-    paddingBottom: spacing.xs,
-  },
-  flatList: {
-    flex: 1,
-    width: '100%',
+    backgroundColor: colors.background,
   },
   emptyCard: {
     borderRadius: borderRadius.md,
@@ -200,7 +191,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
     padding: spacing.md,
-    margin: spacing.layout,
+    marginTop: spacing.md,
   },
   emptyTitle: {
     fontSize: typography.fontSize.sm,
@@ -214,23 +205,20 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   listContent: {
-    paddingHorizontal: spacing.layout,
-    paddingBottom: spacing.lg,
+    paddingBottom: 170,
     paddingTop: spacing.xs,
   },
   footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: spacing.md,
-    paddingHorizontal: spacing.layout,
+    padding: spacing.lg,
     borderWidth: 1.5,
     borderColor: colors.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 8,
   },
   totalsRow: {
     flexDirection: 'row',

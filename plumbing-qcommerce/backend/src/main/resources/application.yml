@@ -1,6 +1,5 @@
 server:
   port: ${PORT:8081}
-  address: 0.0.0.0
 
 spring:
   application:
@@ -16,7 +15,6 @@ spring:
     enabled: true
     baseline-on-migrate: true
   jpa:
-    open-in-view: false
     hibernate:
       ddl-auto: none
     show-sql: false
@@ -37,7 +35,7 @@ spring:
 
   # Kafka Event Bus
   kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: plumbing-core-group
       auto-offset-reset: earliest
@@ -48,7 +46,6 @@ spring:
 logging:
   level:
     org.springframework.security: INFO
-    org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: ERROR
     org.hibernate.SQL: INFO
     org.hibernate.type.descriptor.sql.BasicBinder: INFO
     org.springframework.data: INFO
@@ -97,8 +94,6 @@ app:
     demo-enabled: ${APP_SEED_DEMO_ENABLED:false}
     catalog-enabled: ${APP_SEED_CATALOG_ENABLED:false}
     admin-demo-enabled: ${APP_SEED_ADMIN_DEMO_ENABLED:false}
-    mobile-qa-enabled: ${APP_SEED_MOBILE_QA_ENABLED:false}
-    staging-admin-enabled: ${APP_SEED_STAGING_ADMIN_ENABLED:false}
     fail-if-prod-demo-enabled: ${APP_SEED_FAIL_IF_PROD_DEMO_ENABLED:true}
     demo-password: ${APP_SEED_DEMO_PASSWORD:password}
 

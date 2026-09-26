@@ -56,7 +56,6 @@ export function OTPInput({
             onChangeText={(text) => handleChangeText(text, index)}
             onKeyPress={(e) => handleKeyPress(e, index)}
             selectTextOnFocus
-            accessibilityLabel={`OTP digit ${index + 1}`}
           />
         ))}
     </View>

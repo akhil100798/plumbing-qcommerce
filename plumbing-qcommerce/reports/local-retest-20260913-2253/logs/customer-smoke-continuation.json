@@ -1,6 +1,0 @@
-{
-  "url": "http://localhost:8082/",
-  "title": "FixKart Customer",
-  "text": "Skip\nYour Trusted Plumbing & Home Service App\nEnter your mobile number to book certified plumbers and track service in real-time.\nMobile Number\n🇮🇳\n+91\nGet OTP\n100% Safe & Verified FixKart Professionals\nBy continuing, you agree to FixKart’s Terms of Service & Privacy Policy.",
-  "snapshot": "- img\n- button \"Skip login\": Skip\n- text: Your Trusted Plumbing & Home Service App Enter your mobile number to book certified plumbers and track service in real-time. Mobile Number 🇮🇳 +91\n- textbox \"Mobile number input\":\n  - /placeholder: Enter 10-digit number\n  - text: \"9876511223\"\n- button \"Get OTP button\": Get OTP\n- img\n- text: 100% Safe & Verified FixKart Professionals By continuing, you agree to FixKart’s Terms of Service & Privacy Policy."
-}

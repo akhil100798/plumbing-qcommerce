@@ -1,4 +1,0 @@
-{
-  "url": "http://localhost:8083/",
-  "snapshot": "- text: Materials 1 requests\n- button \"Open material request 1, status Ready For Pickup\": \"FixKart QA Staging Store Request #1 Ready For Pickup ₹290\"\n- tablist:\n  - tab \"Home\":\n    - img\n    - img\n    - text: Home\n  - tab \"Jobs\":\n    - img\n    - img\n    - text: Jobs\n  - tab \"Earnings\":\n    - img\n    - img\n    - text: Earnings\n  - tab \"Materials\" [selected]:\n    - img\n    - img\n    - text: Materials\n  - tab \"Profile\":\n    - img\n    - img\n    - text: Profile"
-}

@@ -8,14 +8,12 @@ import {
   SafeAreaView,
   ScrollView,
   Alert,
-  Platform,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { Avatar } from '../../components/common/Avatar';
 import { logout, setAvailability } from '../../redux/slices/authSlice';
-import { authService } from '../../services/auth/authService';
 import { profileService } from '../../services/profile/profileService';
 import { colors, spacing, typography, borderRadius } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
@@ -50,7 +48,7 @@ export function DrawerMenuScreen({ navigation }: Props) {
   const { plumber } = useSelector((state: RootState) => state.auth);
   const [isOnline, setIsOnline] = useState<boolean>(plumber?.availability ?? true);
 
-  const plumberName = plumber?.fullName || 'FixKart Technician';
+  const plumberName = plumber?.fullName || 'Ramesh Kumar';
 
   const handleToggleOnline = async (val: boolean) => {
     setIsOnline(val);
@@ -75,25 +73,15 @@ export function DrawerMenuScreen({ navigation }: Props) {
   };
 
   const handleLogout = () => {
-    const performLogout = async () => {
-      await authService.logout();
-      dispatch(logout());
-      navigation?.replace?.('Auth');
-    };
-
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      if (window.confirm('Are you sure you want to logout of the FixKart Plumber app?')) {
-        void performLogout();
-      }
-      return;
-    }
-
     Alert.alert('Confirm Logout', 'Are you sure you want to logout of the FixKart Plumber app?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Logout',
         style: 'destructive',
-        onPress: () => { void performLogout(); },
+        onPress: () => {
+          dispatch(logout());
+          navigation?.replace?.('Auth');
+        },
       },
     ]);
   };
@@ -111,8 +99,6 @@ export function DrawerMenuScreen({ navigation }: Props) {
             style={styles.profileInfo}
             onPress={() => navigation?.navigate?.('Profile')}
             activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="View profile"
           >
             <Avatar name={plumberName} size={48} />
             <View style={styles.profileText}>
@@ -128,11 +114,9 @@ export function DrawerMenuScreen({ navigation }: Props) {
             <Switch
               value={isOnline}
               onValueChange={handleToggleOnline}
-              trackColor={{ false: colors.border, true: colors.success }}
-              thumbColor={colors.surfaceContainerLowest}
-              ios_backgroundColor={colors.border}
-              accessibilityLabel="Toggle availability"
-              accessibilityState={{ checked: isOnline }}
+              trackColor={{ false: '#D1D5DB', true: colors.success }}
+              thumbColor="#FFFFFF"
+              ios_backgroundColor="#D1D5DB"
             />
           </View>
         </View>
@@ -149,14 +133,12 @@ export function DrawerMenuScreen({ navigation }: Props) {
                 style={styles.menuItem}
                 onPress={() => handleNavigate(item)}
                 activeOpacity={0.6}
-                accessibilityRole="button"
-                accessibilityLabel={item.label}
               >
                 <View style={styles.menuIconContainer}>
-                  <IconComp width={20} height={20} stroke={colors.textSecondary} />
+                  <IconComp width={20} height={20} stroke="#4B5563" />
                 </View>
                 <Text style={styles.menuLabel}>{item.label}</Text>
-                <ArrowRightIcon width={18} height={18} stroke={colors.borderDark} />
+                <ArrowRightIcon width={18} height={18} stroke="#C4C9D0" />
               </TouchableOpacity>
             );
           })}
@@ -169,8 +151,6 @@ export function DrawerMenuScreen({ navigation }: Props) {
           style={styles.menuItem}
           onPress={handleLogout}
           activeOpacity={0.6}
-          accessibilityRole="button"
-          accessibilityLabel="Logout"
         >
           <View style={styles.menuIconContainer}>
             <LogoutIcon width={20} height={20} stroke={colors.error} />
@@ -185,7 +165,7 @@ export function DrawerMenuScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.surfaceContainerLowest,
+    backgroundColor: '#FFFFFF',
   },
   container: {
     flex: 1,
@@ -234,7 +214,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: colors.surfaceContainerLow,
+    backgroundColor: '#F0F1F3',
     marginVertical: 12,
   },
   menuList: {

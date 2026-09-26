@@ -5,13 +5,8 @@ import com.pqc.core.entity.RequestType;
 import com.pqc.core.entity.Role;
 import com.pqc.core.entity.ServiceOrder;
 import com.pqc.core.entity.User;
-import com.pqc.core.entity.PlumberKyc;
-import com.pqc.core.entity.PlumberAvailabilityStatus;
-import com.pqc.core.entity.PlumberKycStatus;
-import com.pqc.core.repository.PlumberKycRepository;
 import com.pqc.core.repository.OutboxEventRepository;
 import com.pqc.core.repository.ServiceOrderRepository;
-import com.pqc.core.repository.ServiceOrderPlumberDispositionRepository;
 import com.pqc.core.repository.StoreRepository;
 import com.pqc.core.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,9 +30,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import org.springframework.web.server.ResponseStatusException;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -47,13 +39,11 @@ class ResourceAuthorizationTest {
     @Autowired MockMvc mvc;
     @Autowired UserRepository users;
     @Autowired ServiceOrderRepository orders;
-    @Autowired ServiceOrderPlumberDispositionRepository dispositions;
     @Autowired StoreRepository stores;
     @Autowired OutboxEventRepository outbox;
     @Autowired PasswordEncoder passwordEncoder;
     @Autowired JwtService jwtService;
     @Autowired ServiceOrderService orderService;
-    @Autowired PlumberKycRepository plumberKycRepository;
 
     @Autowired org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
@@ -68,7 +58,6 @@ class ResourceAuthorizationTest {
     @BeforeEach
     void setUp() {
         jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
-        jdbcTemplate.execute("TRUNCATE TABLE service_order_plumber_dispositions RESTART IDENTITY");
         jdbcTemplate.execute("TRUNCATE TABLE outbox_events RESTART IDENTITY");
         jdbcTemplate.execute("TRUNCATE TABLE inventory_reservations RESTART IDENTITY");
         jdbcTemplate.execute("TRUNCATE TABLE product_order_items RESTART IDENTITY");
@@ -80,7 +69,6 @@ class ResourceAuthorizationTest {
         jdbcTemplate.execute("TRUNCATE TABLE wallets RESTART IDENTITY");
         jdbcTemplate.execute("TRUNCATE TABLE refresh_tokens RESTART IDENTITY");
         jdbcTemplate.execute("TRUNCATE TABLE notifications RESTART IDENTITY");
-        jdbcTemplate.execute("TRUNCATE TABLE plumber_kyc RESTART IDENTITY");
         jdbcTemplate.execute("TRUNCATE TABLE users RESTART IDENTITY");
         jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
 
@@ -167,112 +155,6 @@ class ResourceAuthorizationTest {
     }
 
     @Test
-    void serviceRejectsOfflinePlumberAcceptingAnOrder() {
-        plumberKycRepository.save(PlumberKyc.builder()
-                .plumberId(plumber.getId())
-                .status(PlumberKycStatus.APPROVED)
-                .availabilityStatus(PlumberAvailabilityStatus.OFFLINE)
-                .build());
-        authenticate(plumber);
-
-        assertThrows(ResponseStatusException.class,
-                () -> orderService.acceptOrder(otherCustomersOrder.getId(), plumber.getId()));
-    }
-
-    @Test
-    void offlinePlumberDoesNotReceivePendingOrderOffers() {
-        plumberKycRepository.save(PlumberKyc.builder()
-                .plumberId(plumber.getId())
-                .status(PlumberKycStatus.APPROVED)
-                .availabilityStatus(PlumberAvailabilityStatus.OFFLINE)
-                .build());
-        authenticate(plumber);
-
-        assertTrue(orderService.getOrdersByStatus(OrderStatus.PENDING).isEmpty());
-    }
-
-    @Test
-    void plumberRejectsOnlyTheirOfferAndAnotherOnlinePlumberStillSeesPendingOrder() {
-        plumberKycRepository.save(approvedOnlineKyc(plumber));
-        plumberKycRepository.save(approvedOnlineKyc(otherPlumber));
-        authenticate(plumber);
-
-        assertTrue(orderService.getOrdersByStatus(OrderStatus.PENDING).stream()
-                .anyMatch(order -> order.getId().equals(otherCustomersOrder.getId())));
-
-        orderService.rejectOrder(otherCustomersOrder.getId(), plumber.getId());
-
-        assertEquals(OrderStatus.PENDING, orders.findById(otherCustomersOrder.getId()).orElseThrow().getStatus());
-        assertTrue(dispositions.findByServiceOrderIdAndPlumberId(otherCustomersOrder.getId(), plumber.getId()).isPresent());
-        assertTrue(orderService.getOrdersByStatus(OrderStatus.PENDING).stream()
-                .noneMatch(order -> order.getId().equals(otherCustomersOrder.getId())));
-
-        authenticate(otherPlumber);
-        assertTrue(orderService.getOrdersByStatus(OrderStatus.PENDING).stream()
-                .anyMatch(order -> order.getId().equals(otherCustomersOrder.getId())));
-    }
-
-    @Test
-    void duplicatePlumberRejectIsIdempotent() {
-        plumberKycRepository.save(approvedOnlineKyc(plumber));
-        authenticate(plumber);
-
-        orderService.rejectOrder(otherCustomersOrder.getId(), plumber.getId());
-        orderService.rejectOrder(otherCustomersOrder.getId(), plumber.getId());
-
-        assertEquals(1, dispositions.findAll().size());
-        assertEquals(OrderStatus.PENDING, orders.findById(otherCustomersOrder.getId()).orElseThrow().getStatus());
-    }
-
-    @Test
-    void offlinePlumberCannotRejectPendingOffer() {
-        plumberKycRepository.save(PlumberKyc.builder()
-                .plumberId(plumber.getId())
-                .status(PlumberKycStatus.APPROVED)
-                .availabilityStatus(PlumberAvailabilityStatus.OFFLINE)
-                .build());
-        authenticate(plumber);
-
-        assertThrows(ResponseStatusException.class,
-                () -> orderService.rejectOrder(otherCustomersOrder.getId(), plumber.getId()));
-        assertTrue(dispositions.findByServiceOrderIdAndPlumberId(
-                otherCustomersOrder.getId(), plumber.getId()).isEmpty());
-    }
-
-    @Test
-    void declinedPlumberCannotAcceptTheSamePendingOffer() {
-        plumberKycRepository.save(approvedOnlineKyc(plumber));
-        authenticate(plumber);
-
-        orderService.rejectOrder(otherCustomersOrder.getId(), plumber.getId());
-
-        assertThrows(ResponseStatusException.class,
-                () -> orderService.acceptOrder(otherCustomersOrder.getId(), plumber.getId()));
-        ServiceOrder persisted = orders.findById(otherCustomersOrder.getId()).orElseThrow();
-        assertEquals(OrderStatus.PENDING, persisted.getStatus());
-        assertTrue(persisted.getPlumber() == null);
-    }
-
-    @Test
-    void customerCannotRejectPlumberOffer() throws Exception {
-        mvc.perform(patch("/api/v1/orders/{id}/reject", otherCustomersOrder.getId())
-                .header("Authorization", bearer(customer)))
-            .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void plumberCannotRejectAlreadyAcceptedOrder() {
-        plumberKycRepository.save(approvedOnlineKyc(plumber));
-        otherCustomersOrder.setPlumber(plumber);
-        otherCustomersOrder.setStatus(OrderStatus.ACCEPTED);
-        orders.save(otherCustomersOrder);
-        authenticate(plumber);
-
-        assertThrows(ResponseStatusException.class,
-                () -> orderService.rejectOrder(otherCustomersOrder.getId(), plumber.getId()));
-    }
-
-    @Test
     void serviceRejectsUnassignedPlumberStartingOrder() {
         otherCustomersOrder.setPlumber(plumber);
         otherCustomersOrder.setStatus(OrderStatus.ACCEPTED);
@@ -291,14 +173,6 @@ class ResourceAuthorizationTest {
                 .phone("9999999999")
                 .role(role)
                 .build());
-    }
-
-    private PlumberKyc approvedOnlineKyc(User user) {
-        return PlumberKyc.builder()
-                .plumberId(user.getId())
-                .status(PlumberKycStatus.APPROVED)
-                .availabilityStatus(PlumberAvailabilityStatus.ONLINE)
-                .build();
     }
 
     private String bearer(User user) {

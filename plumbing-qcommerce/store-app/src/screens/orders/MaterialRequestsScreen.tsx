@@ -1,55 +1,36 @@
-import { NavigationProp, useNavigation } from '@react-navigation/native';
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import {
-  ActivityIndicator,
+  View,
+  Text,
+  StyleSheet,
   FlatList,
-  RefreshControl,
+  TouchableOpacity,
   SafeAreaView,
   StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+  ActivityIndicator,
 } from 'react-native';
-
-import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
-import { StatusChip } from '../../components/common/StatusChip';
-import { materialRequestService } from '../../services/orders/materialRequestService';
-import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
-import { MaterialRequest } from '../../types';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
+import { materialRequestService } from '../../services/orders/materialRequestService';
+import { MaterialRequest } from '../../types';
+import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
+import PlusIcon from '../../assets/icons/plus.svg';
+import { colors, borderRadius, spacing, typography } from '../../theme';
 
 const tabs = [
-  { key: 'all', label: 'All' },
-  { key: 'approved', label: 'Action Required' },
-  { key: 'accepted', label: 'Accepted' },
+  { key: 'all',       label: 'All' },
+  { key: 'pending',   label: 'Pending' },
   { key: 'preparing', label: 'Preparing' },
-  { key: 'ready', label: 'Ready' },
-  { key: 'collected', label: 'Completed' },
+  { key: 'ready',     label: 'Ready' },
+  { key: 'completed', label: 'Completed' },
 ];
 
-const statusToChipType: Record<string, 'warning' | 'primary' | 'info' | 'success' | 'error' | 'neutral'> = {
-  REQUESTED: 'warning',
-  APPROVED: 'warning',
-  STORE_ACCEPTED: 'primary',
-  PREPARING: 'info',
-  READY_FOR_PICKUP: 'success',
-  PLUMBER_AT_STORE: 'success',
-  COLLECTED: 'neutral',
-  REJECTED: 'error',
-  CANCELLED: 'error',
-};
-
-const statusLabel: Record<string, string> = {
-  REQUESTED: 'Pending Approval',
-  APPROVED: 'Action Required',
-  STORE_ACCEPTED: 'Accepted',
-  PREPARING: 'Preparing',
-  READY_FOR_PICKUP: 'Ready for Pickup',
-  PLUMBER_AT_STORE: 'Handover',
-  COLLECTED: 'Collected',
-  REJECTED: 'Rejected',
-  CANCELLED: 'Cancelled',
+const statusDisplay: Record<string, { label: string; color: string; bg: string }> = {
+  PENDING:   { label: 'Pending',   color: colors.accentOrange, bg: colors.accentOrangeLight },
+  PREPARING: { label: 'Preparing', color: '#2E9AE0',           bg: '#E7F5FE' },
+  READY:     { label: 'Ready',     color: colors.accentGreen,  bg: colors.accentGreenLight },
+  COMPLETED: { label: 'Completed', color: '#6B7280',           bg: '#F3F4F6' },
+  CANCELLED: { label: 'Cancelled', color: colors.error,        bg: colors.errorLight || '#FEE2E2' },
 };
 
 export function MaterialRequestsScreen() {
@@ -57,19 +38,18 @@ export function MaterialRequestsScreen() {
   const [activeTab, setActiveTab] = useState('all');
   const [requests, setRequests] = useState<MaterialRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadRequests = useCallback(async () => {
+    setLoading(true);
     setError(null);
     try {
-      const data = await materialRequestService.getStoreRequests();
+      const data = await materialRequestService.getMaterialRequests();
       setRequests(data || []);
     } catch (err: any) {
-      setError(err.message || 'Unable to load material requests.');
+      setError(err.message || 'Unable to load material requests. Please try again.');
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, []);
 
@@ -77,25 +57,15 @@ export function MaterialRequestsScreen() {
     loadRequests();
   }, [loadRequests]);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadRequests();
-  };
-
-  const filteredRequests = requests.filter((r) => {
-    const raw = r.rawStatus || r.status;
-    if (activeTab === 'all') return true;
-    if (activeTab === 'approved') return raw === 'APPROVED' || raw === 'REQUESTED' || r.status === 'PENDING';
-    if (activeTab === 'accepted') return raw === 'STORE_ACCEPTED' || raw === 'RESERVED';
-    if (activeTab === 'preparing') return raw === 'PREPARING' || r.status === 'PREPARING';
-    if (activeTab === 'ready') return raw === 'READY_FOR_PICKUP' || raw === 'PLUMBER_AT_STORE' || r.status === 'READY';
-    if (activeTab === 'collected') return raw === 'COLLECTED' || r.status === 'COMPLETED';
-    return true;
-  });
+  const filteredRequests = activeTab === 'all'
+    ? requests
+    : requests.filter(r => r.status.toLowerCase() === activeTab);
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
+
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => {
@@ -110,30 +80,34 @@ export function MaterialRequestsScreen() {
         <View style={{ width: 24 }} />
       </View>
 
+      {/* Tabs */}
       <View style={styles.tabsRow}>
         {tabs.map((tab) => {
           const isActive = tab.key === activeTab;
+          const count = tab.key === 'all' ? requests.length : requests.filter(r => r.status.toLowerCase() === tab.key).length;
           return (
             <TouchableOpacity
               key={tab.key}
               style={[styles.tabItem, isActive && styles.tabItemActive]}
               onPress={() => setActiveTab(tab.key)}
             >
-              <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>{tab.label}</Text>
+              <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                {tab.label}{count > 0 && tab.key !== 'all' ? ` (${count})` : ''}
+              </Text>
             </TouchableOpacity>
           );
         })}
       </View>
 
-      {loading && !refreshing ? (
+      {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading requests...</Text>
+          <Text style={styles.loadingText}>Loading requests…</Text>
         </View>
       ) : error ? (
         <View style={styles.center}>
-          <Text style={styles.errorIcon}>!</Text>
-          <Text style={styles.errorTitle}>Unable to Load</Text>
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={styles.errorTitle}>Could Not Load Requests</Text>
           <Text style={styles.errorMessage}>{error}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={loadRequests}>
             <Text style={styles.retryBtnText}>Retry</Text>
@@ -143,46 +117,55 @@ export function MaterialRequestsScreen() {
         <FlatList
           data={filteredRequests}
           keyExtractor={(item) => String(item.id)}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.huge }}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.center}>
-              <Text style={styles.emptyTitle}>No requests</Text>
-              <Text style={styles.emptySub}>No material requests in this queue tab.</Text>
+              <Text style={styles.emptyIcon}>📋</Text>
+              <Text style={styles.emptyText}>
+                {activeTab === 'all' ? 'No material requests yet.' : `No ${activeTab} requests.`}
+              </Text>
             </View>
           }
           renderItem={({ item }) => {
-            const rawStatus = item.rawStatus || item.status;
-            const chipType = statusToChipType[rawStatus] || 'neutral';
-            const isActionNeeded = rawStatus === 'STORE_REVIEWING';
-
+            const style = statusDisplay[item.status] || statusDisplay.PENDING;
             return (
               <TouchableOpacity
-                style={[styles.requestCard, isActionNeeded && styles.requestCardHighlighted]}
-                onPress={() => navigation.navigate(
-                  rawStatus === 'PLUMBER_AT_STORE' || rawStatus === 'COLLECTED'
-                    ? 'CollectionConfirmation' : 'MaterialRequestDetail',
-                  { requestId: Number(item.id) }
-                )}
+                testID={`store-material-request-card-${item.id}`}
+                style={styles.requestCard}
+                onPress={() => navigation.navigate('MaterialRequestDetail', { requestId: item.id as number })}
               >
                 <View style={styles.requestTopRow}>
                   <Text style={styles.requestId}>Request #{item.id}</Text>
-                  <StatusChip status={rawStatus} />
+                  <View style={[styles.statusPill, { backgroundColor: style.bg }]}>
+                    <Text style={[styles.statusPillText, { color: style.color }]}>
+                      {style.label}
+                    </Text>
+                  </View>
                 </View>
-                {item.serviceOrderId && (
-                  <Text style={styles.requestMeta}>Service Order: #{item.serviceOrderId}</Text>
-                )}
-                <Text style={styles.requestMeta}>Plumber: {item.plumberName || 'Field Technician'}</Text>
-                {item.items && item.items.length > 0 && (
+                <Text style={styles.requestDate}>
+                  {new Date(item.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </Text>
+                <Text style={styles.requestMeta}>
+                  Plumber: {item.plumberName}
+                </Text>
+                {item.items?.length > 0 && (
                   <Text style={styles.requestQty}>
-                    {item.items.length} item{item.items.length > 1 ? 's' : ''} · ₹
-                    {(item.totalAmount || 0).toFixed(2)}
+                    {item.items.length} item{item.items.length > 1 ? 's' : ''} · ₹{item.totalAmount.toFixed(2)}
                   </Text>
                 )}
               </TouchableOpacity>
             );
           }}
+          ListFooterComponent={
+            <TouchableOpacity
+              style={styles.newRequestButton}
+              onPress={() => navigation.navigate('MaterialRequests')}
+            >
+              <PlusIcon width={18} height={18} stroke={colors.surface} />
+              <Text style={styles.newRequestText}>Refresh</Text>
+            </TouchableOpacity>
+          }
         />
       )}
     </SafeAreaView>
@@ -195,8 +178,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.layout,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
@@ -204,59 +188,69 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
   tabsRow: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.layout,
+    paddingHorizontal: spacing.xl,
     backgroundColor: colors.surface,
-    paddingBottom: spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingBottom: spacing.sm,
+    marginBottom: spacing.sm,
     flexWrap: 'wrap',
   },
   tabItem: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: borderRadius.sm,
-    marginRight: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: borderRadius.round,
+    marginRight: 8,
     marginTop: 4,
-    backgroundColor: colors.surfaceContainerLow,
+    backgroundColor: colors.background,
   },
   tabItemActive: { backgroundColor: colors.primary },
-  tabLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary, fontWeight: '600' },
-  tabLabelActive: { color: colors.onPrimary, fontWeight: typography.fontWeight.bold },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.sm, padding: spacing.layout, minHeight: 220 },
-  loadingText: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
-  errorIcon: { fontSize: 24, fontWeight: 'bold', color: colors.danger, marginBottom: spacing.xs },
-  errorTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  errorMessage: { fontSize: typography.fontSize.xs, color: colors.textSecondary, textAlign: 'center' },
+  tabLabel: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
+  tabLabelActive: { color: colors.surface },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.md, padding: spacing.layout, minHeight: 200 },
+  loadingText: { fontSize: typography.fontSize.sm, color: colors.textSecondary },
+  errorIcon: { fontSize: 36 },
+  errorTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, textAlign: 'center' },
+  errorMessage: { fontSize: typography.fontSize.sm, color: colors.textSecondary, textAlign: 'center', lineHeight: 20 },
   retryBtn: {
     backgroundColor: colors.primary,
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.md,
     paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
+    marginTop: spacing.sm,
   },
-  retryBtnText: { color: colors.onPrimary, fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold },
-  emptyTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  emptySub: { fontSize: typography.fontSize.xs, color: colors.textMuted, textAlign: 'center', marginTop: spacing.xs },
-  listContainer: { padding: spacing.layout, paddingBottom: spacing.giant },
+  retryBtnText: { color: colors.surface, fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold },
+  emptyIcon: { fontSize: 36 },
+  emptyText: { fontSize: typography.fontSize.sm, color: colors.textSecondary, textAlign: 'center' },
   requestCard: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.xs,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    ...shadows.sm,
-  },
-  requestCardHighlighted: {
-    borderColor: colors.warning,
-    borderWidth: 1.5,
   },
   requestTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: 4,
   },
-  requestId: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  requestMeta: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: 2 },
-  requestQty: { fontSize: typography.fontSize.xs, color: colors.textPrimary, fontWeight: typography.fontWeight.bold, marginTop: spacing.xs },
+  requestId: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: borderRadius.round },
+  statusPillText: { fontSize: 11, fontWeight: '700' },
+  requestDate: { fontSize: typography.fontSize.xs, color: colors.textMuted, marginBottom: 4 },
+  requestMeta: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginBottom: 2 },
+  requestQty: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: 2 },
+  newRequestButton: {
+    flexDirection: 'row',
+    backgroundColor: colors.primary,
+    height: 52,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  newRequestText: { color: colors.surface, fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, marginLeft: 6 },
 });
+
+export default MaterialRequestsScreen;

@@ -4,8 +4,6 @@ export const typography = {
     medium: 'System',
     bold: 'System',
     black: 'System',
-    body: 'System',
-    heading: 'System',
   },
   fontSize: {
     xs: 12,

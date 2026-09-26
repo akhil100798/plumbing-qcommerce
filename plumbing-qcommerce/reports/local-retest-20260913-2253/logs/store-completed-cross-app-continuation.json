@@ -1,4 +1,0 @@
-{
-  "url": "http://localhost:8084/",
-  "snapshot": "- img\n- text: \"Material Requests All Action Required Accepted Preparing Ready Completed Request #1 COLLECTED Service Order: #2 Plumber: QA Plumber One\"\n- tablist:\n  - tab \"Home\":\n    - img\n    - img\n    - text: Home\n  - tab \"Orders\":\n    - img\n    - img\n    - text: Orders\n  - tab \"Inventory\":\n    - img\n    - img\n    - text: Inventory\n  - tab \"Materials\" [selected]:\n    - img\n    - img\n    - text: Materials\n  - tab \"Account\":\n    - img\n    - img\n    - text: Account"
-}

@@ -12,7 +12,6 @@ import {
 
 import { borderRadius, colors, spacing, typography } from '../../theme';
 import { animation, useNativeDriver } from '../../theme/animation';
-import { useReducedMotion } from '../../hooks/useReducedMotion';
 
 interface SecondaryButtonProps {
   title: string;
@@ -40,11 +39,9 @@ export function SecondaryButton({
   accessibilityLabel,
 }: SecondaryButtonProps) {
   const scale = useRef(new Animated.Value(1)).current;
-  const reduceMotion = useReducedMotion();
   const isInteractionDisabled = disabled || loading;
 
   const handlePressIn = () => {
-    if (reduceMotion) return;
     Animated.spring(scale, {
       toValue: animation.pressScale,
       useNativeDriver,
@@ -54,7 +51,6 @@ export function SecondaryButton({
   };
 
   const handlePressOut = () => {
-    if (reduceMotion) return;
     Animated.spring(scale, {
       toValue: 1,
       useNativeDriver,
@@ -70,9 +66,8 @@ export function SecondaryButton({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={isInteractionDisabled}
-         accessibilityRole="button"
-         accessibilityLabel={accessibilityLabel || title}
-         accessibilityState={{ disabled: isInteractionDisabled, busy: loading }}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel || title}
         style={({ pressed }) => [
           styles.button,
           { borderColor: outlineColor },

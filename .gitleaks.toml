@@ -19,9 +19,6 @@ regexes = [
   '''(?i)your-very-strong-jwt-secret-key-here-at-least-256-bits-long-for-hs256''',
   '''(?i)test-hash-secret-key-minimum-32-chars-long''',
   '''(?i)a-very-(long-and-secure-random-secret-key-32-chars|strong-and-secure-hash-secret-value)''',
-  '''(?i)QaOnly!Pass123''',
-  '''(?i)FixKartLocal!2026''',
-  '''(?i)(canonical|legacy)-access-token''',
 ]
 paths = [
   '''(^|/)docs/''',

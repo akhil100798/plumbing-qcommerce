@@ -1,4 +1,0 @@
-{
-  "url": "http://localhost:8084/",
-  "snapshot": "- text: Hardware Inventory\n- img\n- text: All In Stock Low Stock Out of Stock\n- progressbar:\n  - img\n- text: Fetching Store Inventory...\n- tablist:\n  - tab \"Home\":\n    - img\n    - img\n    - text: Home\n  - tab \"Orders\":\n    - img\n    - img\n    - text: Orders\n  - tab \"Inventory\" [selected]:\n    - img\n    - img\n    - text: Inventory\n  - tab \"Materials\":\n    - img\n    - img\n    - text: Materials\n  - tab \"Account\":\n    - img\n    - img\n    - text: Account"
-}

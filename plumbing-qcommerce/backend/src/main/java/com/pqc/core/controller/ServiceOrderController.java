@@ -9,12 +9,6 @@ import com.pqc.core.entity.OrderStatus;
 import com.pqc.core.entity.RequestType;
 import com.pqc.core.entity.ServiceOrder;
 import com.pqc.core.service.ServiceOrderService;
-import com.pqc.core.service.ServiceOrderPhotoService;
-import com.pqc.core.entity.ServiceOrderPhotoPhase;
-import com.pqc.core.dto.ServiceOrderPhotoResponse;
-import org.springframework.core.io.Resource;
-import org.springframework.http.MediaType;
-import org.springframework.web.multipart.MultipartFile;
 import com.pqc.core.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +25,6 @@ import java.util.Map;
 public class ServiceOrderController {
 
     private final ServiceOrderService orderService;
-    private final ServiceOrderPhotoService photoService;
     private final CurrentUser currentUser;
 
     /**
@@ -69,13 +62,6 @@ public class ServiceOrderController {
         return ResponseEntity.ok(orderService.acceptOrder(id, currentUser.require().getId()));
     }
 
-    /** PATCH/POST /api/v1/orders/{id}/reject - Plumber declines their offer */
-    @RequestMapping(value = "/{id}/reject", method = {RequestMethod.POST, RequestMethod.PATCH})
-    @PreAuthorize("hasRole('PLUMBER')")
-    public ResponseEntity<ServiceOrder> rejectOrder(@PathVariable Long id) {
-        return ResponseEntity.ok(orderService.rejectOrder(id, currentUser.require().getId()));
-    }
-
     /** PATCH/POST /api/v1/orders/{id}/arrive — Plumber marks arrival */
     @RequestMapping(value = "/{id}/arrive", method = {RequestMethod.POST, RequestMethod.PATCH})
     @PreAuthorize("hasRole('PLUMBER') and @orderAuthorization.isAssignedPlumber(#id, authentication)")
@@ -100,28 +86,15 @@ public class ServiceOrderController {
     /** POST /api/v1/orders/{id}/photos/before */
     @PostMapping("/{id}/photos/before")
     @PreAuthorize("hasRole('PLUMBER') and @orderAuthorization.isAssignedPlumber(#id, authentication)")
-    public ResponseEntity<ServiceOrderPhotoResponse> uploadBeforePhoto(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(photoService.upload(id, ServiceOrderPhotoPhase.BEFORE, file));
+    public ResponseEntity<Map<String, String>> uploadBeforePhoto(@PathVariable Long id) {
+        return ResponseEntity.ok(Map.of("message", "Before photo uploaded successfully", "orderId", String.valueOf(id)));
     }
 
     /** POST /api/v1/orders/{id}/photos/after */
     @PostMapping("/{id}/photos/after")
     @PreAuthorize("hasRole('PLUMBER') and @orderAuthorization.isAssignedPlumber(#id, authentication)")
-    public ResponseEntity<ServiceOrderPhotoResponse> uploadAfterPhoto(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(photoService.upload(id, ServiceOrderPhotoPhase.AFTER, file));
-    }
-
-    @GetMapping("/{id}/photos/{phase}")
-    @PreAuthorize("hasRole('PLUMBER') and @orderAuthorization.isAssignedPlumber(#id, authentication)")
-    public ResponseEntity<List<ServiceOrderPhotoResponse>> listPhotos(@PathVariable Long id, @PathVariable ServiceOrderPhotoPhase phase) {
-        return ResponseEntity.ok(photoService.list(id, phase));
-    }
-
-    @GetMapping("/{id}/photos/{photoId}/file")
-    @PreAuthorize("hasRole('PLUMBER') and @orderAuthorization.isAssignedPlumber(#id, authentication)")
-    public ResponseEntity<Resource> photoFile(@PathVariable Long id, @PathVariable Long photoId) {
-        ServiceOrderPhotoService.PhotoFile file = photoService.file(id, photoId);
-        return ResponseEntity.ok().contentType(MediaType.parseMediaType(file.contentType())).body(file.resource());
+    public ResponseEntity<Map<String, String>> uploadAfterPhoto(@PathVariable Long id) {
+        return ResponseEntity.ok(Map.of("message", "After photo uploaded successfully", "orderId", String.valueOf(id)));
     }
 
     /** GET /api/v1/orders/plumber/history — Get current plumber's job history */

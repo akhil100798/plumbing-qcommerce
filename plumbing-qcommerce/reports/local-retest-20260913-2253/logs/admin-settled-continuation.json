@@ -1,4 +1,0 @@
-{
-  "url": "http://localhost:3001/",
-  "snapshot": "- text: P\n- heading \"PlumbCommerce\" [level=1]\n- paragraph: Admin Portal\n- text: Email\n- textbox \"Email\":\n  - /placeholder: admin@plumbcommerce.com\n  - text: superadmin@plumbcommerce.com\n- text: Password\n- textbox \"Password\": [REDACTED]\n- text: Failed to fetch\n- button \"Sign in\"\n- alert"
-}
