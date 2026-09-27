@@ -1,7 +1,6 @@
 import { StackScreenProps } from '@react-navigation/stack';
 import React, { useEffect } from 'react';
 import {
-  Alert,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -13,6 +12,7 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 
 import { AddressCard } from '../components/cards/AddressCard';
+import { AddressForm } from '../components/address/AddressForm';
 import { PrimaryButton } from '../components/common/PrimaryButton';
 import { addAddress, deleteAddress, setSelectedAddress, setAddresses } from '../redux/slices/addressSlice';
 import { AddressRepository } from '../services/address/addressRepository';
@@ -27,6 +27,7 @@ export function AddressManagementScreen({ navigation }: Props) {
   const dispatch = useDispatch();
   const { addresses, selectedId } = useSelector((state: RootState) => state.address);
   const [accessMessage, setAccessMessage] = React.useState('');
+  const [showForm, setShowForm] = React.useState(false);
 
   useEffect(() => {
     const fetchAddresses = async () => {
@@ -52,33 +53,15 @@ export function AddressManagementScreen({ navigation }: Props) {
     fetchAddresses();
   }, [dispatch]);
 
-  const handleAddNew = async () => {
+  const handleSaveAddress = async (address: Parameters<typeof AddressRepository.addAddress>[0]) => {
     const token = await getAuthToken();
     if (!token) {
-      Alert.alert('Sign in required', 'Please sign in before adding a service address.');
       setAccessMessage('Sign in is required to manage saved addresses.');
       return;
     }
-    try {
-      const saved = await AddressRepository.addAddress({
-        label: 'Other',
-        name: 'Akhil Kumar (Secondary)',
-        addressLine: 'Plot No. 12, Kavuri Hills, Phase 2, Near Jubilee Hills, Hyderabad, 500033',
-        phone: '+91 98765 43210',
-      });
-      dispatch(
-        addAddress({
-          id: saved.id,
-          label: saved.label,
-          name: saved.name,
-          addressLine: saved.addressLine,
-          phone: saved.phone,
-        })
-      );
-    } catch (err) {
-      console.error('Failed to add address', err);
-      Alert.alert('Address unavailable', 'We could not save this address. Please try again.');
-    }
+    const saved = await AddressRepository.addAddress(address);
+    dispatch(addAddress({ id: saved.id, label: saved.label, name: saved.name, addressLine: saved.addressLine, phone: saved.phone }));
+    setShowForm(false);
   };
 
   const handleDelete = async (id: number) => {
@@ -103,6 +86,7 @@ export function AddressManagementScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.sectionTitle}>Default Delivery Address</Text>
         {accessMessage ? <Text style={styles.accessMessage}>{accessMessage}</Text> : null}
+        {showForm ? <AddressForm onSave={handleSaveAddress} onCancel={() => setShowForm(false)} /> : null}
         {addresses.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No saved addresses found.</Text>
@@ -133,7 +117,8 @@ export function AddressManagementScreen({ navigation }: Props) {
       <View style={styles.footer}>
         <PrimaryButton
           title="+ Add New Address"
-          onPress={handleAddNew}
+          onPress={() => setShowForm(true)}
+          disabled={showForm}
           style={styles.addBtn}
         />
       </View>

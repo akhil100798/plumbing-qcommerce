@@ -1,6 +1,6 @@
 import { StackScreenProps } from '@react-navigation/stack';
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useDispatch } from 'react-redux';
 
 import { PrimaryButton } from '../../components/common/PrimaryButton';
@@ -16,25 +16,27 @@ export function RegisterScreen({ navigation }: Props) {
   const dispatch = useDispatch();
   const [form, setForm] = useState({ fullName: '', email: '', phone: '', password: '', confirmPassword: '', storeName: '', storeAddress: '', latitude: '', longitude: '' });
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const set = (key: keyof typeof form) => (value: string) => setForm((current) => ({ ...current, [key]: value }));
 
   const register = async () => {
+    setErrorMessage('');
     if (Object.values(form).some((value) => !value.trim())) {
-      Alert.alert('Validation Error', 'Complete every field.');
+      setErrorMessage('Complete every field.');
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) || !/^[6-9]\d{9}$/.test(form.phone)) {
-      Alert.alert('Validation Error', 'Enter a valid email and 10-digit Indian mobile number.');
+      setErrorMessage('Enter a valid email and 10-digit Indian mobile number.');
       return;
     }
     const latitude = Number(form.latitude);
     const longitude = Number(form.longitude);
     if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
-      Alert.alert('Validation Error', 'Enter valid latitude (-90 to 90) and longitude (-180 to 180).');
+      setErrorMessage('Enter valid latitude (-90 to 90) and longitude (-180 to 180).');
       return;
     }
     if (form.password.length < 8 || form.password !== form.confirmPassword) {
-      Alert.alert('Validation Error', form.password.length < 8 ? 'Password must be at least 8 characters.' : 'Passwords do not match.');
+      setErrorMessage(form.password.length < 8 ? 'Password must be at least 8 characters.' : 'Passwords do not match.');
       return;
     }
 
@@ -53,7 +55,7 @@ export function RegisterScreen({ navigation }: Props) {
       dispatch(authSuccess(result));
       navigation.replace('Main' as any);
     } catch (error: any) {
-      Alert.alert('Registration Failed', error.message || 'Registration failed.');
+      setErrorMessage(error.message || 'Registration failed.');
     } finally {
       setLoading(false);
     }
@@ -77,6 +79,7 @@ export function RegisterScreen({ navigation }: Props) {
             </View>
             <Field label="Password" value={form.password} onChangeText={set('password')} secureTextEntry />
             <Field label="Confirm password" value={form.confirmPassword} onChangeText={set('confirmPassword')} secureTextEntry />
+            {errorMessage ? <Text accessibilityRole="alert" style={styles.error}>{errorMessage}</Text> : null}
             <PrimaryButton title="Create Store Account" onPress={register} loading={loading} style={styles.button} />
             <TouchableOpacity onPress={() => navigation.navigate('Login')}><Text style={styles.link}>Already registered? Log in</Text></TouchableOpacity>
           </View>
@@ -96,5 +99,6 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.surface, borderRadius: 16, padding: spacing.lg }, field: { marginBottom: 12 },
   label: { color: colors.textPrimary, fontWeight: '600', marginBottom: 6 }, input: { borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingHorizontal: 12, height: 48, color: colors.textPrimary },
   row: { flexDirection: 'row', gap: 10 }, half: { flex: 1 }, button: { marginTop: 8 },
+  error: { color: '#B91C1C', marginBottom: 8, fontWeight: '600' },
   link: { color: colors.primary, textAlign: 'center', marginTop: 18, fontWeight: '600' },
 });
