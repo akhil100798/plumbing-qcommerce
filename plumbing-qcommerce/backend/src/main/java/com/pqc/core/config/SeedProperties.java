@@ -16,10 +16,6 @@ public class SeedProperties {
     private boolean demoEnabled = false;
     private boolean catalogEnabled = false;
     private boolean adminDemoEnabled = false;
-    /** Activates {@code StagingDemoMobileUserSeeder} — env: {@code APP_SEED_MOBILE_QA_ENABLED}. Staging only. */
-    private boolean mobileQaEnabled = false;
-    /** Activates {@code StagingDemoAdminUserSeeder} — env: {@code APP_SEED_STAGING_ADMIN_ENABLED}. Staging only. */
-    private boolean stagingAdminEnabled = false;
     private boolean failIfProdDemoEnabled = true;
     private String demoPassword = "password";
 
@@ -30,17 +26,18 @@ public class SeedProperties {
     public void validate() {
         if (env != null && env.getActiveProfiles() != null) {
             boolean isProd = Arrays.asList(env.getActiveProfiles()).contains("prod");
-            if (isProd) {
+            boolean stagingAdminEnabled = env.getProperty("app.seed.staging-admin-enabled", Boolean.class, false);
+            if (isProd || stagingAdminEnabled) {
                 if (failIfProdDemoEnabled && (demoEnabled || adminDemoEnabled || catalogEnabled)) {
                     throw new IllegalStateException("Production configuration violation: Seeding cannot be enabled when the production profile is active.");
                 }
-                if (demoEnabled || adminDemoEnabled || catalogEnabled) {
+                if (demoEnabled || adminDemoEnabled || catalogEnabled || stagingAdminEnabled) {
                     if (demoPassword == null || demoPassword.isBlank()) {
-                        throw new IllegalStateException("Production configuration violation: app.seed.demo-password must not be blank when seeding is enabled.");
+                        throw new IllegalStateException("Seed configuration violation: app.seed.demo-password must not be blank when seeding is enabled.");
                     }
                     String lowerPwd = demoPassword.toLowerCase().trim();
                     if (lowerPwd.equals("password") || lowerPwd.equals("admin") || lowerPwd.equals("123456")) {
-                        throw new IllegalStateException("Production configuration violation: app.seed.demo-password cannot use a weak default password.");
+                        throw new IllegalStateException("Seed configuration violation: app.seed.demo-password cannot use a weak default password.");
                     }
                 }
             }
