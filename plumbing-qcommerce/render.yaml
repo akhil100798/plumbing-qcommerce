@@ -12,6 +12,10 @@ services:
         value: false
       - key: APP_DEMO_SEED_ENABLED
         value: true
+      - key: APP_SEED_STAGING_ADMIN_ENABLED
+        value: true
+      - key: APP_SEED_DEMO_PASSWORD
+        sync: false
       - key: PORT
         value: 10000
       - key: DATABASE_URL
