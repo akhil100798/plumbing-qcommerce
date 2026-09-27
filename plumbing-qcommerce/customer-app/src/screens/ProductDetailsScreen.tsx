@@ -72,6 +72,7 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
   }, [productId]);
 
   const handleBuyNow = () => {
+    Array.from({ length: quantity }).forEach(() => dispatch(addToCart(productId)));
     navigation.navigate('Cart');
   };
 

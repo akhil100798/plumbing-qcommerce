@@ -22,6 +22,7 @@ export function OrderDetailsScreen({ route, navigation }: Props) {
   const { orderId, type } = route.params as { orderId: number; type: 'product' | 'service' };
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<any>(null);
+  const [feedbackMessage, setFeedbackMessage] = useState('');
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
@@ -82,7 +83,15 @@ export function OrderDetailsScreen({ route, navigation }: Props) {
     : 0;
   const deliveryFee = isProduct ? 25 : 0;
   const handlingFee = isProduct ? 10 : 0;
-  const grandTotal = isProduct ? (order.totalAmount || (itemTotal + deliveryFee + handlingFee)) : order.totalAmount;
+  const serviceTotalParts = [order.baseCharge, order.laborCharge, order.partsCharge, order.platformFee]
+    .map((value) => Number(value))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  const serviceTotal = Number(order.totalAmount) > 0
+    ? Number(order.totalAmount)
+    : serviceTotalParts.reduce((total: number, value: number) => total + value, 0);
+  const grandTotal = isProduct
+    ? Number(order.totalAmount) || (itemTotal + deliveryFee + handlingFee)
+    : serviceTotal > 0 ? serviceTotal : 199;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -145,7 +154,7 @@ export function OrderDetailsScreen({ route, navigation }: Props) {
                   <Text style={styles.itemName}>{order.description || 'Plumbing Service'}</Text>
                   <Text style={styles.itemQty}>Standard Repair</Text>
                 </View>
-                <Text style={styles.itemPrice}>₹{order.totalAmount || 199}</Text>
+                <Text style={styles.itemPrice}>₹{grandTotal}</Text>
               </View>
             )}
           </View>
@@ -206,11 +215,14 @@ export function OrderDetailsScreen({ route, navigation }: Props) {
       <View style={styles.footer}>
         <PrimaryButton
           title={status === 'CANCELLED' ? 'Reorder Items' : 'Get Help / Support'}
-          onPress={() => {
-            Alert.alert('Action Triggered', 'Our team will support your request shortly.');
-          }}
+          onPress={() => setFeedbackMessage(
+            status === 'CANCELLED'
+              ? 'Reorder is available from the catalog. Choose the items you need to continue.'
+              : 'Support request noted. Our team will contact you shortly.'
+          )}
           style={styles.actionBtn}
         />
+        {feedbackMessage ? <Text accessibilityRole="alert" style={styles.feedbackMessage}>{feedbackMessage}</Text> : null}
       </View>
     </SafeAreaView>
   );
@@ -392,6 +404,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 1.5,
     borderTopColor: colors.border,
     backgroundColor: colors.surface,
+  },
+  feedbackMessage: {
+    marginTop: spacing.sm,
+    color: colors.textSecondary,
+    fontSize: typography.fontSize.xs,
+    textAlign: 'center',
   },
   actionBtn: {
     width: '100%',

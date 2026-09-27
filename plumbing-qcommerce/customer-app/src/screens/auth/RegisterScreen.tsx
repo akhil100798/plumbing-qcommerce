@@ -1,7 +1,6 @@
 import { StackScreenProps } from '@react-navigation/stack';
 import React, { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -43,14 +42,7 @@ export function RegisterScreen({ navigation }: Props) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const notify = (title: string, message: string) => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
-      window.alert(`${title}\n\n${message}`);
-      return;
-    }
-    Alert.alert(title, message);
-  };
+  const [errorMessage, setErrorMessage] = useState('');
 
   const validate = () => {
     if (!fullName.trim()) return 'Please enter your full name';
@@ -63,9 +55,10 @@ export function RegisterScreen({ navigation }: Props) {
   };
 
   const handleRegister = async () => {
+    setErrorMessage('');
     const validationError = validate();
     if (validationError) {
-      notify('Validation Error', validationError);
+      setErrorMessage(validationError);
       return;
     }
 
@@ -94,7 +87,7 @@ export function RegisterScreen({ navigation }: Props) {
       });
     } catch (err: any) {
       dispatch(loginFailure(err.message || 'Registration failed'));
-      notify('Registration Failed', err.message || 'Registration failed');
+      setErrorMessage(err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -144,6 +137,12 @@ export function RegisterScreen({ navigation }: Props) {
               onChangeText={(value) => setPhone(value.replace(/[^0-9]/g, ''))}
             />
             <Text style={styles.helperText}>No SMS or OTP is required for customer registration.</Text>
+
+            {errorMessage ? (
+              <Text accessibilityRole="alert" style={styles.errorText}>
+                {errorMessage}
+              </Text>
+            ) : null}
 
             <Text style={styles.inputLabel}>Password</Text>
             <TextInput
@@ -251,6 +250,12 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontSize: 12,
     fontFamily: typography.fontFamily.regular,
+  },
+  errorText: {
+    marginTop: spacing.md,
+    color: colors.error,
+    fontSize: 13,
+    fontFamily: typography.fontFamily.medium,
   },
   textInput: {
     height: 48,

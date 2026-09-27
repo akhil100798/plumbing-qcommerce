@@ -837,7 +837,12 @@ export function HomeScreen({ navigation }: any) {
                 {Object.values(cart).reduce((a, b) => a + b, 0)} Items Selected
               </Text>
             </View>
-            <TouchableOpacity style={[styles.primaryButton, { backgroundColor: '#2563EB' }]} onPress={handleCheckout}>
+            <TouchableOpacity
+              style={[styles.primaryButton, { backgroundColor: '#2563EB' }]}
+              accessibilityRole="button"
+              accessibilityLabel="Buy now"
+              onPress={() => navigation.navigate('Cart')}
+            >
               <Text style={styles.primaryButtonText}>Buy Now</Text>
             </TouchableOpacity>
           </View>

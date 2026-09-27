@@ -28,16 +28,18 @@ type Props = StackScreenProps<AuthStackParamList, 'Login'>;
 export function LoginScreen({ navigation }: Props) {
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState<'mobile' | 'email'>('mobile');
-  const [phone, setPhone] = useState('9876543210');
-  const [email, setEmail] = useState('plumber@plumbcommerce.com');
-  const [password, setPassword] = useState('password');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleContinue = async () => {
+    setErrorMessage('');
     if (activeTab === 'mobile') {
       if (phone.length !== 10) {
-        Alert.alert('Invalid Mobile Number', 'Please enter a valid 10-digit mobile number');
+        setErrorMessage('Please enter a valid 10-digit mobile number.');
         return;
       }
       // Navigate to OTP Screen
@@ -47,7 +49,7 @@ export function LoginScreen({ navigation }: Props) {
 
     if (!email.trim() || !password.trim()) {
       dispatch(authFailure('Please fill in all credentials fields'));
-      Alert.alert('Invalid Input', 'Please fill in all credentials fields');
+      setErrorMessage('Email and password are required.');
       return;
     }
 
@@ -60,7 +62,7 @@ export function LoginScreen({ navigation }: Props) {
       navigation.replace('Main' as any);
     } catch (err: any) {
       dispatch(authFailure(err.message || 'Could not authenticate'));
-      Alert.alert('Login Failed', err.message || 'Could not log in. Please try again.');
+      setErrorMessage(err.message || 'Could not log in. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -149,6 +151,12 @@ export function LoginScreen({ navigation }: Props) {
                 </View>
               </>
             )}
+
+            {errorMessage ? (
+              <Text accessibilityRole="alert" style={styles.errorText}>
+                {errorMessage}
+              </Text>
+            ) : null}
 
             <View style={styles.rememberForgotRow}>
               <TouchableOpacity
@@ -354,6 +362,12 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xs,
     color: colors.primary,
     fontWeight: typography.fontWeight.bold,
+  },
+  errorText: {
+    color: colors.error,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    marginTop: spacing.sm,
   },
   continueButton: {
     width: '100%',
