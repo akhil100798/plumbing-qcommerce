@@ -26,17 +26,18 @@ public class SeedProperties {
     public void validate() {
         if (env != null && env.getActiveProfiles() != null) {
             boolean isProd = Arrays.asList(env.getActiveProfiles()).contains("prod");
-            if (isProd) {
+            boolean stagingAdminEnabled = env.getProperty("app.seed.staging-admin-enabled", Boolean.class, false);
+            if (isProd || stagingAdminEnabled) {
                 if (failIfProdDemoEnabled && (demoEnabled || adminDemoEnabled || catalogEnabled)) {
                     throw new IllegalStateException("Production configuration violation: Seeding cannot be enabled when the production profile is active.");
                 }
-                if (demoEnabled || adminDemoEnabled || catalogEnabled) {
+                if (demoEnabled || adminDemoEnabled || catalogEnabled || stagingAdminEnabled) {
                     if (demoPassword == null || demoPassword.isBlank()) {
-                        throw new IllegalStateException("Production configuration violation: app.seed.demo-password must not be blank when seeding is enabled.");
+                        throw new IllegalStateException("Seed configuration violation: app.seed.demo-password must not be blank when seeding is enabled.");
                     }
                     String lowerPwd = demoPassword.toLowerCase().trim();
                     if (lowerPwd.equals("password") || lowerPwd.equals("admin") || lowerPwd.equals("123456")) {
-                        throw new IllegalStateException("Production configuration violation: app.seed.demo-password cannot use a weak default password.");
+                        throw new IllegalStateException("Seed configuration violation: app.seed.demo-password cannot use a weak default password.");
                     }
                 }
             }
