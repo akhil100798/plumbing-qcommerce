@@ -40,8 +40,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class SuperAdminService {
 
     private static final Set<Role> ADMIN_ROLES = EnumSet.of(

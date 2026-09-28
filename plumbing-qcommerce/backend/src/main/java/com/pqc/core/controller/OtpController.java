@@ -1,6 +1,7 @@
 package com.pqc.core.controller;
 
 import com.pqc.core.dto.OtpRequest;
+import com.pqc.core.config.OtpProperties;
 import com.pqc.core.entity.Role;
 import com.pqc.core.entity.User;
 import com.pqc.core.repository.UserRepository;
@@ -8,13 +9,17 @@ import com.pqc.core.security.JwtService;
 import com.pqc.core.service.OtpService;
 import com.pqc.core.service.RefreshTokenService;
 import com.pqc.core.util.PhoneMaskingUtil;
+import com.pqc.core.util.IndianPhoneNormalizer;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -29,17 +34,34 @@ public class OtpController {
     private final RefreshTokenService refreshTokenService;
     private final PasswordEncoder passwordEncoder;
     private final OtpService otpService;
+    private final OtpProperties otpProperties;
+    private final Environment environment;
 
     @PostMapping("/send-otp")
     public ResponseEntity<?> sendOtp(@Valid @RequestBody OtpRequest request) {
-        String phone = request.getPhone();
+        String phone = IndianPhoneNormalizer.normalize(request.getPhone());
         otpService.sendOtp(phone);
-        return ResponseEntity.ok(Map.of("message", "OTP sent successfully"));
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("message", "OTP sent successfully");
+        if (shouldExposeLocalQaCode()) {
+            response.put("qaCode", otpProperties.getDemoCode());
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    private boolean shouldExposeLocalQaCode() {
+        String[] activeProfiles = environment.getActiveProfiles();
+        boolean production = activeProfiles != null && Arrays.asList(activeProfiles).contains("prod");
+        String demoCode = otpProperties.getDemoCode();
+        return !production
+                && otpProperties.isDemoBypassEnabled()
+                && demoCode != null
+                && !demoCode.isBlank();
     }
 
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@Valid @RequestBody OtpRequest request) {
-        String phone = request.getPhone();
+        String phone = IndianPhoneNormalizer.normalize(request.getPhone());
         String code = request.getCode();
 
         // Performs secure validation, lockout check, demo bypass and consumption logic inside the service

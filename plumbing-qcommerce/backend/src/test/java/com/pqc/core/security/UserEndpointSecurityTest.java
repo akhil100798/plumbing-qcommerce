@@ -137,7 +137,7 @@ class UserEndpointSecurityTest {
             {
               "label": "Home",
               "name": "Test Customer",
-              "addressLine": "123 Test Street, Bengaluru",
+                      "addressLine": "123 Test Street, Bengaluru - 500001",
               "phone": "9000000101"
             }
             """;
@@ -153,12 +153,51 @@ class UserEndpointSecurityTest {
                 .content(payload))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.label").value("Home"))
-            .andExpect(jsonPath("$.addressLine").value("123 Test Street, Bengaluru"))
+            .andExpect(jsonPath("$.addressLine").value("123 Test Street, Bengaluru - 500001"))
             .andExpect(jsonPath("$.user").doesNotExist());
 
         mvc.perform(get("/api/v1/users")
                 .header("Authorization", bearer(customer)))
             .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void customerAddressPostalContractRejectsMalformedValuesAndAcceptsValidValue() throws Exception {
+        User customer = saveUser("address-validation@example.com", Role.CUSTOMER);
+        String[] invalidPostalCodes = {"abc", "12345", "1234567", "12A456", "500 001", "１２３４５６", ""};
+
+        for (String postalCode : invalidPostalCodes) {
+            String payload = """
+                {
+                  "label": "Home",
+                  "name": "Validation Customer",
+                  "addressLine": "123 Validation Street, Bengaluru - %s",
+                  "phone": "9000000102"
+                }
+                """.formatted(postalCode);
+
+            mvc.perform(post("/api/v1/users/me/addresses")
+                    .header("Authorization", bearer(customer))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+        }
+
+        mvc.perform(post("/api/v1/users/me/addresses")
+                .header("Authorization", bearer(customer))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "label": "Home",
+                      "name": "Validation Customer",
+                      "addressLine": "123 Validation Street, Bengaluru - 500081",
+                      "phone": "9000000102"
+                    }
+                    """))
+            .andExpect(status().isOk());
+
+        org.junit.jupiter.api.Assertions.assertEquals(1, userAddressRepository.findByUserId(customer.getId()).size());
     }
 
     @Test

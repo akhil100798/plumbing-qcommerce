@@ -2,8 +2,10 @@ package com.pqc.core.repository;
 
 import com.pqc.core.entity.ServiceOrder;
 import com.pqc.core.entity.OrderStatus;
+import com.pqc.core.entity.PlumberJobDisposition;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -11,6 +13,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+
+import jakarta.persistence.LockModeType;
 
 @Repository
 public interface ServiceOrderRepository extends JpaRepository<ServiceOrder, Long>, JpaSpecificationExecutor<ServiceOrder> {
@@ -18,6 +23,27 @@ public interface ServiceOrderRepository extends JpaRepository<ServiceOrder, Long
     List<ServiceOrder> findByPlumber_Id(Long plumberId);
     List<ServiceOrder> findByStore_Id(Long storeId);
     List<ServiceOrder> findByStatus(OrderStatus status);
+
+    @Query("""
+            SELECT o FROM ServiceOrder o
+            WHERE o.status = :status
+              AND NOT EXISTS (
+                  SELECT d.id FROM ServiceOrderPlumberDisposition d
+                  WHERE d.serviceOrderId = o.id
+                    AND d.plumberId = :plumberId
+                    AND d.disposition = :disposition
+              )
+            ORDER BY o.createdAt ASC
+            """)
+    List<ServiceOrder> findByStatusExcludingPlumberDisposition(
+            @org.springframework.data.repository.query.Param("status") OrderStatus status,
+            @org.springframework.data.repository.query.Param("plumberId") Long plumberId,
+            @org.springframework.data.repository.query.Param("disposition") PlumberJobDisposition disposition);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT o FROM ServiceOrder o WHERE o.id = :id")
+    Optional<ServiceOrder> findByIdForUpdate(
+            @org.springframework.data.repository.query.Param("id") Long id);
     long countByCustomer_Id(Long customerId);
     long countByPlumber_Id(Long plumberId);
     long countByStatusIn(Collection<OrderStatus> statuses);

@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Component
-@Profile("!prod & (local | dev | demo | test)")
+@Profile("!prod & (local | dev | demo | test | staging)")
 @ConditionalOnProperty(
     prefix = "app.seed",
     name = "catalog-enabled",

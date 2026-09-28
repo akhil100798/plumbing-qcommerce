@@ -11,11 +11,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class OutboxPoller {
+
+    private static final long KAFKA_ACK_TIMEOUT_SECONDS = 10;
 
     private final OutboxEventRepository outboxRepository;
     private final ObjectProvider<KafkaTemplate<String, String>> kafkaTemplateProvider;
@@ -33,27 +39,13 @@ public class OutboxPoller {
         log.info("Found {} pending events in outbox. Starting publication...", pendingEvents.size());
 
         for (OutboxEvent event : pendingEvents) {
-            // Step 1: Attempt Kafka publish (best-effort — failure does NOT block audit/mark)
-            KafkaTemplate<String, String> kafkaTemplate = kafkaTemplateProvider.getIfAvailable();
-            if (kafkaTemplate != null) {
-                try {
-                    kafkaTemplate.send(event.getTopic(), event.getAggregateId(), event.getPayload())
-                            .whenComplete((result, ex) -> {
-                                if (ex == null) {
-                                    log.debug("Successfully published event #{} to topic {}", event.getId(), event.getTopic());
-                                } else {
-                                    log.error("Failed to publish event #{} to topic {}", event.getId(), event.getTopic(), ex);
-                                }
-                            });
-                } catch (Exception kafkaEx) {
-                    log.warn("Kafka unavailable for event #{} ({}): {}. Proceeding with audit/mark.", 
-                            event.getId(), event.getTopic(), kafkaEx.getMessage());
-                }
-            } else {
-                log.debug("Kafka template is not configured. Skipping publisher for event #{}.", event.getId());
+            // Do not acknowledge the outbox event until Kafka confirms the send.
+            // Leaving failures unprocessed gives the next poll an at-least-once retry.
+            if (!publishToKafka(event)) {
+                continue;
             }
 
-            // Step 2: Always mark as processed and write MongoDB audit log
+            // Kafka accepted the event. Persist the acknowledgement and optional audit log.
             try {
                 event.setProcessed(true);
                 outboxRepository.save(event);
@@ -78,5 +70,34 @@ public class OutboxPoller {
             }
         }
     }
-}
 
+    private boolean publishToKafka(OutboxEvent event) {
+        KafkaTemplate<String, String> kafkaTemplate = kafkaTemplateProvider.getIfAvailable();
+        if (kafkaTemplate == null) {
+            log.warn("Kafka template is not configured for outbox event #{}; leaving it unprocessed.", event.getId());
+            return false;
+        }
+
+        try {
+            CompletableFuture<?> sendFuture = kafkaTemplate.send(
+                    event.getTopic(), event.getAggregateId(), event.getPayload());
+            if (sendFuture == null) {
+                log.error("Kafka returned no acknowledgement future for outbox event #{}; leaving it unprocessed.", event.getId());
+                return false;
+            }
+            sendFuture.get(KAFKA_ACK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            log.debug("Successfully published event #{} to topic {}", event.getId(), event.getTopic());
+            return true;
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            log.error("Interrupted while publishing outbox event #{}; leaving it unprocessed.", event.getId(), ex);
+        } catch (ExecutionException | TimeoutException ex) {
+            log.error("Failed to publish outbox event #{} to topic {}; leaving it unprocessed.",
+                    event.getId(), event.getTopic(), ex);
+        } catch (Exception ex) {
+            log.error("Kafka send failed for outbox event #{} to topic {}; leaving it unprocessed.",
+                    event.getId(), event.getTopic(), ex);
+        }
+        return false;
+    }
+}
