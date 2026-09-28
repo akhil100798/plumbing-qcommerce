@@ -10,8 +10,11 @@ services:
         value: prod,staging
       - key: APP_SCHEDULING_ENABLED
         value: false
+      # Legacy demo seeding is intentionally disabled on the prod+staging
+      # Render service. The staging-only admin seeder below is the only seed
+      # enabled for QA.
       - key: APP_DEMO_SEED_ENABLED
-        value: true
+        value: false
       - key: APP_SEED_STAGING_ADMIN_ENABLED
         value: true
       - key: APP_SEED_DEMO_PASSWORD
