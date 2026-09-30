@@ -29,6 +29,19 @@ import { CartRepository } from '../services/cart/cartRepository';
 
 type Props = StackScreenProps<AppStackParamList, 'PlumberTracking'>;
 
+const ACTIVE_ASSIGNED_STATUSES = new Set([
+  'ACCEPTED',
+  'IN_PROGRESS',
+  'COMBINED_ORDER',
+  'MATERIALS_REQUIRED',
+  'WAITING_FOR_STORE',
+  'READY_FOR_PRODUCT_PICKUP',
+  'PLUMBER_COLLECTING_PRODUCTS',
+  'PRODUCTS_COLLECTED',
+  'RETURNING_TO_CUSTOMER',
+  'WORK_RESUMED',
+]);
+
 interface MaterialPaymentRequest {
   productOrderId: number;
   serviceOrderId: number;
@@ -37,8 +50,21 @@ interface MaterialPaymentRequest {
 }
 
 export function PlumberTrackingScreen({ route, navigation }: Props) {
-  const { orderId, plumberName } = route.params;
+  const {
+    orderId, plumberName, plumberPhone, estimatedArrivalAt, status,
+    customerLatitude, customerLongitude, plumberLatitude, plumberLongitude,
+    createdAt, assignedAt,
+  } = route.params;
   const devMode = canUseDevMockFallbacks();
+  const isAssigned = Boolean(plumberName) && status != null && ACTIVE_ASSIGNED_STATUSES.has(status);
+  const displayPlumberName = plumberName ?? 'Plumber unavailable';
+  const trackingStatusText = isAssigned
+    ? 'On the way to your location'
+    : status === 'CANCELLED'
+      ? 'Booking cancelled'
+      : status === 'CUSTOMER_CONFIRMED' || status === 'COMPLETED' || status === 'PAID'
+        ? 'Service completed'
+        : 'Waiting for a plumber';
 
   const [materialRequest, setMaterialRequest] = useState<MaterialPaymentRequest | null>(null);
   const [isApproving, setIsApproving] = useState(false);
@@ -95,7 +121,7 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
           {
             text: 'OK',
             onPress: () =>
-              navigation.replace('ServiceCompletion', { plumberName }),
+              navigation.replace('ServiceCompletion', { plumberName: displayPlumberName }),
           },
         ]
       );
@@ -107,7 +133,7 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
   };
 
   const steps = [
-    'Booking Confirmed (09:30 AM)',
+    'Booking Confirmed',
     'Plumber on the Way (Live assignment)',
     'Arrived & Work in Progress',
   ];
@@ -123,18 +149,20 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.mapPanel}>
-          <MapView
-            style={styles.map}
-            initialRegion={{ latitude: 17.4485, longitude: 78.3741, latitudeDelta: 0.015, longitudeDelta: 0.015 }}
-            scrollEnabled={false}
-            zoomEnabled={false}
-          >
-            <Marker coordinate={{ latitude: 17.4485, longitude: 78.3741 }} title="Your Location" />
-            <Marker coordinate={{ latitude: 17.452, longitude: 78.38 }} title={plumberName}>
-              <PulsingLocationMarker color={colors.warning} size={14} />
-            </Marker>
-            <Polyline coordinates={[{ latitude: 17.4485, longitude: 78.3741 }, { latitude: 17.452, longitude: 78.38 }]} strokeColor={colors.primary} strokeWidth={4} />
-          </MapView>
+          {customerLatitude != null && customerLongitude != null && plumberLatitude != null && plumberLongitude != null ? (
+            <MapView
+              style={styles.map}
+              initialRegion={{ latitude: customerLatitude, longitude: customerLongitude, latitudeDelta: 0.015, longitudeDelta: 0.015 }}
+              scrollEnabled={false}
+              zoomEnabled={false}
+            >
+              <Marker coordinate={{ latitude: customerLatitude, longitude: customerLongitude }} title="Your Location" />
+              <Marker coordinate={{ latitude: plumberLatitude, longitude: plumberLongitude }} title={displayPlumberName}>
+                <PulsingLocationMarker color={colors.warning} size={14} />
+              </Marker>
+              <Polyline coordinates={[{ latitude: customerLatitude, longitude: customerLongitude }, { latitude: plumberLatitude, longitude: plumberLongitude }]} strokeColor={colors.primary} strokeWidth={4} />
+            </MapView>
+          ) : <Text style={styles.mapUnavailable}>Map coordinates unavailable</Text>}
         </View>
 
         {/* Material Approval Card â€” shown when plumber requests parts */}
@@ -172,19 +200,23 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
         )}
 
         <View style={styles.cardContainer}>
-          <LiveTrackingCard
-            eta="6 mins"
-            statusText="On the way to your location"
-            name={plumberName}
-            role="FixKart Expert Plumber"
-            onCallPress={() => Linking.openURL('tel:+919876543210').catch(() => Alert.alert('Call failed'))}
-            onChatPress={() => navigation.navigate('Chat', { name: plumberName, role: 'Plumber' })}
+           <LiveTrackingCard
+             eta={estimatedArrivalAt || 'ETA unavailable'}
+             statusText={trackingStatusText}
+           name={displayPlumberName}
+          role="FixKart Expert Plumber"
+          callDisabled={!plumberPhone}
+          onCallPress={() => {
+            if (!plumberPhone) return;
+            Linking.openURL(`tel:${plumberPhone}`).catch(() => Alert.alert('Call failed'));
+          }}
+           onChatPress={() => navigation.navigate('Chat', { name: displayPlumberName, role: 'Plumber' })}
           />
         </View>
 
         <View style={styles.statusSection}>
           <Text style={styles.sectionTitle}>Service Progress</Text>
-          <TrackingStatusStepper steps={steps} currentStep={1} />
+           <TrackingStatusStepper steps={steps} currentStep={isAssigned ? 1 : 0} />
         </View>
       </ScrollView>
 
@@ -192,7 +224,7 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
         {devMode && (
           <SecondaryButton
             title="Simulate Material Request (Dev Only)"
-            onPress={() => navigation.navigate('MaterialApproval', { serviceOrderId: orderId, plumberName })}
+            onPress={() => navigation.navigate('MaterialApproval', { serviceOrderId: orderId, plumberName: displayPlumberName })}
             style={styles.simulateBtn}
           />
         )}
@@ -210,6 +242,7 @@ const styles = StyleSheet.create({
   scrollContent: { padding: spacing.layout, paddingBottom: spacing.huge },
   map: { ...StyleSheet.absoluteFillObject },
   mapPanel: { height: 250, borderRadius: borderRadius.md, backgroundColor: '#DBEAFE', marginBottom: spacing.lg, justifyContent: 'center', overflow: 'hidden' },
+  mapUnavailable: { textAlign: 'center', color: colors.textSecondary, fontSize: typography.fontSize.sm },
   cardContainer: { marginBottom: spacing.lg },
   statusSection: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, borderRadius: borderRadius.md, padding: spacing.md },
   sectionTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, marginBottom: spacing.md },

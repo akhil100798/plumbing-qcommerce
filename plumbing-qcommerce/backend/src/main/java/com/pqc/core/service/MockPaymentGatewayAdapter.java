@@ -11,7 +11,8 @@ import java.util.UUID;
 public class MockPaymentGatewayAdapter implements PaymentGatewayAdapter {
 
     @Override
-    public String capturePayment(Long orderId, BigDecimal amount, String paymentMethodId) {
+    public String capturePayment(Long orderId, BigDecimal amount, String paymentMethodId, String currency,
+                                 String idempotencyKey) {
         log.info("MockPaymentGateway: Capturing payment for order #{} of amount {} using instrument {}", 
                 orderId, amount, paymentMethodId);
         

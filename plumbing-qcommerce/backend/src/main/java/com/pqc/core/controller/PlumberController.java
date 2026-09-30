@@ -121,8 +121,8 @@ public class PlumberController {
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<User> getProfile() {
-        return ResponseEntity.ok(currentUser.require());
+    public ResponseEntity<com.pqc.core.dto.CurrentUserProfileResponse> getProfile() {
+        return ResponseEntity.ok(com.pqc.core.dto.CurrentUserProfileResponse.from(com.pqc.core.dto.AuthUserDto.from(currentUser.require())));
     }
 
     @GetMapping("/kyc")

@@ -97,6 +97,19 @@ public class OperationsAdminController {
         return ResponseEntity.ok(operationsAdminService.reassignPlumber(jobId, request));
     }
 
+    @PatchMapping("/service-jobs/{jobId}/assign-plumber")
+    public ResponseEntity<OperationsServiceJobSummary> assignPlumber(
+            @PathVariable Long jobId,
+            @RequestBody ReassignPlumberRequest request
+    ) {
+        return ResponseEntity.ok(operationsAdminService.assignPlumber(jobId, request));
+    }
+
+    @GetMapping("/service-jobs/eligible-plumbers")
+    public ResponseEntity<List<com.pqc.core.dto.EligiblePlumberResponse>> eligiblePlumbers() {
+        return ResponseEntity.ok(operationsAdminService.eligiblePlumbers());
+    }
+
     @PatchMapping("/product-orders/{orderId}/reassign-delivery")
     public ResponseEntity<OperationsProductOrderSummary> reassignDelivery(
             @PathVariable Long orderId,

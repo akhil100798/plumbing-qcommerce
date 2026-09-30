@@ -20,6 +20,7 @@ public record OperationsServiceJobDetail(
         LocalDateTime completedAt,
         List<OperationsMaterialRequestSummary> materialRequests,
         List<String> logs,
+        List<AssignmentInfo> assignmentHistory,
         boolean delayFlag
 ) {
     public record PersonInfo(Long id, String name, String phone, String email) {
@@ -27,4 +28,8 @@ public record OperationsServiceJobDetail(
 
     public record AddressInfo(Double latitude, Double longitude) {
     }
+
+    public record AssignmentInfo(Long id, Long plumberId, String plumberName, String status,
+                                 String assignmentMode, Long actorId, String actorRole,
+                                 String reason, LocalDateTime createdAt) {}
 }

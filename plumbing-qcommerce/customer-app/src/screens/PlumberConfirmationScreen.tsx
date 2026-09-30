@@ -9,13 +9,13 @@ import {
   Text,
   TouchableOpacity,
   View,
+  TextInput,
 } from 'react-native';
 
 import MapView, { Marker, Polyline } from 'react-native-maps';
 
 import { PlumberCard } from '../components/cards/PlumberCard';
 import { PrimaryButton } from '../components/common/PrimaryButton';
-import { canUseDevMockFallbacks } from '../services/mockPolicy';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
 
@@ -24,38 +24,55 @@ import { PlumberRepository } from '../services/plumbers/plumberRepository';
 type Props = StackScreenProps<AppStackParamList, 'PlumberConfirmation'>;
 
 export function PlumberConfirmationScreen({ route, navigation }: Props) {
-  const { issueType } = route.params;
+  const { issueType, issueCategory, description, urgency, scheduledFor } = route.params;
   const [loading, setLoading] = useState(false);
+  const [addressLine1, setAddressLine1] = useState('');
+  const [city, setCity] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [landmark, setLandmark] = useState('');
+  const [coordinates, setCoordinates] = useState('');
+  const [createdOrder, setCreatedOrder] = useState<any>(null);
 
   const handleConfirm = async () => {
     setLoading(true);
     try {
       const response = await PlumberRepository.createServiceOrder({
-        description: issueType,
-        latitude: 17.4485,
-        longitude: 78.3741,
+        issueCategory,
+        description: description || issueType,
+        latitude: coordinates ? Number(coordinates.split(',')[0]) : null,
+        longitude: coordinates ? Number(coordinates.split(',')[1]) : null,
+        addressLine1,
+        city,
+        postalCode,
+        contactPhone,
+        landmark,
         requestType: 'NEARBY_AUTO',
+        urgency,
+        scheduledFor,
       });
+      setCreatedOrder(response);
 
       navigation.replace('PlumberTracking', {
         orderId: response.id,
-        plumberId: response.plumber?.id ? String(response.plumber.id) : 'plumber_999',
-        plumberName: response.plumber?.fullName || 'Assigned plumber',
+        plumberId: null,
+        plumberName: response.plumberName ?? null,
+        plumberPhone: response.plumberPhone ?? null,
+        customerLatitude: response.customerLatitude ?? null,
+        customerLongitude: response.customerLongitude ?? null,
+        plumberLatitude: null,
+        plumberLongitude: null,
+        createdAt: response.createdAt ?? null,
+        assignedAt: response.assignedAt ?? null,
+        estimatedArrivalAt: response.estimatedArrivalAt ?? null,
+        status: response.status ?? null,
       });
     } catch (err: any) {
       console.error('Failed to confirm plumber booking', err);
-      if (canUseDevMockFallbacks()) {
-        navigation.replace('PlumberTracking', {
-          orderId: 999,
-          plumberId: 'plumber_999',
-          plumberName: 'Ravi Kumar',
-        });
-      } else {
-        Alert.alert(
-          'Booking pending',
-          err?.message || 'Plumber assignment is not available from the staging backend right now.'
-        );
-      }
+      Alert.alert(
+        'Booking failed',
+        err?.response?.data?.error || err?.message || 'Unable to submit the service request. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -71,46 +88,27 @@ export function PlumberConfirmationScreen({ route, navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.mapPanel}>
-          <MapView
-            style={styles.map}
-            initialRegion={{
-              latitude: 17.4485,
-              longitude: 78.3741,
-              latitudeDelta: 0.015,
-              longitudeDelta: 0.015,
-            }}
-            scrollEnabled={false}
-            zoomEnabled={false}
-          >
-            <Marker
-              coordinate={{ latitude: 17.4485, longitude: 78.3741 }}
-              title="Your Location"
-            />
-            <Marker
-              coordinate={{ latitude: 17.4520, longitude: 78.3800 }}
-              title="Ravi Kumar"
-              pinColor={colors.warning}
-            />
-            <Polyline
-              coordinates={[
-                { latitude: 17.4485, longitude: 78.3741 },
-                { latitude: 17.4520, longitude: 78.3800 }
-              ]}
-              strokeColor={colors.primary}
-              strokeWidth={4}
-            />
-          </MapView>
-        </View>
+        <Text style={styles.sectionTitle}>Service address</Text>
+        <TextInput value={addressLine1} onChangeText={setAddressLine1} placeholder="Address" style={styles.input} />
+        <TextInput value={city} onChangeText={setCity} placeholder="City" style={styles.input} />
+        <TextInput value={postalCode} onChangeText={setPostalCode} placeholder="Postal code" keyboardType="number-pad" style={styles.input} />
+        <TextInput value={contactPhone} onChangeText={setContactPhone} placeholder="Contact phone" keyboardType="phone-pad" style={styles.input} />
+        <TextInput value={landmark} onChangeText={setLandmark} placeholder="Landmark (optional)" style={styles.input} />
+        <TextInput value={coordinates} onChangeText={setCoordinates} placeholder="Latitude, longitude" keyboardType="numbers-and-punctuation" style={styles.input} />
+        {(() => {
+          const [lat, lng] = coordinates.split(',').map((value) => Number(value.trim()));
+          const hasCoordinates = Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+          return hasCoordinates ? (
+            <View style={styles.mapPanel}>
+              <MapView style={styles.map} initialRegion={{ latitude: lat, longitude: lng, latitudeDelta: 0.015, longitudeDelta: 0.015 }} scrollEnabled={false} zoomEnabled={false}>
+                <Marker coordinate={{ latitude: lat, longitude: lng }} />
+              </MapView>
+            </View>
+          ) : <Text style={styles.locationUnavailable}>Location unavailable until valid coordinates are provided.</Text>;
+        })()}
 
-        <Text style={styles.sectionTitle}>Assigned Plumber</Text>
-        <PlumberCard
-          name="Ravi Kumar"
-          rating={4.7}
-          jobsCount={213}
-          eta="8 mins away"
-          avatarText="R"
-        />
+        <Text style={styles.sectionTitle}>Assignment status</Text>
+        <View style={styles.card}><Text style={styles.value}>Waiting for a plumber</Text><Text style={styles.label}>ETA unavailable</Text></View>
 
         <View style={styles.billingSection}>
           <Text style={styles.sectionTitle}>Service Charge Summary</Text>
@@ -121,11 +119,11 @@ export function PlumberConfirmationScreen({ route, navigation }: Props) {
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>Base Inspection Fee</Text>
-              <Text style={styles.value}>?199</Text>
+              <Text style={styles.value}>{createdOrder?.visitFee != null ? `${createdOrder.currency || 'INR'} ${createdOrder.visitFee}` : 'Returned by backend after request'}</Text>
             </View>
             <View style={[styles.row, styles.totalRow]}>
               <Text style={styles.totalLabel}>Total Payable</Text>
-              <Text style={styles.totalValue}>?199</Text>
+              <Text style={styles.totalValue}>{createdOrder?.visitFee != null ? `${createdOrder.currency || 'INR'} ${createdOrder.visitFee}` : 'See final backend amount'}</Text>
             </View>
           </View>
         </View>
@@ -180,6 +178,15 @@ const styles = StyleSheet.create({
     padding: spacing.layout,
     paddingBottom: spacing.huge,
   },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    color: colors.textPrimary,
+  },
   map: {
     ...StyleSheet.absoluteFillObject,
   },
@@ -191,6 +198,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
     overflow: 'hidden',
+  },
+  locationUnavailable: {
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
     fontSize: typography.fontSize.md,

@@ -18,9 +18,9 @@ export type MainTabParamList = {
 export type AppStackParamList = {
   Auth: undefined;
   Main: NavigatorScreenParams<MainTabParamList> | undefined; // Contains Bottom Tabs + Drawer
-  IncomingJobRequest: { jobId: string; customerId: string; distance: number };
+  IncomingJobRequest: { jobId: string; customerId: string; distance?: number };
   ActiveJob: { jobId: string };
-  Navigation: { jobId: string; customerId: string; latitude: number; longitude: number; address: string };
+  Navigation: { jobId: string; customerId: string; latitude?: number | null; longitude?: number | null; plumberLatitude?: number | null; plumberLongitude?: number | null; routeEta?: string | null; routeDistance?: string | null; turnInstruction?: string | null; turnDistance?: string | null; status?: string | null; address: string };
   ReachedCustomer: { jobId: string };
   StartWork: { jobId: string };
   BeforePhotos: { jobId: string };

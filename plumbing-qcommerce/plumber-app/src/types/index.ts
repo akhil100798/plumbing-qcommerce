@@ -3,7 +3,7 @@ export interface PlumberProfile {
   fullName: string;
   phone: string;
   email: string;
-  rating: number;
+  rating: number | null;
   ratingsCount: number;
   plumberId: string;
   availability: boolean;
@@ -21,11 +21,11 @@ export interface JobOffer {
   customerId: string;
   customerName?: string;
   customerRating?: number;
-  distance: number;
+  distance?: number;
   location?: string;
   latitude?: number;
   longitude?: number;
-  estimatedEarnings?: number;
+  estimatedEarnings?: number | null;
   issueDescription?: string;
   category?: string;
 }
@@ -35,11 +35,11 @@ export interface ActiveJob {
   customer: CustomerInfo;
   status: 'assigned' | 'accepted' | 'started' | 'completed' | 'reached' | 'on_the_way';
   address: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number | null;
+  longitude?: number | null;
   customerNote?: string;
   issueDescription?: string;
-  estimatedEarnings: number;
+  estimatedEarnings?: number | null;
   partsCharge?: number;
   timeline: {
     assigned?: string;

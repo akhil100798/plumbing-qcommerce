@@ -36,6 +36,7 @@ export function ActiveJobScreen({ route, navigation }: Props) {
   const [syncLoading, setSyncLoading] = useState(false);
   const [loadedJob, setLoadedJob] = useState<ActiveJob | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const currentJobId = routeJobId || activeJob?.jobId;
 
@@ -92,6 +93,10 @@ export function ActiveJobScreen({ route, navigation }: Props) {
   const handleActionPress = () => {
     switch (displayJob.status) {
       case 'accepted':
+        if (displayJob.latitude == null || displayJob.longitude == null) {
+          setActionError('Customer coordinates are unavailable for navigation.');
+          break;
+        }
         dispatch(
           updateJobStatus({
             status: 'on_the_way',
@@ -108,6 +113,10 @@ export function ActiveJobScreen({ route, navigation }: Props) {
         });
         break;
       case 'on_the_way':
+        if (displayJob.latitude == null || displayJob.longitude == null) {
+          setActionError('Customer coordinates are unavailable for navigation.');
+          break;
+        }
         navigation.navigate('Navigation', {
           jobId: String(displayJob.jobId),
           customerId: displayJob.customer.id,

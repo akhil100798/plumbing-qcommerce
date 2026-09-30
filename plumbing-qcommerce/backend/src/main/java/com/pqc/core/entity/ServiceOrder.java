@@ -40,8 +40,42 @@ public class ServiceOrder {
     @Column(nullable = false)
     private String description;
 
+    @Column(name = "issue_category")
+    private String issueCategory;
+
+    private String urgency;
+
+    @Column(name = "scheduled_for")
+    private LocalDateTime scheduledFor;
+
+    @Column(name = "address_line_1")
+    private String addressLine1;
+    @Column(name = "address_line_2")
+    private String addressLine2;
+    private String landmark;
+    private String city;
+    @Column(name = "postal_code")
+    private String postalCode;
+    @Column(name = "customer_phone_snapshot")
+    private String customerPhoneSnapshot;
+
     private Double customerLatitude;
     private Double customerLongitude;
+
+    @Column(name = "visit_fee", precision = 19, scale = 2)
+    private BigDecimal visitFee;
+    @Column(length = 3)
+    private String currency;
+
+    @Column(name = "assigned_at")
+    private LocalDateTime assignedAt;
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cancelled_by")
+    private User cancelledBy;
+    @Column(name = "cancellation_reason")
+    private String cancellationReason;
 
     // Billing fields — computed when job is COMPLETED
     private BigDecimal laborCharge;

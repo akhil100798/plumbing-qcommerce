@@ -418,43 +418,14 @@ export function HomeScreen({ navigation }: any) {
 
     dispatch(startSearching());
     try {
-      if (!edgeServerUrl) {
-        const order = await PlumberRepository.createServiceOrder({
-          description: `${selectedCategory} - ${selectedService.title}`,
-          latitude: 17.4485,
-          longitude: 78.3741,
-          requestType:
-            selectedMode === 'store'
-              ? 'STORE_ROUTED'
-              : selectedMode === 'expert'
-              ? 'DIRECT_PLUMBER'
-              : 'NEARBY_AUTO',
-        });
-
-        dispatch(stopSearching());
-        dispatch(
-          setActiveJob({
-            plumberId: order.plumber?.id ? String(order.plumber.id) : `order_${order.id}`,
-            message: `Service order #${order.id} created. It is now visible in the plumber app.`,
-          })
-        );
-        Alert.alert(
-          'Request sent',
-          `Service order #${order.id} was created and sent to the plumber workflow.`
-        );
-        return;
-      }
-
-      const result = await PlumberRepository.requestNearbyPlumber({
-        customerId: currentUser?.id ?? 0,
-        longitude: -122.4194,
-        latitude: 37.7749,
-        requestType: selectedMode,
-        category: selectedCategory,
-      });
-
       dispatch(stopSearching());
-      Alert.alert('Broadcast Completed', result.message || 'Job broadcasted to nearby plumbers.');
+      navigation.navigate('PlumberConfirmation', {
+        issueType: `${selectedCategory} - ${selectedService.title}`,
+        issueCategory: selectedCategory,
+        description: `${selectedCategory} - ${selectedService.title}`,
+        urgency: 'NORMAL',
+        scheduledFor: null,
+      });
     } catch (error: any) {
       dispatch(stopSearching());
       Alert.alert('Connection issue', error.message || 'Could not reach the dispatch service.');

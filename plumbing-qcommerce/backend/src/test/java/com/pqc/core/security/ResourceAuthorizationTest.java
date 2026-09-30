@@ -167,6 +167,49 @@ class ResourceAuthorizationTest {
     }
 
     @Test
+    void customerOrderResponsesDoNotExposeJpaGraphs() throws Exception {
+        mvc.perform(get("/api/v1/orders/{id}", otherCustomersOrder.getId())
+                .header("Authorization", bearer(otherCustomer)))
+            .andExpect(status().isOk())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.customer").doesNotExist())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.plumber").doesNotExist())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.store").doesNotExist())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.password").doesNotExist())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.providerId").doesNotExist())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.kyc").doesNotExist());
+    }
+
+    @Test
+    void customerCreateOrderResponseIsDtoNotJpaGraph() throws Exception {
+        mvc.perform(post("/api/v1/orders")
+                .header("Authorization", bearer(customer))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"issueCategory\":\"pipe\",\"description\":\"New leak\",\"latitude\":19.07,\"longitude\":72.87,\"requestType\":\"NEARBY_AUTO\",\"addressLine1\":\"1 Main Street\",\"city\":\"Mumbai\",\"postalCode\":\"400001\",\"contactPhone\":\"+919876543210\",\"urgency\":\"NORMAL\"}"))
+            .andExpect(status().isOk())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.customer").doesNotExist())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.plumber").doesNotExist())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.store").doesNotExist())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.password").doesNotExist())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.providerId").doesNotExist());
+    }
+
+    @Test
+    void plumberDetailEndpointDoesNotExposeCustomerOrPersistenceGraph() throws Exception {
+        otherCustomersOrder.setPlumber(plumber);
+        otherCustomersOrder.setStatus(OrderStatus.ACCEPTED);
+        orders.saveAndFlush(otherCustomersOrder);
+
+        mvc.perform(get("/api/v1/orders/{id}", otherCustomersOrder.getId())
+                .header("Authorization", bearer(plumber)))
+            .andExpect(status().isOk())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.customer").doesNotExist())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.store").doesNotExist())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.password").doesNotExist())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.providerId").doesNotExist())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.kyc").doesNotExist());
+    }
+
+    @Test
     void serviceRejectsOfflinePlumberAcceptingAnOrder() {
         plumberKycRepository.save(PlumberKyc.builder()
                 .plumberId(plumber.getId())

@@ -1,0 +1,20 @@
+const { chromium } = require('C:/Users/akhil/node_modules/playwright');
+(async () => {
+  const b = await chromium.launch({ headless: true, executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe' });
+  const p = await b.newPage();
+  await p.goto('http://localhost:8092'); await p.waitForTimeout(5000);
+  await p.getByText('Skip', { exact: true }).click(); await p.waitForTimeout(500);
+  await p.locator('input[placeholder="Enter email"]').fill('customer.qa@fixkart.com');
+  await p.locator('input[placeholder="Enter password"]').fill('FixKartLocal!2026');
+  await p.getByRole('button', { name: 'Login' }).click(); await p.waitForTimeout(2500);
+  await p.locator('input[placeholder="Enter your full name"]').fill('QA Customer One');
+  await p.locator('input[placeholder="10-digit number"]').fill('9000000011');
+  await p.locator('input[placeholder="Flat, House no., Building, Company, Apartment"]').fill('1 QA Street');
+  await p.locator('input[placeholder="E.g. near main road, opposite park"]').fill('QA Landmark');
+  await p.locator('input[placeholder="Hyderabad"]').fill('Hyderabad');
+  await p.locator('input[placeholder="Telangana"]').fill('Telangana');
+  await p.locator('input[placeholder="6-digit pincode"]').fill('500001');
+  await p.getByText('Save and Continue', { exact: true }).click(); await p.waitForTimeout(3000);
+  console.log((await p.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 1600));
+  await p.screenshot({ path: 'customer-profile-complete2.png', fullPage: true }); await b.close();
+})();

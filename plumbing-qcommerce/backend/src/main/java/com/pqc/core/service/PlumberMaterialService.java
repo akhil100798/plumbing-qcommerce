@@ -29,6 +29,7 @@ public class PlumberMaterialService {
     private final ProductOrderStatusHistoryRepository historyRepo;
     private final ServiceOrderStatusHistoryRepository serviceOrderHistoryRepo;
     private final CurrentUser currentUser;
+    private final LaunchPolicyService launchPolicyService;
 
     private void recordServiceOrderHistory(Long orderId, OrderStatus prev, OrderStatus next, User actor, String reason) {
         if (serviceOrderHistoryRepo != null && orderId != null) {
@@ -55,6 +56,7 @@ public class PlumberMaterialService {
             throw error(HttpStatus.CONFLICT, "Materials require an active job");
         if (inputs == null || inputs.isEmpty()) throw error(HttpStatus.BAD_REQUEST, "At least one product is required");
         Store store = stores.findById(storeId).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Store not found"));
+        requireLaunchStore(storeId);
         ProductOrder request = ProductOrder.builder().customer(job.getCustomer()).store(store).serviceOrder(job)
                 .requestedByPlumber(plumber).status(ProductOrderStatus.REQUESTED).totalAmount(BigDecimal.ZERO).build();
         List<ProductOrderItem> items = new ArrayList<>();
@@ -90,6 +92,7 @@ public class PlumberMaterialService {
             throw error(HttpStatus.CONFLICT, "Request can only be updated before store review (current: " + request.getStatus() + ")");
         if (inputs == null || inputs.isEmpty()) throw error(HttpStatus.BAD_REQUEST, "At least one product is required");
         Store store = stores.findById(storeId).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Store not found"));
+        requireLaunchStore(storeId);
 
         // Replace items
         request.getItems().clear();
@@ -539,6 +542,7 @@ public class PlumberMaterialService {
         User actor = currentUser.require();
         ProductOrder request = material(id);
         Store newStore = stores.findById(newStoreId).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "New store not found"));
+        requireLaunchStore(newStoreId);
         
         // Release old reservations if they exist
         releaseReservations(request);
@@ -651,6 +655,13 @@ public class PlumberMaterialService {
                 || input.getQuantity() <= 0 || input.getQuantity() > 1000)
             throw error(HttpStatus.BAD_REQUEST, "Each quantity must be between 1 and 1000");
         if (!unique.add(input.getProductId())) throw error(HttpStatus.BAD_REQUEST, "Duplicate products are not allowed");
+    }
+
+    private void requireLaunchStore(Long storeId) {
+        Long ownedStoreId = launchPolicyService.requiredOwnedStoreId();
+        if (ownedStoreId != null && !Objects.equals(ownedStoreId, storeId)) {
+            throw error(HttpStatus.CONFLICT, "Service material requests must use the configured launch store");
+        }
     }
 
     private User role(Role role) {

@@ -43,6 +43,9 @@ public class ServiceOrderService {
     private final ServiceOrderStatusHistoryRepository historyRepository;
     private final PlumberKycRepository plumberKycRepository;
     private final ServiceOrderPlumberDispositionRepository dispositionRepository;
+    private final PlumberEligibilityService plumberEligibilityService;
+    private final LaunchPolicyService launchPolicyService;
+    private final ServiceOrderAssignmentService assignmentService;
 
     private void recordHistory(Long orderId, OrderStatus prev, OrderStatus next, User actor, String reason) {
         historyRepository.save(ServiceOrderStatusHistory.builder()
@@ -74,19 +77,41 @@ public class ServiceOrderService {
     public ServiceOrder createOrder(Long customerId, String description,
                                     Double latitude, Double longitude,
                                     RequestType requestType) {
+        return createOrder(customerId, null, description, latitude, longitude, requestType,
+                null, null, null, null, null, null, null, null);
+    }
+
+    @Transactional
+    public ServiceOrder createOrder(Long customerId, String issueCategory, String description,
+                                    Double latitude, Double longitude, RequestType requestType,
+                                    String addressLine1, String addressLine2, String landmark,
+                                    String city, String postalCode, String contactPhone,
+                                    String urgency, LocalDateTime scheduledFor) {
         User actor = currentUser.require();
         if (actor.getRole() != Role.CUSTOMER || !actor.getId().equals(customerId)) {
             throw new AccessDeniedException("Customers may create only their own orders");
         }
         User customer = userRepository.findById(customerId)
                 .orElseThrow(() -> notFound("Customer not found: " + customerId));
+        validateLaunchServiceArea(latitude, longitude);
 
         ServiceOrder order = ServiceOrder.builder()
                 .customer(customer)
+                .issueCategory(issueCategory)
                 .description(description)
                 .customerLatitude(latitude)
                 .customerLongitude(longitude)
                 .requestType(requestType)
+                .addressLine1(addressLine1)
+                .addressLine2(addressLine2)
+                .landmark(landmark)
+                .city(city)
+                .postalCode(postalCode)
+                .customerPhoneSnapshot(contactPhone != null && !contactPhone.isBlank() ? contactPhone : customer.getPhone())
+                .urgency(urgency)
+                .scheduledFor(scheduledFor)
+                .visitFee(launchPolicyService.authoritativeVisitFee())
+                .currency(launchPolicyService.authoritativeCurrency())
                 .status(OrderStatus.PENDING)
                 .build();
 
@@ -107,48 +132,23 @@ public class ServiceOrderService {
      */
     @Transactional
     public ServiceOrder acceptOrder(Long orderId, Long plumberId) {
-        User actor = currentUser.require();
-        if (actor.getRole() != Role.PLUMBER || !actor.getId().equals(plumberId)) {
-            throw new AccessDeniedException("Plumbers may accept orders only as themselves");
+        return assignmentService.accept(orderId, plumberId);
+    }
+
+    private void validateLaunchServiceArea(Double latitude, Double longitude) {
+        LaunchPolicy policy = launchPolicyService.requireServiceAreaPolicyIfConfigured();
+        boolean serviceAreaConfigured = policy != null && policy.getServiceAreaCenterLatitude() != null;
+        if (latitude == null || longitude == null) {
+            if (!serviceAreaConfigured) return;
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valid service coordinates are required");
         }
-        ServiceOrder order = getOrderForMutationOrThrow(orderId);
-
-        if (order.getStatus() == OrderStatus.ACCEPTED
-                && order.getPlumber() != null
-                && order.getPlumber().getId().equals(plumberId)) {
-            return order;
+        if (!Double.isFinite(latitude) || !Double.isFinite(longitude)
+                || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valid service coordinates are required");
         }
-
-        if (order.getStatus() != OrderStatus.PENDING) {
-            throw conflict("Order #" + orderId + " cannot be accepted. Status: " + order.getStatus());
+        if (!launchPolicyService.isWithinServiceArea(latitude, longitude)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Service address is outside the launch service area");
         }
-
-        User plumber = userRepository.findById(plumberId)
-                .orElseThrow(() -> notFound("Plumber not found: " + plumberId));
-        if (plumber.getRole() != Role.PLUMBER) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Assigned user is not a plumber");
-        }
-        requireOnlinePlumber(plumber);
-        if (dispositionRepository.existsByServiceOrderIdAndPlumberIdAndDisposition(
-                orderId, plumberId, PlumberJobDisposition.DECLINED)) {
-            throw conflict("Order #" + orderId + " was already declined by this plumber");
-        }
-
-        OrderStatus prev = order.getStatus();
-        order.setPlumber(plumber);
-        order.setStatus(OrderStatus.ACCEPTED);
-        order.setAcceptedAt(LocalDateTime.now());
-
-        ServiceOrder saved = orderRepository.save(order);
-        recordHistory(orderId, prev, OrderStatus.ACCEPTED, actor, "Order accepted by plumber");
-
-        // Save to Outbox
-        saveToOutbox(String.valueOf(orderId), "ORDER_ACCEPTED", "order-accepted",
-                "ORDER_ACCEPTED:" + orderId + ":PLUMBER:" + plumberId + ":CUSTOMER:" + order.getCustomer().getId());
-
-        log.info("Order #{} acceptance persisted in outbox.", orderId);
-
-        return saved;
     }
 
     /**
@@ -162,7 +162,7 @@ public class ServiceOrderService {
             throw new AccessDeniedException("Plumbers may reject orders only as themselves");
         }
 
-        requireOnlinePlumber(actor);
+        requireEligiblePlumber(actor);
         ServiceOrder order = getOrderForMutationOrThrow(orderId);
         if (order.getStatus() != OrderStatus.PENDING) {
             throw conflict("Order #" + orderId + " cannot be rejected. Status: " + order.getStatus());
@@ -478,18 +478,32 @@ public class ServiceOrderService {
 
     @Transactional
     public ServiceOrder cancelOrder(Long orderId) {
+        return cancelOrder(orderId, null);
+    }
+
+    @Transactional
+    public ServiceOrder cancelOrder(Long orderId, String cancellationReason) {
         ServiceOrder order = getOrderOrThrow(orderId);
         User actor = currentUser.require();
-        boolean allowed = actor.getRole() == Role.ADMIN
-                || actor.getRole() == Role.CUSTOMER
-                && order.getCustomer().getId().equals(actor.getId());
+        OrderStatus previousStatus = order.getStatus();
+        boolean customerOwns = actor.getRole() == Role.CUSTOMER && order.getCustomer().getId().equals(actor.getId());
+        boolean operator = actor.getRole() == Role.ADMIN || actor.getRole() == Role.SUPER_ADMIN || actor.getRole() == Role.OPERATIONS_ADMIN;
+        boolean allowed = operator || customerOwns && order.getArrivedAt() == null
+                && order.getStartedAt() == null && order.getStatus() != OrderStatus.IN_PROGRESS;
         if (!allowed) {
             throw new AccessDeniedException("Only the owning customer or an administrator may cancel this order");
         }
-        if (order.getStatus() == OrderStatus.COMPLETED) {
+        if (order.getStatus() == OrderStatus.COMPLETED || order.getStatus() == OrderStatus.PAID
+                || order.getStatus() == OrderStatus.CUSTOMER_CONFIRMED) {
             throw conflict("Cannot cancel a completed order.");
         }
+        assignmentService.cancelCurrent(orderId, actor, "Order cancelled");
         order.setStatus(OrderStatus.CANCELLED);
+        order.setCancelledAt(LocalDateTime.now());
+        order.setCancelledBy(actor);
+        order.setCancellationReason(cancellationReason == null || cancellationReason.isBlank()
+                ? "Customer or operator cancellation" : cancellationReason.trim());
+        recordHistory(orderId, previousStatus, OrderStatus.CANCELLED, actor, order.getCancellationReason());
         return orderRepository.save(order);
     }
 
@@ -515,7 +529,7 @@ public class ServiceOrderService {
         if (role != Role.ADMIN && role != Role.PLUMBER && role != Role.STORE_MANAGER) {
             throw new AccessDeniedException("This role cannot browse orders by status");
         }
-        if (role == Role.PLUMBER && status == OrderStatus.PENDING && !isOnlinePlumber(actor)) {
+        if (role == Role.PLUMBER && status == OrderStatus.PENDING && !plumberEligibilityService.isEligibleForLaunch(actor)) {
             return List.of();
         }
         if (role == Role.PLUMBER && status == OrderStatus.PENDING) {
@@ -525,17 +539,14 @@ public class ServiceOrderService {
         return orderRepository.findByStatus(status);
     }
 
-    private void requireOnlinePlumber(User plumber) {
-        if (!isOnlinePlumber(plumber)) {
+    private void requireEligiblePlumber(User plumber) {
+        if (!plumberEligibilityService.isEligibleForLaunch(plumber)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Plumber must be online to accept service orders");
         }
     }
 
-    private boolean isOnlinePlumber(User plumber) {
-        return plumberKycRepository.findByPlumberId(plumber.getId())
-                .map(kyc -> kyc.getStatus() == PlumberKycStatus.APPROVED
-                        && kyc.getAvailabilityStatus() == PlumberAvailabilityStatus.ONLINE)
-                .orElse(false);
+    public String findUserName(Long userId) {
+        return userId == null ? null : userRepository.findById(userId).map(User::getFullName).orElse(null);
     }
 
     public ServiceOrder getOrderById(Long id) {
@@ -557,7 +568,7 @@ public class ServiceOrderService {
     private boolean isEligiblePendingOffer(ServiceOrder order, User actor) {
         return actor.getRole() == Role.PLUMBER
                 && order.getStatus() == OrderStatus.PENDING
-                && isOnlinePlumber(actor)
+                && plumberEligibilityService.isEligibleForLaunch(actor)
                 && !dispositionRepository.existsByServiceOrderIdAndPlumberIdAndDisposition(
                         order.getId(), actor.getId(), PlumberJobDisposition.DECLINED);
     }

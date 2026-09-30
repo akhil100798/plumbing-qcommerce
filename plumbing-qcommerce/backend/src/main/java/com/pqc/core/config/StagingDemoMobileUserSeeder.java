@@ -137,12 +137,12 @@ public class StagingDemoMobileUserSeeder implements CommandLineRunner {
 
     private List<QaUser> qaUsers() {
         return List.of(
-                new QaUser("customer.qa@fixkart.com",  "QA Customer One",     "5555500001", Role.CUSTOMER),
-                new QaUser("customer2.qa@fixkart.com", "QA Customer Two",     "5555500002", Role.CUSTOMER),
-                new QaUser("plumber.qa@fixkart.com",   "QA Plumber One",      "5555500003", Role.PLUMBER),
-                new QaUser("plumber2.qa@fixkart.com",  "QA Plumber Two",      "5555500004", Role.PLUMBER),
-                new QaUser("store.qa@fixkart.com",     "QA Store Manager",    "5555500005", Role.STORE_MANAGER),
-                new QaUser("admin.qa@fixkart.com",     "QA Administrator",    "5555500006", Role.SUPER_ADMIN)
+                new QaUser("customer.qa@fixkart.com",  "QA Customer One",     "9000000001", Role.CUSTOMER),
+                new QaUser("customer2.qa@fixkart.com", "QA Customer Two",     "9000000002", Role.CUSTOMER),
+                new QaUser("plumber.qa@fixkart.com",   "QA Plumber One",      "9000000003", Role.PLUMBER),
+                new QaUser("plumber2.qa@fixkart.com",  "QA Plumber Two",      "9000000004", Role.PLUMBER),
+                new QaUser("store.qa@fixkart.com",     "QA Store Manager",    "9000000005", Role.STORE_MANAGER),
+                new QaUser("admin.qa@fixkart.com",     "QA Administrator",    "9000000006", Role.SUPER_ADMIN)
         );
     }
 

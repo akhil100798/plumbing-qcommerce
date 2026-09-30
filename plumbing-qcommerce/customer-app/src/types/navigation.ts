@@ -29,8 +29,21 @@ export type AppStackParamList = {
   OrderDetails: { orderId: number; type: 'product' | 'service' };
   OrderTracking: { orderId: number; type: 'product' | 'service' };
   BookPlumber: undefined;
-  PlumberConfirmation: { issueType: string };
-  PlumberTracking: { orderId: number; plumberId: string; plumberName: string };
+  PlumberConfirmation: { issueType: string; issueCategory?: string; description?: string; urgency?: string; scheduledFor?: string | null };
+  PlumberTracking: {
+    orderId: number;
+    plumberId?: string | null;
+    plumberName: string | null;
+    plumberPhone?: string | null;
+    customerLatitude?: number | null;
+    customerLongitude?: number | null;
+    plumberLatitude?: number | null;
+    plumberLongitude?: number | null;
+    createdAt?: string | null;
+    assignedAt?: string | null;
+    estimatedArrivalAt?: string | null;
+    status?: string | null;
+  };
   MaterialApproval: { serviceOrderId: number; plumberName: string };
   ServiceCompletion: { plumberName: string };
   AddressManagement: undefined;

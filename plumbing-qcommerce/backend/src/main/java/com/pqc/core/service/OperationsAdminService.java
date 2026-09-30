@@ -59,6 +59,9 @@ public class OperationsAdminService {
     private final ProductOrderRepository productOrderRepository;
     private final ServiceOrderRepository serviceOrderRepository;
     private final UserRepository userRepository;
+    private final PlumberEligibilityService plumberEligibilityService;
+    private final ServiceOrderAssignmentService assignmentService;
+    private final com.pqc.core.repository.ServiceOrderAssignmentRepository assignmentRepository;
 
     public OperationsDashboardResponse getDashboard() {
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
@@ -142,17 +145,29 @@ public class OperationsAdminService {
         if (job.getStatus() == OrderStatus.COMPLETED || job.getStatus() == OrderStatus.PAID || job.getStatus() == OrderStatus.CANCELLED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot reassign completed or cancelled service jobs");
         }
-        User plumber = userRepository.findById(request.plumberId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Plumber not found"));
-        if (plumber.getRole() != Role.PLUMBER || plumber.getStatus() != UserStatus.ACTIVE) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New assignee must be an active plumber");
+        return toServiceSummary(assignmentService.assignByOperator(jobId, request.plumberId(), request.reason()));
+    }
+
+    @Transactional
+    public OperationsServiceJobSummary assignPlumber(Long jobId, ReassignPlumberRequest request) {
+        if (request == null || request.plumberId() == null || isBlank(request.reason())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "plumberId and reason are required");
         }
-        job.setPlumber(plumber);
-        if (job.getStatus() == OrderStatus.PENDING) {
-            job.setStatus(OrderStatus.ACCEPTED);
-            job.setAcceptedAt(LocalDateTime.now());
+        ServiceOrder job = serviceOrderRepository.findById(jobId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Service job not found"));
+        if (job.getStatus() != OrderStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Service job is no longer pending assignment");
         }
-        return toServiceSummary(serviceOrderRepository.save(job));
+        return toServiceSummary(assignmentService.assignInitiallyByOperator(jobId, request.plumberId(), request.reason()));
+    }
+
+    public List<com.pqc.core.dto.EligiblePlumberResponse> eligiblePlumbers() {
+        return userRepository.findAll((root, query, cb) -> cb.and(
+                        cb.equal(root.get("role"), Role.PLUMBER),
+                        cb.equal(root.get("status"), UserStatus.ACTIVE)))
+                .stream().filter(plumberEligibilityService::isEligibleForLaunch)
+                .map(p -> new com.pqc.core.dto.EligiblePlumberResponse(p.getId(), p.getFullName(), p.getPhone()))
+                .toList();
     }
 
     @Transactional
@@ -334,6 +349,7 @@ public class OperationsAdminService {
                 job.getCompletedAt(),
                 productOrderRepository.findByServiceOrderId(job.getId()).stream().map(this::toMaterialSummary).toList(),
                 List.of(),
+                assignmentHistoryWithNames(job.getId()),
                 isServiceDelayed(job)
         );
     }
@@ -350,6 +366,15 @@ public class OperationsAdminService {
                 order.getTotalAmount(),
                 order.getCreatedAt()
         );
+    }
+
+    private List<OperationsServiceJobDetail.AssignmentInfo> assignmentHistoryWithNames(Long jobId) {
+        var assignments = assignmentRepository.findByServiceOrderIdOrderByCreatedAtAsc(jobId);
+        var plumbers = userRepository.findAllById(assignments.stream().map(com.pqc.core.entity.ServiceOrderAssignment::getPlumberId).filter(java.util.Objects::nonNull).toList())
+                .stream().collect(java.util.stream.Collectors.toMap(User::getId, User::getFullName));
+        return assignments.stream().map(a -> new OperationsServiceJobDetail.AssignmentInfo(
+                a.getId(), a.getPlumberId(), plumbers.get(a.getPlumberId()), a.getStatus().name(),
+                a.getAssignmentMode().name(), a.getActorId(), a.getActorRole(), a.getReason(), a.getCreatedAt())).toList();
     }
 
     private OperationsServiceJobDetail.PersonInfo toPersonInfo(User user) {
