@@ -47,6 +47,7 @@ public class StagingDemoMobileUserSeeder implements CommandLineRunner {
     private final StockRepository stockRepository;
     private final ServiceOrderRepository serviceOrderRepository;
     private final PlumberKycRepository plumberKycRepository;
+    private final LaunchPolicyRepository launchPolicyRepository;
     private final SeedProperties seedProperties;
 
     @Override
@@ -109,8 +110,29 @@ public class StagingDemoMobileUserSeeder implements CommandLineRunner {
                     .build());
         }
 
+        // Provision staging default SERVICE_LAUNCH policy if absent
+        ensureServiceLaunchPolicy();
+
         log.info("StagingDemoMobileUserSeeder: QA provisioning complete. " +
                 "Users=6, Store=1 (id={}), Products=4 (3 sufficient, 1 low-stock)", store.getId());
+    }
+
+    private void ensureServiceLaunchPolicy() {
+        if (launchPolicyRepository.findFirstByPolicyKey(com.pqc.core.service.LaunchPolicyService.SERVICE_POLICY_KEY).isPresent()) {
+            log.info("SERVICE_LAUNCH staging policy already exists; no mutation performed");
+            return;
+        }
+
+        LaunchPolicy policy = LaunchPolicy.builder()
+                .policyKey(com.pqc.core.service.LaunchPolicyService.SERVICE_POLICY_KEY)
+                .active(true)
+                .rosterEnforcementEnabled(true)
+                .serviceMaterialEnforcementEnabled(false)
+                .currency("INR")
+                .build();
+
+        launchPolicyRepository.save(policy);
+        log.info("SERVICE_LAUNCH staging policy provisioned");
     }
 
     // ------------------------------------------------------------------ helpers

@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.List;
 
 public interface LaunchPolicyRepository extends JpaRepository<LaunchPolicy, Long> {
+    Optional<LaunchPolicy> findFirstByPolicyKey(String policyKey);
     Optional<LaunchPolicy> findFirstByPolicyKeyAndActiveTrue(String policyKey);
     List<LaunchPolicy> findAllByPolicyKeyAndActiveTrue(String policyKey);
 

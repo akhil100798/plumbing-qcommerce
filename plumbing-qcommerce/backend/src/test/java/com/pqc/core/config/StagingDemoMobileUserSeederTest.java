@@ -47,10 +47,12 @@ class StagingDemoMobileUserSeederTest {
     private StockRepository stockRepository;
     private ServiceOrderRepository serviceOrderRepository;
     private PlumberKycRepository plumberKycRepository;
+    private LaunchPolicyRepository launchPolicyRepository;
     private SeedProperties seedProperties;
 
     private Map<String, User> users;
     private List<User> savedUsers;
+    private Map<String, com.pqc.core.entity.LaunchPolicy> policies;
 
     @BeforeEach
     void setUp() {
@@ -62,10 +64,12 @@ class StagingDemoMobileUserSeederTest {
         stockRepository = mock(StockRepository.class);
         serviceOrderRepository = mock(ServiceOrderRepository.class);
         plumberKycRepository = mock(PlumberKycRepository.class);
+        launchPolicyRepository = mock(LaunchPolicyRepository.class);
         seedProperties = mock(SeedProperties.class);
 
         users = new HashMap<>();
         savedUsers = new ArrayList<>();
+        policies = new HashMap<>();
 
         when(seedProperties.getDemoPassword()).thenReturn("QaStagingSecret!");
         when(passwordEncoder.encode("QaStagingSecret!")).thenReturn("bcrypt-qa-password");
@@ -100,13 +104,23 @@ class StagingDemoMobileUserSeederTest {
 
         when(serviceOrderRepository.countByCustomer_Id(any())).thenReturn(0L);
         when(serviceOrderRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        when(launchPolicyRepository.findFirstByPolicyKey(any())).thenAnswer(inv -> Optional.ofNullable(policies.get(inv.getArgument(0))));
+        when(launchPolicyRepository.save(any(com.pqc.core.entity.LaunchPolicy.class))).thenAnswer(inv -> {
+            com.pqc.core.entity.LaunchPolicy policy = inv.getArgument(0);
+            if (policy.getId() == null) {
+                policy.setId((long) (policies.size() + 1));
+            }
+            policies.put(policy.getPolicyKey(), policy);
+            return policy;
+        });
     }
 
     private StagingDemoMobileUserSeeder buildSeeder() {
         return new StagingDemoMobileUserSeeder(
                 userRepository, passwordEncoder, storeRepository, categoryRepository,
                 productRepository, stockRepository, serviceOrderRepository, plumberKycRepository,
-                seedProperties
+                launchPolicyRepository, seedProperties
         );
     }
 
@@ -172,6 +186,85 @@ class StagingDemoMobileUserSeederTest {
         assertThat(users.get("customer.qa@fixkart.com").getPassword()).isEqualTo("bcrypt-qa-password");
     }
 
+    @Test
+    @DisplayName("run() provisions SERVICE_LAUNCH policy when absent")
+    void runProvisionsServiceLaunchPolicyWhenAbsent() throws Exception {
+        buildSeeder().run();
+
+        assertThat(policies).containsKey("SERVICE_LAUNCH");
+        com.pqc.core.entity.LaunchPolicy policy = policies.get("SERVICE_LAUNCH");
+        assertThat(policy.getPolicyKey()).isEqualTo("SERVICE_LAUNCH");
+        assertThat(policy.isActive()).isTrue();
+        assertThat(policy.isRosterEnforcementEnabled()).isTrue();
+        assertThat(policy.isServiceMaterialEnforcementEnabled()).isFalse();
+        assertThat(policy.getCurrency()).isEqualTo("INR");
+        assertThat(policy.getOwnedStoreId()).isNull();
+        assertThat(policy.getServiceAreaCenterLatitude()).isNull();
+        assertThat(policy.getServiceAreaCenterLongitude()).isNull();
+        assertThat(policy.getServiceAreaRadiusKm()).isNull();
+        assertThat(policy.getVisitFee()).isNull();
+        assertThat(policies).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("run() is idempotent for SERVICE_LAUNCH policy on multiple executions")
+    void runIsIdempotentForServiceLaunchPolicy() throws Exception {
+        StagingDemoMobileUserSeeder seeder = buildSeeder();
+        seeder.run();
+        seeder.run();
+
+        assertThat(policies).hasSize(1);
+        com.pqc.core.entity.LaunchPolicy policy = policies.get("SERVICE_LAUNCH");
+        assertThat(policy.getPolicyKey()).isEqualTo("SERVICE_LAUNCH");
+        assertThat(policy.isActive()).isTrue();
+    }
+
+    @Test
+    @DisplayName("run() preserves existing active SERVICE_LAUNCH policy without mutation")
+    void runPreservesExistingActiveServiceLaunchPolicy() throws Exception {
+        com.pqc.core.entity.LaunchPolicy existing = com.pqc.core.entity.LaunchPolicy.builder()
+                .id(999L)
+                .policyKey("SERVICE_LAUNCH")
+                .active(true)
+                .rosterEnforcementEnabled(false)
+                .serviceMaterialEnforcementEnabled(true)
+                .ownedStoreId(42L)
+                .currency("INR")
+                .build();
+        policies.put("SERVICE_LAUNCH", existing);
+
+        buildSeeder().run();
+
+        assertThat(policies).hasSize(1);
+        com.pqc.core.entity.LaunchPolicy policy = policies.get("SERVICE_LAUNCH");
+        assertThat(policy.getId()).isEqualTo(999L);
+        assertThat(policy.isRosterEnforcementEnabled()).isFalse();
+        assertThat(policy.isServiceMaterialEnforcementEnabled()).isTrue();
+        assertThat(policy.getOwnedStoreId()).isEqualTo(42L);
+    }
+
+    @Test
+    @DisplayName("run() preserves existing inactive SERVICE_LAUNCH policy without duplicate or activation")
+    void runPreservesExistingInactiveServiceLaunchPolicy() throws Exception {
+        com.pqc.core.entity.LaunchPolicy existing = com.pqc.core.entity.LaunchPolicy.builder()
+                .id(888L)
+                .policyKey("SERVICE_LAUNCH")
+                .active(false)
+                .rosterEnforcementEnabled(false)
+                .serviceMaterialEnforcementEnabled(false)
+                .currency("INR")
+                .build();
+        policies.put("SERVICE_LAUNCH", existing);
+
+        buildSeeder().run();
+
+        assertThat(policies).hasSize(1);
+        com.pqc.core.entity.LaunchPolicy policy = policies.get("SERVICE_LAUNCH");
+        assertThat(policy.getId()).isEqualTo(888L);
+        assertThat(policy.isActive()).isFalse();
+        assertThat(policy.isRosterEnforcementEnabled()).isFalse();
+    }
+
     // ------------------------------------------------------------------ Profile tests
 
     @Test
@@ -186,6 +279,7 @@ class StagingDemoMobileUserSeederTest {
                 .withBean(StockRepository.class, () -> stockRepository)
                 .withBean(ServiceOrderRepository.class, () -> serviceOrderRepository)
                 .withBean(PlumberKycRepository.class, () -> plumberKycRepository)
+                .withBean(LaunchPolicyRepository.class, () -> launchPolicyRepository)
                 .withBean(SeedProperties.class, () -> seedProperties)
                 .withBean(StagingDemoMobileUserSeeder.class)
                 .withPropertyValues("app.seed.mobile-qa-enabled=true")
@@ -205,6 +299,7 @@ class StagingDemoMobileUserSeederTest {
                 .withBean(StockRepository.class, () -> stockRepository)
                 .withBean(ServiceOrderRepository.class, () -> serviceOrderRepository)
                 .withBean(PlumberKycRepository.class, () -> plumberKycRepository)
+                .withBean(LaunchPolicyRepository.class, () -> launchPolicyRepository)
                 .withBean(SeedProperties.class, () -> seedProperties)
                 .withBean(StagingDemoMobileUserSeeder.class)
                 .withPropertyValues("app.seed.mobile-qa-enabled=true")
@@ -227,6 +322,7 @@ class StagingDemoMobileUserSeederTest {
                 .withBean(StockRepository.class, () -> stockRepository)
                 .withBean(ServiceOrderRepository.class, () -> serviceOrderRepository)
                 .withBean(PlumberKycRepository.class, () -> plumberKycRepository)
+                .withBean(LaunchPolicyRepository.class, () -> launchPolicyRepository)
                 .withBean(SeedProperties.class, () -> seedProperties)
                 .withBean(StagingDemoMobileUserSeeder.class)
                 .withPropertyValues("app.seed.mobile-qa-enabled=true")
@@ -249,6 +345,7 @@ class StagingDemoMobileUserSeederTest {
                 .withBean(StockRepository.class, () -> stockRepository)
                 .withBean(ServiceOrderRepository.class, () -> serviceOrderRepository)
                 .withBean(PlumberKycRepository.class, () -> plumberKycRepository)
+                .withBean(LaunchPolicyRepository.class, () -> launchPolicyRepository)
                 .withBean(SeedProperties.class, () -> seedProperties)
                 .withBean(StagingDemoMobileUserSeeder.class)
                 .withPropertyValues("app.seed.mobile-qa-enabled=false")
