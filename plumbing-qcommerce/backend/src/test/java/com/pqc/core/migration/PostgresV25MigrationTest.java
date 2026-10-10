@@ -24,9 +24,9 @@ class PostgresV25MigrationTest {
 
     @BeforeEach
     void setUp() {
-        String url = System.getenv().getOrDefault("PHASE1_TEST_POSTGRES_URL", "jdbc:postgresql://localhost:5433/plumbing_commerce");
-        String username = System.getenv().getOrDefault("PHASE1_TEST_POSTGRES_USERNAME", "admin");
-        String password = System.getenv().getOrDefault("PHASE1_TEST_POSTGRES_PASSWORD", "local-postgres-password");
+        String url = com.pqc.core.testsupport.PostgresTestTargetGuard.requireUrl();
+        String username = com.pqc.core.testsupport.PostgresTestTargetGuard.requireUsername();
+        String password = com.pqc.core.testsupport.PostgresTestTargetGuard.requirePassword();
         dataSource = new DriverManagerDataSource(url, username, password);
         schema = "phase1_v25_" + UUID.randomUUID().toString().replace("-", "");
         new JdbcTemplate(dataSource).execute("CREATE SCHEMA " + schema);
@@ -46,6 +46,7 @@ class PostgresV25MigrationTest {
                 .schemas(schema)
                 .defaultSchema(schema)
                 .baselineOnMigrate(false)
+                .target("25")
                 .locations("classpath:db/migration")
                 .load()
                 .migrate();
