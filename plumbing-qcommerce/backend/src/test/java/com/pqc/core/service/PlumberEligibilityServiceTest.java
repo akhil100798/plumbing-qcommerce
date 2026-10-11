@@ -54,4 +54,28 @@ class PlumberEligibilityServiceTest {
 
         assertThat(service.isEligibleForLaunch(plumber)).isTrue();
     }
+
+    @Test
+    void deactivatedRosterMembershipIsNotEligible() {
+        User plumber = User.builder().id(10L).role(Role.PLUMBER).build();
+        LaunchPolicy policy = LaunchPolicy.builder().id(5L).active(true).rosterEnforcementEnabled(true).build();
+        when(kycRepository.findByPlumberId(10L)).thenReturn(Optional.of(PlumberKyc.builder()
+                .plumberId(10L).status(PlumberKycStatus.APPROVED).availabilityStatus(PlumberAvailabilityStatus.ONLINE).build()));
+        when(policyService.launchRosterEnforced()).thenReturn(true);
+        when(policyService.activePolicy()).thenReturn(policy);
+        when(rosterRepository.existsByPolicyIdAndPlumberIdAndApprovedTrue(5L, 10L)).thenReturn(false);
+
+        assertThat(service.isEligibleForLaunch(plumber)).isFalse();
+    }
+
+    @Test
+    void rosterIsNotRequiredWhenPolicyEnforcementIsOff() {
+        User plumber = User.builder().id(11L).role(Role.PLUMBER).build();
+        when(kycRepository.findByPlumberId(11L)).thenReturn(Optional.of(PlumberKyc.builder()
+                .plumberId(11L).status(PlumberKycStatus.APPROVED).availabilityStatus(PlumberAvailabilityStatus.ONLINE).build()));
+        when(policyService.launchRosterEnforced()).thenReturn(false);
+
+        assertThat(service.isEligibleForLaunch(plumber)).isTrue();
+        verifyNoInteractions(rosterRepository);
+    }
 }

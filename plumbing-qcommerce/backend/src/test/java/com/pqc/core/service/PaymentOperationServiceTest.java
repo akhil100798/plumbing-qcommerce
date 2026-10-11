@@ -55,18 +55,21 @@ class PaymentOperationServiceTest {
         PaymentOperation operation = PaymentOperation.builder().id(3L).serviceOrderId(9L)
                 .purpose(PaymentOperationService.PURPOSE).status(PaymentOperationStatus.INITIATED)
                 .amount(new BigDecimal("10.00")).currency("INR").build();
+        Object lock = new Object();
         AtomicInteger queries = new AtomicInteger();
         when(repository.findForUpdate(9L, PaymentOperationService.PURPOSE)).thenAnswer(invocation -> {
-            if (queries.getAndIncrement() == 0) {
-                PaymentOperation firstRead = PaymentOperation.builder()
-                        .id(operation.getId()).serviceOrderId(operation.getServiceOrderId())
-                        .purpose(operation.getPurpose()).idempotencyKey(operation.getIdempotencyKey())
-                        .status(PaymentOperationStatus.INITIATED).amount(operation.getAmount())
-                        .currency(operation.getCurrency()).build();
-                operation.setStatus(PaymentOperationStatus.CAPTURE_IN_PROGRESS);
-                return Optional.of(firstRead);
+            synchronized (lock) {
+                if (queries.getAndIncrement() == 0) {
+                    PaymentOperation firstRead = PaymentOperation.builder()
+                            .id(operation.getId()).serviceOrderId(operation.getServiceOrderId())
+                            .purpose(operation.getPurpose()).idempotencyKey(operation.getIdempotencyKey())
+                            .status(PaymentOperationStatus.INITIATED).amount(operation.getAmount())
+                            .currency(operation.getCurrency()).build();
+                    operation.setStatus(PaymentOperationStatus.CAPTURE_IN_PROGRESS);
+                    return Optional.of(firstRead);
+                }
+                return Optional.of(operation);
             }
-            return Optional.of(operation);
         });
         when(repository.saveAndFlush(any(PaymentOperation.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
