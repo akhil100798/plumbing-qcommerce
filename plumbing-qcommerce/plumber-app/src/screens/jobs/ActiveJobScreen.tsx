@@ -90,20 +90,24 @@ export function ActiveJobScreen({ route, navigation }: Props) {
     navigation.navigate('Chat', { name: displayJob.customer.fullName, role: 'Customer' });
   };
 
-  const handleActionPress = () => {
+  const handleActionPress = async () => {
     switch (displayJob.status) {
       case 'accepted':
+        if (displayJob.timeline?.reached) {
+          navigation.navigate('StartWork', { jobId: String(displayJob.jobId) });
+          break;
+        }
         if (displayJob.latitude == null || displayJob.longitude == null) {
           setActionError('Customer coordinates are unavailable for navigation.');
           break;
         }
-        dispatch(
-          updateJobStatus({
-            status: 'on_the_way',
-            timelineField: 'on_the_way',
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          })
-        );
+        setActionError(null);
+        try {
+          await jobService.startNavigation(String(displayJob.jobId));
+        } catch (cause) {
+          setActionError(cause instanceof Error ? cause.message : 'Could not verify this navigation action with the server.');
+          break;
+        }
         navigation.navigate('Navigation', {
           jobId: String(displayJob.jobId),
           customerId: displayJob.customer.id,
@@ -129,7 +133,10 @@ export function ActiveJobScreen({ route, navigation }: Props) {
         navigation.navigate('StartWork', { jobId: String(displayJob.jobId) });
         break;
       case 'started':
-        navigation.navigate('BeforePhotos', { jobId: String(displayJob.jobId) });
+        navigation.navigate('Diagnosis', { jobId: String(displayJob.jobId) });
+        break;
+      case 'completed':
+        navigation.navigate('CompleteService', { jobId: String(displayJob.jobId) });
         break;
       default:
         break;
@@ -167,7 +174,7 @@ export function ActiveJobScreen({ route, navigation }: Props) {
           <View style={styles.customerRow}>
             <View>
               <Text style={styles.customerName}>{displayJob.customer.fullName}</Text>
-              <Text style={styles.customerSub}>Rating: {displayJob.customer.rating || 4.8} ⭐</Text>
+          {displayJob.customer.rating != null ? <Text style={styles.customerSub}>Rating: {displayJob.customer.rating} ⭐</Text> : null}
             </View>
             <View style={styles.contactButtons}>
               <TouchableOpacity style={styles.callBtn} onPress={handleCall}>
@@ -196,9 +203,9 @@ export function ActiveJobScreen({ route, navigation }: Props) {
         {/* Bottom Navigation Button */}
         <View style={styles.actionContainer}>
           <PrimaryButton
-            title={displayJob.status === 'completed' ? 'Job Completed' : 'Start Navigation'}
+            title={displayJob.status === 'completed' ? 'View completion status' : displayJob.status === 'started' ? 'Open diagnosis & quote' : displayJob.status === 'reached' || (displayJob.status === 'accepted' && !!displayJob.timeline?.reached) ? 'Start diagnostic visit' : 'Start Navigation'}
             onPress={handleActionPress}
-            disabled={displayJob.status === 'completed'}
+            disabled={syncLoading}
             style={styles.navButton}
           />
         </View>

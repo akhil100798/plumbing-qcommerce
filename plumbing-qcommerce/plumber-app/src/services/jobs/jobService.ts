@@ -61,7 +61,7 @@ const mapServiceOrderToActiveJob = (order: any, status?: ActiveJob['status']): A
     longitude: order.customerLongitude ?? order.longitude ?? null,
     customerNote: order.description,
     estimatedEarnings: null,
-    partsCharge: Number(order.partsCharge ?? 0),
+    partsCharge: null,
     timeline: {
       accepted: order.acceptedAt,
       reached: order.arrivedAt,
@@ -151,7 +151,8 @@ export const jobService = {
         (order) =>
           order.status === 'ACCEPTED' ||
           order.status === 'IN_PROGRESS' ||
-          order.status === 'COMBINED_ORDER'
+          order.status === 'COMBINED_ORDER' ||
+          order.status === 'COMPLETED'
       );
       if (!activeOrder) return null;
 

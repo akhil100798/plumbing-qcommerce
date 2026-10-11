@@ -13,7 +13,7 @@ export interface CustomerInfo {
   id: string;
   fullName: string;
   phone: string;
-  rating: number;
+  rating: number | null;
 }
 
 export interface JobOffer {
@@ -40,7 +40,7 @@ export interface ActiveJob {
   customerNote?: string;
   issueDescription?: string;
   estimatedEarnings?: number | null;
-  partsCharge?: number;
+  partsCharge?: number | null;
   timeline: {
     assigned?: string;
     accepted?: string;

@@ -23,6 +23,7 @@ export type AppStackParamList = {
   Navigation: { jobId: string; customerId: string; latitude?: number | null; longitude?: number | null; plumberLatitude?: number | null; plumberLongitude?: number | null; routeEta?: string | null; routeDistance?: string | null; turnInstruction?: string | null; turnDistance?: string | null; status?: string | null; address: string };
   ReachedCustomer: { jobId: string };
   StartWork: { jobId: string };
+  Diagnosis: { jobId: string };
   BeforePhotos: { jobId: string };
   StoreSelection: { jobId: string };
   MaterialRequest: { jobId: string; storeId: number; storeName: string };

@@ -22,9 +22,9 @@ import { RootState } from '../../redux/store';
 type Props = StackScreenProps<AppStackParamList, 'StartWork'>;
 
 const CHECKLIST = [
-  { id: 'explain', label: 'Explain the issue to customer' },
-  { id: 'check', label: 'Check the problem clearly' },
-  { id: 'confirm', label: 'Confirm the work & charges' },
+  { id: 'explain', label: 'Confirm the reported issue with the customer' },
+  { id: 'check', label: 'Inspect the problem and explain findings' },
+  { id: 'confirm', label: 'Do not start repair until the customer approves the labor quote' },
 ];
 
 export function StartWorkScreen({ route, navigation }: Props) {
@@ -34,11 +34,11 @@ export function StartWorkScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(false);
 
   const [checked, setChecked] = useState<{ [key: string]: boolean }>({
-    explain: true,
-    check: true,
-    confirm: true,
+    explain: false,
+    check: false,
+    confirm: false,
   });
-  const [discussed, setDiscussed] = useState(true);
+  const [discussed, setDiscussed] = useState(false);
 
   const toggle = (id: string) => setChecked((c) => ({ ...c, [id]: !c[id] }));
 
@@ -47,7 +47,7 @@ export function StartWorkScreen({ route, navigation }: Props) {
     [checked, discussed]
   );
 
-  const customerName = activeJob?.customer.fullName || 'Anil Kumar';
+  const customerName = activeJob?.customer.fullName || 'Customer';
   const customerInitial = customerName.charAt(0).toUpperCase();
 
   const handleStartWork = async () => {
@@ -60,24 +60,9 @@ export function StartWorkScreen({ route, navigation }: Props) {
     try {
       const updatedJob = await jobService.startWork(jobId);
       dispatch(setActiveJob(updatedJob));
-      dispatch(
-        updateJobStatus({
-          status: 'started',
-          timelineField: 'started',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        })
-      );
-      navigation.replace('BeforePhotos', { jobId });
+      navigation.replace('Diagnosis', { jobId });
     } catch (err: any) {
-      // Proceed to photo capture fallback
-      dispatch(
-        updateJobStatus({
-          status: 'started',
-          timelineField: 'started',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        })
-      );
-      navigation.replace('BeforePhotos', { jobId });
+      Alert.alert('Could not start diagnosis', err?.message || 'The backend did not confirm arrival or diagnostic start. Refresh and try again.');
     } finally {
       setLoading(false);
     }
@@ -85,13 +70,11 @@ export function StartWorkScreen({ route, navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.flex}>
-      <AppHeader title="Start Work" onBackPress={() => navigation.goBack()} />
+      <AppHeader title="Start diagnostic visit" onBackPress={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.body}>
         <Text style={styles.jobId}>#{jobId}</Text>
-        <Text style={styles.jobTitle}>
-          {activeJob ? 'Bathroom Pipe Leakage' : 'Bathroom Pipe Leakage'}
-        </Text>
+        <Text style={styles.jobTitle}>{activeJob?.issueDescription || activeJob?.customerNote || 'Service diagnosis'}</Text>
 
         <View style={styles.customerCard}>
           <View style={styles.avatar}>
@@ -126,7 +109,7 @@ export function StartWorkScreen({ route, navigation }: Props) {
 
       <View style={styles.footer}>
         <PrimaryButton
-          title="Start Work"
+          title="Start diagnosis"
           onPress={handleStartWork}
           loading={loading}
           disabled={!canStart}
