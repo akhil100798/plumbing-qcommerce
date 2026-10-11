@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 
 /** Provisions only an explicitly configured QA labor catalog fixture. */
 @Component
-@Profile("!prod & (qa | staging)")
+@Profile("staging | qa")
 @ConditionalOnProperty(prefix = "app.seed.qa-labor-catalog", name = "enabled", havingValue = "true", matchIfMissing = false)
 @RequiredArgsConstructor
 public class QaLaborCatalogSeeder implements CommandLineRunner {
