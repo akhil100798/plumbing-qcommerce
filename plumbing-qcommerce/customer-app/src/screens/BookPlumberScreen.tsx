@@ -24,12 +24,12 @@ interface IssueItem {
 }
 
 const issues: IssueItem[] = [
-  { id: 'pipe', name: 'Pipe Leakage', icon: '🚰' },
-  { id: 'tap', name: 'Tap Repair', icon: '🚿' },
-  { id: 'toilet', name: 'Toilet Blockage', icon: '🚽' },
-  { id: 'tank', name: 'Water Tank Issue', icon: '🛢️' },
-  { id: 'motor', name: 'Motor Repair', icon: '⚙️' },
-  { id: 'other', name: 'Other Issue', icon: '🛠️' },
+  { id: 'pipe', name: 'Leaking or damaged pipe', icon: '🚰' },
+  { id: 'tap', name: 'Tap or faucet problem', icon: '🚿' },
+  { id: 'toilet', name: 'Blocked or faulty toilet', icon: '🚽' },
+  { id: 'tank', name: 'Water tank problem', icon: '🛢️' },
+  { id: 'motor', name: 'Water pump or motor', icon: '⚙️' },
+  { id: 'other', name: 'Something else / not sure', icon: '🛠️' },
 ];
 
 export function BookPlumberScreen({ navigation }: Props) {
@@ -41,10 +41,6 @@ export function BookPlumberScreen({ navigation }: Props) {
 
   const handleContinue = () => {
     const selected = issues.find((i) => i.id === selectedIssueId);
-    if (!description.trim()) {
-      Alert.alert('Description required', 'Please describe the plumbing issue.');
-      return;
-    }
     let scheduledFor: string | null = null;
     if (scheduleOption === 'schedule') {
       const parsed = new Date(scheduledForInput);
@@ -94,11 +90,11 @@ export function BookPlumberScreen({ navigation }: Props) {
           })}
         </View>
 
-        <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Tell us more</Text>
+        <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Tell us more (optional)</Text>
         <TextInput
           value={description}
           onChangeText={setDescription}
-          placeholder="Describe the problem"
+          placeholder="What do you notice? Add details if you can."
           multiline
           style={styles.descriptionInput}
         />
@@ -154,7 +150,7 @@ export function BookPlumberScreen({ navigation }: Props) {
 
       <View style={styles.footer}>
         <PrimaryButton
-          title="Continue"
+          title="Continue to address"
           onPress={handleContinue}
           style={styles.continueBtn}
         />

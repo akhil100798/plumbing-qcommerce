@@ -60,6 +60,8 @@ export const getAuthToken = async () => {
   return authToken;
 };
 
+export const getApiBaseUrl = () => apiClient.defaults.baseURL || `${BACKEND_URL}/api/v1`;
+
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const token = await getAuthToken();
@@ -138,6 +140,8 @@ apiClient.interceptors.response.use(
       message,
     });
 
-    return Promise.reject(new Error(message));
+    const apiError = new Error(message) as Error & { status?: number };
+    apiError.status = error.response?.status;
+    return Promise.reject(apiError);
   }
 );

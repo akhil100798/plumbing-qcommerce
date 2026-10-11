@@ -23,12 +23,14 @@ export interface ServiceOrderDTO {
   arrivedAt?: string | null;
   startedAt?: string | null;
   status: string;
+  customerFacingStatus?: string | null;
+  completedAt?: string | null;
+  totalAmount?: number | null;
   requestType: string;
   createdAt: string;
   totalCharge?: number;
   baseCharge?: number;
   partsCharge?: number;
-  customerFacingStatus?: string | null;
   cancellationEligible?: boolean;
 }
 

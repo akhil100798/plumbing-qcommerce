@@ -25,6 +25,7 @@ import { SearchScreen } from '../screens/SearchScreen';
 import { ServiceCompletionScreen } from '../screens/ServiceCompletionScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { SupportScreen } from '../screens/SupportScreen';
+import { ServiceDiagnosisScreen } from '../screens/ServiceDiagnosisScreen';
 import { WalletScreen } from '../screens/WalletScreen';
 import { AppStackParamList } from '../types/navigation';
 import { AuthNavigator } from './AuthNavigator';
@@ -67,6 +68,7 @@ export function RootNavigator() {
         <Stack.Screen name="BookPlumber" component={BookPlumberScreen} />
         <Stack.Screen name="PlumberConfirmation" component={PlumberConfirmationScreen} />
         <Stack.Screen name="PlumberTracking" component={PlumberTrackingScreen} />
+        <Stack.Screen name="ServiceDiagnosis" component={ServiceDiagnosisScreen} />
         <Stack.Screen name="MaterialApproval" component={MaterialApprovalScreen} />
         <Stack.Screen name="ServiceCompletion" component={ServiceCompletionScreen} />
         <Stack.Screen name="AddressManagement" component={AddressManagementScreen} />

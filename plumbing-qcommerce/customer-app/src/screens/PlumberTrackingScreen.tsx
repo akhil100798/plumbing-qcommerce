@@ -56,13 +56,14 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
     createdAt, assignedAt,
   } = route.params;
   const devMode = canUseDevMockFallbacks();
-  const isAssigned = Boolean(plumberName) && status != null && ACTIVE_ASSIGNED_STATUSES.has(status);
+  const [currentOrderStatus, setCurrentOrderStatus] = useState(status);
+  const isAssigned = Boolean(plumberName) && currentOrderStatus != null && ACTIVE_ASSIGNED_STATUSES.has(currentOrderStatus);
   const displayPlumberName = plumberName ?? 'Plumber unavailable';
   const trackingStatusText = isAssigned
     ? 'On the way to your location'
-    : status === 'CANCELLED'
+    : currentOrderStatus === 'CANCELLED'
       ? 'Booking cancelled'
-      : status === 'CUSTOMER_CONFIRMED' || status === 'COMPLETED' || status === 'PAID'
+      : currentOrderStatus === 'CUSTOMER_CONFIRMED' || currentOrderStatus === 'COMPLETED' || currentOrderStatus === 'PAID'
         ? 'Service completed'
         : 'Waiting for a plumber';
 
@@ -107,6 +108,22 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
       clearInterval(interval);
     };
   }, [orderId, plumberName, devMode]);
+
+  useEffect(() => {
+    if (!Number.isSafeInteger(orderId) || orderId <= 0) return;
+    let cancelled = false;
+    const refreshOrder = async () => {
+      try {
+        const order = await OrderRepository.getServiceOrderById(orderId);
+        if (!cancelled) setCurrentOrderStatus(order.status);
+      } catch {
+        // Retain the last confirmed server state during a transient failure.
+      }
+    };
+    void refreshOrder();
+    const interval = setInterval(refreshOrder, 10000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [orderId]);
 
   const handleApproveMaterial = async () => {
     if (!materialRequest) return;
@@ -217,6 +234,12 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
         <View style={styles.statusSection}>
           <Text style={styles.sectionTitle}>Service Progress</Text>
            <TrackingStatusStepper steps={steps} currentStep={isAssigned ? 1 : 0} />
+           {currentOrderStatus === 'IN_PROGRESS' || currentOrderStatus === 'COMBINED_ORDER' ? (
+             <PrimaryButton title="View diagnosis & labor quote" onPress={() => navigation.navigate('ServiceDiagnosis', { orderId, plumberName })} />
+           ) : null}
+           {currentOrderStatus === 'COMPLETED' ? (
+             <Text style={styles.mapUnavailable}>Your plumber marked the repair complete. Customer confirmation and payment are outside this milestone.</Text>
+           ) : null}
         </View>
       </ScrollView>
 

@@ -32,6 +32,8 @@ export type AppStackParamList = {
   PlumberConfirmation: { issueType: string; issueCategory?: string; description?: string; urgency?: string; scheduledFor?: string | null };
   PlumberTracking: {
     orderId: number;
+    issueType?: string | null;
+    description?: string | null;
     plumberId?: string | null;
     plumberName: string | null;
     plumberPhone?: string | null;
@@ -44,6 +46,7 @@ export type AppStackParamList = {
     estimatedArrivalAt?: string | null;
     status?: string | null;
   };
+  ServiceDiagnosis: { orderId: number; plumberName: string | null };
   MaterialApproval: { serviceOrderId: number; plumberName: string };
   ServiceCompletion: { plumberName: string };
   AddressManagement: undefined;

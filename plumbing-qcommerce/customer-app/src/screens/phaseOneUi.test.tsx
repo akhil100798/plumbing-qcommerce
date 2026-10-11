@@ -83,7 +83,7 @@ describe('customer Phase 1 request UI', () => {
     await act(async () => { renderer = TestRenderer.create(<BookPlumberScreen navigation={nowNavigation as any} route={undefined as any} />); });
     const description = renderer.root.findAllByType('TextInput' as any)[0];
     await act(async () => { description.props.onChangeText('Leak'); });
-    const continueButton = renderer.root.findAllByType('PrimaryButton' as any).find((item) => item.props.title === 'Continue')!;
+    const continueButton = renderer.root.findAllByType('PrimaryButton' as any).find((item) => item.props.title === 'Continue to address')!;
     await act(async () => { continueButton.props.onPress(); });
     expect(nowNavigation.navigate).toHaveBeenCalledWith('PlumberConfirmation', expect.objectContaining({ scheduledFor: null }));
 
@@ -92,11 +92,11 @@ describe('customer Phase 1 request UI', () => {
     await act(async () => { renderer.root.findAllByType('TextInput' as any)[0].props.onChangeText('Leak'); });
     await act(async () => { touchableWithText(renderer, 'Schedule')?.props.onPress(); });
     const scheduleInput = renderer.root.findAllByType('TextInput' as any)[1];
-    const scheduleContinue = renderer.root.findAllByType('PrimaryButton' as any).find((item) => item.props.title === 'Continue')!;
+    const scheduleContinue = renderer.root.findAllByType('PrimaryButton' as any).find((item) => item.props.title === 'Continue to address')!;
     await act(async () => { scheduleContinue.props.onPress(); });
     expect(scheduleNavigation.navigate).not.toHaveBeenCalled();
     await act(async () => { scheduleInput.props.onChangeText('2099-05-06T07:08'); });
-    const button = renderer.root.findAllByType('PrimaryButton' as any).find((item) => item.props.title === 'Continue')!;
+    const button = renderer.root.findAllByType('PrimaryButton' as any).find((item) => item.props.title === 'Continue to address')!;
     await act(async () => { button.props.onPress(); });
     expect(scheduleNavigation.navigate).toHaveBeenCalledWith('PlumberConfirmation', expect.objectContaining({ scheduledFor: '2099-05-06T07:08:00' }));
   });
@@ -111,7 +111,7 @@ describe('customer Phase 1 request UI', () => {
     await act(async () => { touchableWithText(renderer, 'Schedule')?.props.onPress(); });
     const scheduleInput = renderer.root.findAllByType('TextInput' as any)[1];
     await act(async () => { scheduleInput.props.onChangeText('2000-01-01T00:00'); });
-    const continueButton = renderer.root.findAllByType('PrimaryButton' as any).find((item) => item.props.title === 'Continue')!;
+    const continueButton = renderer.root.findAllByType('PrimaryButton' as any).find((item) => item.props.title === 'Continue to address')!;
     await act(async () => { continueButton.props.onPress(); });
 
     expect(navigation.navigate).not.toHaveBeenCalled();
