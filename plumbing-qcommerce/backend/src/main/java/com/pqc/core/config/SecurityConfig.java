@@ -33,7 +33,7 @@ public class SecurityConfig {
     private final RateLimitingFilter rateLimitingFilter;
     private final UserDetailsService userDetailsService;
 
-    @Value("${app.cors.allowed-origins:http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:3101,http://localhost:19007,http://localhost:19008,http://localhost:19009,http://localhost:3000}")
+    @Value("${app.cors.allowed-origins:http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,http://localhost:3101,http://localhost:19007,http://localhost:19008,http://localhost:19009,http://localhost:3000,http://127.0.0.1:8081,http://127.0.0.1:8082,http://127.0.0.1:8083,http://127.0.0.1:8084,http://127.0.0.1:3101}")
     private String allowedOrigins;
 
     @Bean
@@ -81,9 +81,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/config/public", "/api/v1/support/contact").permitAll()
                 .requestMatchers("/api/v1/admin/super/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
                 .requestMatchers("/api/v1/admin/operations/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "OPERATIONS_ADMIN")
+                .requestMatchers("/api/v1/admin/service-jobs/*/reconciliation").hasAnyRole("SUPER_ADMIN", "ADMIN", "OPERATIONS_ADMIN")
                 .requestMatchers("/api/v1/admin/finance/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "FINANCE_ADMIN")
                 .requestMatchers("/api/v1/admin/support/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "SUPPORT_ADMIN")
                 .requestMatchers("/api/v1/admin/plumber-manager/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "PLUMBER_MANAGER")
+                .requestMatchers("/api/v1/admin/launch-roster/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
                 .requestMatchers("/api/v1/admin/marketing/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "MARKETING_ADMIN")
                 .requestMatchers("/api/v1/admin/rbac/me").hasAnyRole("SUPER_ADMIN", "ADMIN", "OPERATIONS_ADMIN", "PLUMBER_MANAGER", "FINANCE_ADMIN", "SUPPORT_ADMIN", "MARKETING_ADMIN", "STORE_MANAGER")
                 .requestMatchers("/api/v1/admin/rbac/**").hasAnyRole("SUPER_ADMIN", "ADMIN")

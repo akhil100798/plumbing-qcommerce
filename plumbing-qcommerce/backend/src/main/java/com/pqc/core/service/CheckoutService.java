@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Comparator;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +30,7 @@ public class CheckoutService {
     private final StockRepository stockRepository;
     private final InventoryReservationRepository reservationRepository;
     private final ProductOrderRepository orderRepository;
+    private final ProductOrderItemRepository itemRepository;
     private final UserRepository userRepository;
     private final CurrentUser currentUser;
     private final OutboxEventRepository outboxRepository;
@@ -151,8 +153,13 @@ public class CheckoutService {
      */
     @Transactional
     public void confirmPayment(Long orderId) {
-        ProductOrder order = orderRepository.findById(orderId)
+        ProductOrder discovered = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+        ServiceOrder linked = discovered.getServiceOrder() == null ? null
+                : serviceOrderRepository.findByIdForUpdate(discovered.getServiceOrder().getId()).orElseThrow();
+        ProductOrder order = linked == null ? discovered : orderRepository.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+        if (linked != null) itemRepository.findByOrderIdForUpdate(orderId);
 
         if (order.getStatus() == ProductOrderStatus.CONFIRMED) {
             // Confirmation is intentionally idempotent: a repeated activation must not
@@ -167,10 +174,11 @@ public class CheckoutService {
         order.setStatus(ProductOrderStatus.CONFIRMED);
         orderRepository.save(order);
 
-        List<InventoryReservation> reservations = reservationRepository.findByOrderId(orderId);
+        List<InventoryReservation> reservations = linked == null
+                ? reservationRepository.findByOrderId(orderId) : lockedReservations(orderId);
         List<Stock> stocksToSave = new ArrayList<>();
 
-        for (InventoryReservation res : reservations) {
+        for (InventoryReservation res : reservations.stream().sorted(reservationStockOrder()).toList()) {
             if (res.getStatus() == ReservationStatus.PENDING) {
                 res.setStatus(ReservationStatus.CONFIRMED);
                 Stock stock = res.getStock();
@@ -183,7 +191,7 @@ public class CheckoutService {
         stockRepository.saveAll(stocksToSave);
 
         // ---- Phase 3: Combined Order handling ----
-        Optional<ServiceOrder> linkedServiceOrder = Optional.ofNullable(order.getServiceOrder());
+        Optional<ServiceOrder> linkedServiceOrder = Optional.ofNullable(linked);
         String eventType = "ORDER_CONFIRMED";
         String topic = "order-confirmed";
 
@@ -228,8 +236,13 @@ public class CheckoutService {
      */
     @Transactional
     public void releaseReservation(Long orderId) {
-        ProductOrder order = orderRepository.findById(orderId)
+        ProductOrder discovered = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+        ServiceOrder linked = discovered.getServiceOrder() == null ? null
+                : serviceOrderRepository.findByIdForUpdate(discovered.getServiceOrder().getId()).orElseThrow();
+        ProductOrder order = linked == null ? discovered : orderRepository.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+        if (linked != null) itemRepository.findByOrderIdForUpdate(orderId);
 
         if (order.getStatus() == ProductOrderStatus.CANCELLED) {
             return;
@@ -242,10 +255,11 @@ public class CheckoutService {
         order.setStatus(ProductOrderStatus.CANCELLED);
         orderRepository.save(order);
 
-        List<InventoryReservation> reservations = reservationRepository.findByOrderId(orderId);
+        List<InventoryReservation> reservations = linked == null
+                ? reservationRepository.findByOrderId(orderId) : lockedReservations(orderId);
         List<Stock> stocksToSave = new ArrayList<>();
 
-        for (InventoryReservation res : reservations) {
+        for (InventoryReservation res : reservations.stream().sorted(reservationStockOrder()).toList()) {
             if (res.getStatus() == ReservationStatus.PENDING) {
                 res.setStatus(ReservationStatus.RELEASED);
                 Stock stock = res.getStock();
@@ -258,6 +272,22 @@ public class CheckoutService {
         reservationRepository.saveAll(reservations);
         stockRepository.saveAll(stocksToSave);
         log.info("Released stock reservations for cancelled order #{}", orderId);
+    }
+
+    private List<InventoryReservation> lockedReservations(Long orderId) {
+        List<InventoryReservation> discovered = reservationRepository.findByOrderId(orderId);
+        discovered.stream()
+                .sorted(reservationStockOrder())
+                .forEach(reservation -> stockRepository.findForUpdateByStoreIdAndProductId(
+                        reservation.getStock().getStore().getId(), reservation.getStock().getProduct().getId())
+                        .orElseThrow(() -> new IllegalStateException("Stock not found for reservation " + reservation.getId())));
+        return reservationRepository.findByOrderIdForUpdate(orderId);
+    }
+
+    private Comparator<InventoryReservation> reservationStockOrder() {
+        return Comparator.comparing((InventoryReservation r) -> r.getStock().getStore().getId())
+                .thenComparing(r -> r.getStock().getProduct().getId())
+                .thenComparing(InventoryReservation::getId);
     }
 
     /**

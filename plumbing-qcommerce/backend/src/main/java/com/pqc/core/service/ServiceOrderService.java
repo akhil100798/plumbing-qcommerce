@@ -46,6 +46,8 @@ public class ServiceOrderService {
     private final PlumberEligibilityService plumberEligibilityService;
     private final LaunchPolicyService launchPolicyService;
     private final ServiceOrderAssignmentService assignmentService;
+    private final ServiceDiagnosisService diagnosisService;
+    private final Phase2AuthorizationService phase2AuthorizationService;
 
     private void recordHistory(Long orderId, OrderStatus prev, OrderStatus next, User actor, String reason) {
         historyRepository.save(ServiceOrderStatusHistory.builder()
@@ -252,9 +254,9 @@ public class ServiceOrderService {
     /**
      * Plumber completes the job — triggers the Billing Engine.
      */
-    @Transactional
+    @Transactional(noRollbackFor = Phase2ReconciliationRequiredException.class)
     public ServiceOrder completeOrder(Long orderId, BigDecimal extraCharge) {
-        ServiceOrder order = getOrderOrThrow(orderId);
+        ServiceOrder order = getOrderForMutationOrThrow(orderId);
         User actor = currentUser.require();
         requireAssignedPlumber(order);
 
@@ -277,12 +279,27 @@ public class ServiceOrderService {
             throw conflict("Order cannot be completed from status: " + order.getStatus());
         }
 
+        Phase2AuthorizationService.AuthorizationSnapshot authorization =
+                phase2AuthorizationService.requireCompletionAuthorization(order, extraCharge);
+        // Completion and reconciliation resolution share this transaction: a failed
+        // billing/order write must not leave the reconciliation marked RESOLVED.
+
         OrderStatus prev = order.getStatus();
         LocalDateTime now = LocalDateTime.now();
         order.setCompletedAt(now);
         order.setStatus(OrderStatus.COMPLETED);
+        BigDecimal referralCommission;
 
         // ---- BILLING ENGINE ----
+        if (authorization != null) {
+            LegacyBillingResult result = authorization.billingResult();
+            order.setLaborCharge(result.laborCharge());
+            order.setPartsCharge(result.partsCharge());
+            referralCommission = result.referralCommission();
+            order.setReferralCommission(referralCommission);
+            order.setPlatformFee(result.platformFee());
+            order.setTotalAmount(result.totalAmount());
+        } else {
         // 1. Labour cost
         LocalDateTime startedAt = order.getStartedAt() != null ? order.getStartedAt() : now;
         long minutesWorked = ChronoUnit.MINUTES.between(startedAt, now);
@@ -301,7 +318,7 @@ public class ServiceOrderService {
                 .add(extraCharge != null ? extraCharge : BigDecimal.ZERO);
 
         // 3. Referral commission — 10% of parts ordered through the platform
-        BigDecimal referralCommission = deliveredPartsTotal
+        referralCommission = deliveredPartsTotal
                 .multiply(new BigDecimal("0.10"))
                 .setScale(2, java.math.RoundingMode.HALF_UP);
 
@@ -313,8 +330,10 @@ public class ServiceOrderService {
                 order.getLaborCharge()
                         .add(order.getPartsCharge())
                         .add(PLATFORM_FEE));
+        }
 
         ServiceOrder saved = orderRepository.save(order);
+        phase2AuthorizationService.reconcileSuccessfulCompletion(saved, authorization);
         recordHistory(orderId, prev, OrderStatus.COMPLETED, actor, "Job completed by plumber");
 
         // Publish completion event for inventory reconcile
@@ -483,7 +502,7 @@ public class ServiceOrderService {
 
     @Transactional
     public ServiceOrder cancelOrder(Long orderId, String cancellationReason) {
-        ServiceOrder order = getOrderOrThrow(orderId);
+        ServiceOrder order = getOrderForMutationOrThrow(orderId);
         User actor = currentUser.require();
         OrderStatus previousStatus = order.getStatus();
         boolean customerOwns = actor.getRole() == Role.CUSTOMER && order.getCustomer().getId().equals(actor.getId());
@@ -503,6 +522,8 @@ public class ServiceOrderService {
         order.setCancelledBy(actor);
         order.setCancellationReason(cancellationReason == null || cancellationReason.isBlank()
                 ? "Customer or operator cancellation" : cancellationReason.trim());
+        phase2AuthorizationService.closeReconciliationForCancellation(orderId);
+        diagnosisService.cancelOpenForOrder(orderId, actor);
         recordHistory(orderId, previousStatus, OrderStatus.CANCELLED, actor, order.getCancellationReason());
         return orderRepository.save(order);
     }

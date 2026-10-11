@@ -53,6 +53,24 @@ public class ServiceOrderPhotoService {
         return ServiceOrderPhotoResponse.from(saved);
     }
 
+    @Transactional
+    public ServiceOrderPhotoResponse uploadDiagnosis(Long orderId, MultipartFile file) {
+        ServiceOrder order = assignedOrder(orderId);
+        validateImage(file);
+        String extension = switch (file.getContentType()) { case "image/jpeg" -> ".jpg"; case "image/png" -> ".png"; default -> ".webp"; };
+        String storageKey = UUID.randomUUID() + extension;
+        Path target = storagePath().resolve(storageKey).normalize();
+        try {
+            Files.createDirectories(target.getParent());
+            file.transferTo(target);
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to store photo", e);
+        }
+        return ServiceOrderPhotoResponse.from(photos.save(ServiceOrderPhoto.builder().serviceOrder(order)
+                .phase(ServiceOrderPhotoPhase.DIAGNOSIS).storageKey(storageKey)
+                .contentType(file.getContentType()).sizeBytes(file.getSize()).build()));
+    }
+
     @Transactional(readOnly = true)
     public List<ServiceOrderPhotoResponse> list(Long orderId, ServiceOrderPhotoPhase phase) {
         assignedOrder(orderId);
@@ -81,13 +99,19 @@ public class ServiceOrderPhotoService {
     }
 
     private void validateUpload(ServiceOrder order, ServiceOrderPhotoPhase phase, MultipartFile file) {
-        if (file == null || file.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "An image file is required");
-        if (file.getSize() > MAX_FILE_SIZE) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Image must not exceed 5 MB");
-        if (!ALLOWED_TYPES.contains(file.getContentType())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only JPEG, PNG, and WebP images are allowed");
+        validateImage(file);
+        if (phase == ServiceOrderPhotoPhase.DIAGNOSIS)
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Diagnosis evidence uses its dedicated authorization flow");
         if (phase == ServiceOrderPhotoPhase.BEFORE && order.getStatus() != OrderStatus.IN_PROGRESS)
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Before photos require an active job");
         if (phase == ServiceOrderPhotoPhase.AFTER && !Set.of(OrderStatus.IN_PROGRESS, OrderStatus.WORK_RESUMED).contains(order.getStatus()))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "After photos require active or resumed work");
+    }
+
+    private void validateImage(MultipartFile file) {
+        if (file == null || file.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "An image file is required");
+        if (file.getSize() > MAX_FILE_SIZE) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Image must not exceed 5 MB");
+        if (!ALLOWED_TYPES.contains(file.getContentType())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only JPEG, PNG, and WebP images are allowed");
     }
 
     private Path storagePath() { return Path.of(storageDirectory).toAbsolutePath().normalize(); }

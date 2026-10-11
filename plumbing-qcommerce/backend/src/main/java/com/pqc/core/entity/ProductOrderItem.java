@@ -37,6 +37,22 @@ public class ProductOrderItem {
     @Builder.Default
     private Integer reservedQuantity = 0;
 
+    @Column(nullable = false, length = 32)
+    @Builder.Default
+    private String unit = "UNIT";
+
+    @Column(name = "unit_price_snapshot", precision = 19, scale = 2)
+    private BigDecimal unitPriceSnapshot;
+
+    @Column(name = "pricing_source", length = 32)
+    private String pricingSource;
+
+    @Column(name = "pricing_catalog_line_id")
+    private Long pricingCatalogLineId;
+
+    @Column(name = "pricing_catalog_version")
+    private Integer pricingCatalogVersion;
+
     @Column(name = "packed_quantity", nullable = false)
     @Builder.Default
     private Integer packedQuantity = 0;
