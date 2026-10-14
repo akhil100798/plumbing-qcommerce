@@ -28,10 +28,13 @@ public class SeedProperties {
             boolean isProd = Arrays.asList(env.getActiveProfiles()).contains("prod");
             boolean stagingAdminEnabled = Boolean.TRUE.equals(
                     env.getProperty("app.seed.staging-admin-enabled", Boolean.class, false));
-            if (isProd && failIfProdDemoEnabled && (demoEnabled || adminDemoEnabled || catalogEnabled)) {
-                throw new IllegalStateException("Production configuration violation: Seeding cannot be enabled when the production profile is active.");
+            if ((isProd || stagingAdminEnabled) && failIfProdDemoEnabled
+                    && (demoEnabled || adminDemoEnabled || catalogEnabled)) {
+                throw new IllegalStateException(
+                        "Seed configuration violation: Seeding cannot be enabled in production or staging-admin mode.");
             }
-            if ((isProd || stagingAdminEnabled) && (demoEnabled || adminDemoEnabled || catalogEnabled || stagingAdminEnabled)) {
+            if ((isProd || stagingAdminEnabled)
+                    && (demoEnabled || adminDemoEnabled || catalogEnabled || stagingAdminEnabled)) {
                 if (demoPassword == null || demoPassword.isBlank()) {
                     throw new IllegalStateException("Seed configuration violation: app.seed.demo-password must not be blank when seeding is enabled.");
                 }
