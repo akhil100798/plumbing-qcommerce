@@ -51,6 +51,7 @@ class AuthControllerTest {
         jdbcTemplate.execute("TRUNCATE TABLE user_addresses RESTART IDENTITY");
         jdbcTemplate.execute("TRUNCATE TABLE wallets RESTART IDENTITY");
         jdbcTemplate.execute("TRUNCATE TABLE refresh_tokens RESTART IDENTITY");
+        jdbcTemplate.execute("TRUNCATE TABLE revoked_tokens RESTART IDENTITY");
         jdbcTemplate.execute("TRUNCATE TABLE notifications RESTART IDENTITY");
         jdbcTemplate.execute("TRUNCATE TABLE users RESTART IDENTITY");
         jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
