@@ -16,6 +16,7 @@ interface LiveTrackingCardProps {
   statusText: string;
   onCallPress: () => void;
   onChatPress: () => void;
+  callDisabled?: boolean;
   style?: any;
 }
 
@@ -27,6 +28,7 @@ export function LiveTrackingCard({
   statusText,
   onCallPress,
   onChatPress,
+  callDisabled = false,
   style,
 }: LiveTrackingCardProps) {
   return (
@@ -66,6 +68,7 @@ export function LiveTrackingCard({
 
         <AnimatedIconButton
           onPress={onCallPress}
+          disabled={callDisabled}
           style={styles.callBtn}
           accessibilityLabel="Call partner"
         >

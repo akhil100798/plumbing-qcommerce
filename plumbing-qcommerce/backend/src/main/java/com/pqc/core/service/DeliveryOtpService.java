@@ -3,6 +3,8 @@ package com.pqc.core.service;
 import com.pqc.core.config.DeliveryOtpProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -15,24 +17,43 @@ import java.security.SecureRandom;
 import java.util.concurrent.TimeUnit;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class DeliveryOtpService {
 
-    private final StringRedisTemplate redisTemplate;
+    private final ObjectProvider<StringRedisTemplate> redisTemplateProvider;
     private final DeliveryOtpProperties deliveryOtpProperties;
     private final SecureRandom secureRandom = new SecureRandom();
+
+    @Autowired
+    public DeliveryOtpService(ObjectProvider<StringRedisTemplate> redisTemplateProvider, DeliveryOtpProperties deliveryOtpProperties) {
+        this.redisTemplateProvider = redisTemplateProvider;
+        this.deliveryOtpProperties = deliveryOtpProperties;
+    }
+
+    public DeliveryOtpService(StringRedisTemplate redisTemplate, DeliveryOtpProperties deliveryOtpProperties) {
+        this(new ObjectProvider<>() {
+            @Override public StringRedisTemplate getObject() { return redisTemplate; }
+            @Override public StringRedisTemplate getIfAvailable() { return redisTemplate; }
+            @Override public StringRedisTemplate getIfUnique() { return redisTemplate; }
+            @Override public StringRedisTemplate getObject(Object... args) { return redisTemplate; }
+        }, deliveryOtpProperties);
+    }
+
+    private StringRedisTemplate redis() {
+        return redisTemplateProvider.getIfAvailable();
+    }
 
     private static final String KEY_HASH = "delivery-otp:%s:%s:hash";
     private static final String KEY_ATTEMPTS = "delivery-otp:%s:%s:attempts";
     private static final String KEY_COOLDOWN = "delivery-otp:%s:%s:cooldown";
 
     /**
-     * Generates a cryptographically secure OTP, hashes it, and stores it in Redis.
+     * Generates a cryptographically secure OTP, hashes it, and stores it in Redis if available.
      */
     public String generateOtp(Long orderId, Long deliveryPartnerId) {
+        StringRedisTemplate redis = redis();
         String cooldownKey = String.format(KEY_COOLDOWN, orderId, deliveryPartnerId);
-        if (Boolean.TRUE.equals(redisTemplate.hasKey(cooldownKey))) {
+        if (redis != null && Boolean.TRUE.equals(redis.hasKey(cooldownKey))) {
             log.warn("Resend cooldown active for order {}, delivery partner {}", orderId, deliveryPartnerId);
             throw new IllegalStateException("Resend cooldown active. Please wait.");
         }
@@ -48,19 +69,21 @@ public class DeliveryOtpService {
         }
         String otp = sb.toString();
 
-        // 2. Hash the OTP with context (orderId, deliveryPartnerId)
-        String hash = hashOtp(orderId, deliveryPartnerId, otp);
+        if (redis != null) {
+            // 2. Hash the OTP with context (orderId, deliveryPartnerId)
+            String hash = hashOtp(orderId, deliveryPartnerId, otp);
 
-        // 3. Save hash to Redis with configured expiry
-        String hashKey = String.format(KEY_HASH, orderId, deliveryPartnerId);
-        redisTemplate.opsForValue().set(hashKey, hash, deliveryOtpProperties.getExpirySeconds(), TimeUnit.SECONDS);
+            // 3. Save hash to Redis with configured expiry
+            String hashKey = String.format(KEY_HASH, orderId, deliveryPartnerId);
+            redis.opsForValue().set(hashKey, hash, deliveryOtpProperties.getExpirySeconds(), TimeUnit.SECONDS);
 
-        // 4. Reset attempts count
-        String attemptsKey = String.format(KEY_ATTEMPTS, orderId, deliveryPartnerId);
-        redisTemplate.delete(attemptsKey);
+            // 4. Reset attempts count
+            String attemptsKey = String.format(KEY_ATTEMPTS, orderId, deliveryPartnerId);
+            redis.delete(attemptsKey);
 
-        // 5. Set resend cooldown
-        redisTemplate.opsForValue().set(cooldownKey, "active", deliveryOtpProperties.getCooldownSeconds(), TimeUnit.SECONDS);
+            // 5. Set resend cooldown
+            redis.opsForValue().set(cooldownKey, "active", deliveryOtpProperties.getCooldownSeconds(), TimeUnit.SECONDS);
+        }
 
         return otp;
     }
@@ -69,12 +92,17 @@ public class DeliveryOtpService {
      * Allows storing an explicit OTP (e.g. for testing or predefined flows), hashing it securely.
      */
     public void saveExplicitOtp(Long orderId, Long deliveryPartnerId, String otp) {
+        StringRedisTemplate redis = redis();
+        if (redis == null) {
+            return;
+        }
+
         String hash = hashOtp(orderId, deliveryPartnerId, otp);
         String hashKey = String.format(KEY_HASH, orderId, deliveryPartnerId);
-        redisTemplate.opsForValue().set(hashKey, hash, deliveryOtpProperties.getExpirySeconds(), TimeUnit.SECONDS);
+        redis.opsForValue().set(hashKey, hash, deliveryOtpProperties.getExpirySeconds(), TimeUnit.SECONDS);
 
         String attemptsKey = String.format(KEY_ATTEMPTS, orderId, deliveryPartnerId);
-        redisTemplate.delete(attemptsKey);
+        redis.delete(attemptsKey);
     }
 
     /**
@@ -85,22 +113,28 @@ public class DeliveryOtpService {
             return false;
         }
 
+        StringRedisTemplate redis = redis();
+        if (redis == null) {
+            log.warn("Redis is unavailable for delivery OTP verification.");
+            return false;
+        }
+
         String hashKey = String.format(KEY_HASH, orderId, deliveryPartnerId);
         String attemptsKey = String.format(KEY_ATTEMPTS, orderId, deliveryPartnerId);
 
         // 1. Increment attempts counter
-        Long attempts = redisTemplate.opsForValue().increment(attemptsKey);
+        Long attempts = redis.opsForValue().increment(attemptsKey);
         if (attempts != null && attempts == 1) {
-            redisTemplate.expire(attemptsKey, deliveryOtpProperties.getExpirySeconds(), TimeUnit.SECONDS);
+            redis.expire(attemptsKey, deliveryOtpProperties.getExpirySeconds(), TimeUnit.SECONDS);
         }
 
         if (attempts != null && attempts > deliveryOtpProperties.getMaxAttempts()) {
-            redisTemplate.delete(hashKey); // Delete hash to lock verification
+            redis.delete(hashKey); // Delete hash to lock verification
             log.warn("[SECURITY] Too many delivery OTP attempts. Locked order {}, delivery partner {}", orderId, deliveryPartnerId);
             throw new IllegalArgumentException("Verification locked due to too many failed attempts.");
         }
 
-        String storedHash = redisTemplate.opsForValue().get(hashKey);
+        String storedHash = redis.opsForValue().get(hashKey);
         if (storedHash == null) {
             return false;
         }
@@ -109,9 +143,9 @@ public class DeliveryOtpService {
         String inputHash = hashOtp(orderId, deliveryPartnerId, code);
         if (storedHash.equals(inputHash)) {
             // Replay protection: delete OTP state upon success
-            redisTemplate.delete(hashKey);
-            redisTemplate.delete(attemptsKey);
-            redisTemplate.delete(String.format(KEY_COOLDOWN, orderId, deliveryPartnerId));
+            redis.delete(hashKey);
+            redis.delete(attemptsKey);
+            redis.delete(String.format(KEY_COOLDOWN, orderId, deliveryPartnerId));
             return true;
         }
 

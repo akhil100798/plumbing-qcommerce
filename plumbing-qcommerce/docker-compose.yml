@@ -76,6 +76,11 @@ services:
     ports:
       - "8081:8081"
     environment:
+      # Local verification must use the local-staging profile explicitly.
+      # Without this, a recreated container falls back to the default profile,
+      # starts production-style integrations, and can fail before readiness.
+      SPRING_PROFILES_ACTIVE: local-staging
+      SPRING_AUTOCONFIGURE_EXCLUDE: org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
       SPRING_DATASOURCE_URL: jdbc:postgresql://pqc_postgres:5432/plumbing_commerce
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-admin}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-local-postgres-password}
@@ -84,6 +89,14 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: pqc_kafka:9092
       SPRING_MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-admin}:${MONGO_INITDB_ROOT_PASSWORD:-local-mongo-password}@pqc_mongodb:27017/pqc_logs?authSource=admin
       JWT_SECRET: ${JWT_SECRET:-your-very-strong-jwt-secret-key-here-at-least-256-bits-long-for-hs256}
+      APP_SEED_MOBILE_QA_ENABLED: "true"
+      APP_SEED_CATALOG_ENABLED: "true"
+      APP_SEED_STAGING_ADMIN_ENABLED: "true"
+      APP_SEED_ADMIN_DEMO_ENABLED: "true"
+      APP_SEED_DEMO_ENABLED: "false"
+      APP_SEED_DEMO_PASSWORD: FixKartLocal!2026
+      SMS_PROVIDER: local-capture
+      SMS_LOCAL_CAPTURE_ENABLED: "true"
     depends_on:
       - postgres
       - redis

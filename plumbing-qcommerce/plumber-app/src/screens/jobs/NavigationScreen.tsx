@@ -19,7 +19,8 @@ type Props = StackScreenProps<AppStackParamList, 'Navigation'>;
 
 export function NavigationScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
-  const { jobId, address, latitude, longitude } = route.params;
+  const { jobId, latitude, longitude, plumberLatitude, plumberLongitude, routeEta, routeDistance, turnInstruction, turnDistance } = route.params;
+  const hasRenderableMap = plumberLatitude != null && plumberLongitude != null && latitude != null && longitude != null;
   const { activeJob } = useSelector((state: RootState) => state.job);
   const [loading, setLoading] = useState(false);
 
@@ -36,15 +37,15 @@ export function NavigationScreen({ route, navigation }: Props) {
       );
       navigation.replace('ReachedCustomer', { jobId });
     } catch (err: any) {
-      Alert.alert('Arrival failed', err?.message || 'Could not mark this job as arrived. Proceeding to arrival confirmation.');
-      navigation.replace('ReachedCustomer', { jobId });
+      Alert.alert('Arrival failed', err?.message || 'Could not mark this job as arrived. Please retry.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleCall = () => {
-    const phone = activeJob?.customer.phone || '+91 98765 43210';
+    const phone = activeJob?.customer.phone;
+    if (!phone) return;
     Alert.alert('Contact Customer', `Calling customer at ${phone}`);
   };
 
@@ -54,34 +55,41 @@ export function NavigationScreen({ route, navigation }: Props) {
 
       <View style={styles.mapArea}>
         {/* Map View */}
-        <RouteMap
-          plumberLatitude={latitude}
-          plumberLongitude={longitude}
+        {hasRenderableMap ? <RouteMap
+          plumberLatitude={plumberLatitude}
+          plumberLongitude={plumberLongitude}
           customerLatitude={latitude}
           customerLongitude={longitude}
-          customerName={activeJob?.customer.fullName || 'Customer'}
-        />
+          customerName={activeJob?.customer.fullName || 'Customer unavailable'}
+        /> : <View style={styles.mapUnavailable}><Text>Map coordinates unavailable</Text></View>}
 
         {/* Floating Turn Instruction Banner */}
-        <View style={styles.turnBanner}>
+        {turnInstruction && turnDistance ? <View style={styles.turnBanner}>
           <View style={styles.turnIcon}>
             <ArrowRightIcon width={22} height={22} stroke="#FFFFFF" />
           </View>
           <View style={styles.turnTextWrap}>
-            <Text style={styles.turnDistance}>350 m</Text>
-            <Text style={styles.turnDesc}>Turn right{'\n'}100 Feet Road</Text>
+            <Text style={styles.turnDistance}>{turnDistance}</Text>
+            <Text style={styles.turnDesc}>{turnInstruction}</Text>
           </View>
-          <TouchableOpacity style={styles.recenterBtn}>
+          {hasRenderableMap ? <TouchableOpacity style={styles.recenterBtn}>
             <LocationPinIcon width={16} height={16} stroke={colors.textPrimary} />
-          </TouchableOpacity>
-        </View>
+          </TouchableOpacity> : null}
+        </View> : null}
 
         {/* Floating Map Controls */}
         <View style={styles.mapControls}>
-          <TouchableOpacity style={styles.controlBtn} onPress={() => Alert.alert('Recenter', 'Map centered on live position.')}>
+          <TouchableOpacity
+            style={styles.controlBtn}
+            disabled={!hasRenderableMap}
+            onPress={() => {
+              if (!hasRenderableMap) return;
+              Alert.alert('Recenter', 'Map centered on live position.');
+            }}
+          >
             <NavigationIcon width={16} height={16} stroke={colors.textPrimary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.controlBtn} onPress={handleCall}>
+          <TouchableOpacity style={styles.controlBtn} onPress={handleCall} disabled={!activeJob?.customer.phone}>
             <PhoneIcon width={16} height={16} stroke={colors.textPrimary} />
           </TouchableOpacity>
         </View>
@@ -90,8 +98,8 @@ export function NavigationScreen({ route, navigation }: Props) {
       {/* Trip Footer */}
       <View style={styles.footer}>
         <View style={styles.footerLeft}>
-          <Text style={styles.eta}>12 min</Text>
-          <Text style={styles.etaSub}>4.3 km · Job #{jobId}</Text>
+          <Text style={styles.eta}>{routeEta || 'ETA unavailable'}</Text>
+          <Text style={styles.etaSub}>{routeDistance || 'Distance unavailable'} - Job #{jobId}</Text>
         </View>
         <TouchableOpacity
           style={styles.endTripBtn}
@@ -108,6 +116,7 @@ export function NavigationScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   mapArea: { flex: 1, position: 'relative' },
+  mapUnavailable: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   turnBanner: {
     position: 'absolute',
     top: spacing.md,

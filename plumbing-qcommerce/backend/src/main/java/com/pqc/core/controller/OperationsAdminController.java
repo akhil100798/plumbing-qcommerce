@@ -10,6 +10,8 @@ import com.pqc.core.dto.OperationsServiceJobDetail;
 import com.pqc.core.dto.OperationsServiceJobSummary;
 import com.pqc.core.dto.ReassignDeliveryRequest;
 import com.pqc.core.dto.ReassignPlumberRequest;
+import com.pqc.core.dto.AdminDiagnosisResponse;
+import com.pqc.core.service.ServiceDiagnosisService;
 import com.pqc.core.entity.OrderStatus;
 import com.pqc.core.entity.ProductOrderStatus;
 import com.pqc.core.service.OperationsAdminService;
@@ -34,6 +36,10 @@ import java.util.List;
 public class OperationsAdminController {
 
     private final OperationsAdminService operationsAdminService;
+    private final ServiceDiagnosisService diagnosisService;
+
+    @GetMapping("/service-jobs/{orderId}/diagnosis")
+    public ResponseEntity<List<AdminDiagnosisResponse>> getDiagnosisHistory(@PathVariable Long orderId) { return ResponseEntity.ok(diagnosisService.adminHistory(orderId)); }
 
     @GetMapping("/dashboard")
     public ResponseEntity<OperationsDashboardResponse> getDashboard() {
@@ -95,6 +101,19 @@ public class OperationsAdminController {
             @RequestBody ReassignPlumberRequest request
     ) {
         return ResponseEntity.ok(operationsAdminService.reassignPlumber(jobId, request));
+    }
+
+    @PatchMapping("/service-jobs/{jobId}/assign-plumber")
+    public ResponseEntity<OperationsServiceJobSummary> assignPlumber(
+            @PathVariable Long jobId,
+            @RequestBody ReassignPlumberRequest request
+    ) {
+        return ResponseEntity.ok(operationsAdminService.assignPlumber(jobId, request));
+    }
+
+    @GetMapping("/service-jobs/eligible-plumbers")
+    public ResponseEntity<List<com.pqc.core.dto.EligiblePlumberResponse>> eligiblePlumbers() {
+        return ResponseEntity.ok(operationsAdminService.eligiblePlumbers());
     }
 
     @PatchMapping("/product-orders/{orderId}/reassign-delivery")

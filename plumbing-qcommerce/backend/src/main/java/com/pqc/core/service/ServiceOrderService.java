@@ -7,7 +7,9 @@ import com.pqc.core.dto.ServiceOrderStatusHistoryResponse;
 import com.pqc.core.entity.*;
 import com.pqc.core.repository.OutboxEventRepository;
 import com.pqc.core.repository.ProductOrderRepository;
+import com.pqc.core.repository.PlumberKycRepository;
 import com.pqc.core.repository.ServiceOrderRepository;
+import com.pqc.core.repository.ServiceOrderPlumberDispositionRepository;
 import com.pqc.core.repository.UserRepository;
 import com.pqc.core.repository.ServiceOrderStatusHistoryRepository;
 import com.pqc.core.security.CurrentUser;
@@ -23,6 +25,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +41,13 @@ public class ServiceOrderService {
     private final CurrentUser currentUser;
     private final ProductOrderRepository productOrderRepository;
     private final ServiceOrderStatusHistoryRepository historyRepository;
+    private final PlumberKycRepository plumberKycRepository;
+    private final ServiceOrderPlumberDispositionRepository dispositionRepository;
+    private final PlumberEligibilityService plumberEligibilityService;
+    private final LaunchPolicyService launchPolicyService;
+    private final ServiceOrderAssignmentService assignmentService;
+    private final ServiceDiagnosisService diagnosisService;
+    private final Phase2AuthorizationService phase2AuthorizationService;
 
     private void recordHistory(Long orderId, OrderStatus prev, OrderStatus next, User actor, String reason) {
         historyRepository.save(ServiceOrderStatusHistory.builder()
@@ -69,19 +79,41 @@ public class ServiceOrderService {
     public ServiceOrder createOrder(Long customerId, String description,
                                     Double latitude, Double longitude,
                                     RequestType requestType) {
+        return createOrder(customerId, null, description, latitude, longitude, requestType,
+                null, null, null, null, null, null, null, null);
+    }
+
+    @Transactional
+    public ServiceOrder createOrder(Long customerId, String issueCategory, String description,
+                                    Double latitude, Double longitude, RequestType requestType,
+                                    String addressLine1, String addressLine2, String landmark,
+                                    String city, String postalCode, String contactPhone,
+                                    String urgency, LocalDateTime scheduledFor) {
         User actor = currentUser.require();
         if (actor.getRole() != Role.CUSTOMER || !actor.getId().equals(customerId)) {
             throw new AccessDeniedException("Customers may create only their own orders");
         }
         User customer = userRepository.findById(customerId)
                 .orElseThrow(() -> notFound("Customer not found: " + customerId));
+        validateLaunchServiceArea(latitude, longitude);
 
         ServiceOrder order = ServiceOrder.builder()
                 .customer(customer)
+                .issueCategory(issueCategory)
                 .description(description)
                 .customerLatitude(latitude)
                 .customerLongitude(longitude)
                 .requestType(requestType)
+                .addressLine1(addressLine1)
+                .addressLine2(addressLine2)
+                .landmark(landmark)
+                .city(city)
+                .postalCode(postalCode)
+                .customerPhoneSnapshot(contactPhone != null && !contactPhone.isBlank() ? contactPhone : customer.getPhone())
+                .urgency(urgency)
+                .scheduledFor(scheduledFor)
+                .visitFee(launchPolicyService.authoritativeVisitFee())
+                .currency(launchPolicyService.authoritativeCurrency())
                 .status(OrderStatus.PENDING)
                 .build();
 
@@ -102,43 +134,52 @@ public class ServiceOrderService {
      */
     @Transactional
     public ServiceOrder acceptOrder(Long orderId, Long plumberId) {
+        return assignmentService.accept(orderId, plumberId);
+    }
+
+    private void validateLaunchServiceArea(Double latitude, Double longitude) {
+        LaunchPolicy policy = launchPolicyService.requireServiceAreaPolicyIfConfigured();
+        boolean serviceAreaConfigured = policy != null && policy.getServiceAreaCenterLatitude() != null;
+        if (latitude == null || longitude == null) {
+            if (!serviceAreaConfigured) return;
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valid service coordinates are required");
+        }
+        if (!Double.isFinite(latitude) || !Double.isFinite(longitude)
+                || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valid service coordinates are required");
+        }
+        if (!launchPolicyService.isWithinServiceArea(latitude, longitude)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Service address is outside the launch service area");
+        }
+    }
+
+    /**
+     * A plumber declines only their own offer. The service order remains PENDING
+     * so another eligible plumber can still receive it.
+     */
+    @Transactional
+    public ServiceOrder rejectOrder(Long orderId, Long plumberId) {
         User actor = currentUser.require();
         if (actor.getRole() != Role.PLUMBER || !actor.getId().equals(plumberId)) {
-            throw new AccessDeniedException("Plumbers may accept orders only as themselves");
-        }
-        ServiceOrder order = getOrderOrThrow(orderId);
-
-        if (order.getStatus() == OrderStatus.ACCEPTED
-                && order.getPlumber() != null
-                && order.getPlumber().getId().equals(plumberId)) {
-            return order;
+            throw new AccessDeniedException("Plumbers may reject orders only as themselves");
         }
 
+        requireEligiblePlumber(actor);
+        ServiceOrder order = getOrderForMutationOrThrow(orderId);
         if (order.getStatus() != OrderStatus.PENDING) {
-            throw conflict("Order #" + orderId + " cannot be accepted. Status: " + order.getStatus());
+            throw conflict("Order #" + orderId + " cannot be rejected. Status: " + order.getStatus());
         }
 
-        User plumber = userRepository.findById(plumberId)
-                .orElseThrow(() -> notFound("Plumber not found: " + plumberId));
-        if (plumber.getRole() != Role.PLUMBER) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Assigned user is not a plumber");
+        if (!dispositionRepository.existsByServiceOrderIdAndPlumberIdAndDisposition(
+                orderId, plumberId, PlumberJobDisposition.DECLINED)) {
+            dispositionRepository.save(ServiceOrderPlumberDisposition.builder()
+                    .serviceOrderId(orderId)
+                    .plumberId(plumberId)
+                    .disposition(PlumberJobDisposition.DECLINED)
+                    .build());
         }
 
-        OrderStatus prev = order.getStatus();
-        order.setPlumber(plumber);
-        order.setStatus(OrderStatus.ACCEPTED);
-        order.setAcceptedAt(LocalDateTime.now());
-
-        ServiceOrder saved = orderRepository.save(order);
-        recordHistory(orderId, prev, OrderStatus.ACCEPTED, actor, "Order accepted by plumber");
-
-        // Save to Outbox
-        saveToOutbox(String.valueOf(orderId), "ORDER_ACCEPTED", "order-accepted",
-                "ORDER_ACCEPTED:" + orderId + ":PLUMBER:" + plumberId + ":CUSTOMER:" + order.getCustomer().getId());
-
-        log.info("Order #{} acceptance persisted in outbox.", orderId);
-
-        return saved;
+        return order;
     }
 
     /**
@@ -180,12 +221,22 @@ public class ServiceOrderService {
             return order;
         }
 
-        if (order.getStatus() != OrderStatus.ACCEPTED) {
+        Set<OrderStatus> startableStatuses = Set.of(
+                OrderStatus.ACCEPTED,
+                OrderStatus.WORK_RESUMED,
+                OrderStatus.PRODUCTS_COLLECTED,
+                OrderStatus.PLUMBER_COLLECTING_PRODUCTS,
+                OrderStatus.READY_FOR_PRODUCT_PICKUP,
+                OrderStatus.WAITING_FOR_STORE,
+                OrderStatus.MATERIALS_REQUIRED
+        );
+
+        if (!startableStatuses.contains(order.getStatus())) {
             throw conflict("Order cannot be started from status: " + order.getStatus());
         }
 
         if (order.getArrivedAt() == null) {
-            throw conflict("Order must be marked arrived before work can start.");
+            order.setArrivedAt(LocalDateTime.now());
         }
 
         OrderStatus prev = order.getStatus();
@@ -203,9 +254,9 @@ public class ServiceOrderService {
     /**
      * Plumber completes the job — triggers the Billing Engine.
      */
-    @Transactional
+    @Transactional(noRollbackFor = Phase2ReconciliationRequiredException.class)
     public ServiceOrder completeOrder(Long orderId, BigDecimal extraCharge) {
-        ServiceOrder order = getOrderOrThrow(orderId);
+        ServiceOrder order = getOrderForMutationOrThrow(orderId);
         User actor = currentUser.require();
         requireAssignedPlumber(order);
 
@@ -213,18 +264,42 @@ public class ServiceOrderService {
             return order;
         }
 
-        if (order.getStatus() != OrderStatus.IN_PROGRESS
-                && order.getStatus() != OrderStatus.WORK_RESUMED
-                && order.getStatus() != OrderStatus.COMBINED_ORDER) {
+        Set<OrderStatus> completableStatuses = Set.of(
+                OrderStatus.IN_PROGRESS,
+                OrderStatus.WORK_RESUMED,
+                OrderStatus.COMBINED_ORDER,
+                OrderStatus.MATERIALS_REQUIRED,
+                OrderStatus.WAITING_FOR_STORE,
+                OrderStatus.READY_FOR_PRODUCT_PICKUP,
+                OrderStatus.PLUMBER_COLLECTING_PRODUCTS,
+                OrderStatus.PRODUCTS_COLLECTED,
+                OrderStatus.RETURNING_TO_CUSTOMER
+        );
+        if (!completableStatuses.contains(order.getStatus())) {
             throw conflict("Order cannot be completed from status: " + order.getStatus());
         }
+
+        Phase2AuthorizationService.AuthorizationSnapshot authorization =
+                phase2AuthorizationService.requireCompletionAuthorization(order, extraCharge);
+        // Completion and reconciliation resolution share this transaction: a failed
+        // billing/order write must not leave the reconciliation marked RESOLVED.
 
         OrderStatus prev = order.getStatus();
         LocalDateTime now = LocalDateTime.now();
         order.setCompletedAt(now);
         order.setStatus(OrderStatus.COMPLETED);
+        BigDecimal referralCommission;
 
         // ---- BILLING ENGINE ----
+        if (authorization != null) {
+            LegacyBillingResult result = authorization.billingResult();
+            order.setLaborCharge(result.laborCharge());
+            order.setPartsCharge(result.partsCharge());
+            referralCommission = result.referralCommission();
+            order.setReferralCommission(referralCommission);
+            order.setPlatformFee(result.platformFee());
+            order.setTotalAmount(result.totalAmount());
+        } else {
         // 1. Labour cost
         LocalDateTime startedAt = order.getStartedAt() != null ? order.getStartedAt() : now;
         long minutesWorked = ChronoUnit.MINUTES.between(startedAt, now);
@@ -243,7 +318,7 @@ public class ServiceOrderService {
                 .add(extraCharge != null ? extraCharge : BigDecimal.ZERO);
 
         // 3. Referral commission — 10% of parts ordered through the platform
-        BigDecimal referralCommission = deliveredPartsTotal
+        referralCommission = deliveredPartsTotal
                 .multiply(new BigDecimal("0.10"))
                 .setScale(2, java.math.RoundingMode.HALF_UP);
 
@@ -255,8 +330,10 @@ public class ServiceOrderService {
                 order.getLaborCharge()
                         .add(order.getPartsCharge())
                         .add(PLATFORM_FEE));
+        }
 
         ServiceOrder saved = orderRepository.save(order);
+        phase2AuthorizationService.reconcileSuccessfulCompletion(saved, authorization);
         recordHistory(orderId, prev, OrderStatus.COMPLETED, actor, "Job completed by plumber");
 
         // Publish completion event for inventory reconcile
@@ -420,18 +497,34 @@ public class ServiceOrderService {
 
     @Transactional
     public ServiceOrder cancelOrder(Long orderId) {
-        ServiceOrder order = getOrderOrThrow(orderId);
+        return cancelOrder(orderId, null);
+    }
+
+    @Transactional
+    public ServiceOrder cancelOrder(Long orderId, String cancellationReason) {
+        ServiceOrder order = getOrderForMutationOrThrow(orderId);
         User actor = currentUser.require();
-        boolean allowed = actor.getRole() == Role.ADMIN
-                || actor.getRole() == Role.CUSTOMER
-                && order.getCustomer().getId().equals(actor.getId());
+        OrderStatus previousStatus = order.getStatus();
+        boolean customerOwns = actor.getRole() == Role.CUSTOMER && order.getCustomer().getId().equals(actor.getId());
+        boolean operator = actor.getRole() == Role.ADMIN || actor.getRole() == Role.SUPER_ADMIN || actor.getRole() == Role.OPERATIONS_ADMIN;
+        boolean allowed = operator || customerOwns && order.getArrivedAt() == null
+                && order.getStartedAt() == null && order.getStatus() != OrderStatus.IN_PROGRESS;
         if (!allowed) {
             throw new AccessDeniedException("Only the owning customer or an administrator may cancel this order");
         }
-        if (order.getStatus() == OrderStatus.COMPLETED) {
+        if (order.getStatus() == OrderStatus.COMPLETED || order.getStatus() == OrderStatus.PAID
+                || order.getStatus() == OrderStatus.CUSTOMER_CONFIRMED) {
             throw conflict("Cannot cancel a completed order.");
         }
+        assignmentService.cancelCurrent(orderId, actor, "Order cancelled");
         order.setStatus(OrderStatus.CANCELLED);
+        order.setCancelledAt(LocalDateTime.now());
+        order.setCancelledBy(actor);
+        order.setCancellationReason(cancellationReason == null || cancellationReason.isBlank()
+                ? "Customer or operator cancellation" : cancellationReason.trim());
+        phase2AuthorizationService.closeReconciliationForCancellation(orderId);
+        diagnosisService.cancelOpenForOrder(orderId, actor);
+        recordHistory(orderId, previousStatus, OrderStatus.CANCELLED, actor, order.getCancellationReason());
         return orderRepository.save(order);
     }
 
@@ -452,11 +545,29 @@ public class ServiceOrderService {
     }
 
     public List<ServiceOrder> getOrdersByStatus(OrderStatus status) {
-        Role role = currentUser.require().getRole();
+        User actor = currentUser.require();
+        Role role = actor.getRole();
         if (role != Role.ADMIN && role != Role.PLUMBER && role != Role.STORE_MANAGER) {
             throw new AccessDeniedException("This role cannot browse orders by status");
         }
+        if (role == Role.PLUMBER && status == OrderStatus.PENDING && !plumberEligibilityService.isEligibleForLaunch(actor)) {
+            return List.of();
+        }
+        if (role == Role.PLUMBER && status == OrderStatus.PENDING) {
+            return orderRepository.findByStatusExcludingPlumberDisposition(
+                    status, actor.getId(), PlumberJobDisposition.DECLINED);
+        }
         return orderRepository.findByStatus(status);
+    }
+
+    private void requireEligiblePlumber(User plumber) {
+        if (!plumberEligibilityService.isEligibleForLaunch(plumber)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Plumber must be online to accept service orders");
+        }
+    }
+
+    public String findUserName(Long userId) {
+        return userId == null ? null : userRepository.findById(userId).map(User::getFullName).orElse(null);
     }
 
     public ServiceOrder getOrderById(Long id) {
@@ -466,12 +577,21 @@ public class ServiceOrderService {
                 || actor.getRole() == Role.CUSTOMER && order.getCustomer().getId().equals(actor.getId())
                 || actor.getRole() == Role.PLUMBER && order.getPlumber() != null
                     && order.getPlumber().getId().equals(actor.getId())
+                || isEligiblePendingOffer(order, actor)
                 || actor.getRole() == Role.STORE_MANAGER && order.getStore() != null
                     && order.getStore().getManager().getId().equals(actor.getId());
         if (!allowed) {
             throw new AccessDeniedException("This order is not accessible to the current user");
         }
         return order;
+    }
+
+    private boolean isEligiblePendingOffer(ServiceOrder order, User actor) {
+        return actor.getRole() == Role.PLUMBER
+                && order.getStatus() == OrderStatus.PENDING
+                && plumberEligibilityService.isEligibleForLaunch(actor)
+                && !dispositionRepository.existsByServiceOrderIdAndPlumberIdAndDisposition(
+                        order.getId(), actor.getId(), PlumberJobDisposition.DECLINED);
     }
 
     private void requireAssignedPlumber(ServiceOrder order) {
@@ -484,6 +604,11 @@ public class ServiceOrderService {
 
     private ServiceOrder getOrderOrThrow(Long id) {
         return orderRepository.findById(id)
+                .orElseThrow(() -> notFound("Service order not found: " + id));
+    }
+
+    private ServiceOrder getOrderForMutationOrThrow(Long id) {
+        return orderRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> notFound("Service order not found: " + id));
     }
 

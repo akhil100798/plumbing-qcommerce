@@ -11,6 +11,7 @@ import {
   OPERATIONS_PORTAL_ROLES,
   PLUMBER_MANAGER_PORTAL_ROLES,
   MARKETING_PORTAL_ROLES,
+  LAUNCH_ROSTER_PORTAL_ROLES,
   SUPPORT_PORTAL_ROLES,
   SUPER_ADMIN_PORTAL_ROLES,
   type CurrentAdminAccess,
@@ -44,7 +45,7 @@ export default function PortalGate({ children }: PortalGateProps) {
 
       try {
         const access = await getCurrentAdminAccess();
-        const allowedRoles = pathname.startsWith("/operations") ? OPERATIONS_PORTAL_ROLES : pathname.startsWith("/finance") ? FINANCE_PORTAL_ROLES : pathname.startsWith("/support") ? SUPPORT_PORTAL_ROLES : pathname.startsWith("/plumber-manager") ? PLUMBER_MANAGER_PORTAL_ROLES : pathname.startsWith("/marketing") ? MARKETING_PORTAL_ROLES : SUPER_ADMIN_PORTAL_ROLES;
+        const allowedRoles = pathname.startsWith("/launch-roster") ? LAUNCH_ROSTER_PORTAL_ROLES : pathname.startsWith("/operations") ? OPERATIONS_PORTAL_ROLES : pathname.startsWith("/finance") ? FINANCE_PORTAL_ROLES : pathname.startsWith("/support") ? SUPPORT_PORTAL_ROLES : pathname.startsWith("/plumber-manager") ? PLUMBER_MANAGER_PORTAL_ROLES : pathname.startsWith("/marketing") ? MARKETING_PORTAL_ROLES : SUPER_ADMIN_PORTAL_ROLES;
         if (!(allowedRoles as readonly string[]).includes(access.role)) {
           router.replace(access.role === "OPERATIONS_ADMIN" ? "/operations" : access.role === "FINANCE_ADMIN" ? "/finance" : access.role === "SUPPORT_ADMIN" ? "/support" : access.role === "PLUMBER_MANAGER" ? "/plumber-manager" : access.role === "MARKETING_ADMIN" ? "/marketing" : "/");
           return;

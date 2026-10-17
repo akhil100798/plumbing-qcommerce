@@ -1,0 +1,18 @@
+ALTER TABLE service_quotes ADD COLUMN IF NOT EXISTS labor_subtotal DECIMAL(19,2) NOT NULL DEFAULT 0;
+ALTER TABLE service_quotes ADD COLUMN IF NOT EXISTS known_material_subtotal DECIMAL(19,2) NOT NULL DEFAULT 0;
+ALTER TABLE service_quotes ADD COLUMN IF NOT EXISTS pricing_catalog_version INTEGER;
+ALTER TABLE service_quotes ADD COLUMN IF NOT EXISTS published_at TIMESTAMP;
+ALTER TABLE service_quotes ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP;
+ALTER TABLE service_quotes ADD COLUMN IF NOT EXISTS rejected_at TIMESTAMP;
+ALTER TABLE service_quotes ADD COLUMN IF NOT EXISTS decision_actor_id BIGINT REFERENCES users(id);
+ALTER TABLE service_quotes ADD COLUMN IF NOT EXISTS decision_reason VARCHAR(1000);
+ALTER TABLE service_quotes ADD COLUMN IF NOT EXISTS supersedes_quote_id BIGINT REFERENCES service_quotes(id);
+ALTER TABLE service_quotes ADD COLUMN IF NOT EXISTS immutable_snapshot_at TIMESTAMP;
+CREATE INDEX IF NOT EXISTS idx_service_quotes_current ON service_quotes(service_order_id, quote_kind, state);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_service_quote_current_published ON service_quotes(service_order_id) WHERE state = 'PUBLISHED' AND quote_kind IN ('INITIAL','REVISION');
+ALTER TABLE service_quote_lines ADD COLUMN IF NOT EXISTS quantity DECIMAL(12,2) NOT NULL DEFAULT 1;
+ALTER TABLE service_quote_lines ADD COLUMN IF NOT EXISTS unit VARCHAR(32) NOT NULL DEFAULT 'UNIT';
+ALTER TABLE service_quote_lines ADD COLUMN IF NOT EXISTS unit_price DECIMAL(19,2) NOT NULL DEFAULT 0;
+ALTER TABLE service_quote_lines ADD COLUMN IF NOT EXISTS line_total DECIMAL(19,2) NOT NULL DEFAULT 0;
+ALTER TABLE service_quote_lines ADD COLUMN IF NOT EXISTS pricing_source_version INTEGER;
+ALTER TABLE service_quote_lines ADD CONSTRAINT ck_quote_line_quantity CHECK (quantity > 0);

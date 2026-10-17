@@ -29,6 +29,8 @@ public class PlumberMaterialService {
     private final ProductOrderStatusHistoryRepository historyRepo;
     private final ServiceOrderStatusHistoryRepository serviceOrderHistoryRepo;
     private final CurrentUser currentUser;
+    private final LaunchPolicyService launchPolicyService;
+    private final Phase2AuthorizationService phase2AuthorizationService;
 
     private void recordServiceOrderHistory(Long orderId, OrderStatus prev, OrderStatus next, User actor, String reason) {
         if (serviceOrderHistoryRepo != null && orderId != null) {
@@ -48,13 +50,14 @@ public class PlumberMaterialService {
     @Transactional
     public MaterialRequestDetailResponse createMaterialRequest(Long jobId, Long storeId, List<CartItemDTO> inputs) {
         User plumber = role(Role.PLUMBER);
-        ServiceOrder job = jobs.findById(jobId).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Service order not found"));
+        ServiceOrder job = jobs.findByIdForUpdate(jobId).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Service order not found"));
         if (job.getPlumber() == null || !Objects.equals(job.getPlumber().getId(), plumber.getId()))
             throw new AccessDeniedException("Only the assigned plumber can request materials");
         if (!Set.of(OrderStatus.IN_PROGRESS, OrderStatus.WORK_RESUMED).contains(job.getStatus()))
             throw error(HttpStatus.CONFLICT, "Materials require an active job");
         if (inputs == null || inputs.isEmpty()) throw error(HttpStatus.BAD_REQUEST, "At least one product is required");
         Store store = stores.findById(storeId).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Store not found"));
+        requireLaunchStore(storeId);
         ProductOrder request = ProductOrder.builder().customer(job.getCustomer()).store(store).serviceOrder(job)
                 .requestedByPlumber(plumber).status(ProductOrderStatus.REQUESTED).totalAmount(BigDecimal.ZERO).build();
         List<ProductOrderItem> items = new ArrayList<>();
@@ -90,6 +93,7 @@ public class PlumberMaterialService {
             throw error(HttpStatus.CONFLICT, "Request can only be updated before store review (current: " + request.getStatus() + ")");
         if (inputs == null || inputs.isEmpty()) throw error(HttpStatus.BAD_REQUEST, "At least one product is required");
         Store store = stores.findById(storeId).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Store not found"));
+        requireLaunchStore(storeId);
 
         // Replace items
         request.getItems().clear();
@@ -167,7 +171,17 @@ public class PlumberMaterialService {
     }
 
     private void releaseReservations(ProductOrder request) {
-        for (InventoryReservation res : reservations.findByOrderId(request.getId())) {
+        List<InventoryReservation> discovered = reservations.findByOrderId(request.getId());
+        discovered.stream()
+                .sorted(reservationOrder())
+                .forEach(res -> stocks.findForUpdateByStoreIdAndProductId(
+                        res.getStock().getStore().getId(), res.getStock().getProduct().getId())
+                        .orElseThrow(() -> error(HttpStatus.CONFLICT, "Stock not found for reservation")));
+        releaseReservationsLocked(request, reservations.findByOrderIdForUpdate(request.getId()));
+    }
+
+    private void releaseReservationsLocked(ProductOrder request, List<InventoryReservation> lockedReservations) {
+        for (InventoryReservation res : lockedReservations.stream().sorted(reservationOrder()).toList()) {
             if (res.getStatus() != ReservationStatus.CONFIRMED) continue;
             Stock stock = stocks.findForUpdateByStoreIdAndProductId(
                     request.getStore().getId(), res.getStock().getProduct().getId()).orElse(null);
@@ -179,6 +193,12 @@ public class PlumberMaterialService {
             res.setStatus(ReservationStatus.RELEASED);
             reservations.save(res);
         }
+    }
+
+    private Comparator<InventoryReservation> reservationOrder() {
+        return Comparator.comparing((InventoryReservation r) -> r.getStock().getStore().getId())
+                .thenComparing(r -> r.getStock().getProduct().getId())
+                .thenComparing(InventoryReservation::getId);
     }
 
     // ─── STATUS HISTORY ──────────────────────────────────────────────────────
@@ -283,10 +303,41 @@ public class PlumberMaterialService {
         ProductOrder request = storeRequestEntity(id);
         User manager = role(Role.STORE_MANAGER);
         ProductOrderStatus prev = request.getStatus();
-        move(request, ProductOrderStatus.STORE_REVIEWING, ProductOrderStatus.REJECTED);
+        if (Set.of(ProductOrderStatus.RESERVED, ProductOrderStatus.PREPARING,
+                ProductOrderStatus.READY_FOR_PICKUP, ProductOrderStatus.PLUMBER_AT_STORE).contains(request.getStatus())) {
+            releaseReservations(request);
+        }
+        request.setStatus(ProductOrderStatus.REJECTED);
         request.setNotes(reason);
+        ServiceOrder job = request.getServiceOrder();
+        if (job != null && Set.of(OrderStatus.WAITING_FOR_STORE, OrderStatus.MATERIALS_REQUIRED,
+                OrderStatus.READY_FOR_PRODUCT_PICKUP, OrderStatus.PLUMBER_COLLECTING_PRODUCTS).contains(job.getStatus())) {
+            job.setStatus(OrderStatus.MATERIALS_REQUIRED);
+            jobs.save(job);
+        }
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.REJECTED, manager, reason);
+        return toDetail(saved);
+    }
+
+    @Transactional
+    public MaterialRequestDetailResponse updatePackingProgress(Long id, Map<Long, Integer> packedQuantities) {
+        ProductOrder request = storeRequestEntity(id);
+        if (request.getStatus() != ProductOrderStatus.PREPARING && request.getStatus() != ProductOrderStatus.RESERVED && request.getStatus() != ProductOrderStatus.APPROVED) {
+            throw error(HttpStatus.CONFLICT, "Packing progress can only be updated for active requests");
+        }
+        if (packedQuantities != null) {
+            for (ProductOrderItem item : request.getItems()) {
+                if (packedQuantities.containsKey(item.getProduct().getId())) {
+                    int packed = packedQuantities.get(item.getProduct().getId());
+                    if (packed < 0 || packed > item.getQuantity()) {
+                        throw error(HttpStatus.BAD_REQUEST, "Invalid packed quantity");
+                    }
+                    item.setPackedQuantity(packed);
+                }
+            }
+        }
+        ProductOrder saved = requests.save(request);
         return toDetail(saved);
     }
 
@@ -301,18 +352,18 @@ public class PlumberMaterialService {
             if (quantity == 0) continue;
             Stock stock = stocks.findForUpdateByStoreIdAndProductId(request.getStore().getId(), item.getProduct().getId())
                     .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Stock not found"));
+            boolean alreadyReserved = reservations.findByOrderId(id).stream()
+                    .anyMatch(r -> r.getStatus() == ReservationStatus.CONFIRMED
+                            && Objects.equals(r.getStock().getId(), stock.getId()));
+            if (alreadyReserved) {
+                throw error(HttpStatus.CONFLICT, "Request is already reserved");
+            }
             if (stock.getAvailableQuantity() < quantity) throw error(HttpStatus.CONFLICT, "Insufficient stock for product " + item.getProduct().getId());
             stock.setAvailableQuantity(stock.getAvailableQuantity() - quantity);
             stock.setReservedQuantity(stock.getReservedQuantity() + quantity);
             stocks.save(stock);
-            // Prevent duplicate reservation
-            boolean alreadyReserved = reservations.findByOrderId(id).stream()
-                    .anyMatch(r -> r.getStatus() == ReservationStatus.CONFIRMED
-                            && Objects.equals(r.getStock().getId(), stock.getId()));
-            if (!alreadyReserved) {
-                reservations.save(InventoryReservation.builder().customer(request.getCustomer()).stock(stock).order(request)
-                        .quantity(quantity).status(ReservationStatus.CONFIRMED).expiresAt(LocalDateTime.now().plusDays(7)).build());
-            }
+            reservations.save(InventoryReservation.builder().customer(request.getCustomer()).stock(stock).order(request)
+                    .quantity(quantity).status(ReservationStatus.CONFIRMED).expiresAt(LocalDateTime.now().plusDays(7)).build());
         }
         ProductOrderStatus prev = request.getStatus();
         request.setStatus(ProductOrderStatus.RESERVED);
@@ -327,6 +378,9 @@ public class PlumberMaterialService {
         User manager = role(Role.STORE_MANAGER);
         ProductOrderStatus prev = request.getStatus();
         move(request, ProductOrderStatus.RESERVED, ProductOrderStatus.PREPARING);
+        if (request.getPreparingStartedAt() == null) {
+            request.setPreparingStartedAt(LocalDateTime.now());
+        }
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.PREPARING, manager, null);
         return toDetail(saved);
@@ -336,12 +390,22 @@ public class PlumberMaterialService {
     public MaterialRequestDetailResponse ready(Long id) {
         ProductOrder request = storeRequestEntity(id);
         User manager = role(Role.STORE_MANAGER);
+        boolean allPacked = request.getItems().stream()
+                .allMatch(i -> (i.getPackedQuantity() != null ? i.getPackedQuantity() : 0) >= i.getQuantity());
+        if (!allPacked) {
+            throw error(HttpStatus.BAD_REQUEST, "All requested items must be fully packed before marking order ready for pickup");
+        }
         ProductOrderStatus prev = request.getStatus();
         move(request, ProductOrderStatus.PREPARING, ProductOrderStatus.READY_FOR_PICKUP);
-        OrderStatus prevJobStatus = request.getServiceOrder().getStatus();
-        request.getServiceOrder().setStatus(OrderStatus.READY_FOR_PRODUCT_PICKUP);
-        jobs.save(request.getServiceOrder());
-        recordServiceOrderHistory(request.getServiceOrder().getId(), prevJobStatus, OrderStatus.READY_FOR_PRODUCT_PICKUP, manager, "Products ready for plumber pickup");
+        if (request.getReadyForPickupAt() == null) {
+            request.setReadyForPickupAt(LocalDateTime.now());
+        }
+        if (request.getServiceOrder() != null) {
+            OrderStatus prevJobStatus = request.getServiceOrder().getStatus();
+            request.getServiceOrder().setStatus(OrderStatus.READY_FOR_PRODUCT_PICKUP);
+            jobs.save(request.getServiceOrder());
+            recordServiceOrderHistory(request.getServiceOrder().getId(), prevJobStatus, OrderStatus.READY_FOR_PRODUCT_PICKUP, manager, "Products ready for plumber pickup");
+        }
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.READY_FOR_PICKUP, manager, null);
         return toDetail(saved);
@@ -354,10 +418,12 @@ public class PlumberMaterialService {
         ProductOrderStatus prev = request.getStatus();
         move(request, ProductOrderStatus.READY_FOR_PICKUP, ProductOrderStatus.PLUMBER_AT_STORE);
         request.setPlumberArrivedAt(LocalDateTime.now());
-        OrderStatus prevJobStatus = request.getServiceOrder().getStatus();
-        request.getServiceOrder().setStatus(OrderStatus.PLUMBER_COLLECTING_PRODUCTS);
-        jobs.save(request.getServiceOrder());
-        recordServiceOrderHistory(request.getServiceOrder().getId(), prevJobStatus, OrderStatus.PLUMBER_COLLECTING_PRODUCTS, plumber, "Plumber collecting products at store");
+        if (request.getServiceOrder() != null) {
+            OrderStatus prevJobStatus = request.getServiceOrder().getStatus();
+            request.getServiceOrder().setStatus(OrderStatus.PLUMBER_COLLECTING_PRODUCTS);
+            jobs.save(request.getServiceOrder());
+            recordServiceOrderHistory(request.getServiceOrder().getId(), prevJobStatus, OrderStatus.PLUMBER_COLLECTING_PRODUCTS, plumber, "Plumber collecting products at store");
+        }
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.PLUMBER_AT_STORE, plumber, null);
         return toDetail(saved);
@@ -367,11 +433,16 @@ public class PlumberMaterialService {
     public MaterialRequestDetailResponse collect(Long id) {
         ProductOrder request = plumberRequestEntity(id);
         User plumber = role(Role.PLUMBER);
-        if (request.getStatus() != ProductOrderStatus.PLUMBER_AT_STORE || request.getPlumberCollectedAt() != null)
-            throw error(HttpStatus.CONFLICT, "Collection is not allowed or was already recorded");
+        if (request.getPlumberCollectedAt() != null || request.getStatus() == ProductOrderStatus.COLLECTED || request.getStatus() == ProductOrderStatus.DELIVERED) {
+            return toDetail(request);
+        }
+        if (request.getStatus() != ProductOrderStatus.PLUMBER_AT_STORE || request.getPlumberArrivedAt() == null) {
+            throw error(HttpStatus.CONFLICT, "Plumber must arrive at the store before collection");
+        }
         ProductOrderStatus prev = request.getStatus();
+        request.setStatus(ProductOrderStatus.PLUMBER_AT_STORE);
         request.setPlumberCollectedAt(LocalDateTime.now());
-        request.setCollectedByPlumber(currentUser.require());
+        request.setCollectedByPlumber(plumber);
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.PLUMBER_AT_STORE, plumber, "Plumber collected products");
         return toDetail(saved);
@@ -398,10 +469,12 @@ public class PlumberMaterialService {
         ProductOrderStatus prev = request.getStatus();
         request.setStatus(ProductOrderStatus.COLLECTED);
         request.setCollectionConfirmedAt(LocalDateTime.now());
-        OrderStatus prevJobStatus = request.getServiceOrder().getStatus();
-        request.getServiceOrder().setStatus(OrderStatus.PRODUCTS_COLLECTED);
-        jobs.save(request.getServiceOrder());
-        recordServiceOrderHistory(request.getServiceOrder().getId(), prevJobStatus, OrderStatus.PRODUCTS_COLLECTED, manager, "Products collected from store");
+        if (request.getServiceOrder() != null) {
+            OrderStatus prevJobStatus = request.getServiceOrder().getStatus();
+            request.getServiceOrder().setStatus(OrderStatus.PRODUCTS_COLLECTED);
+            jobs.save(request.getServiceOrder());
+            recordServiceOrderHistory(request.getServiceOrder().getId(), prevJobStatus, OrderStatus.PRODUCTS_COLLECTED, manager, "Products collected from store");
+        }
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.COLLECTED, manager, null);
         return toDetail(saved);
@@ -420,12 +493,13 @@ public class PlumberMaterialService {
         return saved;
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = Phase2ReconciliationRequiredException.class)
     public ServiceOrder resume(Long jobId) {
         ServiceOrder job = assignedJob(jobId);
         User plumber = role(Role.PLUMBER);
         if (job.getStatus() != OrderStatus.RETURNING_TO_CUSTOMER)
             throw error(HttpStatus.CONFLICT, "Plumber must be returning to customer");
+        phase2AuthorizationService.requireResumeAuthorization(job);
         OrderStatus prev = job.getStatus();
         job.setStatus(OrderStatus.WORK_RESUMED);
         ServiceOrder saved = jobs.save(job);
@@ -487,17 +561,35 @@ public class PlumberMaterialService {
         User actor = currentUser.require();
         ProductOrder request = material(id);
         Store newStore = stores.findById(newStoreId).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "New store not found"));
-        
-        // Release old reservations if they exist
-        releaseReservations(request);
+        requireLaunchStore(newStoreId);
+
+        // Acquire every old/new stock row in one global order before touching
+        // reservations. Opposite reassignments therefore cannot form a cycle.
+        Map<String, Stock> lockedStocks = new LinkedHashMap<>();
+        List<InventoryReservation> existingReservations = reservations.findByOrderId(request.getId());
+        Set<String> stockKeys = new HashSet<>();
+        for (InventoryReservation reservation : existingReservations) {
+            stockKeys.add(stockKey(reservation.getStock().getStore().getId(), reservation.getStock().getProduct().getId()));
+        }
+        for (ProductOrderItem item : request.getItems()) {
+            stockKeys.add(stockKey(newStoreId, item.getProduct().getId()));
+        }
+        stockKeys.stream().sorted().forEach(key -> {
+            String[] parts = key.split(":");
+            Long storeId = Long.valueOf(parts[0]);
+            Long productId = Long.valueOf(parts[1]);
+            lockedStocks.put(key, stocks.findForUpdateByStoreIdAndProductId(storeId, productId)
+                    .orElseThrow(() -> error(HttpStatus.BAD_REQUEST, "Store does not stock product " + productId)));
+        });
+        List<InventoryReservation> lockedReservations = reservations.findByOrderIdForUpdate(request.getId());
+        releaseReservationsLocked(request, lockedReservations);
         
         // Validate new store stocks all products, and if currently in a reserved state, check and deduct stock
         boolean shouldReserve = Set.of(ProductOrderStatus.RESERVED, ProductOrderStatus.PREPARING,
                 ProductOrderStatus.READY_FOR_PICKUP, ProductOrderStatus.PLUMBER_AT_STORE).contains(request.getStatus());
         
         for (ProductOrderItem item : request.getItems()) {
-            Stock stock = stocks.findForUpdateByStoreIdAndProductId(newStoreId, item.getProduct().getId())
-                    .orElseThrow(() -> error(HttpStatus.BAD_REQUEST, "New store does not stock product " + item.getProduct().getId()));
+            Stock stock = lockedStocks.get(stockKey(newStoreId, item.getProduct().getId()));
             
             if (shouldReserve) {
                 int quantityToReserve = item.getReservedQuantity() > 0 ? item.getReservedQuantity() : item.getQuantity();
@@ -533,6 +625,10 @@ public class PlumberMaterialService {
         return toDetail(saved);
     }
 
+    private String stockKey(Long storeId, Long productId) {
+        return String.format("%020d:%020d", storeId, productId);
+    }
+
     // ─── MAPPING ─────────────────────────────────────────────────────────────
 
     public MaterialRequestDetailResponse toDetail(ProductOrder r) {
@@ -543,7 +639,8 @@ public class PlumberMaterialService {
                         i.getProduct().getSku(),
                         i.getPrice(),
                         i.getQuantity(),
-                        i.getReservedQuantity()
+                        i.getReservedQuantity(),
+                        i.getPackedQuantity() == null ? 0 : i.getPackedQuantity()
                 )).toList();
         return new MaterialRequestDetailResponse(
                 r.getId(),
@@ -561,6 +658,8 @@ public class PlumberMaterialService {
                 items,
                 r.getCreatedAt(),
                 r.getStoreConfirmedAt(),
+                r.getPreparingStartedAt(),
+                r.getReadyForPickupAt(),
                 r.getPlumberArrivedAt(),
                 r.getPlumberCollectedAt(),
                 r.getCollectionConfirmedAt()
@@ -581,6 +680,8 @@ public class PlumberMaterialService {
                 r.getTotalAmount(),
                 r.getCreatedAt(),
                 r.getStoreConfirmedAt(),
+                r.getPreparingStartedAt(),
+                r.getReadyForPickupAt(),
                 r.getPlumberArrivedAt(),
                 r.getPlumberCollectedAt(),
                 r.getCollectionConfirmedAt()
@@ -594,6 +695,13 @@ public class PlumberMaterialService {
                 || input.getQuantity() <= 0 || input.getQuantity() > 1000)
             throw error(HttpStatus.BAD_REQUEST, "Each quantity must be between 1 and 1000");
         if (!unique.add(input.getProductId())) throw error(HttpStatus.BAD_REQUEST, "Duplicate products are not allowed");
+    }
+
+    private void requireLaunchStore(Long storeId) {
+        Long ownedStoreId = launchPolicyService.requiredOwnedStoreId();
+        if (ownedStoreId != null && !Objects.equals(ownedStoreId, storeId)) {
+            throw error(HttpStatus.CONFLICT, "Service material requests must use the configured launch store");
+        }
     }
 
     private User role(Role role) {
@@ -624,13 +732,23 @@ public class PlumberMaterialService {
     }
 
     private ProductOrder material(Long id) {
-        return requests.findById(id).filter(r -> r.getServiceOrder() != null)
+        // Phase 2 lock order: service_order -> product_order. The first read only
+        // discovers the service-order key; neither row is mutated before both
+        // ordered locks are acquired.
+        ProductOrder discovered = requests.findById(id)
+                .filter(r -> r.getServiceOrder() != null)
+                .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Material request not found"));
+        Long serviceOrderId = discovered.getServiceOrder().getId();
+        jobs.findByIdForUpdate(serviceOrderId)
+                .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Service order not found"));
+        return requests.findByIdForUpdate(id)
+                .filter(r -> r.getServiceOrder() != null)
                 .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Material request not found"));
     }
 
     private ServiceOrder assignedJob(Long id) {
         User plumber = role(Role.PLUMBER);
-        ServiceOrder job = jobs.findById(id).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Service order not found"));
+        ServiceOrder job = jobs.findByIdForUpdate(id).orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Service order not found"));
         if (job.getPlumber() == null || !Objects.equals(job.getPlumber().getId(), plumber.getId()))
             throw new AccessDeniedException("Job belongs to another plumber");
         return job;

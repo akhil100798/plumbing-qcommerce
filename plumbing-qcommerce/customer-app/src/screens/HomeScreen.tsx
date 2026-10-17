@@ -98,21 +98,34 @@ const serviceOptions: ServiceOption[] = [
   },
 ];
 
-const categories = ['Leak repair', 'Drain clean', 'Tap install', 'Bathroom', 'Motor pump'];
+interface ServiceCategoryItem {
+  id: string; // canonical backend enum: pipe, tap, toilet, tank, motor, other
+  name: string; // display label
+  iconName?: string;
+}
+
+const categories: ServiceCategoryItem[] = [
+  { id: 'pipe', name: 'Leak repair' },
+  { id: 'tap', name: 'Drain clean' },
+  { id: 'tap', name: 'Tap install' },
+  { id: 'toilet', name: 'Bathroom' },
+  { id: 'motor', name: 'Motor pump' },
+];
 
 interface HomeCategory {
   id: number;
   name: string;
   iconName: string;
+  categoryValue: string;
 }
 
 const homeCategories: HomeCategory[] = [
-  { id: 1, name: 'Pipe Leakage', iconName: 'pipe-leak' },
-  { id: 2, name: 'Tap Repair', iconName: 'tap-repair' },
-  { id: 3, name: 'Toilet Repair', iconName: 'drain-cleaning' },
-  { id: 4, name: 'Water Tank', iconName: 'water-heater' },
-  { id: 5, name: 'Motor Repair', iconName: 'repair' },
-  { id: 6, name: 'More', iconName: 'plus' },
+  { id: 1, name: 'Pipe Leakage', iconName: 'pipe-leak', categoryValue: 'pipe' },
+  { id: 2, name: 'Tap Repair', iconName: 'tap-repair', categoryValue: 'tap' },
+  { id: 3, name: 'Toilet Repair', iconName: 'drain-cleaning', categoryValue: 'toilet' },
+  { id: 4, name: 'Water Tank', iconName: 'water-heater', categoryValue: 'tank' },
+  { id: 5, name: 'Motor Repair', iconName: 'repair', categoryValue: 'motor' },
+  { id: 6, name: 'More', iconName: 'plus', categoryValue: 'other' },
 ];
 
 const getCategoryIcon = (iconName: string) => {
@@ -147,7 +160,13 @@ export function HomeScreen({ navigation }: any) {
   const isSearching = useSelector((state: RootState) => state.plumbers.isSearching);
   const activeJob = useSelector((state: RootState) => state.plumbers.activeJob);
   const selectedMode = useSelector((state: RootState) => state.plumbers.selectedMode);
-  const selectedCategory = useSelector((state: RootState) => state.plumbers.selectedCategory || categories[0]);
+  // Redux selectedCategory stores either the canonical category value (e.g. 'pipe') or display name
+  const rawSelectedCategory = useSelector((state: RootState) => state.plumbers.selectedCategory);
+  const activeCategoryItem = categories.find(
+    (c) => c.name === rawSelectedCategory || c.id === rawSelectedCategory
+  ) || categories[0];
+  const selectedCategory = activeCategoryItem.id; // always valid backend enum: 'pipe', 'tap', 'toilet', 'tank', 'motor', 'other'
+  const selectedCategoryLabel = activeCategoryItem.name;
   const currentUser = useSelector((state: RootState) => state.auth.user);
 
   // Product Catalog State
@@ -418,43 +437,14 @@ export function HomeScreen({ navigation }: any) {
 
     dispatch(startSearching());
     try {
-      if (!edgeServerUrl) {
-        const order = await PlumberRepository.createServiceOrder({
-          description: `${selectedCategory} - ${selectedService.title}`,
-          latitude: 17.4485,
-          longitude: 78.3741,
-          requestType:
-            selectedMode === 'store'
-              ? 'STORE_ROUTED'
-              : selectedMode === 'expert'
-              ? 'DIRECT_PLUMBER'
-              : 'NEARBY_AUTO',
-        });
-
-        dispatch(stopSearching());
-        dispatch(
-          setActiveJob({
-            plumberId: order.plumber?.id ? String(order.plumber.id) : `order_${order.id}`,
-            message: `Service order #${order.id} created. It is now visible in the plumber app.`,
-          })
-        );
-        Alert.alert(
-          'Request sent',
-          `Service order #${order.id} was created and sent to the plumber workflow.`
-        );
-        return;
-      }
-
-      const result = await PlumberRepository.requestNearbyPlumber({
-        customerId: currentUser?.id ?? 0,
-        longitude: -122.4194,
-        latitude: 37.7749,
-        requestType: selectedMode,
-        category: selectedCategory,
-      });
-
       dispatch(stopSearching());
-      Alert.alert('Broadcast Completed', result.message || 'Job broadcasted to nearby plumbers.');
+      navigation.navigate('PlumberConfirmation', {
+        issueType: `${selectedCategoryLabel} - ${selectedService.title}`,
+        issueCategory: selectedCategory,
+        description: `${selectedCategoryLabel} - ${selectedService.title}`,
+        urgency: 'NORMAL',
+        scheduledFor: null,
+      });
     } catch (error: any) {
       dispatch(stopSearching());
       Alert.alert('Connection issue', error.message || 'Could not reach the dispatch service.');
@@ -470,8 +460,14 @@ export function HomeScreen({ navigation }: any) {
     if (category.name === 'More') {
       navigation.navigate('Categories');
     } else {
-      dispatch(setBookingConfig({ mode: selectedMode, category: category.name }));
-      navigation.navigate('PlumberConfirmation', { issueType: category.name });
+      dispatch(setBookingConfig({ mode: selectedMode, category: category.categoryValue }));
+      navigation.navigate('PlumberConfirmation', {
+        issueType: category.name,
+        issueCategory: category.categoryValue,
+        description: category.name,
+        urgency: 'NORMAL',
+        scheduledFor: null,
+      });
     }
   };
 
@@ -600,7 +596,7 @@ export function HomeScreen({ navigation }: any) {
           <View style={styles.hero}>
             <Text style={styles.brand}>PlumbCommerce</Text>
             <Text style={styles.heroTitle}>Your plumber is on the way</Text>
-            <Text style={styles.heroSub}>Live assignment for {selectedCategory.toLowerCase()}.</Text>
+            <Text style={styles.heroSub}>Live assignment for {selectedCategoryLabel.toLowerCase()}.</Text>
           </View>
 
           <View style={styles.mapPanel}>
@@ -755,12 +751,12 @@ export function HomeScreen({ navigation }: any) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryRail}>
           {categories.map((category) => (
             <Pressable
-              key={category}
-              style={[styles.categoryChip, selectedCategory === category && styles.categoryChipActive]}
-              onPress={() => dispatch(setBookingConfig({ mode: selectedMode, category }))}
+              key={category.name}
+              style={[styles.categoryChip, selectedCategoryLabel === category.name && styles.categoryChipActive]}
+              onPress={() => dispatch(setBookingConfig({ mode: selectedMode, category: category.name }))}
             >
-              <Text style={[styles.categoryText, selectedCategory === category && styles.categoryTextActive]}>
-                {category}
+              <Text style={[styles.categoryText, selectedCategoryLabel === category.name && styles.categoryTextActive]}>
+                {category.name}
               </Text>
             </Pressable>
           ))}

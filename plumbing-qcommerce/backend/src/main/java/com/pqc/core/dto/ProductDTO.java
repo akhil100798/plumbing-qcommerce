@@ -19,4 +19,6 @@ public class ProductDTO {
     private String imageUrl;
     private Long categoryId;
     private String categoryName;
+    private Integer availableQuantity;
+    private Boolean lowStock;
 }

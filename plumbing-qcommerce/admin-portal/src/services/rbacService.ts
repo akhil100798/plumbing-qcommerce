@@ -29,6 +29,7 @@ export const ADMIN_ROLES = [
 export type AdminRole = (typeof ADMIN_ROLES)[number];
 
 export const SUPER_ADMIN_PORTAL_ROLES = ["SUPER_ADMIN", "ADMIN"] as const;
+export const LAUNCH_ROSTER_PORTAL_ROLES = ["SUPER_ADMIN", "ADMIN"] as const;
 export const OPERATIONS_PORTAL_ROLES = ["SUPER_ADMIN", "ADMIN", "OPERATIONS_ADMIN"] as const;
 export const FINANCE_PORTAL_ROLES = ["SUPER_ADMIN", "ADMIN", "FINANCE_ADMIN"] as const;
 export const SUPPORT_PORTAL_ROLES = ["SUPER_ADMIN", "ADMIN", "SUPPORT_ADMIN"] as const;

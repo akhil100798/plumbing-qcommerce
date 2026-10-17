@@ -41,9 +41,14 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
     return () => clearInterval(interval);
   }, []);
 
-  const handleDecline = () => {
-    dispatch(removeIncomingJob(jobId));
-    navigation.goBack();
+  const handleDecline = async () => {
+    try {
+      await jobService.rejectJob(jobId);
+      dispatch(removeIncomingJob(jobId));
+      navigation.goBack();
+    } catch (error: any) {
+      Alert.alert('Decline job failed', error?.message || 'Could not decline this service request. Please retry.');
+    }
   };
 
   const handleAccept = async () => {
@@ -85,29 +90,26 @@ export function IncomingJobRequestScreen({ route, navigation }: Props) {
                   <Text style={styles.jobId}>#{jobId}</Text>
                   <MapPinIcon width={14} height={14} stroke={colors.textMuted} />
                 </View>
-                <Text style={styles.serviceName}>Water Heater Installation</Text>
+                <Text style={styles.serviceName}>Service request</Text>
               </View>
             </View>
 
             <View style={styles.locationBlock}>
-              <Text style={styles.distanceText}>📍 {distance || 4.2} km away</Text>
-              <Text style={styles.addressText}>
-                22, Green Park, Indiranagar, Bengaluru, 560038
-              </Text>
+              <Text style={styles.distanceText}>📍 {distance != null ? `${distance} km away` : 'Distance unavailable'}</Text>
+              <Text style={styles.addressText}>Service location details are available after loading the request.</Text>
             </View>
 
             <View style={styles.detailsGrid}>
               <View>
-                <Text style={styles.priceText}>₹650</Text>
-                <Text style={styles.subText}>Estimated</Text>
+                <Text style={styles.priceText}>Unavailable</Text>
+                <Text style={styles.subText}>Earnings are not shown for discovery</Text>
               </View>
 
               <View style={styles.ratingBox}>
                 <View style={styles.ratingRow}>
-                  <Text style={styles.ratingVal}>4.7</Text>
-                  <StarIcon width={14} height={14} fill="#F59E0B" stroke="#F59E0B" />
+                    <Text style={styles.ratingVal}>Unavailable</Text>
                 </View>
-                <Text style={styles.subText}>Customer Rating</Text>
+                <Text style={styles.subText}>Customer rating unavailable</Text>
               </View>
 
               {/* Countdown Timer Badge */}

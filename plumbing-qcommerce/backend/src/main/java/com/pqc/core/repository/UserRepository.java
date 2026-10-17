@@ -22,4 +22,6 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     Page<User> findByRoleIn(Collection<Role> roles, Pageable pageable);
     long countByRoleAndStatus(Role role, UserStatus status);
     List<User> findByRole(Role role);
+    List<User> findByRoleOrderByIdAsc(Role role);
+    List<User> findAllByIdInOrderByIdAsc(java.util.Collection<Long> ids);
 }

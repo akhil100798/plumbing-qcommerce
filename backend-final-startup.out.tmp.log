@@ -1,0 +1,113 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< com.pqc.core:plumbing-core >---------------------
+[INFO] Building plumbing-core 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.0.4:run (default-cli) > test-compile @ plumbing-core >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ plumbing-core ---
+[INFO] Copying 5 resources from src\main\resources to target\classes
+[INFO] Copying 21 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ plumbing-core ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ plumbing-core ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ plumbing-core ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:4.0.4:run (default-cli) < test-compile @ plumbing-core <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.0.4:run (default-cli) @ plumbing-core ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.4)
+
+2026-09-16T22:53:34.438+05:30  INFO 14284 --- [plumbing-core] [           main] com.pqc.core.PlumbingCoreApplication     : Starting PlumbingCoreApplication using Java 17.0.12 with PID 14284 (C:\Users\akhil\OneDrive\Desktop\Workspace\fixkart\plumbing-qcommerce\plumbing-qcommerce\backend\target\classes started by akhil in C:\Users\akhil\OneDrive\Desktop\Workspace\fixkart\plumbing-qcommerce\plumbing-qcommerce\backend)
+2026-09-16T22:53:34.455+05:30  INFO 14284 --- [plumbing-core] [           main] com.pqc.core.PlumbingCoreApplication     : The following 2 profiles are active: "staging", "local-staging"
+2026-09-16T22:53:37.493+05:30  INFO 14284 --- [plumbing-core] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-09-16T22:53:37.493+05:30  INFO 14284 --- [plumbing-core] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-09-16T22:53:38.143+05:30  INFO 14284 --- [plumbing-core] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 624 ms. Found 27 JPA repository interfaces.
+2026-09-16T22:53:38.149+05:30  INFO 14284 --- [plumbing-core] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-09-16T22:53:38.151+05:30  INFO 14284 --- [plumbing-core] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data MongoDB repositories in DEFAULT mode.
+2026-09-16T22:53:38.168+05:30  INFO 14284 --- [plumbing-core] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 13 ms. Found 2 MongoDB repository interfaces.
+2026-09-16T22:53:42.595+05:30  INFO 14284 --- [plumbing-core] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8081 (http)
+2026-09-16T22:53:42.624+05:30  INFO 14284 --- [plumbing-core] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-16T22:53:42.624+05:30  INFO 14284 --- [plumbing-core] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.18]
+2026-09-16T22:53:42.815+05:30  INFO 14284 --- [plumbing-core] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 8143 ms
+2026-09-16T22:53:44.457+05:30  INFO 14284 --- [plumbing-core] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-09-16T22:53:46.497+05:30  INFO 14284 --- [plumbing-core] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@4535bdc6
+2026-09-16T22:53:46.499+05:30  INFO 14284 --- [plumbing-core] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-09-16T22:53:46.574+05:30  INFO 14284 --- [plumbing-core] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5433/fixkart_final_regression_20260916 (PostgreSQL 15.18)
+2026-09-16T22:53:46.984+05:30  INFO 14284 --- [plumbing-core] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 21 migrations (execution time 00:00.155s)
+2026-09-16T22:53:47.168+05:30  INFO 14284 --- [plumbing-core] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 21
+2026-09-16T22:53:47.180+05:30  INFO 14284 --- [plumbing-core] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+2026-09-16T22:53:47.446+05:30  INFO 14284 --- [plumbing-core] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-09-16T22:53:47.610+05:30  INFO 14284 --- [plumbing-core] [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.7.Final
+2026-09-16T22:53:48.677+05:30  INFO 14284 --- [plumbing-core] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-09-16T22:53:48.803+05:30  WARN 14284 --- [plumbing-core] [           main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-09-16T22:53:48.844+05:30  INFO 14284 --- [plumbing-core] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:postgresql://localhost:5433/fixkart_final_regression_20260916]
+	Database driver: PostgreSQL JDBC Driver
+	Database dialect: PostgreSQLDialect
+	Database version: 15.18
+	Default catalog/schema: fixkart_final_regression_20260916/public
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-09-16T22:53:52.427+05:30  INFO 14284 --- [plumbing-core] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-09-16T22:53:52.478+05:30  INFO 14284 --- [plumbing-core] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-09-16T22:53:52.804+05:30  INFO 14284 --- [plumbing-core] [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-09-16T22:54:01.223+05:30  INFO 14284 --- [plumbing-core] [           main] org.mongodb.driver.client                : MongoClient with metadata {"driver": {"name": "mongo-java-driver|spring-boot|sync", "version": "5.6.4"}, "os": {"type": "Windows", "name": "Windows 11", "architecture": "amd64", "version": "10.0"}, "platform": "Java/Oracle Corporation/17.0.12+8-LTS-286"} created with settings MongoClientSettings{readPreference=primary, writeConcern=WriteConcern{w=null, wTimeout=null ms, journal=null}, retryWrites=true, retryReads=true, readConcern=ReadConcern{level=null}, credential=MongoCredential{mechanism=null, userName='admin', source='admin', password=<hidden>, mechanismProperties=<hidden>}, transportSettings=null, commandListeners=[io.micrometer.core.instrument.binder.mongodb.MongoMetricsCommandListener@454fcb0d], codecRegistry=ProvidersCodecRegistry{codecProviders=[ValueCodecProvider{}, BsonValueCodecProvider{}, DBRefCodecProvider{}, DBObjectCodecProvider{}, DocumentCodecProvider{}, CollectionCodecProvider{}, IterableCodecProvider{}, MapCodecProvider{}, GeoJsonCodecProvider{}, GridFSFileCodecProvider{}, Jsr310CodecProvider{}, JsonObjectCodecProvider{}, BsonCodecProvider{}, com.mongodb.client.model.mql.ExpressionCodecProvider@26599412, com.mongodb.Jep395RecordCodecProvider@6593a932, com.mongodb.KotlinCodecProvider@7f8ac54f, EnumCodecProvider{}]}, loggerSettings=LoggerSettings{maxDocumentLength=1000}, clusterSettings={hosts=[localhost:27017], srvServiceName=mongodb, mode=SINGLE, requiredClusterType=UNKNOWN, requiredReplicaSetName='null', serverSelector='null', clusterListeners='[]', serverSelectionTimeout='30000 ms', localThreshold='15 ms'}, socketSettings=SocketSettings{connectTimeoutMS=10000, readTimeoutMS=0, receiveBufferSize=0, proxySettings=ProxySettings{host=null, port=null, username=null, password=null}}, heartbeatSocketSettings=SocketSettings{connectTimeoutMS=10000, readTimeoutMS=10000, receiveBufferSize=0, proxySettings=ProxySettings{host=null, port=null, username=null, password=null}}, connectionPoolSettings=ConnectionPoolSettings{maxSize=100, minSize=0, maxWaitTimeMS=120000, maxConnectionLifeTimeMS=0, maxConnectionIdleTimeMS=0, maintenanceInitialDelayMS=0, maintenanceFrequencyMS=60000, connectionPoolListeners=[io.micrometer.core.instrument.binder.mongodb.MongoMetricsConnectionPoolListener@74e6fdef], maxConnecting=2}, serverSettings=ServerSettings{heartbeatFrequencyMS=10000, minHeartbeatFrequencyMS=500, serverMonitoringMode=AUTO, serverListeners='[]', serverMonitorListeners='[]'}, sslSettings=SslSettings{enabled=false, invalidHostNameAllowed=false, context=null}, applicationName='null', compressorList=[], uuidRepresentation=UNSPECIFIED, serverApi=null, autoEncryptionSettings=null, dnsClient=null, inetAddressResolver=null, contextProvider=null, timeoutMS=null}
+2026-09-16T22:54:01.611+05:30  INFO 14284 --- [plumbing-core] [localhost:27017] org.mongodb.driver.cluster               : Monitor thread successfully connected to server with description ServerDescription{address=localhost:27017, type=STANDALONE, cryptd=false, state=CONNECTED, ok=true, minWireVersion=0, maxWireVersion=17, maxDocumentSize=16777216, logicalSessionTimeoutMinutes=30, roundTripTimeNanos=420433200, minRoundTripTimeNanos=0}
+2026-09-16T22:54:03.208+05:30  INFO 14284 --- [plumbing-core] [           main] eAuthenticationProviderManagerConfigurer : Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
+2026-09-16T22:54:07.798+05:30  INFO 14284 --- [plumbing-core] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoints beneath base path '/actuator'
+2026-09-16T22:54:08.298+05:30  INFO 14284 --- [plumbing-core] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8081 (http) with context path '/'
+2026-09-16T22:54:08.332+05:30  INFO 14284 --- [plumbing-core] [           main] com.pqc.core.PlumbingCoreApplication     : Started PlumbingCoreApplication in 35.737 seconds (process running for 37.824)
+2026-09-16T22:54:08.477+05:30  INFO 14284 --- [plumbing-core] [           main] c.p.c.config.StagingDemoAdminUserSeeder  : StagingDemoAdminUserSeeder: provisioning staging admin QA accounts...
+2026-09-16T22:54:10.135+05:30  INFO 14284 --- [plumbing-core] [           main] c.p.c.config.StagingDemoAdminUserSeeder  : StagingDemoAdminUserSeeder: staging admin provisioning complete.
+2026-09-16T22:54:10.152+05:30  INFO 14284 --- [plumbing-core] [           main] c.p.c.c.StagingDemoMobileUserSeeder      : StagingDemoMobileUserSeeder: provisioning FixKart QA accounts...
+2026-09-16T22:54:12.259+05:30  INFO 14284 --- [plumbing-core] [           main] c.p.c.c.StagingDemoMobileUserSeeder      : StagingDemoMobileUserSeeder: QA provisioning complete. Users=6, Store=1 (id=1), Products=4 (3 sufficient, 1 low-stock)
+2026-09-16T22:54:12.301+05:30  INFO 14284 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Ensuring development/demo users...
+2026-09-16T22:54:12.384+05:30  INFO 14284 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Creating demo user: manager@plumbcommerce.com (STORE_MANAGER)
+2026-09-16T22:54:12.678+05:30  INFO 14284 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Creating demo user: customer@plumbcommerce.com (CUSTOMER)
+2026-09-16T22:54:12.938+05:30  INFO 14284 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Creating demo user: admin@plumbcommerce.com (ADMIN)
+2026-09-16T22:54:13.189+05:30  INFO 14284 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Demo user already present: superadmin@plumbcommerce.com (SUPER_ADMIN)
+2026-09-16T22:54:13.205+05:30  INFO 14284 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Demo user already present: operations@plumbcommerce.com (OPERATIONS_ADMIN)
+2026-09-16T22:54:13.222+05:30  INFO 14284 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Demo user already present: plumbermanager@plumbcommerce.com (PLUMBER_MANAGER)
+2026-09-16T22:54:13.230+05:30  INFO 14284 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Demo user already present: finance@plumbcommerce.com (FINANCE_ADMIN)
+2026-09-16T22:54:13.248+05:30  INFO 14284 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Demo user already present: support@plumbcommerce.com (SUPPORT_ADMIN)
+2026-09-16T22:54:13.259+05:30  INFO 14284 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Demo user already present: marketing@plumbcommerce.com (MARKETING_ADMIN)
+2026-09-16T22:54:13.292+05:30  INFO 14284 --- [plumbing-core] [           main] com.pqc.core.config.CatalogDataSeeder    : Catalog already seeded.
+2026-09-16T22:54:13.295+05:30  INFO 14284 --- [plumbing-core] [           main] c.pqc.core.config.StartupEventListener   : [STARTUP] Application ready and listening for HTTP requests in 42785 ms (42.79 s)
+2026-09-16T22:54:38.083+05:30  INFO 14284 --- [plumbing-core] [0.0-8081-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-16T22:54:38.083+05:30  INFO 14284 --- [plumbing-core] [0.0-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-16T22:54:38.089+05:30  INFO 14284 --- [plumbing-core] [0.0-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 4 ms
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  03:03 min
+[INFO] Finished at: 2026-09-16T22:56:21+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:4.0.4:run (default-cli) on project plumbing-core: Process terminated with exit code: -1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

@@ -9,9 +9,11 @@ public interface PaymentGatewayAdapter {
      * @param orderId          The order reference.
      * @param amount           The charge amount.
      * @param paymentMethodId  The payment instrument ID.
+     * @param currency         The server-authoritative ISO currency.
      * @return The transaction reference/ID.
      */
-    String capturePayment(Long orderId, BigDecimal amount, String paymentMethodId);
+    String capturePayment(Long orderId, BigDecimal amount, String paymentMethodId, String currency,
+                          String idempotencyKey);
 
     /**
      * Triggers payout to plumbers or store managers.

@@ -40,15 +40,18 @@ export function ReachedCustomerScreen({ route, navigation }: Props) {
       );
       navigation.replace('StartWork', { jobId });
     } catch (err: any) {
-      // Proceed to start work on staging fallback
-      navigation.replace('StartWork', { jobId });
+      Alert.alert('Arrival not recorded', err?.message || 'The backend did not confirm arrival. Try again before starting diagnosis.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleContactCustomer = () => {
-    const phone = activeJob?.customer.phone || '+91 98765 43210';
+    const phone = activeJob?.customer.phone;
+    if (!phone) {
+      Alert.alert('Phone unavailable', 'The customer phone number was not provided by the server.');
+      return;
+    }
     Alert.alert('Contact Customer', `Calling customer at ${phone}`);
   };
 

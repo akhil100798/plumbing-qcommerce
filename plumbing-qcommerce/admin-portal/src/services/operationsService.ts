@@ -67,7 +67,10 @@ export interface OperationsServiceJobDetail extends OperationsServiceJobSummary 
   completedAt?: string | null;
   materialRequests: OperationsMaterialRequestSummary[];
   logs: string[];
+  assignmentHistory?: Array<{ id: number; plumberId: number; plumberName?: string | null; status: string; assignmentMode: string; actorId?: number | null; actorRole?: string | null; reason?: string | null; createdAt?: string | null }>;
 }
+
+export interface EligiblePlumber { id: number; name: string; phone?: string | null; }
 
 export interface OperationsMaterialRequestSummary {
   requestId: number;
@@ -153,6 +156,10 @@ export function listAvailableDeliveryPartners() {
 
 export function reassignPlumber(jobId: string | number, plumberId: number, reason: string) {
   return apiRequest<OperationsServiceJobSummary>(`/api/v1/admin/operations/service-jobs/${jobId}/reassign-plumber`, { method: "PATCH", body: { plumberId, reason } });
+}
+
+export function listEligiblePlumbers() {
+  return apiRequest<EligiblePlumber[]>("/api/v1/admin/operations/service-jobs/eligible-plumbers");
 }
 
 export function reassignDelivery(orderId: string | number, deliveryPartnerId: number, reason: string) {

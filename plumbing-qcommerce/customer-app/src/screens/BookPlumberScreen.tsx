@@ -1,5 +1,6 @@
 import { StackScreenProps } from '@react-navigation/stack';
 import React, { useState } from 'react';
+import { Alert } from 'react-native';
 import {
   SafeAreaView,
   ScrollView,
@@ -7,6 +8,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  TextInput,
 } from 'react-native';
 
 import { PrimaryButton } from '../components/common/PrimaryButton';
@@ -22,22 +24,39 @@ interface IssueItem {
 }
 
 const issues: IssueItem[] = [
-  { id: 'pipe', name: 'Pipe Leakage', icon: '🚰' },
-  { id: 'tap', name: 'Tap Repair', icon: '🚿' },
-  { id: 'toilet', name: 'Toilet Blockage', icon: '🚽' },
-  { id: 'tank', name: 'Water Tank Issue', icon: '🛢️' },
-  { id: 'motor', name: 'Motor Repair', icon: '⚙️' },
-  { id: 'other', name: 'Other Issue', icon: '🛠️' },
+  { id: 'pipe', name: 'Leaking or damaged pipe', icon: '🚰' },
+  { id: 'tap', name: 'Tap or faucet problem', icon: '🚿' },
+  { id: 'toilet', name: 'Blocked or faulty toilet', icon: '🚽' },
+  { id: 'tank', name: 'Water tank problem', icon: '🛢️' },
+  { id: 'motor', name: 'Water pump or motor', icon: '⚙️' },
+  { id: 'other', name: 'Something else / not sure', icon: '🛠️' },
 ];
 
 export function BookPlumberScreen({ navigation }: Props) {
   const [selectedIssueId, setSelectedIssueId] = useState('pipe');
   const [scheduleOption, setScheduleOption] = useState<'now' | 'schedule'>('now');
+  const [description, setDescription] = useState('');
+  const [urgency, setUrgency] = useState<'NORMAL' | 'URGENT'>('NORMAL');
+  const [scheduledForInput, setScheduledForInput] = useState('');
 
   const handleContinue = () => {
     const selected = issues.find((i) => i.id === selectedIssueId);
+    let scheduledFor: string | null = null;
+    if (scheduleOption === 'schedule') {
+      const parsed = new Date(scheduledForInput);
+      if (!scheduledForInput || !Number.isFinite(parsed.getTime()) || parsed.getTime() <= Date.now()) {
+        Alert.alert('Choose a future time', 'Scheduled requests must use a valid future date and time.');
+        return;
+      }
+      // The backend contract uses an ISO local date-time (no fabricated timezone).
+      scheduledFor = scheduledForInput.length === 16 ? `${scheduledForInput}:00` : scheduledForInput;
+    }
     navigation.navigate('PlumberConfirmation', {
       issueType: selected ? selected.name : 'Plumbing Request',
+      issueCategory: selected?.id,
+      description,
+      urgency,
+       scheduledFor,
     });
   };
 
@@ -71,6 +90,24 @@ export function BookPlumberScreen({ navigation }: Props) {
           })}
         </View>
 
+        <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Tell us more (optional)</Text>
+        <TextInput
+          value={description}
+          onChangeText={setDescription}
+          placeholder="What do you notice? Add details if you can."
+          multiline
+          style={styles.descriptionInput}
+        />
+
+        <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Urgency</Text>
+        <View style={styles.scheduleOptions}>
+          {(['NORMAL', 'URGENT'] as const).map((value) => (
+            <TouchableOpacity key={value} style={[styles.radioCard, urgency === value && styles.radioCardSelected]} onPress={() => setUrgency(value)}>
+              <Text style={styles.radioTitle}>{value === 'URGENT' ? 'Urgent' : 'Normal'}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>
           When do you need help?
         </Text>
@@ -85,7 +122,7 @@ export function BookPlumberScreen({ navigation }: Props) {
               </View>
               <View>
                 <Text style={styles.radioTitle}>Now</Text>
-                <Text style={styles.radioSub}>Within 15 mins</Text>
+                <Text style={styles.radioSub}>Request service as soon as possible</Text>
               </View>
             </View>
             <Text style={styles.accentText}>⚡ Fast</Text>
@@ -106,12 +143,14 @@ export function BookPlumberScreen({ navigation }: Props) {
             </View>
             <Text style={styles.accentText}>📅 Plan</Text>
           </TouchableOpacity>
+
+          {scheduleOption === 'schedule' ? <TextInput value={scheduledForInput} onChangeText={setScheduledForInput} placeholder="YYYY-MM-DDTHH:mm" style={styles.descriptionInput} /> : null}
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
         <PrimaryButton
-          title="Continue"
+          title="Continue to address"
           onPress={handleContinue}
           style={styles.continueBtn}
         />
@@ -254,6 +293,16 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.primary,
+  },
+  descriptionInput: {
+    minHeight: 96,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    textAlignVertical: 'top',
+    color: colors.textPrimary,
   },
   footer: {
     padding: spacing.layout,

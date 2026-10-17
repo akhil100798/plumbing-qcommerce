@@ -9,7 +9,11 @@ import com.pqc.core.entity.ServiceOrder;
 import com.pqc.core.entity.Store;
 import com.pqc.core.entity.User;
 import com.pqc.core.entity.UserStatus;
+import com.pqc.core.entity.PlumberAvailabilityStatus;
+import com.pqc.core.entity.PlumberKyc;
+import com.pqc.core.entity.PlumberKycStatus;
 import com.pqc.core.repository.ProductOrderRepository;
+import com.pqc.core.repository.PlumberKycRepository;
 import com.pqc.core.repository.ServiceOrderRepository;
 import com.pqc.core.repository.StoreRepository;
 import com.pqc.core.repository.UserRepository;
@@ -41,6 +45,7 @@ class OperationsAdminControllerTest {
     @Autowired StoreRepository storeRepository;
     @Autowired ProductOrderRepository productOrderRepository;
     @Autowired ServiceOrderRepository serviceOrderRepository;
+    @Autowired PlumberKycRepository plumberKycRepository;
     @Autowired PasswordEncoder passwordEncoder;
     @Autowired JwtService jwtService;
     @Autowired JdbcTemplate jdbcTemplate;
@@ -126,6 +131,11 @@ class OperationsAdminControllerTest {
     @Test
     void operationsAdminCanReassignPlumberAndDeliveryPartner() throws Exception {
         User newPlumber = saveUser("new-plumber@example.com", Role.PLUMBER);
+        plumberKycRepository.save(PlumberKyc.builder()
+                .plumberId(newPlumber.getId())
+                .status(PlumberKycStatus.APPROVED)
+                .availabilityStatus(PlumberAvailabilityStatus.ONLINE)
+                .build());
         User newDelivery = saveUser("new-delivery@example.com", Role.DELIVERY_PARTNER);
 
         mvc.perform(patch("/api/v1/admin/operations/service-jobs/{id}/reassign-plumber", serviceJob.getId())

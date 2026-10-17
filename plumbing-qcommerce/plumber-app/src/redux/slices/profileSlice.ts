@@ -41,7 +41,7 @@ const profileSlice = createSlice({
     },
     setProfileSuccess: (state, action: PayloadAction<PlumberProfile>) => {
       state.plumberProfile = action.payload;
-      state.rating = action.payload.rating;
+      state.rating = action.payload.rating ?? 0;
       state.availability = action.payload.availability;
       state.loading = false;
       state.error = null;

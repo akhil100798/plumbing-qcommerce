@@ -121,8 +121,8 @@ public class PlumberController {
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<User> getProfile() {
-        return ResponseEntity.ok(currentUser.require());
+    public ResponseEntity<com.pqc.core.dto.CurrentUserProfileResponse> getProfile() {
+        return ResponseEntity.ok(com.pqc.core.dto.CurrentUserProfileResponse.from(com.pqc.core.dto.AuthUserDto.from(currentUser.require())));
     }
 
     @GetMapping("/kyc")
@@ -153,17 +153,19 @@ public class PlumberController {
         return ResponseEntity.status(201).body(toKycResponse(user, plumberKycRepository.save(kyc)));
     }
 
+
     @GetMapping("/orders/{orderId}/material-request")
     public ResponseEntity<List<MaterialRequestSummaryResponse>> getMaterialRequestByOrder(@PathVariable Long orderId) {
         List<MaterialRequestSummaryResponse> response = plumberMaterialService.serviceOrderRequests(orderId);
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/material-requests/{requestId}")
-    public ResponseEntity<MaterialRequestDetailResponse> getMaterialRequestById(@PathVariable Long requestId) {
-        MaterialRequestDetailResponse response = plumberMaterialService.plumberRequestDetails(requestId);
-        return ResponseEntity.ok(response);
-    }
+    // Handled in MaterialPickupController to prevent Spring MVC route collision
+    // @GetMapping("/material-requests/{requestId}")
+    // public ResponseEntity<MaterialRequestDetailResponse> getMaterialRequestById(@PathVariable Long requestId) {
+    //     MaterialRequestDetailResponse response = plumberMaterialService.plumberRequestDetails(requestId);
+    //     return ResponseEntity.ok(response);
+    // }
 
     @GetMapping("/material-requests/{requestId}/tracking")
     public ResponseEntity<List<Map<String, Object>>> getMaterialTracking(@PathVariable Long requestId) {
