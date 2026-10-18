@@ -133,14 +133,7 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
       setMaterialRequest(null);
       Alert.alert(
         'Approved!',
-        'Payment confirmed. Materials will be dispatched to your site shortly.',
-        [
-          {
-            text: 'OK',
-            onPress: () =>
-              navigation.replace('ServiceCompletion', { plumberName: displayPlumberName }),
-          },
-        ]
+        'Payment confirmed. Materials will be dispatched to your site shortly.'
       );
     } catch (err: any) {
       Alert.alert('Payment Failed', err?.message || 'Could not confirm payment. Please try again.');
@@ -238,12 +231,39 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
              <PrimaryButton title="View diagnosis & labor quote" onPress={() => navigation.navigate('ServiceDiagnosis', { orderId, plumberName })} />
            ) : null}
            {currentOrderStatus === 'COMPLETED' ? (
-             <Text style={styles.mapUnavailable}>Your plumber marked the repair complete. Customer confirmation and payment are outside this milestone.</Text>
+             <View style={styles.completedBanner}>
+               <Text style={styles.completedBannerTitle}>Repair Complete!</Text>
+               <Text style={styles.completedBannerSub}>
+                 Your plumber marked the repair complete. Please confirm the service and rate your plumber.
+               </Text>
+               <PrimaryButton
+                 title="Confirm & Rate Service"
+                 onPress={() =>
+                   navigation.navigate('ServiceCompletion', {
+                     orderId,
+                     plumberName: displayPlumberName,
+                   })
+                 }
+                 style={styles.reviewBtn}
+               />
+             </View>
            ) : null}
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
+        {currentOrderStatus === 'COMPLETED' ? (
+          <PrimaryButton
+            title="Review & Complete Service"
+            onPress={() =>
+              navigation.navigate('ServiceCompletion', {
+                orderId,
+                plumberName: displayPlumberName,
+              })
+            }
+            style={styles.simulateBtn}
+          />
+        ) : null}
         {devMode && (
           <SecondaryButton
             title="Simulate Material Request (Dev Only)"
@@ -251,7 +271,7 @@ export function PlumberTrackingScreen({ route, navigation }: Props) {
             style={styles.simulateBtn}
           />
         )}
-        <SecondaryButton title="Cancel Booking" onPress={() => navigation.navigate('Main')} textColor={colors.error} outlineColor={colors.error} style={styles.cancelBtn} />
+        <SecondaryButton title="Return to Home" onPress={() => navigation.navigate('Main')} textColor={colors.textSecondary} outlineColor={colors.border} style={styles.cancelBtn} />
       </View>
     </SafeAreaView>
   );
@@ -292,4 +312,28 @@ const styles = StyleSheet.create({
   declineBtnText: { fontSize: typography.fontSize.sm, color: colors.textSecondary, fontWeight: typography.fontWeight.medium },
   approveBtn: { flex: 2, backgroundColor: colors.primary, borderRadius: borderRadius.sm, paddingVertical: spacing.sm, alignItems: 'center' },
   approveBtnText: { fontSize: typography.fontSize.sm, color: '#FFFFFF', fontWeight: typography.fontWeight.bold },
+  completedBanner: {
+    backgroundColor: colors.successLight,
+    borderWidth: 1.5,
+    borderColor: colors.success,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginTop: spacing.md,
+    alignItems: 'center',
+  },
+  completedBannerTitle: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.success,
+    marginBottom: spacing.xs,
+  },
+  completedBannerSub: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  reviewBtn: {
+    width: '100%',
+  },
 });

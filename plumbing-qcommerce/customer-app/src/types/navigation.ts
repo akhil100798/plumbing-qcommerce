@@ -48,7 +48,7 @@ export type AppStackParamList = {
   };
   ServiceDiagnosis: { orderId: number; plumberName: string | null };
   MaterialApproval: { serviceOrderId: number; plumberName: string };
-  ServiceCompletion: { plumberName: string };
+  ServiceCompletion: { orderId: number; plumberName?: string };
   AddressManagement: undefined;
   PaymentMethods: undefined;
   Settings: undefined;

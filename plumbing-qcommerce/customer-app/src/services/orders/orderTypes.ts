@@ -55,3 +55,22 @@ export interface PaymentResponseDTO {
   transactionId: string;
   message: string;
 }
+
+export interface CustomerConfirmationResponse {
+  orderId: number;
+  status: string;
+  confirmedAt?: string | null;
+  message: string;
+}
+
+export interface RatingRequest {
+  rating: number;
+  comment?: string;
+}
+
+export interface RatingResponse {
+  orderId: number;
+  rating: number;
+  comment?: string;
+  ratedAt?: string;
+}

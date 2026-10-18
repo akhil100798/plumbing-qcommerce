@@ -1,6 +1,7 @@
 export const ENDPOINTS = {
   auth: {
     login: '/auth/login',
+    logout: '/auth/logout',
     register: '/auth/register/store',
     sendOtp: '/auth/send-otp',
     verifyOtp: '/auth/verify-otp',

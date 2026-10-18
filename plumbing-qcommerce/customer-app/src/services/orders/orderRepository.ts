@@ -51,4 +51,26 @@ export const OrderRepository = {
     const response = await apiClient.post<PaymentResponseDTO>('/payments/process', data);
     return response.data;
   },
+
+  confirmServiceOrder: async (orderId: number): Promise<import('./orderTypes').CustomerConfirmationResponse> => {
+    const response = await apiClient.post<import('./orderTypes').CustomerConfirmationResponse>(`/orders/${orderId}/confirm`);
+    return response.data;
+  },
+
+  submitServiceRating: async (
+    orderId: number,
+    rating: number,
+    comment?: string
+  ): Promise<import('./orderTypes').RatingResponse> => {
+    const response = await apiClient.post<import('./orderTypes').RatingResponse>(`/orders/${orderId}/rating`, {
+      rating,
+      comment: comment?.trim() ? comment.trim() : undefined,
+    });
+    return response.data;
+  },
+
+  getServiceRating: async (orderId: number): Promise<import('./orderTypes').RatingResponse> => {
+    const response = await apiClient.get<import('./orderTypes').RatingResponse>(`/orders/${orderId}/rating`);
+    return response.data;
+  },
 };
