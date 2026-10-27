@@ -39,7 +39,7 @@ services:
       - key: CORS_ALLOWED_ORIGINS
         sync: false
       - key: SMS_PROVIDER
-        value: disabled
+        value: mock
       - key: MONGO_URI
         sync: false
       - key: KAFKA_BOOTSTRAP_SERVERS
@@ -52,3 +52,4 @@ services:
         sync: false
       - key: KAFKA_SASL_MECHANISM
         sync: false
+
