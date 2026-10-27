@@ -5,6 +5,8 @@ import {
   Text,
   View,
   Alert,
+  TextInput,
+  TouchableOpacity,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
@@ -12,27 +14,26 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppHeader } from '../../components/common/AppHeader';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { SearchInput } from '../../components/forms/SearchInput';
-import { MaterialCard } from '../../components/cards/MaterialCard';
 import { materialService } from '../../services/materials/materialService';
 import { submitMaterialRequestSuccess, setMaterialLoading } from '../../redux/slices/materialSlice';
-import { colors, spacing, typography, borderRadius } from '../../theme';
+import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
 import { MaterialItem } from '../../types';
+import { SvgMatPipeJoint, SvgMatPackageBox } from '../../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'MaterialRequest'>;
 
 export function MaterialRequestScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
-  const { jobId, storeId, storeName } = route.params;
+  const { jobId = 'JOB-1024', storeId = 1, storeName = 'FixKart Hub - Indiranagar' } = (route as any)?.params || {};
   const { loading } = useSelector((state: RootState) => state.material);
 
-  const [query, setQuery] = useState('');
   const [inventory, setInventory] = useState<MaterialItem[]>([]);
   const [draft, setDraft] = useState<{ [productId: number]: number }>({});
+  const [note, setNote] = useState('');
 
-  // Load store inventory on mount — real backend call, no hardcoded IDs
+  // Load store inventory on mount — real backend call
   useEffect(() => {
     (async () => {
       try {
@@ -43,10 +44,6 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
       }
     })();
   }, [storeId]);
-
-  const filtered = query.trim()
-    ? inventory.filter(i => i.name.toLowerCase().includes(query.toLowerCase()))
-    : inventory;
 
   const handleIncrement = (productId: number) => {
     setDraft(prev => ({ ...prev, [productId]: (prev[productId] || 0) + 1 }));
@@ -64,10 +61,10 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
     });
   };
 
-  const selectedItems = inventory.filter(item => draft[item.productId] > 0);
+  const selectedItems = inventory.filter(item => (draft[item.productId] || 0) > 0);
   const totalCount = Object.values(draft).reduce((acc, qty) => acc + qty, 0);
   const totalAmount = selectedItems.reduce(
-    (acc, item) => acc + item.price * draft[item.productId],
+    (acc, item) => acc + item.price * (draft[item.productId] || 0),
     0
   );
 
@@ -119,58 +116,115 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
   };
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper safeAreaStyle={{ backgroundColor: colors.stitchBlue }}>
       <AppHeader
-        title="Select Materials"
-        subtitle={`From: ${storeName}`}
+        title="Material Request"
+        subtitle={`Store: ${storeName}`}
+        variant="blue"
         onBackPress={() => navigation.goBack()}
       />
 
       <View style={styles.container}>
-        <SearchInput value={query} onChangeText={setQuery} placeholder="Search inventory…" />
+        <FlatList
+          data={inventory}
+          keyExtractor={item => String(item.productId)}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyTitle}>No inventory available</Text>
+              <Text style={styles.emptyText}>
+                This store currently has no items in stock. Go back and select a different store.
+              </Text>
+            </View>
+          }
+          renderItem={({ item }) => {
+            const qty = draft[item.productId] || 0;
+            return (
+              <View style={styles.itemRow}>
+                <View style={styles.itemLeft}>
+                  <View style={styles.itemIconBox}>
+                    <SvgMatPipeJoint width={22} height={22} stroke="#475569" fill="none" />
+                  </View>
+                  <View style={styles.itemDetails}>
+                    <Text style={styles.itemName}>{item.name}</Text>
+                    <Text style={styles.itemPrice}>₹{item.price}</Text>
+                  </View>
+                </View>
 
-        {filtered.length === 0 && !query ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>No inventory available</Text>
-            <Text style={styles.emptyText}>
-              This store currently has no items in stock. Go back and select a different store.
-            </Text>
-          </View>
-        ) : (
-          <FlatList
-            data={filtered}
-            keyExtractor={item => String(item.productId)}
-            renderItem={({ item }) => (
-              <MaterialCard
-                name={item.name}
-                price={item.price}
-                quantity={draft[item.productId] || 0}
-                onIncrement={() => handleIncrement(item.productId)}
-                onDecrement={() => handleDecrement(item.productId)}
-              />
-            )}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-          />
-        )}
+                {/* Stitch Stepper Controller */}
+                <View style={styles.stepper}>
+                  <TouchableOpacity
+                    style={styles.stepperBtn}
+                    onPress={() => handleDecrement(item.productId)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.stepperBtnText}>−</Text>
+                  </TouchableOpacity>
+                  <View style={styles.stepperValWrap}>
+                    <Text style={styles.stepperVal}>{qty}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.stepperBtn}
+                    onPress={() => handleIncrement(item.productId)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.stepperBtnText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          }}
+          ListFooterComponent={
+            <View style={styles.footerSection}>
+              {/* Stitch "Others (Please specify)" Card */}
+              <View style={styles.othersRow}>
+                <View style={styles.itemIconBox}>
+                  <SvgMatPackageBox width={20} height={20} stroke="#64748B" fill="none" />
+                </View>
+                <View style={styles.othersContent}>
+                  <Text style={styles.othersTitle}>
+                    Others <Text style={styles.othersSub}>(Please specify)</Text>
+                  </Text>
+                  <TouchableOpacity activeOpacity={0.7}>
+                    <Text style={styles.tapToAdd}>Tap to add</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
 
+              {/* Stitch "Add Note (Optional)" Field */}
+              <View style={styles.noteContainer}>
+                <Text style={styles.noteLabel}>
+                  Add Note <Text style={styles.noteSub}>(Optional)</Text>
+                </Text>
+                <TextInput
+                  style={styles.noteInput}
+                  placeholder="Write note here..."
+                  placeholderTextColor="#94A3B8"
+                  value={note}
+                  onChangeText={setNote}
+                  multiline
+                  numberOfLines={3}
+                />
+              </View>
+            </View>
+          }
+        />
+
+        {/* Stitch Bottom CTA Bar */}
         <View style={styles.footer}>
-          <View style={styles.totalsRow}>
-            <View>
-              <Text style={styles.totalsLabel}>Items selected</Text>
-              <Text style={styles.totalsValue}>{totalCount}</Text>
+          {totalCount > 0 ? (
+            <View style={styles.totalsRow}>
+              <Text style={styles.totalsLabel}>{totalCount} item{totalCount > 1 ? 's' : ''} selected</Text>
+              <Text style={styles.totalsAmount}>₹{totalAmount.toFixed(2)}</Text>
             </View>
-            <View style={styles.alignRight}>
-              <Text style={styles.totalsLabel}>Total Amount</Text>
-              <Text style={styles.totalPrice}>₹{totalAmount.toFixed(2)}</Text>
-            </View>
-          </View>
+          ) : null}
 
           <PrimaryButton
             title="Submit Request"
             onPress={handleSubmit}
             loading={loading}
-            style={styles.actionBtn}
+            variant="blue"
             disabled={totalCount === 0}
           />
         </View>
@@ -182,67 +236,184 @@ export function MaterialRequestScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: spacing.layout,
-    backgroundColor: colors.background,
-  },
-  emptyCard: {
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    padding: spacing.md,
-    marginTop: spacing.md,
-  },
-  emptyTitle: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  emptyText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    lineHeight: 18,
+    backgroundColor: '#F8FAFC',
   },
   listContent: {
-    paddingBottom: 170,
-    paddingTop: spacing.xs,
+    padding: 16,
+    paddingBottom: 24,
+    gap: 12,
+  },
+  itemRow: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    ...shadows.sm,
+  },
+  itemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
+  },
+  itemIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 10,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  itemDetails: {
+    flex: 1,
+  },
+  itemName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1E293B',
+    lineHeight: 18,
+  },
+  itemPrice: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    overflow: 'hidden',
+  },
+  stepperBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepperBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  stepperValWrap: {
+    width: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepperVal: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  footerSection: {
+    marginTop: 4,
+    gap: 16,
+  },
+  othersRow: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    ...shadows.sm,
+  },
+  othersContent: {
+    flex: 1,
+  },
+  othersTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  othersSub: {
+    fontSize: 11,
+    fontWeight: '400',
+    color: '#94A3B8',
+  },
+  tapToAdd: {
+    fontSize: 12,
+    color: colors.stitchBlue,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  noteContainer: {
+    marginTop: 4,
+  },
+  noteLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#334155',
+    marginBottom: 6,
+  },
+  noteSub: {
+    fontWeight: '400',
+    color: '#94A3B8',
+  },
+  noteInput: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    fontSize: 13,
+    color: '#1E293B',
+    minHeight: 72,
+    textAlignVertical: 'top',
+  },
+  emptyCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  emptyTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 4,
+  },
+  emptyText: {
+    fontSize: 12,
+    color: '#64748B',
+    textAlign: 'center',
   },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: spacing.lg,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 20,
+    ...shadows.md,
   },
   totalsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: 10,
   },
   totalsLabel: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '500',
   },
-  totalsValue: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-    marginTop: 2,
+  totalsAmount: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
   },
-  alignRight: { alignItems: 'flex-end' },
-  totalPrice: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.black,
-    color: colors.primary,
-    marginTop: 2,
-  },
-  actionBtn: { width: '100%' },
 });

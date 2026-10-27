@@ -363,8 +363,8 @@ public class ServiceOrderService {
             return new CustomerConfirmationResponse(order.getId(), order.getStatus(), order.getCustomerConfirmedAt(), "Order already confirmed");
         }
 
-        if (order.getStatus() != OrderStatus.COMPLETED) {
-            throw conflict("Order must be COMPLETED before customer confirmation. Current status: " + order.getStatus());
+        if (order.getStatus() != OrderStatus.COMPLETED && order.getStatus() != OrderStatus.PAID) {
+            throw conflict("Order must be COMPLETED or PAID before customer confirmation. Current status: " + order.getStatus());
         }
 
         OrderStatus prev = order.getStatus();
@@ -394,8 +394,8 @@ public class ServiceOrderService {
             throw new AccessDeniedException("Only the owning customer may rate this order");
         }
 
-        if (order.getStatus() != OrderStatus.CUSTOMER_CONFIRMED && order.getStatus() != OrderStatus.COMPLETED) {
-            throw conflict("Order must be completed or confirmed before submitting rating. Current status: " + order.getStatus());
+        if (order.getStatus() != OrderStatus.CUSTOMER_CONFIRMED && order.getStatus() != OrderStatus.COMPLETED && order.getStatus() != OrderStatus.PAID) {
+            throw conflict("Order must be completed, paid, or confirmed before submitting rating. Current status: " + order.getStatus());
         }
 
         if (rating == null || rating < 1 || rating > 5) {

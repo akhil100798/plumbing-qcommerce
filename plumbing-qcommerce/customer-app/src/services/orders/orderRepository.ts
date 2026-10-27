@@ -48,7 +48,13 @@ export const OrderRepository = {
   },
 
   processPayment: async (data: PaymentRequestDTO): Promise<PaymentResponseDTO> => {
-    const response = await apiClient.post<PaymentResponseDTO>('/payments/process', data);
+    const payload = {
+      orderId: data.orderId,
+      amount: data.amount,
+      paymentMethodId: data.paymentMethodId || data.paymentMethod || 'pm_mock_upi',
+      currency: data.currency || 'INR',
+    };
+    const response = await apiClient.post<PaymentResponseDTO>('/payments/process', payload);
     return response.data;
   },
 

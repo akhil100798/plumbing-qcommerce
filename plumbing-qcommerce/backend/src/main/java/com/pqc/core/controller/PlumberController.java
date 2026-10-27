@@ -42,7 +42,8 @@ public class PlumberController {
     @GetMapping("/dashboard")
     public ResponseEntity<PlumberDashboardResponse> getDashboard() {
         User user = currentUser.require();
-        List<ServiceOrder> orders = serviceOrderRepository.findByPlumber_Id(user.getId());
+        List<ServiceOrder> orders = new ArrayList<>(serviceOrderRepository.findByPlumber_Id(user.getId()));
+        orders.sort((a, b) -> b.getId().compareTo(a.getId()));
 
         int completed = 0;
         int active = 0;
@@ -51,11 +52,11 @@ public class PlumberController {
         ServiceOrder upcomingOrder = null;
 
         for (ServiceOrder o : orders) {
-            if (o.getStatus() == OrderStatus.COMPLETED || o.getStatus() == OrderStatus.PAID) {
+            if (o.getStatus() == OrderStatus.COMPLETED || o.getStatus() == OrderStatus.PAID || o.getStatus() == OrderStatus.CUSTOMER_CONFIRMED) {
                 completed++;
             } else if (o.getStatus() == OrderStatus.CANCELLED) {
                 cancelled++;
-            } else if (o.getStatus() == OrderStatus.PENDING) {
+            } else if (o.getStatus() == OrderStatus.PENDING || o.getStatus() == OrderStatus.ACCEPTED) {
                 assigned++;
                 if (upcomingOrder == null) upcomingOrder = o;
             } else {

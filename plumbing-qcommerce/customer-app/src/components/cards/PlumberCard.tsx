@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
+import { SvgStatusStarFilled } from '../../assets/svg';
 
 interface PlumberCardProps {
   name: string;
@@ -31,7 +32,7 @@ export function PlumberCard({
         <Text style={styles.name}>{name}</Text>
         <Text style={styles.sub}>Verified Professional • {eta}</Text>
         <View style={styles.ratingRow}>
-          <Text style={styles.star}>⭐</Text>
+          <SvgStatusStarFilled width={14} height={14} fill="#F59E0B" stroke="#F59E0B" style={{ marginRight: 4 }} />
           <Text style={styles.ratingText}>
             {rating} <Text style={styles.jobs}>({jobsCount} jobs)</Text>
           </Text>

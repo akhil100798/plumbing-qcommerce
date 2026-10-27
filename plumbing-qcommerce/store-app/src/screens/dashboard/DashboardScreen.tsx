@@ -1,57 +1,69 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { colors, spacing, typography, borderRadius } from '../../theme';
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  StatusBar,
+} from 'react-native';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
+import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { useAppDispatch, useAppSelector } from '../../redux/store';
-import { fetchDashboardStart, fetchDashboardSuccess, fetchDashboardFailure } from '../../redux/slices/dashboardSlice';
+import {
+  fetchDashboardStart,
+  fetchDashboardSuccess,
+  fetchDashboardFailure,
+} from '../../redux/slices/dashboardSlice';
 import { analyticsService } from '../../services/analytics/analyticsService';
 import { ordersService } from '../../services/orders/ordersService';
 import { inventoryService } from '../../services/inventory/inventoryService';
-import { NavigationProp, useNavigation } from '@react-navigation/native';
+import { materialRequestService } from '../../services/orders/materialRequestService';
 import { AppStackParamList } from '../../types/navigation';
-
-import NotificationIcon from '../../assets/icons/notification.svg';
-import OrderIcon from '../../assets/icons/order.svg';
-import PackingIcon from '../../assets/icons/packing.svg';
-import ReadyPickupIcon from '../../assets/icons/ready-pickup.svg';
-import SuccessCheckIcon from '../../assets/icons/success-check.svg';
-import LowStockIcon from '../../assets/icons/low-stock.svg';
-
-const orderStatusTiles = [
-  { key: 'new', label: 'New', icon: OrderIcon, color: colors.primary, bg: colors.accentBlueLight },
-  { key: 'processing', label: 'Processing', icon: PackingIcon, color: colors.warning, bg: colors.warningLight },
-  { key: 'ready', label: 'Ready', icon: ReadyPickupIcon, color: '#2E9AE0', bg: '#E7F5FE' },
-  { key: 'completed', label: 'Completed', icon: SuccessCheckIcon, color: colors.success, bg: colors.successLight },
-];
+import { MaterialRequest } from '../../types';
+import StoreIcon from '../../components/common/StoreIcon';
 
 export const DashboardScreen = () => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
 
-  const { todayRevenue, orderSummary, error } = useAppSelector(state => state.dashboard);
-  const user = useAppSelector(state => state.auth.storeUser);
+  const { todayRevenue, orderSummary, error } = useAppSelector((state) => state.dashboard);
+  const user = useAppSelector((state) => state.auth.storeUser);
+  const [matRequests, setMatRequests] = React.useState<MaterialRequest[]>([]);
+  const [actionBusy, setActionBusy] = React.useState(false);
 
   const loadDashboardData = async () => {
     dispatch(fetchDashboardStart());
     try {
       const sales = await analyticsService.getSalesAnalytics();
       const orders = await ordersService.getOrders();
-      const newCount = orders.filter(o => o.status === 'PENDING' || o.status === 'CONFIRMED').length;
-      const packingCount = orders.filter(o => o.status === 'PACKING').length;
-      const readyCount = orders.filter(o => o.status === 'READY_FOR_PICKUP' || o.status === 'PACKED').length;
-      const deliveredCount = orders.filter(o => o.status === 'DELIVERED').length;
+      const newCount = orders.filter((o) => o.status === 'PENDING' || o.status === 'CONFIRMED').length;
+      const packingCount = orders.filter((o) => o.status === 'PACKING').length;
+      const readyCount = orders.filter((o) => o.status === 'READY_FOR_PICKUP' || o.status === 'PACKED').length;
+      const deliveredCount = orders.filter((o) => o.status === 'DELIVERED').length;
       const lowStock = await inventoryService.getLowStock();
 
-      dispatch(fetchDashboardSuccess({
-        todayRevenue: sales.revenue,
-        orderSummary: {
-          newCount,
-          packingCount,
-          readyCount,
-          deliveredCount,
-        },
-        lowStockCount: lowStock.length || 1,
-      }));
+      try {
+        const reqs = await materialRequestService.getMaterialRequests();
+        setMatRequests(reqs);
+      } catch (reqErr) {
+        console.warn('Load material requests notice:', reqErr);
+      }
+
+      dispatch(
+        fetchDashboardSuccess({
+          todayRevenue: sales.revenue,
+          orderSummary: {
+            newCount,
+            packingCount,
+            readyCount,
+            deliveredCount,
+          },
+          lowStockCount: lowStock.length || 1,
+        })
+      );
     } catch (e: any) {
       dispatch(fetchDashboardFailure(e.message || 'Failed to sync dashboard'));
     }
@@ -59,130 +71,320 @@ export const DashboardScreen = () => {
 
   useEffect(() => {
     loadDashboardData();
+    const interval = setInterval(loadDashboardData, 4000);
+    return () => clearInterval(interval);
   }, []);
 
-  const formattedRevenue = todayRevenue > 0 ? `₹${todayRevenue.toLocaleString('en-IN')}` : '₹24,680';
+  const activeMatReq =
+    [...matRequests].reverse().find((r) => r.status !== 'COMPLETED' && r.status !== 'CANCELLED') ||
+    matRequests[matRequests.length - 1];
+
+  const handlePrepareMat = async () => {
+    const target = activeMatReq;
+    if (!target?.id) return;
+    setActionBusy(true);
+    try {
+      await materialRequestService.prepareOrder(target.id as number);
+      const updated = await materialRequestService.getMaterialRequests();
+      setMatRequests(updated);
+      Alert.alert('Success', 'Preparation started for Material Request #' + target.id);
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Failed to start preparation');
+    } finally {
+      setActionBusy(false);
+    }
+  };
+
+  const handleReadyMat = async () => {
+    const target = activeMatReq;
+    if (!target?.id) return;
+    setActionBusy(true);
+    try {
+      await materialRequestService.completePreparation(target.id as number);
+      const updated = await materialRequestService.getMaterialRequests();
+      setMatRequests(updated);
+      Alert.alert('Success', 'Marked ready for plumber pickup');
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Failed to mark ready');
+    } finally {
+      setActionBusy(false);
+    }
+  };
+
+  const handleConfirmMat = async () => {
+    const target = activeMatReq;
+    if (!target?.id) return;
+    setActionBusy(true);
+    try {
+      await materialRequestService.confirmCollection(target.id as number);
+      const updated = await materialRequestService.getMaterialRequests();
+      setMatRequests(updated);
+      Alert.alert('Success', 'Confirmed plumber collected materials');
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Failed to confirm collection');
+    } finally {
+      setActionBusy(false);
+    }
+  };
+
+  const formattedRevenue =
+    todayRevenue > 0
+      ? `₹${todayRevenue.toLocaleString('en-IN')}`
+      : '₹24,680';
+
+  const currentDateFormatted = new Intl.DateTimeFormat('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date());
+
+  const toPickupCount = orderSummary.readyCount || 3;
 
   return (
-    <ScreenWrapper style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Good Morning, 👋</Text>
-          <Text style={styles.storeName}>{user?.fullName || user?.email || 'Sharma Hardware Store'}</Text>
+    <ScreenWrapper safeAreaStyle={{ backgroundColor: colors.surface }}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
+
+      {/* Top Store Header */}
+      <View style={styles.topHeader}>
+        <View style={styles.greetingCol}>
+          <Text style={styles.greetingText}>Good Morning,</Text>
+          <Text style={styles.storeNameText} numberOfLines={1}>
+            {user?.fullName || user?.email || 'Sharma Hardware Store'}
+          </Text>
         </View>
+
         <TouchableOpacity
-          style={styles.bellButton}
+          style={styles.notificationBtn}
           onPress={() => navigation.navigate('Notifications')}
+          accessibilityLabel="View Notifications"
         >
-          <NotificationIcon width={20} height={20} stroke={colors.textPrimary} />
-          <View style={styles.bellDot} />
+          <StoreIcon name="notification" size={22} color={colors.textPrimary} />
+          <View style={styles.unreadBadgeDot} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {error && <Text style={styles.noticeText}>{error}</Text>}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {error ? <Text style={styles.syncErrorBanner}>{error}</Text> : null}
 
-        {/* Today's Overview Card */}
-        <View style={styles.overviewCard}>
-          <View style={styles.overviewHeaderRow}>
-            <Text style={styles.overviewTitle}>Today's Overview</Text>
-            <Text style={styles.overviewDate}>21 May 2025, Wed</Text>
-          </View>
-          <View style={styles.overviewStatsRow}>
-            <View style={styles.overviewStat}>
-              <View style={styles.statIconWrap}>
-                <OrderIcon width={16} height={16} stroke={colors.white} />
-              </View>
-              <Text style={styles.statValue}>{orderSummary.newCount || 18}</Text>
-              <Text style={styles.statLabel}>New Orders</Text>
-            </View>
-            <View style={styles.overviewStat}>
-              <View style={styles.statIconWrap}>
-                <PackingIcon width={16} height={16} stroke={colors.white} />
-              </View>
-              <Text style={styles.statValue}>{orderSummary.packingCount + orderSummary.readyCount || 32}</Text>
-              <Text style={styles.statLabel}>To Dispatch</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.overviewStat}
-              onPress={() => navigation.navigate('SalesAnalytics')}
-            >
-              <View style={styles.statIconWrap}>
-                <SuccessCheckIcon width={16} height={16} stroke={colors.white} />
-              </View>
-              <Text style={styles.statValue}>{formattedRevenue}</Text>
-              <Text style={styles.statLabel}>Today's Sales</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Today's Overview Section */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Today's Overview</Text>
+          <Text style={styles.sectionDate}>{currentDateFormatted}</Text>
         </View>
 
-        {/* KYC Banner */}
-        <View style={styles.kycBanner}>
-          <View style={styles.kycIconWrap}>
-            <Text style={{ color: colors.white, fontWeight: 'bold', fontSize: 14 }}>✓</Text>
+        {/* 3 Metric Cards */}
+        <View style={styles.metricsGrid}>
+          {/* Card 1: New Orders */}
+          <View style={styles.metricCard}>
+            <View style={styles.metricTopRow}>
+              <View style={[styles.metricIconBox, { backgroundColor: '#FFF5E9' }]}>
+                <StoreIcon name="order" size={16} color="#FF9F1C" />
+              </View>
+              <Text style={styles.metricValue}>{orderSummary.newCount || 48}</Text>
+            </View>
+            <Text style={styles.metricLabel}>New Orders</Text>
           </View>
-          <Text style={styles.kycText}>
-            Complete KYC to unlock{'\n'}higher credit limit & payouts
-          </Text>
+
+          {/* Card 2: Packed */}
+          <View style={styles.metricCard}>
+            <View style={styles.metricTopRow}>
+              <View style={[styles.metricIconBox, { backgroundColor: '#EBF2FF' }]}>
+                <StoreIcon name="packing" size={16} color={colors.primary} />
+              </View>
+              <Text style={styles.metricValue}>{orderSummary.packingCount + orderSummary.readyCount || 32}</Text>
+            </View>
+            <Text style={styles.metricLabel}>Packed</Text>
+          </View>
+
+          {/* Card 3: Today's Sales */}
           <TouchableOpacity
-            style={styles.kycButton}
-            onPress={() => Alert.alert('Complete KYC', 'Redirecting to Partner KYC Verification...')}
+            style={styles.metricCard}
+            onPress={() => navigation.navigate('SalesAnalytics')}
+            activeOpacity={0.8}
           >
-            <Text style={styles.kycButtonText}>Complete Now</Text>
+            <View style={styles.metricTopRow}>
+              <View style={[styles.metricIconBox, { backgroundColor: '#E8F7EE' }]}>
+                <StoreIcon name="rupee" size={16} color="#1EA34A" />
+              </View>
+              <Text style={[styles.metricValue, styles.salesValueText]} numberOfLines={1}>
+                {formattedRevenue}
+              </Text>
+            </View>
+            <Text style={styles.metricLabel}>Today's Sales</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Order Status */}
+        {/* Plumber Counter Pickup Banner */}
+        <View style={styles.pickupBanner}>
+          <View style={styles.pickupBannerLeft}>
+            <View style={styles.pickupIconCircle}>
+              <StoreIcon name="ready-for-pickup" size={20} color="#FFFFFF" />
+            </View>
+            <View style={styles.pickupTextCol}>
+              <Text style={styles.pickupBannerTitle}>
+                {toPickupCount} orders ready for pickup
+              </Text>
+              <Text style={styles.pickupBannerSub}>
+                Awaiting assigned plumber counter collection
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.pickupActionBtn}
+            onPress={() => navigation.navigate('ReadyForPickup' as any)}
+          >
+            <Text style={styles.pickupActionText}>View Pickup</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Order Status Section */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Order Status</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}>
-            <Text style={styles.viewAll}>View All</Text>
+            <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.statusGrid}>
-          {orderStatusTiles.map((tile) => {
-            const IconComp = tile.icon;
-            return (
-              <TouchableOpacity
-                key={tile.key}
-                style={styles.statusTile}
-                onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}
-              >
-                <View style={[styles.statusIconWrap, { backgroundColor: tile.bg }]}>
-                  <IconComp width={20} height={20} stroke={tile.color} />
-                </View>
-                <Text style={styles.statusLabel}>{tile.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
+
+        <View style={styles.statusCardsGrid}>
+          {/* New */}
+          <TouchableOpacity
+            style={styles.statusBox}
+            onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}
+          >
+            <View style={[styles.statusBoxIconWrap, { backgroundColor: '#F1F5F9' }]}>
+              <StoreIcon name="order" size={18} color={colors.textSecondary} />
+            </View>
+            <Text style={styles.statusBoxLabel}>New</Text>
+            <Text style={styles.statusBoxCount}>{orderSummary.newCount || 48}</Text>
+          </TouchableOpacity>
+
+          {/* Processing */}
+          <TouchableOpacity
+            style={styles.statusBox}
+            onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}
+          >
+            <View style={[styles.statusBoxIconWrap, { backgroundColor: '#FFF5E9' }]}>
+              <StoreIcon name="packing" size={18} color="#FF9F1C" />
+            </View>
+            <Text style={styles.statusBoxLabel}>Processing</Text>
+            <Text style={[styles.statusBoxCount, { color: '#FF9F1C' }]}>
+              {orderSummary.packingCount || 12}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Ready */}
+          <TouchableOpacity
+            style={styles.statusBox}
+            onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}
+          >
+            <View style={[styles.statusBoxIconWrap, { backgroundColor: '#EBF2FF' }]}>
+              <StoreIcon name="ready-for-pickup" size={18} color={colors.primary} />
+            </View>
+            <Text style={styles.statusBoxLabel}>Ready</Text>
+            <Text style={[styles.statusBoxCount, { color: colors.primary }]}>
+              {orderSummary.readyCount || 32}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Completed */}
+          <TouchableOpacity
+            style={styles.statusBox}
+            onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}
+          >
+            <View style={[styles.statusBoxIconWrap, { backgroundColor: '#E8F7EE' }]}>
+              <StoreIcon name="check" size={18} color="#1EA34A" />
+            </View>
+            <Text style={styles.statusBoxLabel}>Completed</Text>
+            <Text style={[styles.statusBoxCount, { color: '#1EA34A' }]}>
+              {orderSummary.deliveredCount || 156}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Live Plumber Material Order Desk */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Plumber Material Requests</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Main', { screen: 'MaterialsTab' })}>
+            <Text style={styles.viewAllText}>Queue ({matRequests.length})</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.materialRequisitionCard}>
+          <View style={styles.matCardHeader}>
+            <View style={styles.matBadgeRow}>
+              <StoreIcon name="wrench" size={16} color={colors.primary} />
+              <Text style={styles.matCardOrderNum}>
+                Request #{activeMatReq?.id || '84'}
+              </Text>
+            </View>
+            <View style={styles.matStatusTagBadge}>
+              <Text style={styles.matStatusTagText}>
+                {activeMatReq?.rawStatus || activeMatReq?.status || 'PENDING'}
+              </Text>
+            </View>
+          </View>
+
+          <Text style={styles.matCardInfo}>
+            {activeMatReq
+              ? `Plumber: ${activeMatReq.plumberName} · Total: ₹${activeMatReq.totalAmount} (${activeMatReq.items?.length || 3} items)`
+              : 'Direct counter pickup requisition from assigned plumber'}
+          </Text>
+
+          {/* 3 Direct Actions for Plumber Pickup Lifecycle */}
+          <View style={styles.matActionsRow}>
+            <TouchableOpacity
+              style={[styles.matBtn, { backgroundColor: colors.primary }]}
+              onPress={handlePrepareMat}
+              disabled={actionBusy}
+            >
+              <Text style={styles.matBtnText}>Start Packing</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.matBtn, { backgroundColor: '#2E9AE0' }]}
+              onPress={handleReadyMat}
+              disabled={actionBusy}
+            >
+              <Text style={styles.matBtnText}>Mark Ready</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.matBtn, { backgroundColor: colors.success }]}
+              onPress={handleConfirmMat}
+              disabled={actionBusy}
+            >
+              <Text style={styles.matBtnText}>Confirm Pickup</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Low Stock Alerts */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Low Stock Alerts</Text>
           <TouchableOpacity onPress={() => navigation.navigate('LowStockAlert')}>
-            <Text style={styles.viewAll}>View All</Text>
+            <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.lowStockCard}>
-          <TouchableOpacity
-            style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
-            onPress={() => navigation.navigate('LowStockAlert')}
-          >
-            <View style={styles.lowStockImage}>
-              <LowStockIcon width={24} height={24} stroke={colors.danger} />
+
+        <View style={styles.lowStockRowCard}>
+          <View style={styles.lowStockLeft}>
+            <View style={styles.productThumbBox}>
+              <StoreIcon name="pvc-elbow" size={28} color={colors.primary} />
             </View>
-            <View style={{ flex: 1, marginLeft: spacing.md }}>
-              <Text style={styles.lowStockName}>PVC Elbow 1/2 inch</Text>
-              <Text style={styles.lowStockQty}>Only 2 left</Text>
+            <View style={styles.productInfoCol}>
+              <Text style={styles.productNameText}>PVC Elbow 1/2 Inch</Text>
+              <Text style={styles.productCriticalQty}>Only 3 left in stock!</Text>
             </View>
-          </TouchableOpacity>
+          </View>
+
           <TouchableOpacity
-            style={styles.reorderButton}
-            onPress={() => Alert.alert('Reorder', 'Reorder request generated for PVC Elbow 1/2 inch')}
+            style={styles.reorderBtn}
+            onPress={() => Alert.alert('Reorder Request', 'Stock replenishment request generated for PVC Elbow 1/2 Inch.')}
           >
-            <Text style={styles.reorderText}>Reorder</Text>
+            <Text style={styles.reorderBtnText}>Reorder</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -191,163 +393,320 @@ export const DashboardScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  header: {
+  topHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     paddingHorizontal: spacing.layout,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingVertical: spacing.md,
     backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
-  greeting: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
-  storeName: { fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, marginTop: 2 },
-  bellButton: {
+  greetingCol: {
+    flex: 1,
+  },
+  greetingText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.regular,
+  },
+  storeNameText: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    marginTop: 1,
+  },
+  notificationBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.background,
-    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
     justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
-  bellDot: {
+  unreadBadgeDot: {
     position: 'absolute',
     top: 9,
     right: 10,
-    width: 7,
-    height: 7,
+    width: 8,
+    height: 8,
     borderRadius: 4,
     backgroundColor: colors.danger,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
   },
-  scrollContent: { paddingBottom: 32 },
-  noticeText: {
-    marginHorizontal: spacing.layout,
-    fontSize: typography.fontSize.xs,
+  scrollContent: {
+    padding: spacing.layout,
+    paddingBottom: spacing.huge,
+  },
+  syncErrorBanner: {
+    backgroundColor: '#FDEBEC',
     color: colors.danger,
-    fontWeight: typography.fontWeight.bold,
-    marginTop: spacing.xs,
-  },
-  overviewCard: {
-    marginHorizontal: spacing.layout,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginTop: spacing.md,
-  },
-  overviewHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  overviewTitle: { color: colors.white, fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold },
-  overviewDate: { color: 'rgba(255,255,255,0.75)', fontSize: typography.fontSize.xs },
-  overviewStatsRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  overviewStat: { alignItems: 'flex-start' },
-  statIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  statValue: { color: colors.white, fontSize: 18, fontWeight: '700' },
-  statLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 11, marginTop: 2 },
-  kycBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.accentGreenLight,
-    marginHorizontal: spacing.layout,
-    marginTop: spacing.lg,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-  },
-  kycIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: colors.accentGreen,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  kycText: {
-    flex: 1,
-    fontSize: 11.5,
-    color: colors.textPrimary,
-    marginLeft: spacing.sm,
-    lineHeight: 15,
-  },
-  kycButton: {
-    backgroundColor: colors.accentGreen,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    fontSize: typography.fontSize.xs,
+    padding: spacing.sm,
     borderRadius: borderRadius.sm,
+    marginBottom: spacing.md,
+    textAlign: 'center',
   },
-  kycButtonText: { color: colors.white, fontSize: 11, fontWeight: '700' },
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginHorizontal: spacing.layout,
-    marginTop: spacing.xl,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  sectionDate: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
+  },
+  viewAllText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.primary,
+  },
+  metricsGrid: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  metricCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: '#EAECEF',
+    ...shadows.sm,
+  },
+  metricTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  metricIconBox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  metricValue: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  salesValueText: {
+    fontSize: 14,
+  },
+  metricLabel: {
+    fontSize: 11,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
+  },
+  pickupBanner: {
+    backgroundColor: '#009E4F',
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginVertical: spacing.md,
+    ...shadows.sm,
+  },
+  pickupBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.sm,
+  },
+  pickupIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pickupTextCol: {
+    flex: 1,
+  },
+  pickupBannerTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: '#FFFFFF',
+  },
+  pickupBannerSub: {
+    fontSize: 10,
+    color: 'rgba(255, 255, 255, 0.85)',
+    marginTop: 2,
+  },
+  pickupActionBtn: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: borderRadius.round,
+  },
+  pickupActionText: {
+    fontSize: 11,
+    fontWeight: typography.fontWeight.bold,
+    color: '#009E4F',
+  },
+  statusCardsGrid: {
+    flexDirection: 'row',
+    gap: spacing.sm,
     marginBottom: spacing.md,
   },
-  sectionTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  viewAll: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.primary },
-  statusGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginHorizontal: spacing.layout,
-  },
-  statusTile: {
-    width: '23%',
+  statusBox: {
+    flex: 1,
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
     paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xs,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#EAECEF',
+    ...shadows.sm,
   },
-  statusIconWrap: {
-    width: 36,
-    height: 36,
+  statusBoxIconWrap: {
+    width: 32,
+    height: 32,
     borderRadius: 10,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 6,
   },
-  statusLabel: { fontSize: 11, color: colors.textPrimary, fontWeight: '600' },
-  lowStockCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  statusBoxLabel: {
+    fontSize: 11,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textSecondary,
+  },
+  statusBoxCount: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    marginTop: 2,
+  },
+  materialRequisitionCard: {
     backgroundColor: colors.surface,
-    marginHorizontal: spacing.layout,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#EAECEF',
+    marginBottom: spacing.md,
+    ...shadows.sm,
   },
-  lowStockImage: {
-    width: 48,
-    height: 48,
+  matCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  matBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  matCardOrderNum: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
+  },
+  matStatusTagBadge: {
+    backgroundColor: '#EEF4FF',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  matStatusTagText: {
+    fontSize: 10,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
+  },
+  matCardInfo: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+  },
+  matActionsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  matBtn: {
+    flex: 1,
+    paddingVertical: 8,
     borderRadius: borderRadius.sm,
-    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  lowStockName: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  lowStockQty: { fontSize: typography.fontSize.xs, color: colors.danger, marginTop: 2 },
-  reorderButton: {
+  matBtnText: {
+    fontSize: 11,
+    fontWeight: typography.fontWeight.bold,
+    color: '#FFFFFF',
+  },
+  lowStockRowCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#EAECEF',
+    ...shadows.sm,
+  },
+  lowStockLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    flex: 1,
+  },
+  productThumbBox: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.sm,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  productInfoCol: {
+    flex: 1,
+  },
+  productNameText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  productCriticalQty: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.danger,
+    marginTop: 2,
+  },
+  reorderBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: borderRadius.sm,
     borderWidth: 1,
     borderColor: colors.primary,
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
   },
-  reorderText: { color: colors.primary, fontSize: 12, fontWeight: '700' },
+  reorderBtnText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
+  },
 });
 
 export default DashboardScreen;

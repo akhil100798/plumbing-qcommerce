@@ -1,3 +1,4 @@
+import { SvgStatusAlert, SvgPlumbHouseBuilding } from '../../assets/svg';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   FlatList,
@@ -19,7 +20,7 @@ import { Store } from '../../types';
 type Props = StackScreenProps<AppStackParamList, 'StoreSelection'>;
 
 export function StoreSelectionScreen({ route, navigation }: Props) {
-  const { jobId } = route.params;
+  const { jobId = 'JOB-1024' } = (route as any)?.params || {};
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +102,7 @@ export function StoreSelectionScreen({ route, navigation }: Props) {
         </View>
       ) : error ? (
         <View style={styles.center}>
-          <Text style={styles.errorIcon}>⚠️</Text>
+          <SvgStatusAlert width={36} height={36} color="#DC2626" />
           <Text style={styles.errorTitle}>Could Not Load Stores</Text>
           <Text style={styles.errorMessage}>{error}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={loadStores}>
@@ -110,7 +111,7 @@ export function StoreSelectionScreen({ route, navigation }: Props) {
         </View>
       ) : stores.length === 0 ? (
         <View style={styles.center}>
-          <Text style={styles.errorIcon}>🏪</Text>
+          <SvgPlumbHouseBuilding width={36} height={36} color="#64748B" />
           <Text style={styles.errorTitle}>No Stores Available</Text>
           <Text style={styles.errorMessage}>
             No stores are currently available for this job. Please try again later.

@@ -40,6 +40,9 @@ app:
     enabled: false
   demo-seed:
     enabled: false
+  photos:
+    provider: local
+    fail-if-missing-provider: false
 
 # Disable Zipkin/tracing in tests to avoid connection errors
 management:

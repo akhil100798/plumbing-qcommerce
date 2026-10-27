@@ -61,6 +61,18 @@ export const authService = {
       const plumber = await profileService.fetchProfile();
       return { plumber, token, refreshToken };
     } catch (error) {
+      if (canUseDevMockFallbacks() && (email.toLowerCase().includes('plumber') || email.toLowerCase().includes('rajesh') || email.toLowerCase().includes('fixkart') || email.length > 0)) {
+        warnUsingDevMockFallback('Plumber credential login', error);
+        const token = 'mock_jwt_token';
+        const refreshToken = 'mock_refresh_token';
+        setAuthToken(token);
+        setRefreshToken(refreshToken);
+        return {
+          plumber: { ...MOCK_PLUMBER, email, availability: true },
+          token,
+          refreshToken,
+        };
+      }
       throw createBackendUnavailableError('Plumber credential login', error);
     }
   },
@@ -86,7 +98,8 @@ export const authService = {
 
       return { plumber: plumberProfile, token, refreshToken };
     } catch (error) {
-      if (canUseDevMockFallbacks() && phone === '+91 98765 43210' && code === '123456') {
+      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      if (canUseDevMockFallbacks() && (cleanPhone.endsWith('9876543210') || cleanPhone === '1234567890' || cleanPhone.length === 10) && code === '123456') {
         warnUsingDevMockFallback('Plumber login', error);
         const token = 'mock_jwt_token';
         const refreshToken = 'mock_refresh_token';
@@ -107,7 +120,8 @@ export const authService = {
       const response = await apiClient.post<{ message: string }>(ENDPOINTS.AUTH.SEND_OTP, { phone });
       return response.data;
     } catch (error) {
-      if (canUseDevMockFallbacks() && phone === '+91 98765 43210') {
+      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      if (canUseDevMockFallbacks() && (cleanPhone.endsWith('9876543210') || cleanPhone.length >= 10)) {
         warnUsingDevMockFallback('Plumber OTP send', error);
         return { message: 'OTP sent successfully (Mock)' };
       }

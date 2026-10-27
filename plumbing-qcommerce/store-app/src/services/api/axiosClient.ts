@@ -1,9 +1,43 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { tokenStorage } from './tokenStorage';
 
-const EXPLICIT_BACKEND_URL = process.env.EXPO_PUBLIC_API_BASE_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
-const RAW_BACKEND_URL = EXPLICIT_BACKEND_URL || 'https://plumbing-qcommerce.onrender.com';
-const BACKEND_URL = RAW_BACKEND_URL.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+export function resolveApiBaseUrl(env?: Record<string, string | undefined>): string {
+  const explicit = env
+    ? (env.EXPO_PUBLIC_API_BASE_URL || env.EXPO_PUBLIC_BACKEND_URL)
+    : (process.env.EXPO_PUBLIC_API_BASE_URL || process.env.EXPO_PUBLIC_BACKEND_URL);
+
+  const envAppEnv = env ? env.EXPO_PUBLIC_APP_ENV : process.env.EXPO_PUBLIC_APP_ENV;
+  const envVercelEnv = env ? env.VERCEL_ENV : process.env.VERCEL_ENV;
+  const envNodeEnv = env ? env.NODE_ENV : process.env.NODE_ENV;
+
+  const isStagingOrPreview = envAppEnv === 'staging'
+    || envAppEnv === 'preview'
+    || envVercelEnv === 'preview';
+
+  if (explicit && explicit.trim()) {
+    const cleaned = explicit.trim().replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+    if (isStagingOrPreview && cleaned.includes('plumbing-qcommerce.onrender.com')) {
+      throw new Error(
+        'CRITICAL CONFIGURATION ERROR: Staging/preview build cannot target production backend URL (https://plumbing-qcommerce.onrender.com)!'
+      );
+    }
+    return cleaned;
+  }
+
+  if (isStagingOrPreview) {
+    throw new Error(
+      'CRITICAL CONFIGURATION ERROR: EXPO_PUBLIC_API_BASE_URL is required for staging/preview builds. Silent fallback to production backend is strictly prohibited!'
+    );
+  }
+
+  if (envNodeEnv === 'development' || envNodeEnv === 'test') {
+    return 'http://localhost:8085';
+  }
+
+  return 'https://plumbing-qcommerce.onrender.com';
+}
+
+const BACKEND_URL = resolveApiBaseUrl();
 
 export const apiClient = axios.create({
   baseURL: `${BACKEND_URL}/api/v1`,

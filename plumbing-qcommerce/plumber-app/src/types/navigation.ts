@@ -18,22 +18,24 @@ export type MainTabParamList = {
 export type AppStackParamList = {
   Auth: undefined;
   Main: NavigatorScreenParams<MainTabParamList> | undefined; // Contains Bottom Tabs + Drawer
-  IncomingJobRequest: { jobId: string; customerId: string; distance?: number };
-  ActiveJob: { jobId: string };
-  Navigation: { jobId: string; customerId: string; latitude?: number | null; longitude?: number | null; plumberLatitude?: number | null; plumberLongitude?: number | null; routeEta?: string | null; routeDistance?: string | null; turnInstruction?: string | null; turnDistance?: string | null; status?: string | null; address: string };
-  ReachedCustomer: { jobId: string };
-  StartWork: { jobId: string };
-  Diagnosis: { jobId: string };
-  BeforePhotos: { jobId: string };
-  StoreSelection: { jobId: string };
-  MaterialRequest: { jobId: string; storeId: number; storeName: string };
-  MaterialApprovalStatus: { jobId: string; productOrderId?: number };
-  MaterialTracking: { jobId: string; productOrderId: number };
-  AfterPhotos: { jobId: string };
-  CompleteService: { jobId: string };
+  IncomingJobRequest: { jobId?: string; customerId?: string; distance?: number } | undefined;
+  ActiveJob: { jobId?: string } | undefined;
+  Navigation: { jobId?: string; customerId?: string; latitude?: number | null; longitude?: number | null; plumberLatitude?: number | null; plumberLongitude?: number | null; routeEta?: string | null; routeDistance?: string | null; turnInstruction?: string | null; turnDistance?: string | null; status?: string | null; address?: string } | undefined;
+  ReachedCustomer: { jobId?: string } | undefined;
+  StartWork: { jobId?: string } | undefined;
+  Diagnosis: { jobId?: string } | undefined;
+  BeforePhotos: { jobId?: string } | undefined;
+  StoreSelection: { jobId?: string } | undefined;
+  MaterialRequest: { jobId?: string; storeId?: number; storeName?: string } | undefined;
+  MaterialApprovalStatus: { jobId?: string; productOrderId?: number } | undefined;
+  MaterialTracking: { jobId?: string; productOrderId?: number } | undefined;
+  AfterPhotos: { jobId?: string } | undefined;
+  CompleteService: { jobId?: string } | undefined;
+  Materials: { jobId?: string } | undefined;
   Wallet: undefined;
   Earnings: undefined;
   JobHistory: undefined;
   Profile: undefined;
-  Chat: { name: string; role: string };
+  Drawer: undefined;
+  Chat: { name?: string; role?: string } | undefined;
 };

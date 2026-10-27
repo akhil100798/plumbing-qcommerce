@@ -48,7 +48,9 @@ public class PaymentService {
             return failed("Payment amount does not match the order amount.");
         }
         if (order.getStatus() == OrderStatus.PAID) return failed("Order is already paid.");
-        if (order.getStatus() != OrderStatus.COMPLETED) return failed("Order must be in COMPLETED status to accept payment.");
+        if (order.getStatus() != OrderStatus.COMPLETED && order.getStatus() != OrderStatus.CUSTOMER_CONFIRMED) {
+            return failed("Order must be in COMPLETED or CUSTOMER_CONFIRMED status to accept payment.");
+        }
 
         PaymentOperation operation = operationService.getOrCreate(order.getId(), amount, currency);
         PaymentOperationService.CaptureClaim claim = operationService.claimCapture(operation);

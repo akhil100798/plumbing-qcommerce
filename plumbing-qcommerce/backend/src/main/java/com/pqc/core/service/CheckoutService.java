@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Comparator;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +37,9 @@ public class CheckoutService {
     private final OutboxEventRepository outboxRepository;
     private final ServiceOrderRepository serviceOrderRepository;
     private final DeliveryOtpService deliveryOtpService;
+    private final PaymentOperationRepository paymentOperationRepository;
+    private final PaymentGatewayAdapter paymentGatewayAdapter;
+    private final LaunchPolicyService launchPolicyService;
 
     /**
      * Reserve Stock - Phase 1 Inventory reservation logic
@@ -167,6 +171,26 @@ public class CheckoutService {
             return;
         }
 
+        // Support plumber-assisted material orders linked to a service order
+        if (linked != null) {
+            User caller = currentUser.require();
+            if (caller.getRole() != Role.CUSTOMER && caller.getRole() != Role.ADMIN) {
+                throw new AccessDeniedException("Only the customer or admin may authorize material payment.");
+            }
+            if (caller.getRole() == Role.CUSTOMER && linked.getCustomer() != null
+                    && !linked.getCustomer().getId().equals(caller.getId())) {
+                throw new AccessDeniedException("Customer does not own this service order.");
+            }
+            if (caller.getRole() == Role.ADMIN) {
+                log.warn("[SECURITY-AUDIT] Admin user ID {} initiated material payment confirmation for service order #{} on behalf of customer #{}.",
+                        caller.getId(), linked.getId(), linked.getCustomer() != null ? linked.getCustomer().getId() : "null");
+            }
+            log.info("Processing customer payment authorization for linked material order #{} (status: {})",
+                    orderId, order.getStatus());
+            recordMaterialPaymentOperation(linked.getId(), order);
+            return;
+        }
+
         if (order.getStatus() != ProductOrderStatus.PENDING) {
             throw new IllegalStateException("Order #" + orderId + " is not pending payment.");
         }
@@ -247,6 +271,7 @@ public class CheckoutService {
         if (order.getStatus() == ProductOrderStatus.CANCELLED) {
             return;
         }
+
 
         if (order.getStatus() != ProductOrderStatus.PENDING) {
             throw new IllegalStateException("Cannot release stock for non-pending order: " + orderId);
@@ -582,5 +607,79 @@ public class CheckoutService {
 
         log.info("Order #{} handed over to rider. Status updated to OUT_FOR_DELIVERY.", id);
         return mapToResponse(saved);
+    }
+
+    private void recordMaterialPaymentOperation(Long serviceOrderId, ProductOrder materialOrder) {
+        // Prevent payment capture in invalid product-order states
+        if (materialOrder.getStatus() == ProductOrderStatus.CANCELLED
+                || materialOrder.getStatus() == ProductOrderStatus.REJECTED
+                || materialOrder.getStatus() == ProductOrderStatus.FAILED) {
+            throw new IllegalStateException("Cannot capture payment for material order #" + materialOrder.getId()
+                    + " in terminal/invalid status: " + materialOrder.getStatus());
+        }
+
+        // Verify amount is non-null and strictly positive
+        BigDecimal amount = materialOrder.getTotalAmount();
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Material order #" + materialOrder.getId()
+                    + " has invalid payable amount: " + amount);
+        }
+
+        String purpose = "MATERIAL_ORDER_CAPTURE_V1";
+        Optional<PaymentOperation> existing = paymentOperationRepository.findByServiceOrderIdAndPurpose(serviceOrderId, purpose);
+        if (existing.isPresent()) {
+            PaymentOperation op = existing.get();
+            if (op.getStatus() == PaymentOperationStatus.CAPTURED) {
+                log.info("Material payment operation already captured for service order #{}: tx {}",
+                        serviceOrderId, op.getGatewayTransactionId());
+                return;
+            }
+            if (op.getStatus() == PaymentOperationStatus.REQUIRES_RECONCILIATION) {
+                throw new IllegalStateException("Material payment requires reconciliation before retry.");
+            }
+        }
+
+        String idempotencyKey = "service-order:" + serviceOrderId + ":material-order:" + materialOrder.getId() + ":capture:v1";
+        String currency = launchPolicyService != null ? launchPolicyService.authoritativeCurrency() : "INR";
+
+        // Route payment capture through the supported mock payment gateway abstraction
+        final String transactionId;
+        try {
+            transactionId = paymentGatewayAdapter.capturePayment(
+                    materialOrder.getId(),
+                    amount,
+                    "mock_customer_instrument",
+                    currency,
+                    idempotencyKey
+            );
+        } catch (Exception gatewayFailure) {
+            PaymentOperation failedOp = existing.orElseGet(() -> PaymentOperation.builder()
+                    .serviceOrderId(serviceOrderId)
+                    .purpose(purpose)
+                    .idempotencyKey(idempotencyKey)
+                    .amount(amount)
+                    .currency(currency)
+                    .build());
+            failedOp.setStatus(PaymentOperationStatus.FAILED);
+            failedOp.setFailureReason(gatewayFailure.getMessage() != null ? gatewayFailure.getMessage() : "Gateway capture rejected");
+            paymentOperationRepository.save(failedOp);
+            log.warn("Payment gateway rejected material capture for order #{}: {}", materialOrder.getId(), gatewayFailure.getMessage());
+            throw new IllegalStateException("Payment gateway rejected material payment capture.", gatewayFailure);
+        }
+
+        PaymentOperation operation = existing.orElseGet(() -> PaymentOperation.builder()
+                .serviceOrderId(serviceOrderId)
+                .purpose(purpose)
+                .idempotencyKey(idempotencyKey)
+                .amount(amount)
+                .currency(currency)
+                .build());
+
+        operation.setStatus(PaymentOperationStatus.CAPTURED);
+        operation.setGatewayTransactionId(transactionId);
+        operation.setFailureReason(null);
+        paymentOperationRepository.save(operation);
+        log.info("Recorded customer payment capture via gateway for material order #{} linked to service order #{}: amount {} {}, txId {}",
+                materialOrder.getId(), serviceOrderId, currency, amount, transactionId);
     }
 }

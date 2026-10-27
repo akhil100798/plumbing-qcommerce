@@ -12,6 +12,7 @@ import {
 
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
 import { animation } from '../../theme/animation';
+import { SvgStatusCheckCircle } from '../../assets/svg';
 
 interface PrimaryButtonProps {
   title: string;
@@ -23,6 +24,7 @@ interface PrimaryButtonProps {
   iconRight?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
+  testID?: string;
 }
 
 export function PrimaryButton({
@@ -35,6 +37,7 @@ export function PrimaryButton({
   iconRight,
   style,
   accessibilityLabel,
+  testID,
 }: PrimaryButtonProps) {
   const scale = useRef(new Animated.Value(1)).current;
   const isInteractionDisabled = disabled || loading || success;
@@ -60,6 +63,7 @@ export function PrimaryButton({
   return (
     <Animated.View style={{ transform: [{ scale }], width: style ? undefined : 'auto' }}>
       <Pressable
+        testID={testID}
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -78,7 +82,7 @@ export function PrimaryButton({
           <ActivityIndicator color={colors.surface} size="small" />
         ) : success ? (
           <View style={styles.contentRow}>
-            <Text style={styles.text}>✓ Success</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}><SvgStatusCheckCircle width={18} height={18} stroke={colors.surface} style={{ marginRight: 6 }} /><Text style={styles.text}>Success</Text></View>
           </View>
         ) : (
           <View style={styles.contentRow}>

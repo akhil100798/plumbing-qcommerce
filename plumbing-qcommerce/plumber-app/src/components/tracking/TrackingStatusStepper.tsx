@@ -1,3 +1,4 @@
+import { SvgActionCheck } from '../../assets/svg';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, spacing, typography } from '../../theme';
@@ -31,7 +32,7 @@ export function TrackingStatusStepper({
                 ]}
               >
                 {isCompleted ? (
-                  <Text style={styles.checkText}>✓</Text>
+                  <SvgActionCheck width={12} height={12} color="#FFFFFF" stroke="#FFFFFF" />
                 ) : (
                   <View style={[styles.innerDot, isActive && styles.activeInnerDot]} />
                 )}

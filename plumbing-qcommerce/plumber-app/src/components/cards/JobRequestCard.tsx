@@ -1,3 +1,4 @@
+import { SvgStatusLocationPin, SvgStatusClock } from '../../assets/svg';
 import React from 'react';
 import {
   StyleSheet,
@@ -31,7 +32,7 @@ export function JobRequestCard({
         <StatusChip label={category} type="primary" />
         {timeRemaining !== undefined && (
           <View style={styles.timerBadge}>
-            <Text style={styles.timerText}>⏳ {timeRemaining}s remaining</Text>
+            <Text style={styles.timerText}>{timeRemaining}s remaining</Text>
           </View>
         )}
       </View>
@@ -39,14 +40,14 @@ export function JobRequestCard({
       <Text style={styles.title}>{issueDescription}</Text>
       
       <View style={styles.metaRow}>
-        <Text style={styles.metaIcon}>📍</Text>
+        <SvgStatusLocationPin width={16} height={16} color="#64748B" />
         <Text style={styles.metaText} numberOfLines={2}>
           {address}
         </Text>
       </View>
       
       <View style={styles.metaRow}>
-        <Text style={styles.metaIcon}>🛣️</Text>
+        <SvgStatusClock width={16} height={16} color="#64748B" />
         <Text style={styles.metaText}>
           {distance.toFixed(1)} km away
         </Text>

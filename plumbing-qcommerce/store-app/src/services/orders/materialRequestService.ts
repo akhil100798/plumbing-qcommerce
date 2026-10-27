@@ -75,8 +75,20 @@ export const materialRequestService = {
 
   prepareOrder: async (requestId: number): Promise<MaterialRequest> => {
     try {
-      await apiClient.post(ENDPOINTS.materialRequests.approve(requestId));
-      await apiClient.post(ENDPOINTS.materialRequests.reserve(requestId));
+      try {
+        await apiClient.post(ENDPOINTS.materialRequests.approve(requestId));
+      } catch (err: any) {
+        if (err?.response?.status !== 409) {
+          throw err;
+        }
+      }
+      try {
+        await apiClient.post(ENDPOINTS.materialRequests.reserve(requestId));
+      } catch (err: any) {
+        if (err?.response?.status !== 409) {
+          throw err;
+        }
+      }
       const response = await apiClient.post(ENDPOINTS.materialRequests.prepare(requestId));
       const mapped = mapRequest(response.data);
       updateLocalRequest(mapped);

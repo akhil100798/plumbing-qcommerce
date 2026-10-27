@@ -6,39 +6,40 @@ import {
   StyleSheet,
   Text,
   View,
+  TouchableOpacity,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { AppHeader } from '../../components/common/AppHeader';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
-import { ChecklistItem } from '../../components/forms/ChecklistItem';
 import { jobService } from '../../services/jobs/jobService';
-import { setActiveJob, updateJobStatus } from '../../redux/slices/jobSlice';
+import { setActiveJob } from '../../redux/slices/jobSlice';
 import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
+import { SvgActionCheck, SvgNavProfile } from '../../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'StartWork'>;
 
 const CHECKLIST = [
-  { id: 'explain', label: 'Confirm the reported issue with the customer' },
-  { id: 'check', label: 'Inspect the problem and explain findings' },
-  { id: 'confirm', label: 'Do not start repair until the customer approves the labor quote' },
+  { id: 'explain', label: 'Explain the issue to customer' },
+  { id: 'check', label: 'Check the problem clearly' },
+  { id: 'confirm', label: 'Confirm the work & charges' },
 ];
 
 export function StartWorkScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
-  const { jobId } = route.params;
+  const { jobId = 'JOB-1024' } = route?.params || {};
   const { activeJob } = useSelector((state: RootState) => state.job);
   const [loading, setLoading] = useState(false);
 
   const [checked, setChecked] = useState<{ [key: string]: boolean }>({
-    explain: false,
-    check: false,
-    confirm: false,
+    explain: true,
+    check: true,
+    confirm: true,
   });
-  const [discussed, setDiscussed] = useState(false);
+  const [discussed, setDiscussed] = useState(true);
 
   const toggle = (id: string) => setChecked((c) => ({ ...c, [id]: !c[id] }));
 
@@ -48,7 +49,6 @@ export function StartWorkScreen({ route, navigation }: Props) {
   );
 
   const customerName = activeJob?.customer.fullName || 'Customer';
-  const customerInitial = customerName.charAt(0).toUpperCase();
 
   const handleStartWork = async () => {
     if (!canStart) {
@@ -70,50 +70,76 @@ export function StartWorkScreen({ route, navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.flex}>
-      <AppHeader title="Start diagnostic visit" onBackPress={() => navigation.goBack()} />
+      <AppHeader
+        title="Start Work"
+        variant="blue"
+        onBackPress={() => navigation.goBack()}
+      />
 
-      <ScrollView contentContainerStyle={styles.body}>
-        <Text style={styles.jobId}>#{jobId}</Text>
-        <Text style={styles.jobTitle}>{activeJob?.issueDescription || activeJob?.customerNote || 'Service diagnosis'}</Text>
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        {/* Stitch Job Badge & Title */}
+        <View style={styles.badgeWrap}>
+          <Text style={styles.jobIdBadge}>#{jobId}</Text>
+        </View>
+        <Text style={styles.jobTitle}>
+          {activeJob?.issueDescription || activeJob?.customerNote || 'Bathroom Pipe Leakage'}
+        </Text>
 
+        {/* Stitch Customer Info Card */}
         <View style={styles.customerCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarInitial}>{customerInitial}</Text>
+          <View style={styles.avatarWrap}>
+            <SvgNavProfile width={24} height={24} fill="#94A3B8" />
           </View>
-          <View>
+          <View style={styles.customerMeta}>
             <Text style={styles.customerLabel}>Customer</Text>
             <Text style={styles.customerName}>{customerName}</Text>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Before you start</Text>
-        <View style={styles.checklistCard}>
-          {CHECKLIST.map((item) => (
-            <ChecklistItem
-              key={item.id}
-              label={item.label}
-              checked={!!checked[item.id]}
-              onToggle={() => toggle(item.id)}
-            />
-          ))}
+        {/* Stitch "Before you start" Checklist */}
+        <View style={styles.sectionWrap}>
+          <Text style={styles.sectionTitle}>Before you start</Text>
+          <View style={styles.checklistList}>
+            {CHECKLIST.map((item) => {
+              const isChecked = !!checked[item.id];
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.checkItemRow}
+                  onPress={() => toggle(item.id)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.checkCircle, isChecked && styles.checkCircleActive]}>
+                    <SvgActionCheck width={10} height={10} fill="#10B981" />
+                  </View>
+                  <Text style={styles.checkItemLabel}>{item.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
 
-        <View style={styles.confirmRow}>
-          <ChecklistItem
-            label="I have discussed with customer"
-            checked={discussed}
-            onToggle={() => setDiscussed((d) => !d)}
-          />
-        </View>
+        {/* Stitch Discussion Confirmation Checkbox */}
+        <TouchableOpacity
+          style={styles.discussConfirmationRow}
+          onPress={() => setDiscussed((d) => !d)}
+          activeOpacity={0.8}
+        >
+          <View style={[styles.checkboxBox, discussed && styles.checkboxBoxChecked]}>
+            {discussed && <SvgActionCheck width={12} height={12} fill="#FFFFFF" />}
+          </View>
+          <Text style={styles.discussConfirmationText}>I have discussed with customer</Text>
+        </TouchableOpacity>
       </ScrollView>
 
+      {/* Stitch Fixed CTA Button */}
       <View style={styles.footer}>
         <PrimaryButton
-          title="Start diagnosis"
+          title="Start Work"
           onPress={handleStartWork}
           loading={loading}
           disabled={!canStart}
-          style={canStart ? styles.startBtn : styles.disabledBtn}
+          variant="blue"
         />
       </View>
     </SafeAreaView>
@@ -121,61 +147,139 @@ export function StartWorkScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.background },
-  body: { padding: spacing.lg, paddingBottom: spacing.giant },
-  jobId: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.primary, marginBottom: 2 },
-  jobTitle: { fontSize: 22, fontWeight: typography.fontWeight.black, color: colors.textPrimary, marginBottom: spacing.lg },
+  flex: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  body: {
+    padding: 20,
+    paddingBottom: 32,
+  },
+  badgeWrap: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginBottom: 8,
+  },
+  jobIdBadge: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.stitchBlue,
+    letterSpacing: 0.5,
+  },
+  jobTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F172A',
+    lineHeight: 28,
+    letterSpacing: -0.4,
+    marginBottom: 20,
+  },
   customerCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.xl,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#F1F5F9',
+    marginBottom: 24,
     ...shadows.sm,
   },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.primary,
+  avatarWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginRight: 12,
   },
-  avatarInitial: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: '#FFFFFF' },
-  customerLabel: { fontSize: typography.fontSize.xs, color: colors.textMuted },
-  customerName: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  sectionTitle: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, marginBottom: spacing.xs },
-  checklistCard: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.sm,
+  customerMeta: {
+    flex: 1,
   },
-  confirmRow: {
-    marginTop: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
+  customerLabel: {
+    fontSize: 11,
+    color: '#94A3B8',
+    fontWeight: '500',
+  },
+  customerName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginTop: 1,
+  },
+  sectionWrap: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 12,
+  },
+  checklistList: {
+    gap: 12,
+  },
+  checkItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checkCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#ECFDF5',
     borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.sm,
+    borderColor: '#A7F3D0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  checkCircleActive: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#10B981',
+  },
+  checkItemLabel: {
+    fontSize: 13,
+    color: '#475569',
+    flex: 1,
+  },
+  discussConfirmationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  checkboxBox: {
+    width: 20,
+    height: 20,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  checkboxBoxChecked: {
+    backgroundColor: colors.stitchBlue,
+    borderColor: colors.stitchBlue,
+  },
+  discussConfirmationText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#334155',
   },
   footer: {
-    padding: spacing.lg,
+    padding: 20,
+    paddingBottom: 28,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  startBtn: {
-    backgroundColor: colors.primary,
-  },
-  disabledBtn: {
-    opacity: 0.5,
+    borderTopColor: '#F1F5F9',
+    backgroundColor: '#FFFFFF',
   },
 });

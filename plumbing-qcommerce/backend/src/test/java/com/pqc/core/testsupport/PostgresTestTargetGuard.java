@@ -62,14 +62,21 @@ public final class PostgresTestTargetGuard {
                 || uri.getRawPath().substring(1).contains("%")) {
             throw new IllegalStateException("PHASE1_TEST_POSTGRES_URL must contain explicit host, port, and database without embedded credentials");
         }
+        String host = uri.getHost().toLowerCase(java.util.Locale.ROOT);
+        if (host.endsWith("render.com") || host.endsWith("supabase.co") || host.contains("amazonaws.com")) {
+            throw new IllegalStateException("PostgreSQL tests may not target cloud-hosted environments (*.render.com, *.supabase.co, *.amazonaws.com)");
+        }
         if (uri.getRawFragment() != null || hasUnsafeQueryParameter(uri.getRawQuery())) {
             throw new IllegalStateException("PHASE1_TEST_POSTGRES_URL contains an unsafe connection override");
         }
         String database = uri.getRawPath().substring(1);
-        if (!database.matches("[A-Za-z0-9_]+") || "plumbing_commerce".equalsIgnoreCase(database)) {
-            throw new IllegalStateException("PostgreSQL tests may not target plumbing_commerce");
+        if (!database.matches("[A-Za-z0-9_]+")
+                || "plumbing_commerce".equalsIgnoreCase(database)
+                || "fixkart_postgres_new".equalsIgnoreCase(database)
+                || database.toLowerCase().contains("prod")) {
+            throw new IllegalStateException("PostgreSQL tests may not target production databases (plumbing_commerce, fixkart_postgres_new, or *prod*)");
         }
-        return new Target(value, uri.getHost().toLowerCase(java.util.Locale.ROOT), uri.getPort(), database);
+        return new Target(value, host, uri.getPort(), database);
     }
 
     private static void requireOptionalMatch(String name, String expected, String actual) {

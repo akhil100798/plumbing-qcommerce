@@ -98,6 +98,24 @@ app:
     staging-admin-enabled: ${APP_SEED_STAGING_ADMIN_ENABLED:false}
     fail-if-prod-demo-enabled: ${APP_SEED_FAIL_IF_PROD_DEMO_ENABLED:true}
     demo-password: ${APP_SEED_DEMO_PASSWORD:password}
+  payment:
+    provider: ${APP_PAYMENT_PROVIDER:mock}
+    paid-transactions-enabled: ${APP_PAYMENT_PAID_TRANSACTIONS_ENABLED:false}
+    fail-if-mock-in-prod: ${APP_PAYMENT_FAIL_IF_MOCK_IN_PROD:true}
+  photos:
+    provider: ${APP_PHOTOS_PROVIDER:local}
+    fail-if-missing-provider: ${APP_PHOTOS_FAIL_IF_MISSING_PROVIDER:false}
+    storage-dir: ${APP_PHOTOS_STORAGE_DIR:uploads/service-order-photos}
+    r2:
+      account-id: ${R2_ACCOUNT_ID:}
+      access-key-id: ${R2_ACCESS_KEY_ID:}
+      secret-access-key: ${R2_SECRET_ACCESS_KEY:}
+      bucket: ${R2_BUCKET_NAME:}
+      endpoint: ${R2_ENDPOINT:}
+      region: ${R2_REGION:auto}
 
 features:
   delivery-enabled: ${FEATURE_DELIVERY_ENABLED:false}
+
+phase2-diagnosis-quotes:
+  enabled: ${PHASE2_DIAGNOSIS_QUOTES_ENABLED:true}

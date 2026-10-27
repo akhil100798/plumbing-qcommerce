@@ -2,10 +2,14 @@ package com.pqc.core.config;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
 
 import javax.sql.DataSource;
 import java.net.URI;
@@ -13,11 +17,18 @@ import java.net.URI;
 /**
  * Production & Staging DataSource configuration for PostgreSQL.
  * Parses cloud provider URLs (such as Render postgresql://user:pass@host/db)
- * into a clean HikariDataSource bean.
+ * into a clean HikariDataSource bean and explicitly binds spring.datasource.hikari.*
+ * properties (maximum-pool-size, minimum-idle, timeouts, keepalive, leak detection).
  */
 @Configuration
 @Profile("!test")
 public class DataSourceConfig {
+
+    private final Environment environment;
+
+    public DataSourceConfig(Environment environment) {
+        this.environment = environment;
+    }
 
     @Value("${DATABASE_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/plumbing_commerce}}")
     private String rawUrl;
@@ -30,7 +41,8 @@ public class DataSourceConfig {
 
     @Bean
     @Primary
-    public DataSource dataSource() {
+    @ConfigurationProperties(prefix = "spring.datasource.hikari")
+    public HikariDataSource dataSource() {
         String url = rawUrl;
         String username = rawUsername;
         String password = rawPassword;
@@ -65,7 +77,13 @@ public class DataSourceConfig {
             }
         }
 
+        DatabaseIsolationRuntimeGuard.validateJdbcUrl(url, environment);
+
         HikariDataSource ds = new HikariDataSource();
+        if (environment != null) {
+            Binder.get(environment)
+                    .bind("spring.datasource.hikari", Bindable.ofInstance(ds));
+        }
         ds.setJdbcUrl(url);
         ds.setUsername(username);
         ds.setPassword(password);

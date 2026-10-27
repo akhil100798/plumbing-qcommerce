@@ -255,12 +255,12 @@ public class PlumberMaterialService {
 
     @Transactional(readOnly = true)
     public MaterialRequestDetailResponse plumberRequestDetails(Long id) {
-        return toDetail(plumberRequestEntity(id));
+        return toDetail(plumberRequestEntityReadOnly(id));
     }
 
     @Transactional(readOnly = true)
     public MaterialRequestDetailResponse storeRequestDetails(Long id) {
-        return toDetail(storeRequestEntity(id));
+        return toDetail(storeRequestEntityReadOnly(id));
     }
 
     @Transactional(readOnly = true)
@@ -725,6 +725,28 @@ public class PlumberMaterialService {
 
     private ProductOrder storeRequestEntity(Long id) {
         ProductOrder request = material(id);
+        User manager = role(Role.STORE_MANAGER);
+        if (!Objects.equals(request.getStore().getManager().getId(), manager.getId()))
+            throw new AccessDeniedException("Material request belongs to another store");
+        return request;
+    }
+
+    private ProductOrder materialReadOnly(Long id) {
+        return requests.findById(id)
+                .filter(r -> r.getServiceOrder() != null)
+                .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Material request not found"));
+    }
+
+    private ProductOrder plumberRequestEntityReadOnly(Long id) {
+        ProductOrder request = materialReadOnly(id);
+        User plumber = role(Role.PLUMBER);
+        if (request.getRequestedByPlumber() == null || !Objects.equals(request.getRequestedByPlumber().getId(), plumber.getId()))
+            throw new AccessDeniedException("Material request belongs to another plumber");
+        return request;
+    }
+
+    private ProductOrder storeRequestEntityReadOnly(Long id) {
+        ProductOrder request = materialReadOnly(id);
         User manager = role(Role.STORE_MANAGER);
         if (!Objects.equals(request.getStore().getManager().getId(), manager.getId()))
             throw new AccessDeniedException("Material request belongs to another store");

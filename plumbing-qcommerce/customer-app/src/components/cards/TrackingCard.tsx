@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
+import { SvgActionsCall, SvgActionsChat } from '../../assets/svg';
 
 interface TrackingCardProps {
   eta: string;
@@ -38,10 +39,10 @@ export function TrackingCard({
 
       <View style={styles.right}>
         <TouchableOpacity style={styles.actionBtn} onPress={onCall}>
-          <Text style={styles.actionEmoji}>📞</Text>
+          <SvgActionsCall width={18} height={18} stroke={colors.primary} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionBtn} onPress={onChat}>
-          <Text style={styles.actionEmoji}>💬</Text>
+          <SvgActionsChat width={18} height={18} stroke={colors.primary} />
         </TouchableOpacity>
       </View>
     </View>

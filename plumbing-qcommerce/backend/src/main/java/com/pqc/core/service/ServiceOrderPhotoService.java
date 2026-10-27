@@ -5,10 +5,10 @@ import com.pqc.core.entity.*;
 import com.pqc.core.repository.ServiceOrderPhotoRepository;
 import com.pqc.core.repository.ServiceOrderRepository;
 import com.pqc.core.security.CurrentUser;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -17,14 +17,12 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
+@Slf4j
 public class ServiceOrderPhotoService {
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
     private static final Set<String> ALLOWED_TYPES = Set.of("image/jpeg", "image/png", "image/webp");
@@ -32,8 +30,29 @@ public class ServiceOrderPhotoService {
     private final ServiceOrderRepository orders;
     private final ServiceOrderPhotoRepository photos;
     private final CurrentUser currentUser;
+    private final ObjectStorageService storageService;
+
     @Value("${app.photos.storage-dir:uploads/service-order-photos}")
     private String storageDirectory;
+
+    @Autowired
+    public ServiceOrderPhotoService(
+            ServiceOrderRepository orders,
+            ServiceOrderPhotoRepository photos,
+            CurrentUser currentUser,
+            @Autowired(required = false) ObjectStorageService storageService) {
+        this.orders = orders;
+        this.photos = photos;
+        this.currentUser = currentUser;
+        this.storageService = storageService;
+    }
+
+    private ObjectStorageService effectiveStorage() {
+        if (storageService != null && (storageDirectory == null || storageDirectory.equals("uploads/service-order-photos"))) {
+            return storageService;
+        }
+        return new LocalObjectStorageService(storageDirectory != null ? storageDirectory : "uploads/service-order-photos");
+    }
 
     @Transactional
     public ServiceOrderPhotoResponse upload(Long orderId, ServiceOrderPhotoPhase phase, MultipartFile file) {
@@ -41,10 +60,8 @@ public class ServiceOrderPhotoService {
         validateUpload(order, phase, file);
         String extension = switch (file.getContentType()) { case "image/jpeg" -> ".jpg"; case "image/png" -> ".png"; default -> ".webp"; };
         String storageKey = UUID.randomUUID() + extension;
-        Path target = storagePath().resolve(storageKey).normalize();
         try {
-            Files.createDirectories(target.getParent());
-            file.transferTo(target);
+            effectiveStorage().store(storageKey, file);
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to store photo", e);
         }
@@ -59,10 +76,8 @@ public class ServiceOrderPhotoService {
         validateImage(file);
         String extension = switch (file.getContentType()) { case "image/jpeg" -> ".jpg"; case "image/png" -> ".png"; default -> ".webp"; };
         String storageKey = UUID.randomUUID() + extension;
-        Path target = storagePath().resolve(storageKey).normalize();
         try {
-            Files.createDirectories(target.getParent());
-            file.transferTo(target);
+            effectiveStorage().store(storageKey, file);
         } catch (IOException e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to store photo", e);
         }
@@ -84,8 +99,7 @@ public class ServiceOrderPhotoService {
         ServiceOrderPhoto photo = photos.findById(photoId).orElseThrow(() -> notFound("Photo not found"));
         if (!photo.getServiceOrder().getId().equals(orderId)) throw notFound("Photo not found");
         try {
-            Resource resource = new UrlResource(storagePath().resolve(photo.getStorageKey()).normalize().toUri());
-            if (!resource.exists() || !resource.isReadable()) throw notFound("Photo file not found");
+            Resource resource = effectiveStorage().load(photo.getStorageKey());
             return new PhotoFile(resource, photo.getContentType());
         } catch (IOException e) { throw notFound("Photo file not found"); }
     }
@@ -114,7 +128,6 @@ public class ServiceOrderPhotoService {
         if (!ALLOWED_TYPES.contains(file.getContentType())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only JPEG, PNG, and WebP images are allowed");
     }
 
-    private Path storagePath() { return Path.of(storageDirectory).toAbsolutePath().normalize(); }
     private ResponseStatusException notFound(String message) { return new ResponseStatusException(HttpStatus.NOT_FOUND, message); }
     public record PhotoFile(Resource resource, String contentType) { }
 }

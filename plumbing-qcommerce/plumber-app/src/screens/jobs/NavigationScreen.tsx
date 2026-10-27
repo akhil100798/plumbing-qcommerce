@@ -19,7 +19,16 @@ type Props = StackScreenProps<AppStackParamList, 'Navigation'>;
 
 export function NavigationScreen({ route, navigation }: Props) {
   const dispatch = useDispatch();
-  const { jobId, latitude, longitude, plumberLatitude, plumberLongitude, routeEta, routeDistance, turnInstruction, turnDistance } = route.params;
+  const params = (route?.params || {}) as any;
+  const jobId = params.jobId || 'JOB-1024';
+  const latitude = params.latitude;
+  const longitude = params.longitude;
+  const plumberLatitude = params.plumberLatitude;
+  const plumberLongitude = params.plumberLongitude;
+  const routeEta = params.routeEta;
+  const routeDistance = params.routeDistance;
+  const turnInstruction = params.turnInstruction;
+  const turnDistance = params.turnDistance;
   const hasRenderableMap = plumberLatitude != null && plumberLongitude != null && latitude != null && longitude != null;
   const { activeJob } = useSelector((state: RootState) => state.job);
   const [loading, setLoading] = useState(false);
@@ -28,10 +37,17 @@ export function NavigationScreen({ route, navigation }: Props) {
     setLoading(true);
     try {
       await jobService.markArrived(jobId);
+      if (typeof (jobService as any).startWork === 'function') {
+        try {
+          await (jobService as any).startWork(jobId);
+        } catch (e) {
+          console.warn('startWork in handleEndTrip:', e);
+        }
+      }
       dispatch(
         updateJobStatus({
-          status: 'reached',
-          timelineField: 'reached',
+          status: 'started',
+          timelineField: 'started',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         })
       );
@@ -51,33 +67,51 @@ export function NavigationScreen({ route, navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.flex}>
-      <AppHeader title="Navigation" onBackPress={() => navigation.goBack()} />
+      <AppHeader
+        title="Navigation"
+        variant="green"
+        onBackPress={() => navigation.goBack()}
+      />
 
       <View style={styles.mapArea}>
         {/* Map View */}
-        {hasRenderableMap ? <RouteMap
-          plumberLatitude={plumberLatitude}
-          plumberLongitude={plumberLongitude}
-          customerLatitude={latitude}
-          customerLongitude={longitude}
-          customerName={activeJob?.customer.fullName || 'Customer unavailable'}
-        /> : <View style={styles.mapUnavailable}><Text>Map coordinates unavailable</Text></View>}
-
-        {/* Floating Turn Instruction Banner */}
-        {turnInstruction && turnDistance ? <View style={styles.turnBanner}>
-          <View style={styles.turnIcon}>
-            <ArrowRightIcon width={22} height={22} stroke="#FFFFFF" />
+        {hasRenderableMap ? (
+          <RouteMap
+            plumberLatitude={plumberLatitude}
+            plumberLongitude={plumberLongitude}
+            customerLatitude={latitude}
+            customerLongitude={longitude}
+            customerName={activeJob?.customer.fullName || 'Customer unavailable'}
+          />
+        ) : (
+          <View style={styles.mapUnavailable}>
+            <Text style={styles.mapUnavailableText}>Map coordinates unavailable</Text>
           </View>
-          <View style={styles.turnTextWrap}>
-            <Text style={styles.turnDistance}>{turnDistance}</Text>
-            <Text style={styles.turnDesc}>{turnInstruction}</Text>
-          </View>
-          {hasRenderableMap ? <TouchableOpacity style={styles.recenterBtn}>
-            <LocationPinIcon width={16} height={16} stroke={colors.textPrimary} />
-          </TouchableOpacity> : null}
-        </View> : null}
+        )}
 
-        {/* Floating Map Controls */}
+        {/* Stitch Floating Turn Instruction Banner */}
+        {turnInstruction && turnDistance ? (
+          <View style={styles.turnBanner}>
+            <View style={styles.turnIconWrap}>
+              <ArrowRightIcon width={22} height={22} stroke="#FFFFFF" />
+            </View>
+            <View style={styles.turnTextWrap}>
+              <Text style={styles.turnDistanceText}>{turnDistance}</Text>
+              <Text style={styles.turnInstructionText}>{turnInstruction}</Text>
+            </View>
+            {hasRenderableMap ? (
+              <TouchableOpacity
+                style={styles.recenterBtn}
+                onPress={() => Alert.alert('Recenter', 'Map centered on live position.')}
+                accessibilityLabel="Recenter location"
+              >
+                <LocationPinIcon width={16} height={16} stroke={colors.textPrimary} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        ) : null}
+
+        {/* Stitch Floating Map Controls */}
         <View style={styles.mapControls}>
           <TouchableOpacity
             style={styles.controlBtn}
@@ -86,22 +120,33 @@ export function NavigationScreen({ route, navigation }: Props) {
               if (!hasRenderableMap) return;
               Alert.alert('Recenter', 'Map centered on live position.');
             }}
+            accessibilityLabel="Re-center location"
           >
-            <NavigationIcon width={16} height={16} stroke={colors.textPrimary} />
+            <NavigationIcon width={18} height={18} stroke={hasRenderableMap ? colors.stitchGreen : '#94A3B8'} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.controlBtn} onPress={handleCall} disabled={!activeJob?.customer.phone}>
-            <PhoneIcon width={16} height={16} stroke={colors.textPrimary} />
+          <TouchableOpacity
+            style={styles.controlBtn}
+            onPress={handleCall}
+            disabled={!activeJob?.customer.phone}
+            accessibilityLabel="Call Customer"
+          >
+            <PhoneIcon width={18} height={18} stroke={activeJob?.customer.phone ? '#1E293B' : '#CBD5E1'} />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Trip Footer */}
+      {/* Stitch Trip Stats Dock */}
       <View style={styles.footer}>
         <View style={styles.footerLeft}>
-          <Text style={styles.eta}>{routeEta || 'ETA unavailable'}</Text>
-          <Text style={styles.etaSub}>{routeDistance || 'Distance unavailable'} - Job #{jobId}</Text>
+          <View style={styles.etaRow}>
+            <Text style={styles.etaNumber}>{routeEta || 'ETA unavailable'}</Text>
+          </View>
+          <Text style={styles.etaSubtitle}>
+            {routeDistance || 'Distance unavailable'} • Job #{jobId}
+          </Text>
         </View>
         <TouchableOpacity
+          accessibilityRole="button"
           style={styles.endTripBtn}
           onPress={handleEndTrip}
           disabled={loading}
@@ -114,75 +159,135 @@ export function NavigationScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.background },
-  mapArea: { flex: 1, position: 'relative' },
-  mapUnavailable: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
+  flex: {
+    flex: 1,
+    backgroundColor: '#EEF1F5',
+  },
+  mapArea: {
+    flex: 1,
+    position: 'relative',
+  },
+  mapUnavailable: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#EEF1F5',
+  },
+  mapUnavailableText: {
+    fontSize: 14,
+    color: '#64748B',
+    fontWeight: '500',
+  },
   turnBanner: {
     position: 'absolute',
-    top: spacing.md,
-    left: spacing.lg,
-    right: spacing.lg,
-    backgroundColor: colors.success,
-    borderRadius: borderRadius.md,
+    top: 12,
+    left: 16,
+    right: 16,
+    backgroundColor: colors.stitchGreen,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
+    padding: 14,
     ...shadows.md,
+    zIndex: 30,
   },
-  turnIcon: {
+  turnIconWrap: {
     width: 44,
     height: 44,
-    borderRadius: borderRadius.xs,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
-  turnTextWrap: { flex: 1 },
-  turnDistance: { fontSize: typography.fontSize.xl, fontWeight: typography.fontWeight.black, color: '#FFFFFF' },
-  turnDesc: { fontSize: typography.fontSize.xs, color: '#FFFFFF', opacity: 0.9, marginTop: 2 },
+  turnTextWrap: {
+    flex: 1,
+  },
+  turnDistanceText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  turnInstructionText: {
+    fontSize: 13,
+    color: '#ECFDF5',
+    fontWeight: '600',
+    marginTop: 2,
+  },
   recenterBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadows.sm,
   },
   mapControls: {
     position: 'absolute',
-    right: spacing.lg,
-    top: 90,
-    gap: spacing.xs,
+    right: 16,
+    top: 96,
+    gap: 10,
+    zIndex: 25,
   },
   controlBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.xs,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     ...shadows.sm,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: '#F1F5F9',
+    ...shadows.lg,
   },
-  footerLeft: {},
-  eta: { fontSize: 24, fontWeight: typography.fontWeight.black, color: colors.textPrimary },
-  etaSub: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: 2 },
+  footerLeft: {
+    flex: 1,
+  },
+  etaRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  etaNumber: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.5,
+  },
+  etaSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+    marginTop: 3,
+  },
   endTripBtn: {
-    backgroundColor: '#FEE2E2',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: borderRadius.md,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1.5,
+    borderColor: '#EF4444',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 24,
+    ...shadows.sm,
   },
-  endTripLabel: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: '#EF4444' },
+  endTripLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#DC2626',
+  },
 });

@@ -47,7 +47,9 @@ export interface OrderStatusDTO {
 export interface PaymentRequestDTO {
   orderId: number;
   amount: number;
-  paymentMethod: string;
+  paymentMethod?: string;
+  paymentMethodId?: string;
+  currency?: string;
 }
 
 export interface PaymentResponseDTO {

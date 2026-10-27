@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useDispatch } from 'react-redux';
 
-import { PrimaryButton } from '../../components/common/PrimaryButton';
+import { StitchButton } from '../../components/common/StitchButton';
 import { loginFailure, loginStart, loginSuccess } from '../../redux/slices/authSlice';
 import { AuthRepository } from '../../services/auth/authRepository';
 import { AuthResponse } from '../../services/auth/authTypes';
@@ -99,80 +99,113 @@ export function RegisterScreen({ navigation }: Props) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonText}>←</Text>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            accessibilityRole="button"
+            accessibilityLabel="Go back to login"
+          >
+            <Text style={styles.backChevron}>‹</Text>
           </TouchableOpacity>
 
-          <View style={styles.header}>
-            <Text style={styles.title}>Create account</Text>
-            <Text style={styles.subtitle}>
-              Register with email and password. Mobile number is required for service contact;
-              SMS verification is disabled.
-            </Text>
+          <View style={styles.headingSection}>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Join FixKart for reliable home plumbing</Text>
           </View>
 
-          <View style={styles.form}>
-            <Text style={styles.inputLabel}>Full Name</Text>
-            <TextInput style={styles.textInput} placeholder="Enter full name" value={fullName} onChangeText={setFullName} />
-
-            <Text style={styles.inputLabel}>Email Address</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              value={email}
-              onChangeText={setEmail}
-            />
-
-            <Text style={styles.inputLabel}>Mobile Number</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="10-digit mobile number"
-              keyboardType="phone-pad"
-              maxLength={10}
-              value={phone}
-              onChangeText={(value) => setPhone(value.replace(/[^0-9]/g, ''))}
-            />
-            <Text style={styles.helperText}>No SMS or OTP is required for customer registration.</Text>
-
+          {/* Form Card */}
+          <View style={styles.formCard}>
             {errorMessage ? (
-              <Text accessibilityRole="alert" style={styles.errorText}>
-                {errorMessage}
-              </Text>
+              <View style={styles.errorBanner}>
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              </View>
             ) : null}
 
-            <Text style={styles.inputLabel}>Password</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Create password"
-              secureTextEntry
-              autoCapitalize="none"
-              value={password}
-              onChangeText={setPassword}
-            />
+            <Text style={styles.inputLabel}>Full Name</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.textInput}
+                placeholder="e.g. Rahul Sharma"
+                placeholderTextColor={colors.textMuted}
+                value={fullName}
+                onChangeText={setFullName}
+                autoCapitalize="words"
+              />
+            </View>
+
+            <Text style={styles.inputLabel}>Email Address</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.textInput}
+                placeholder="name@example.com"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+
+            <Text style={styles.inputLabel}>Mobile Number (10 digits)</Text>
+            <View style={styles.inputWrapper}>
+              <Text style={styles.countryCode}>+91 </Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="9876543210"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="phone-pad"
+                maxLength={10}
+                value={phone}
+                onChangeText={setPhone}
+              />
+            </View>
+
+            <Text style={styles.inputLabel}>Password (min 8 characters)</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Create strong password"
+                placeholderTextColor={colors.textMuted}
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+                autoCapitalize="none"
+              />
+            </View>
 
             <Text style={styles.inputLabel}>Confirm Password</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Confirm password"
-              secureTextEntry
-              autoCapitalize="none"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-            />
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Re-enter password"
+                placeholderTextColor={colors.textMuted}
+                secureTextEntry
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                autoCapitalize="none"
+              />
+            </View>
 
-            <PrimaryButton
+            <StitchButton
               title="Create Account"
               onPress={handleRegister}
               loading={loading}
+              variant="primary"
               style={styles.submitButton}
             />
+          </View>
 
-            <TouchableOpacity style={styles.loginLinkRow} onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.loginLinkText}>Already have an account? Login</Text>
+          {/* Login Footer */}
+          <View style={styles.footerRow}>
+            <Text style={styles.footerPrompt}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <Text style={styles.footerLink}>Log in</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -191,98 +224,111 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    padding: spacing.lg,
+    paddingHorizontal: spacing.layout,
+    paddingVertical: spacing.md,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  backChevron: {
+    fontSize: 26,
+    color: colors.textPrimary,
+    lineHeight: 28,
+    marginTop: -2,
+    fontWeight: '600',
+  },
+  headingSection: {
     marginBottom: spacing.md,
   },
-  backButtonText: {
-    fontSize: 20,
-    color: '#0F172A',
-    fontWeight: 'bold',
-  },
-  header: {
-    marginBottom: spacing.xl,
-  },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#0F172A',
-    fontFamily: typography.fontFamily.bold,
+    fontSize: 24,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: 15,
-    color: '#64748B',
-    marginTop: spacing.xs,
-    fontFamily: typography.fontFamily.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 2,
   },
-  form: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+  formCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 10,
     elevation: 2,
   },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginTop: spacing.md,
-    marginBottom: spacing.xs,
-    fontFamily: typography.fontFamily.medium,
-  },
-  helperText: {
-    marginTop: spacing.xs,
-    color: '#64748B',
-    fontSize: 12,
-    fontFamily: typography.fontFamily.regular,
+  errorBanner: {
+    backgroundColor: '#FEE2E2',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: spacing.sm,
   },
   errorText: {
-    marginTop: spacing.md,
     color: colors.error,
-    fontSize: 13,
-    fontFamily: typography.fontFamily.medium,
+    fontSize: 12,
+    fontWeight: typography.fontWeight.medium,
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textSecondary,
+    marginBottom: 5,
+    marginTop: 8,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 14,
+    height: 48,
+    marginBottom: spacing.xs,
+  },
+  countryCode: {
+    fontSize: 14,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textSecondary,
   },
   textInput: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
-    fontSize: 15,
-    color: '#0F172A',
-    backgroundColor: '#FAFAFA',
-    fontFamily: typography.fontFamily.regular,
+    flex: 1,
+    fontSize: 14,
+    color: colors.textPrimary,
+    height: '100%',
   },
   submitButton: {
-    height: 48,
-    backgroundColor: colors.primary || '#2563EB',
-    borderRadius: borderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: spacing.xl,
-  },
-  loginLinkRow: {
-    alignItems: 'center',
+    width: '100%',
     marginTop: spacing.md,
   },
-  loginLinkText: {
-    fontSize: 14,
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  footerPrompt: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  footerLink: {
+    fontSize: 13,
+    fontWeight: typography.fontWeight.bold,
     color: colors.primary,
-    fontFamily: typography.fontFamily.medium,
   },
 });

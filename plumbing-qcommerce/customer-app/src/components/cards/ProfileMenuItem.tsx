@@ -7,9 +7,10 @@ import {
 } from 'react-native';
 
 import { borderRadius, colors, spacing, typography } from '../../theme';
+import { SvgNavigationArrowRight } from '../../assets/svg';
 
 interface ProfileMenuItemProps {
-  icon: string;
+  icon: React.ReactNode | string;
   title: string;
   subtitle?: string;
   onPress: () => void;
@@ -29,7 +30,7 @@ export function ProfileMenuItem({
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.left}>
         <View style={styles.iconCircle}>
-          <Text style={styles.icon}>{icon}</Text>
+          typeof icon === 'string' ? <Text style={styles.icon}>{icon}</Text> : icon
         </View>
         <View style={styles.textContainer}>
           <Text style={[styles.title, { color: textColor }]}>{title}</Text>
@@ -37,7 +38,7 @@ export function ProfileMenuItem({
         </View>
       </View>
       {showArrow && (
-        <Text style={styles.arrow}>→</Text>
+        <SvgNavigationArrowRight width={16} height={16} stroke={colors.textSecondary} />
       )}
     </TouchableOpacity>
   );

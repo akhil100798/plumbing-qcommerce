@@ -16,11 +16,12 @@ import {
 } from 'react-native';
 import { useDispatch } from 'react-redux';
 
-import { PrimaryButton } from '../../components/common/PrimaryButton';
+import { StitchButton } from '../../components/common/StitchButton';
 import { borderRadius, colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
 import { loginSuccess } from '../../redux/slices/authSlice';
 import { AuthRepository } from '../../services/auth/authRepository';
+import { SvgServicesLock } from '../../assets/svg';
 
 type Props = StackScreenProps<AuthStackParamList, 'Otp'>;
 
@@ -46,25 +47,31 @@ export function OtpScreen({ route, navigation }: Props) {
     setLoading(true);
     try {
       const loginResponse = await AuthRepository.verifyOtp(phone, code);
-      dispatch(loginSuccess({
-        user: {
-          id: loginResponse.userId,
-          email: loginResponse.email,
-          fullName: 'Customer',
-          role: loginResponse.role,
-          phone: phone,
-        },
-        token: loginResponse.token,
-        refreshToken: loginResponse.refreshToken,
-      }));
-
-      // Reset navigation state to Main so the user can't press back to OTP screen
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'Main' }],
+      dispatch(
+        loginSuccess({
+          user: {
+            id: loginResponse.userId,
+            email: loginResponse.email,
+            fullName: 'Customer',
+            role: loginResponse.role,
+            phone: phone,
+          },
+          token: loginResponse.token,
+          refreshToken: loginResponse.refreshToken,
         })
       );
+
+      const parent = navigation.getParent();
+      if (parent) {
+        try {
+          parent.dispatch(
+            CommonActions.reset({
+              index: 0,
+              routes: [{ name: 'Main' }],
+            })
+          );
+        } catch (_) {}
+      }
     } catch (err: any) {
       Alert.alert('Verification Failed', err.message || 'Invalid OTP code. Please try again.');
     } finally {
@@ -72,7 +79,6 @@ export function OtpScreen({ route, navigation }: Props) {
     }
   };
 
-  // Auto verify when all 6 digits are typed
   useEffect(() => {
     if (code.length === 6) {
       Keyboard.dismiss();
@@ -94,11 +100,11 @@ export function OtpScreen({ route, navigation }: Props) {
           key={i}
           style={[
             styles.otpBox,
-            char ? styles.otpBoxFilled : {},
-            isFocused ? styles.otpBoxFocused : {},
+            char ? styles.otpBoxFilled : null,
+            isFocused ? styles.otpBoxFocused : null,
           ]}
         >
-          <Text style={styles.otpBoxText}>{char}</Text>
+          <Text style={styles.otpText}>{char}</Text>
         </View>
       );
     }
@@ -111,54 +117,79 @@ export function OtpScreen({ route, navigation }: Props) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Text style={styles.backChevron}>‹</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Verify OTP</Text>
+          <View style={{ width: 36 }} />
+        </View>
 
         <View style={styles.content}>
+          <View style={styles.lockIconBox}>
+            <SvgServicesLock width={24} height={24} stroke={colors.primary} />
+          </View>
+
           <Text style={styles.title}>Enter OTP</Text>
           <Text style={styles.subtitle}>
-            We've sent a 6 digit code to{'\n'}
-            <Text style={styles.phoneText}>{phone}</Text>
+            We have sent a 6-digit code to your registered mobile number
           </Text>
 
+          <View style={styles.phoneRow}>
+            <Text style={styles.phoneText}>+91 {phone}</Text>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Text style={styles.editText}>Edit</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* OTP Digit Boxes */}
           <Pressable style={styles.otpContainer} onPress={handleBoxPress}>
             {renderOtpBoxes()}
           </Pressable>
 
-          {/* Hidden real input */}
+          {/* Hidden Real Input */}
           <TextInput
             ref={inputRef}
-            style={styles.hiddenInput}
+            value={code}
+            onChangeText={(text) => setCode(text.replace(/[^0-9]/g, '').slice(0, 6))}
             keyboardType="number-pad"
             maxLength={6}
-            value={code}
-            onChangeText={(val) => setCode(val.replace(/[^0-9]/g, ''))}
+            style={styles.hiddenInput}
             autoFocus
           />
 
-          <View style={styles.timerRow}>
-            {countdown > 0 ? (
-              <Text style={styles.timerText}>
-                Resend OTP in{' '}
-                <Text style={styles.countdownText}>
-                  00:{countdown < 10 ? `0${countdown}` : countdown}
-                </Text>
-              </Text>
-            ) : (
-              <TouchableOpacity onPress={() => setCountdown(25)}>
-                <Text style={styles.resendLink}>Resend OTP</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          <Text style={styles.countdownText}>
+            Auto detecting OTP...{' '}
+            <Text style={styles.countdownSec}>0:{countdown < 10 ? `0${countdown}` : countdown}</Text>
+          </Text>
 
-          <PrimaryButton
-            title="Verify & Proceed"
+          <StitchButton
+            title="Verify & Continue"
             onPress={handleVerify}
             loading={loading}
             disabled={code.length < 6}
+            variant="primary"
             style={styles.verifyButton}
           />
+
+          <View style={styles.resendRow}>
+            <Text style={styles.resendPrompt}>Didn't receive the code? </Text>
+            <TouchableOpacity disabled={countdown > 0}>
+              <Text
+                style={[
+                  styles.resendLink,
+                  countdown > 0 && { color: colors.textMuted },
+                ]}
+              >
+                Resend OTP
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -168,73 +199,125 @@ export function OtpScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: '#F8FAFC',
   },
   keyboardView: {
     flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.layout,
+    paddingVertical: spacing.sm,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
-    backgroundColor: colors.background,
-    marginTop: spacing.md,
-    marginBottom: spacing.xl,
+    justifyContent: 'center',
   },
-  backButtonText: {
-    fontSize: 24,
+  backChevron: {
+    fontSize: 26,
     color: colors.textPrimary,
-    fontWeight: 'bold',
+    lineHeight: 28,
+    marginTop: -2,
+    fontWeight: '600',
+  },
+  headerTitle: {
+    fontSize: 12,
+    fontWeight: typography.fontWeight.bold,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    color: colors.textMuted,
   },
   content: {
     flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+  },
+  lockIconBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  lockIcon: {
+    fontSize: 28,
   },
   title: {
-    fontSize: typography.fontSize.xxl,
-    fontWeight: typography.fontWeight.black,
+    fontSize: 22,
+    fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
-    marginBottom: spacing.xs,
+    letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: typography.fontSize.md,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
-    lineHeight: typography.lineHeight.normal,
-    marginBottom: spacing.giant,
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: 'center',
+    maxWidth: 240,
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  phoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+    marginBottom: spacing.xl,
   },
   phoneText: {
-    color: colors.textPrimary,
+    fontSize: 13,
     fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  editText: {
+    fontSize: 12,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
+    marginLeft: 8,
   },
   otpContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.huge,
+    width: '100%',
+    paddingHorizontal: spacing.xs,
+    marginBottom: spacing.lg,
   },
   otpBox: {
-    width: 48,
-    height: 56,
-    borderRadius: borderRadius.md,
+    width: 44,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
     borderColor: colors.border,
-    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    justifyContent: 'center',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   otpBoxFilled: {
-    borderColor: colors.borderDark,
-    backgroundColor: colors.surface,
+    borderColor: colors.primary,
+    backgroundColor: '#F8FAFF',
   },
   otpBoxFocused: {
     borderColor: colors.primary,
     borderWidth: 2,
-    backgroundColor: colors.surface,
   },
-  otpBoxText: {
-    fontSize: typography.fontSize.xxl,
+  otpText: {
+    fontSize: 20,
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
   },
@@ -244,26 +327,30 @@ const styles = StyleSheet.create({
     width: 1,
     height: 1,
   },
-  timerRow: {
-    alignItems: 'center',
-    marginBottom: spacing.giant,
-  },
-  timerText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
-  },
   countdownText: {
-    color: colors.primary,
-    fontWeight: typography.fontWeight.bold,
+    fontSize: 12,
+    color: colors.textMuted,
+    marginBottom: spacing.xl,
   },
-  resendLink: {
-    fontSize: typography.fontSize.sm,
-    color: colors.primary,
+  countdownSec: {
     fontWeight: typography.fontWeight.bold,
-    textDecorationLine: 'underline',
+    color: colors.textSecondary,
   },
   verifyButton: {
     width: '100%',
+  },
+  resendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.xl,
+  },
+  resendPrompt: {
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  resendLink: {
+    fontSize: 13,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
   },
 });

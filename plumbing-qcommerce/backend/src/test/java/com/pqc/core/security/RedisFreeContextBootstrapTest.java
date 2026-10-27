@@ -15,7 +15,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestPropertySource(properties = {
         "spring.data.redis.host=",
         "features.delivery-enabled=false",
-        "app.seed.staging-admin.enabled=false"
+        "app.seed.staging-admin.enabled=false",
+        "app.photos.provider=local",
+        "app.photos.fail-if-missing-provider=false"
 })
 class RedisFreeContextBootstrapTest {
 

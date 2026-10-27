@@ -21,6 +21,19 @@ export function OTPInput({
 
   const handleChangeText = (text: string, index: number) => {
     const numericText = text.replace(/[^0-9]/g, '');
+    if (numericText.length > 1) {
+      // Pasted or fast multi-char input
+      const digits = numericText.slice(0, length).split('');
+      const newCode = [...code];
+      digits.forEach((d, i) => {
+        newCode[i] = d;
+      });
+      setCode(newCode);
+      onCodeChanged(newCode.join(''));
+      const nextFocus = Math.min(digits.length - 1, length - 1);
+      inputsRef.current[nextFocus]?.focus();
+      return;
+    }
     const newCode = [...code];
     newCode[index] = numericText;
     setCode(newCode);
@@ -51,7 +64,7 @@ export function OTPInput({
             }}
             style={styles.input}
             keyboardType="number-pad"
-            maxLength={1}
+            maxLength={index === 0 ? length : 1}
             value={code[index]}
             onChangeText={(text) => handleChangeText(text, index)}
             onKeyPress={(e) => handleKeyPress(e, index)}
@@ -65,14 +78,15 @@ export function OTPInput({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
+    justifyContent: 'center',
+    gap: 6,
     width: '100%',
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: 4,
     marginVertical: spacing.lg,
   },
   input: {
-    width: 48,
+    flex: 1,
+    maxWidth: 44,
     height: 52,
     borderWidth: 1.5,
     borderColor: colors.borderDark,

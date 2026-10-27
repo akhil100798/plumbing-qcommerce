@@ -48,6 +48,20 @@ class PostgresTestTargetGuardTest {
         assertRedacted(() -> PostgresTestTargetGuard.parse("jdbc:postgresql://qa-db.internal:5544/fixkart_phase3_cert?%68ost=other-host", USER, PASSWORD));
     }
 
+    @Test
+    void rejectsCloudHostedProductionAndStagingHosts() {
+        assertRedacted(() -> PostgresTestTargetGuard.parse("jdbc:postgresql://dpg-c12345.oregon-postgres.render.com:5432/test_db", USER, PASSWORD));
+        assertRedacted(() -> PostgresTestTargetGuard.parse("jdbc:postgresql://db.xyz.supabase.co:5432/test_db", USER, PASSWORD));
+        assertRedacted(() -> PostgresTestTargetGuard.parse("jdbc:postgresql://prod.xxxx.rds.amazonaws.com:5432/test_db", USER, PASSWORD));
+    }
+
+    @Test
+    void rejectsProductionDatabaseNames() {
+        assertRedacted(() -> PostgresTestTargetGuard.parse("jdbc:postgresql://127.0.0.1:5432/fixkart_postgres_new", USER, PASSWORD));
+        assertRedacted(() -> PostgresTestTargetGuard.parse("jdbc:postgresql://127.0.0.1:5432/plumbing_commerce", USER, PASSWORD));
+        assertRedacted(() -> PostgresTestTargetGuard.parse("jdbc:postgresql://127.0.0.1:5432/fixkart_prod", USER, PASSWORD));
+    }
+
     private void assertRedacted(Runnable action) {
         IllegalStateException error = assertThrows(IllegalStateException.class, action::run);
         assertFalse(error.getMessage().contains(PASSWORD));

@@ -36,6 +36,7 @@ class CheckoutIntegrationTest {
     @Autowired private ServiceOrderRepository serviceOrderRepository;
     @Autowired private OutboxEventRepository outboxEventRepository;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private PaymentOperationRepository paymentOperationRepository;
 
     private User customer;
     private Store store;
@@ -52,6 +53,8 @@ class CheckoutIntegrationTest {
         orderRepository.deleteAll();
         orderRepository.flush();
 
+        paymentOperationRepository.deleteAll();
+        paymentOperationRepository.flush();
         serviceOrderRepository.deleteAll();
         serviceOrderRepository.flush();
 
@@ -284,5 +287,114 @@ class CheckoutIntegrationTest {
         Stock unchanged = stockRepository.findById(stock.getId()).orElseThrow();
         assertEquals(50, unchanged.getAvailableQuantity());
         assertEquals(0, unchanged.getReservedQuantity());
+    }
+
+    @Test
+    void testLinkedMaterialOrderCustomerConfirmCapturesViaGateway() {
+        ServiceOrder serviceOrder = serviceOrderRepository.save(ServiceOrder.builder()
+                .customer(customer)
+                .description("Leak Repair")
+                .requestType(RequestType.NEARBY_AUTO)
+                .status(OrderStatus.IN_PROGRESS)
+                .build());
+
+        ProductOrder materialOrder = orderRepository.save(ProductOrder.builder()
+                .customer(customer)
+                .store(store)
+                .serviceOrder(serviceOrder)
+                .status(ProductOrderStatus.PREPARING)
+                .totalAmount(new BigDecimal("290.00"))
+                .build());
+
+        checkoutService.confirmPayment(materialOrder.getId());
+
+        PaymentOperation op = paymentOperationRepository
+                .findByServiceOrderIdAndPurpose(serviceOrder.getId(), "MATERIAL_ORDER_CAPTURE_V1")
+                .orElseThrow();
+
+        assertEquals(new BigDecimal("290.00"), op.getAmount());
+        assertEquals(PaymentOperationStatus.CAPTURED, op.getStatus());
+        assertNotNull(op.getGatewayTransactionId());
+        assertTrue(op.getGatewayTransactionId().startsWith("ch_mock_"));
+    }
+
+    @Test
+    void testLinkedMaterialOrderRejectsUnauthorizedCustomer() {
+        User otherCustomer = userRepository.save(User.builder()
+                .email("other-customer@example.com")
+                .password(passwordEncoder.encode("Password123!"))
+                .fullName("Other Customer")
+                .phone("8888888888")
+                .role(Role.CUSTOMER)
+                .build());
+
+        ServiceOrder serviceOrder = serviceOrderRepository.save(ServiceOrder.builder()
+                .customer(customer)
+                .description("Leak Repair")
+                .requestType(RequestType.NEARBY_AUTO)
+                .status(OrderStatus.IN_PROGRESS)
+                .build());
+
+        ProductOrder materialOrder = orderRepository.save(ProductOrder.builder()
+                .customer(customer)
+                .store(store)
+                .serviceOrder(serviceOrder)
+                .status(ProductOrderStatus.PREPARING)
+                .totalAmount(new BigDecimal("290.00"))
+                .build());
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        otherCustomer.getEmail(),
+                        null,
+                        List.of(new SimpleGrantedAuthority("ROLE_" + Role.CUSTOMER.name()))));
+
+        assertThrows(org.springframework.security.access.AccessDeniedException.class, () ->
+                checkoutService.confirmPayment(materialOrder.getId()));
+    }
+
+    @Test
+    void testLinkedMaterialOrderRejectsCancelledState() {
+        ServiceOrder serviceOrder = serviceOrderRepository.save(ServiceOrder.builder()
+                .customer(customer)
+                .description("Leak Repair")
+                .requestType(RequestType.NEARBY_AUTO)
+                .status(OrderStatus.IN_PROGRESS)
+                .build());
+
+        ProductOrder materialOrder = orderRepository.save(ProductOrder.builder()
+                .customer(customer)
+                .store(store)
+                .serviceOrder(serviceOrder)
+                .status(ProductOrderStatus.CANCELLED)
+                .totalAmount(new BigDecimal("290.00"))
+                .build());
+
+        assertThrows(IllegalStateException.class, () ->
+                checkoutService.confirmPayment(materialOrder.getId()));
+    }
+
+    @Test
+    void testLinkedMaterialOrderIsIdempotent() {
+        ServiceOrder serviceOrder = serviceOrderRepository.save(ServiceOrder.builder()
+                .customer(customer)
+                .description("Leak Repair")
+                .requestType(RequestType.NEARBY_AUTO)
+                .status(OrderStatus.IN_PROGRESS)
+                .build());
+
+        ProductOrder materialOrder = orderRepository.save(ProductOrder.builder()
+                .customer(customer)
+                .store(store)
+                .serviceOrder(serviceOrder)
+                .status(ProductOrderStatus.PREPARING)
+                .totalAmount(new BigDecimal("290.00"))
+                .build());
+
+        checkoutService.confirmPayment(materialOrder.getId());
+        checkoutService.confirmPayment(materialOrder.getId());
+
+        assertEquals(1, paymentOperationRepository.findAll().stream()
+                .filter(p -> p.getServiceOrderId().equals(serviceOrder.getId())).count());
     }
 }

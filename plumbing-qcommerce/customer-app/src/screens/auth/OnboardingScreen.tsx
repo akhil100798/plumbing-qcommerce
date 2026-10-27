@@ -1,20 +1,20 @@
 import { StackScreenProps } from '@react-navigation/stack';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import {
+  Animated,
+  Image,
   SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  Animated,
 } from 'react-native';
 
-import { PrimaryButton } from '../../components/common/PrimaryButton';
-import { borderRadius, colors, spacing, typography } from '../../theme';
+import { StitchButton } from '../../components/common/StitchButton';
+import { colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
-import SplashHero from '../../assets/illustrations/customer-splash-hero.svg';
-import PlumberHero from '../../assets/illustrations/plumber-service-hero.svg';
-import ServicesBanner from '../../assets/illustrations/home-services-banner.svg';
+import { plumberMascotSource } from '../../assets/images/mascot';
+import { SvgBrandLogoMark } from '../../assets/svg';
 
 type Props = StackScreenProps<AuthStackParamList, 'Onboarding'>;
 
@@ -26,18 +26,21 @@ interface Slide {
 
 const slides: Slide[] = [
   {
-    title: 'Plumbing Help\nIn Minutes',
-    subtitle: 'Book plumbers, order materials or get expert solutions at your doorstep.',
-    accent: '#E6F4FE',
+    title: 'Expert Plumbing\nAt Your Fingertips',
+    subtitle:
+      'Find vetted professionals, book instant repairs, and track verified plumbers live right to your door.',
+    accent: '#EFF6FF',
   },
   {
-    title: 'Quality You Can\nTrust',
-    subtitle: 'Verified plumbers, genuine materials and secure payments.',
+    title: 'Quality Hardware\nYou Can Trust',
+    subtitle:
+      'Order genuine pipes, taps, fittings and spare parts delivered in 10-15 minutes.',
     accent: '#ECFDF5',
   },
   {
-    title: 'Fast Delivery\n& Service',
-    subtitle: 'From quick deliveries to emergency repairs, we are always here.',
+    title: 'Transparent Pricing\n& Real Warranties',
+    subtitle:
+      'Pre-approved quotes, itemized invoices, and digital payment security for every service.',
     accent: '#FFFBEB',
   },
 ];
@@ -49,17 +52,15 @@ export function OnboardingScreen({ navigation }: Props) {
 
   const handleNext = () => {
     if (currentSlideIndex < slides.length - 1) {
-      // Transition out
       Animated.parallel([
         Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
-        Animated.timing(slideAnim, { toValue: -20, duration: 150, useNativeDriver: true })
+        Animated.timing(slideAnim, { toValue: -15, duration: 150, useNativeDriver: true }),
       ]).start(() => {
         setCurrentSlideIndex(currentSlideIndex + 1);
-        slideAnim.setValue(20);
-        // Transition in
+        slideAnim.setValue(15);
         Animated.parallel([
           Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
-          Animated.spring(slideAnim, { toValue: 0, tension: 40, friction: 6, useNativeDriver: true })
+          Animated.spring(slideAnim, { toValue: 0, tension: 40, friction: 6, useNativeDriver: true }),
         ]).start();
       });
     } else {
@@ -74,37 +75,58 @@ export function OnboardingScreen({ navigation }: Props) {
   const currentSlide = slides[currentSlideIndex];
   const isLastSlide = currentSlideIndex === slides.length - 1;
 
-  const getIllustration = (index: number) => {
-    switch (index) {
-      case 0:
-        return <SplashHero width={180} height={120} />;
-      case 1:
-        return <PlumberHero width={180} height={120} />;
-      case 2:
-        return <ServicesBanner width={180} height={120} />;
-      default:
-        return null;
-    }
-  };
-
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleSkip}>
-          <Text style={styles.skipText}>{isLastSlide ? '' : 'Skip'}</Text>
-        </TouchableOpacity>
+      {/* Top Header */}
+      <View style={styles.topHeader}>
+        <View style={styles.logoRow}>
+          <View style={styles.logoBox}>
+            <SvgBrandLogoMark width={48} height={48} />
+          </View>
+          <View>
+            <Text style={styles.logoFix}>
+              Fix<Text style={styles.logoKart}>Kart</Text>
+            </Text>
+            <Text style={styles.logoSub}>Customer App</Text>
+          </View>
+        </View>
+
+        {!isLastSlide ? (
+          <TouchableOpacity
+            onPress={handleSkip}
+            style={styles.skipButton}
+            accessibilityRole="button"
+            accessibilityLabel="Skip onboarding"
+          >
+            <Text style={styles.skipText}>Skip</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 44 }} />
+        )}
       </View>
 
-      <Animated.View style={[styles.slideContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-        <View style={[styles.imageContainer, { backgroundColor: currentSlide.accent }]}>
-          {getIllustration(currentSlideIndex)}
+      {/* Main Slide Content */}
+      <Animated.View
+        style={[
+          styles.slideContent,
+          { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+        ]}
+      >
+        <View style={[styles.mascotCircle, { backgroundColor: currentSlide.accent }]}>
+          <Animated.Image
+            source={plumberMascotSource}
+            style={styles.mascotImage}
+            resizeMode="contain"
+          />
         </View>
+
         <Text style={styles.title}>{currentSlide.title}</Text>
         <Text style={styles.subtitle}>{currentSlide.subtitle}</Text>
       </Animated.View>
 
+      {/* Bottom Actions & Pagination */}
       <View style={styles.footer}>
-        <View style={styles.dotsContainer}>
+        <View style={styles.dotsRow}>
           {slides.map((_, index) => (
             <View
               key={index}
@@ -116,10 +138,11 @@ export function OnboardingScreen({ navigation }: Props) {
           ))}
         </View>
 
-        <PrimaryButton
-          title={isLastSlide ? 'Get Started' : 'Next'}
+        <StitchButton
+          title={isLastSlide ? 'Get Started' : 'Continue'}
           onPress={handleNext}
-          style={styles.nextButton}
+          variant="primary"
+          style={styles.continueButton}
         />
       </View>
     </SafeAreaView>
@@ -130,61 +153,113 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.surface,
+    justifyContent: 'space-between',
   },
-  header: {
+  topHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.layout,
-    paddingVertical: spacing.md,
-    alignItems: 'flex-end',
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logoBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.xs,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  logoWrench: {
+    fontSize: 18,
+  },
+  logoFix: {
+    fontSize: 18,
+    fontWeight: typography.fontWeight.black,
+    color: colors.textPrimary,
+    lineHeight: 20,
+  },
+  logoKart: {
+    color: colors.primary,
+  },
+  logoSub: {
+    fontSize: 9,
+    color: colors.textMuted,
+    fontWeight: typography.fontWeight.medium,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  skipButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: colors.surfaceSubtle,
   },
   skipText: {
-    fontSize: typography.fontSize.md,
+    fontSize: 13,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
   },
-  slideContainer: {
+  slideContent: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.huge,
+    paddingHorizontal: spacing.xl,
   },
-  imageContainer: {
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    justifyContent: 'center',
+  mascotCircle: {
+    width: 240,
+    height: 240,
+    borderRadius: 120,
     alignItems: 'center',
-    marginBottom: spacing.huge,
+    justifyContent: 'center',
+    marginBottom: spacing.xl,
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
   },
-  illustrationIcon: {
-    fontSize: 90,
+  mascotImage: {
+    width: 210,
+    height: 210,
   },
   title: {
-    fontSize: typography.fontSize.xxl,
+    fontSize: 24,
     fontWeight: typography.fontWeight.black,
     color: colors.textPrimary,
     textAlign: 'center',
-    lineHeight: typography.lineHeight.relaxed,
-    marginBottom: spacing.md,
+    lineHeight: 32,
+    letterSpacing: -0.5,
+    marginBottom: spacing.sm,
   },
   subtitle: {
-    fontSize: typography.fontSize.md,
+    fontSize: 14,
     color: colors.textSecondary,
     textAlign: 'center',
-    lineHeight: typography.lineHeight.normal,
-    paddingHorizontal: spacing.sm,
+    lineHeight: 22,
+    maxWidth: 300,
   },
   footer: {
     paddingHorizontal: spacing.layout,
     paddingBottom: spacing.huge,
     alignItems: 'center',
   },
-  dotsContainer: {
+  dotsRow: {
     flexDirection: 'row',
-    marginBottom: spacing.xl,
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
   dot: {
     height: 8,
-    borderRadius: borderRadius.round,
+    borderRadius: 4,
     marginHorizontal: 4,
   },
   activeDot: {
@@ -195,7 +270,7 @@ const styles = StyleSheet.create({
     width: 8,
     backgroundColor: colors.borderDark,
   },
-  nextButton: {
+  continueButton: {
     width: '100%',
   },
 });

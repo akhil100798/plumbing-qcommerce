@@ -10,7 +10,7 @@ const initialState: NotificationsState = {
   notifications: [
     {
       id: 'n1',
-      title: 'Order Confirmed 📦',
+      title: 'Order Confirmed',
       body: 'Your order #PC-987654 for CPVC Elbow Joint has been confirmed and is being packed.',
       time: '2 mins ago',
       read: false,
@@ -18,7 +18,7 @@ const initialState: NotificationsState = {
     },
     {
       id: 'n2',
-      title: 'Special Coupon for You! 🏷️',
+      title: 'Special Coupon for You!',
       body: 'Use code "PLUMB50" to get 50% discount on your first plumber booking fee.',
       time: '2 hours ago',
       read: false,
@@ -26,7 +26,7 @@ const initialState: NotificationsState = {
     },
     {
       id: 'n3',
-      title: 'System Maintenance Alert 🛠️',
+      title: 'System Maintenance Alert',
       body: 'The server will undergo minor upgrades tonight from 2 AM to 3 AM. App access may be intermittent.',
       time: '1 day ago',
       read: true,
