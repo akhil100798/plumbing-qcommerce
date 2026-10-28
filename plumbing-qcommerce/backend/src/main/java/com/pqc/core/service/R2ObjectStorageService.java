@@ -43,11 +43,30 @@ public class R2ObjectStorageService implements ObjectStorageService {
             @Value("${app.photos.r2.access-key:${app.photos.r2.access-key-id:}}") String accessKey,
             @Value("${app.photos.r2.secret-key:${app.photos.r2.secret-access-key:}}") String secretKey,
             @Value("${app.photos.r2.region:auto}") String region,
+            @Value("${app.photos.r2.account-id:}") String accountId,
             LocalObjectStorageService localFallback) {
         this.provider = provider != null ? provider.trim().toLowerCase() : "local";
         this.failIfMissingProvider = failIfMissingProvider;
-        this.endpoint = endpoint != null ? endpoint.trim() : "";
-        this.bucket = bucket != null ? bucket.trim() : "";
+
+        String b = bucket != null ? bucket.trim() : "";
+        String ep = endpoint != null ? endpoint.trim() : "";
+        if (ep.isBlank() && accountId != null && !accountId.isBlank()) {
+            ep = "https://" + accountId.trim() + ".r2.cloudflarestorage.com";
+        }
+
+        // Sanitize endpoint: strip trailing slashes and strip redundant bucket suffix if present
+        while (ep.endsWith("/")) {
+            ep = ep.substring(0, ep.length() - 1);
+        }
+        if (!b.isBlank() && ep.endsWith("/" + b)) {
+            ep = ep.substring(0, ep.length() - ("/" + b).length());
+        }
+        while (ep.endsWith("/")) {
+            ep = ep.substring(0, ep.length() - 1);
+        }
+
+        this.endpoint = ep;
+        this.bucket = b;
         this.accessKey = accessKey != null ? accessKey.trim() : "";
         this.secretKey = secretKey != null ? secretKey.trim() : "";
         this.region = (region != null && !region.isBlank()) ? region.trim() : "auto";
@@ -65,6 +84,18 @@ public class R2ObjectStorageService implements ObjectStorageService {
         } else {
             log.info("[STORAGE-CONFIG] Local object storage active (provider='{}', fallback to local disk).", this.provider);
         }
+    }
+
+    public R2ObjectStorageService(
+            String provider,
+            boolean failIfMissingProvider,
+            String endpoint,
+            String bucket,
+            String accessKey,
+            String secretKey,
+            String region,
+            LocalObjectStorageService localFallback) {
+        this(provider, failIfMissingProvider, endpoint, bucket, accessKey, secretKey, region, "", localFallback);
     }
 
     public boolean isRemoteRequired() {

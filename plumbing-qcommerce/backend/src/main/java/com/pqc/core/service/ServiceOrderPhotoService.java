@@ -63,7 +63,8 @@ public class ServiceOrderPhotoService {
         try {
             effectiveStorage().store(storageKey, file);
         } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to store photo", e);
+            log.error("Unable to store photo for order {}: {}", orderId, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to store photo: " + e.getMessage(), e);
         }
         ServiceOrderPhoto saved = photos.save(ServiceOrderPhoto.builder().serviceOrder(order).phase(phase)
                 .storageKey(storageKey).contentType(file.getContentType()).sizeBytes(file.getSize()).build());
@@ -79,7 +80,8 @@ public class ServiceOrderPhotoService {
         try {
             effectiveStorage().store(storageKey, file);
         } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to store photo", e);
+            log.error("Unable to store photo for order {}: {}", orderId, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to store photo: " + e.getMessage(), e);
         }
         return ServiceOrderPhotoResponse.from(photos.save(ServiceOrderPhoto.builder().serviceOrder(order)
                 .phase(ServiceOrderPhotoPhase.DIAGNOSIS).storageKey(storageKey)

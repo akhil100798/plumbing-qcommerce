@@ -298,4 +298,102 @@ class ObjectStorageServiceTest {
                 .hasMessageContaining("status 403")
                 .hasMessageContaining("InvalidAccessKeyId");
     }
+
+    @Test
+    void r2StorageSanitizesDuplicateBucketSuffixInEndpoint() throws IOException {
+        String baseEndpoint = "http://127.0.0.1:" + mockR2Port;
+        // Test endpoint configured with trailing /staging-photos
+        R2ObjectStorageService r2 = new R2ObjectStorageService(
+                "r2", true,
+                baseEndpoint + "/staging-photos/",
+                "staging-photos",
+                "valid-key",
+                "valid-secret",
+                "auto",
+                "",
+                localStorage
+        );
+
+        byte[] payload = new byte[]{100, 101, 102};
+        MockMultipartFile file = new MockMultipartFile("photo", "sanitized-test.jpg", "image/jpeg", payload);
+
+        r2.store("sanitized-test.jpg", file);
+        // Assert path does NOT contain duplicate /staging-photos/staging-photos
+        assertThat(mockR2DataStore).containsKey("/staging-photos/sanitized-test.jpg");
+        assertThat(mockR2DataStore).doesNotContainKey("/staging-photos/staging-photos/sanitized-test.jpg");
+        assertThat(r2.load("sanitized-test.jpg").getContentAsByteArray()).isEqualTo(payload);
+    }
+
+    @Test
+    void r2StorageSanitizesTrailingSlashInEndpoint() throws IOException {
+        String baseEndpoint = "http://127.0.0.1:" + mockR2Port + "/";
+        R2ObjectStorageService r2 = new R2ObjectStorageService(
+                "r2", true,
+                baseEndpoint,
+                "staging-photos",
+                "valid-key",
+                "valid-secret",
+                "auto",
+                "",
+                localStorage
+        );
+
+        byte[] payload = new byte[]{55, 66, 77};
+        MockMultipartFile file = new MockMultipartFile("photo", "slash-test.jpg", "image/jpeg", payload);
+
+        r2.store("slash-test.jpg", file);
+        assertThat(mockR2DataStore).containsKey("/staging-photos/slash-test.jpg");
+        assertThat(r2.load("slash-test.jpg").getContentAsByteArray()).isEqualTo(payload);
+    }
+
+    @Test
+    void r2StorageDerivesEndpointFromAccountIdWhenEndpointBlank() {
+        R2ObjectStorageService r2 = new R2ObjectStorageService(
+                "r2", true,
+                "",
+                "my-bucket",
+                "key",
+                "secret",
+                "auto",
+                "test-account-123",
+                localStorage
+        );
+
+        assertThat(r2.isConfigured()).isTrue();
+        assertThat(r2.isRemote()).isTrue();
+    }
+
+    @Test
+    void r2ByteForByteSyntheticCrudVerification() throws IOException {
+        String endpoint = "http://127.0.0.1:" + mockR2Port;
+        R2ObjectStorageService r2 = new R2ObjectStorageService(
+                "r2", true,
+                endpoint,
+                "staging-photos",
+                "valid-key",
+                "valid-secret",
+                "auto",
+                "",
+                localStorage
+        );
+
+        byte[] syntheticData = new byte[1024];
+        for (int i = 0; i < syntheticData.length; i++) {
+            syntheticData[i] = (byte) (i % 256);
+        }
+        MockMultipartFile file = new MockMultipartFile("file", "synthetic-crud.jpg", "image/jpeg", syntheticData);
+
+        // 1. Store
+        r2.store("synthetic-crud.jpg", file);
+        assertThat(r2.exists("synthetic-crud.jpg")).isTrue();
+
+        // 2. Load and verify byte-for-byte exact equality
+        Resource loaded = r2.load("synthetic-crud.jpg");
+        byte[] loadedBytes = loaded.getContentAsByteArray();
+        assertThat(loadedBytes).isEqualTo(syntheticData);
+
+        // 3. Delete
+        r2.delete("synthetic-crud.jpg");
+        assertThat(r2.exists("synthetic-crud.jpg")).isFalse();
+    }
 }
