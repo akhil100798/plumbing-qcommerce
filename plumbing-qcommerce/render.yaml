@@ -4,6 +4,7 @@ services:
     runtime: docker
     rootDir: backend
     plan: free
+    autoDeploy: false
     healthCheckPath: /actuator/health
     envVars:
       - key: SPRING_PROFILES_ACTIVE
