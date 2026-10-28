@@ -15,12 +15,12 @@ import {
 import { useDispatch } from 'react-redux';
 import * as Linking from 'expo-linking';
 
-import { PrimaryButton } from '../../components/common/PrimaryButton';
-import { SecondaryButton } from '../../components/common/SecondaryButton';
+import { StitchButton } from '../../components/common/StitchButton';
 import { loginFailure, loginStart, loginSuccess } from '../../redux/slices/authSlice';
 import { AuthRepository } from '../../services/auth/authRepository';
 import { AuthResponse } from '../../services/auth/authTypes';
 import { borderRadius, colors, spacing, typography } from '../../theme';
+import { SvgBrandLogoMark, SvgServicesLock } from '../../assets/svg';
 import { AuthStackParamList } from '../../types/navigation';
 
 type Props = StackScreenProps<AuthStackParamList, 'Login'>;
@@ -42,6 +42,7 @@ export function LoginScreen({ navigation }: Props) {
   const dispatch = useDispatch();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleMessage, setGoogleMessage] = useState('');
@@ -89,10 +90,9 @@ export function LoginScreen({ navigation }: Props) {
             })
           );
           const nextRoute = (user.profileComplete === false ? 'CompleteProfile' : 'Main') as never;
-          navigation.reset({
-            index: 0,
-            routes: [{ name: nextRoute }],
-          });
+          if (nextRoute === 'CompleteProfile') {
+            navigation.navigate('CompleteProfile' as never);
+          }
         } catch (err: any) {
           dispatch(loginFailure(err.message || 'Google login failed'));
           const message = err.message || 'Google login failed';
@@ -166,7 +166,9 @@ export function LoginScreen({ navigation }: Props) {
   };
 
   const handleLogin = async () => {
+    console.log('[DEBUG_LOGIN] email:', JSON.stringify(email), 'password:', JSON.stringify(password));
     if (!email.trim() || !password.trim()) {
+      console.log('[DEBUG_LOGIN] Validation failed! Email or password empty!');
       notify('Validation Error', 'Please enter email and password');
       return;
     }
@@ -184,10 +186,9 @@ export function LoginScreen({ navigation }: Props) {
         })
       );
       const nextRoute = (user.profileComplete === false ? 'CompleteProfile' : 'Main') as never;
-      navigation.reset({
-        index: 0,
-        routes: [{ name: nextRoute }],
-      });
+      if (nextRoute === 'CompleteProfile') {
+            navigation.navigate('CompleteProfile' as never);
+          }
     } catch (err: any) {
       dispatch(loginFailure(err.message || 'Login failed'));
       notify('Login Failed', err.message || 'Login failed');
@@ -202,22 +203,35 @@ export function LoginScreen({ navigation }: Props) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
-
-          <View style={styles.header}>
-            <Text style={styles.title}>Welcome back!</Text>
-            <Text style={styles.subtitle}>Sign in with your email and password</Text>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Top Brand Logo */}
+          <View style={styles.brandContainer}>
+            <View style={styles.brandIconBox}>
+              <SvgBrandLogoMark width={48} height={48} />
+            </View>
+            <Text style={styles.brandTitleFix}>
+              Fix<Text style={styles.brandTitleKart}>Kart</Text>
+            </Text>
           </View>
 
-          <View style={styles.form}>
+          {/* Heading */}
+          <View style={styles.headingSection}>
+            <Text style={styles.title}>Welcome back!</Text>
+            <Text style={styles.subtitle}>Plumbing services made reliable and fast</Text>
+          </View>
+
+          {/* Form Card */}
+          <View style={styles.formCard}>
             <Text style={styles.inputLabel}>Email Address</Text>
-            <View style={styles.singleInputRow}>
+            <View style={styles.inputWrapper}>
               <TextInput
                 style={styles.textInput}
                 placeholder="Enter email"
+                placeholderTextColor={colors.textMuted}
                 keyboardType="email-address"
                 value={email}
                 onChangeText={setEmail}
@@ -227,57 +241,71 @@ export function LoginScreen({ navigation }: Props) {
             </View>
 
             <Text style={styles.inputLabel}>Password</Text>
-            <View style={styles.singleInputRow}>
+            <View style={styles.inputWrapper}>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, { flex: 1 }]}
                 placeholder="Enter password"
-                secureTextEntry
+                placeholderTextColor={colors.textMuted}
+                secureTextEntry={!showPassword}
                 value={password}
                 onChangeText={setPassword}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Toggle password visibility"
+              >
+                <SvgServicesLock width={18} height={18} stroke={showPassword ? colors.primary : colors.textMuted} />
+              </TouchableOpacity>
             </View>
 
-            <PrimaryButton
+            <View style={styles.forgotRow}>
+              <TouchableOpacity onPress={() => notify('Password Reset', 'Please contact support to reset your password.')}>
+                <Text style={styles.forgotText}>Forgot password?</Text>
+              </TouchableOpacity>
+            </View>
+
+            <StitchButton
               title="Login"
               onPress={handleLogin}
               loading={loading}
-              style={styles.continueButton}
+              variant="primary"
+              style={styles.loginButton}
             />
 
-            <TouchableOpacity
-              style={styles.registerLinkRow}
-              onPress={() => navigation.navigate('Register')}
-            >
-              <Text style={styles.registerLinkText}>Create Account</Text>
-            </TouchableOpacity>
-
-            <View style={styles.futureCard}>
-              <Text style={styles.futureTitle}>Email login is enabled</Text>
-              <Text style={styles.futureText}>
-                Customer accounts use email and password. Mobile number is collected during
-                registration for service contact only; SMS verification is disabled.
-              </Text>
-            </View>
-
+            {/* Social Divider */}
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>or continue with</Text>
               <View style={styles.dividerLine} />
             </View>
 
-            <View style={styles.socialRow}>
-              <SecondaryButton
-                title={googleLoading ? 'Opening Google...' : 'Continue with Google'}
-                onPress={handleGoogleLogin}
-                disabled={googleLoading}
-                outlineColor={colors.border}
-                textColor={colors.textPrimary}
-                style={styles.googleButton}
-              />
-              {googleMessage ? <Text style={styles.googleMessage}>{googleMessage}</Text> : null}
-            </View>
+            {/* Google Login Button */}
+            <TouchableOpacity
+              style={styles.socialBtn}
+              onPress={handleGoogleLogin}
+              disabled={googleLoading}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Continue with Google"
+            >
+              <Text style={styles.socialIcon}>G</Text>
+              <Text style={styles.socialBtnText}>
+                {googleLoading ? 'Opening Google...' : 'Continue with Google'}
+              </Text>
+            </TouchableOpacity>
+            {googleMessage ? <Text style={styles.googleMessage}>{googleMessage}</Text> : null}
+          </View>
+
+          {/* Signup Redirect Footer */}
+          <View style={styles.footerRow}>
+            <Text style={styles.footerPrompt}>Don't have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <Text style={styles.footerLink}>Sign up now</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -295,110 +323,112 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    padding: spacing.lg,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: spacing.layout,
+    paddingVertical: spacing.lg,
     justifyContent: 'center',
+  },
+  brandContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    justifyContent: 'center',
     marginBottom: spacing.md,
   },
-  backButtonText: {
-    fontSize: 20,
-    color: '#0F172A',
-    fontWeight: 'bold',
+  brandIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  header: {
-    marginBottom: spacing.xl,
+  brandIconText: {
+    fontSize: 20,
+  },
+  brandTitleFix: {
+    fontSize: 26,
+    fontWeight: typography.fontWeight.black,
+    color: colors.primary,
+    letterSpacing: -0.5,
+  },
+  brandTitleKart: {
+    color: colors.secondary, // Stitch Emerald
+  },
+  headingSection: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#0F172A',
-    fontFamily: typography.fontFamily.bold,
+    fontSize: 22,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: 15,
-    color: '#64748B',
-    marginTop: spacing.xs,
-    fontFamily: typography.fontFamily.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 4,
   },
-  form: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+  formCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 10,
     elevation: 2,
   },
   inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginTop: spacing.md,
-    marginBottom: spacing.xs,
-    fontFamily: typography.fontFamily.medium,
+    fontSize: 12,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textSecondary,
+    marginBottom: 6,
+    marginTop: 8,
   },
-  singleInputRow: {
-    width: '100%',
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 14,
+    height: 48,
+    marginBottom: spacing.xs,
   },
   textInput: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
-    fontSize: 15,
-    color: '#0F172A',
-    backgroundColor: '#FAFAFA',
-    fontFamily: typography.fontFamily.regular,
-  },
-  continueButton: {
-    height: 48,
-    backgroundColor: colors.primary || '#2563EB',
-    borderRadius: borderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: spacing.xl,
-  },
-  registerLinkRow: {
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  registerLinkText: {
+    flex: 1,
     fontSize: 14,
+    color: colors.textPrimary,
+    height: '100%',
+  },
+  eyeBtn: {
+    padding: 6,
+  },
+  eyeText: {
+    fontSize: 14,
+  },
+  forgotRow: {
+    alignItems: 'flex-end',
+    marginTop: 4,
+    marginBottom: spacing.md,
+  },
+  forgotText: {
+    fontSize: 12,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.primary,
-    fontFamily: typography.fontFamily.medium,
   },
-  futureCard: {
-    marginTop: spacing.lg,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    backgroundColor: '#EFF6FF',
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-  },
-  futureTitle: {
-    color: '#1D4ED8',
-    fontSize: 14,
-    fontFamily: typography.fontFamily.bold,
-  },
-  futureText: {
+  loginButton: {
+    width: '100%',
     marginTop: spacing.xs,
-    color: '#475569',
-    fontSize: 13,
-    lineHeight: 18,
-    fontFamily: typography.fontFamily.regular,
   },
   dividerRow: {
     flexDirection: 'row',
@@ -408,31 +438,55 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: colors.border,
   },
   dividerText: {
-    fontSize: 14,
-    color: '#64748B',
     paddingHorizontal: spacing.sm,
-    fontFamily: typography.fontFamily.regular,
+    fontSize: 11,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    fontWeight: typography.fontWeight.medium,
   },
-  socialRow: {
-    width: '100%',
-    marginBottom: spacing.md,
-  },
-  googleButton: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    borderRadius: borderRadius.md,
+  socialBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     height: 48,
-    width: '100%',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  socialIcon: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#4285F4',
+    marginRight: 8,
+  },
+  socialBtnText: {
+    fontSize: 13,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
   },
   googleMessage: {
-    marginTop: spacing.sm,
-    color: colors.textSecondary,
-    fontSize: typography.fontSize.xs,
-    lineHeight: typography.lineHeight.tight,
+    marginTop: spacing.xs,
+    fontSize: 11,
+    color: colors.error,
     textAlign: 'center',
+  },
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xl,
+  },
+  footerPrompt: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  footerLink: {
+    fontSize: 13,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
   },
 });

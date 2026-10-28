@@ -42,7 +42,8 @@ public class PlumberController {
     @GetMapping("/dashboard")
     public ResponseEntity<PlumberDashboardResponse> getDashboard() {
         User user = currentUser.require();
-        List<ServiceOrder> orders = serviceOrderRepository.findByPlumber_Id(user.getId());
+        List<ServiceOrder> orders = new ArrayList<>(serviceOrderRepository.findByPlumber_Id(user.getId()));
+        orders.sort((a, b) -> b.getId().compareTo(a.getId()));
 
         int completed = 0;
         int active = 0;
@@ -51,11 +52,11 @@ public class PlumberController {
         ServiceOrder upcomingOrder = null;
 
         for (ServiceOrder o : orders) {
-            if (o.getStatus() == OrderStatus.COMPLETED || o.getStatus() == OrderStatus.PAID) {
+            if (o.getStatus() == OrderStatus.COMPLETED || o.getStatus() == OrderStatus.PAID || o.getStatus() == OrderStatus.CUSTOMER_CONFIRMED) {
                 completed++;
             } else if (o.getStatus() == OrderStatus.CANCELLED) {
                 cancelled++;
-            } else if (o.getStatus() == OrderStatus.PENDING) {
+            } else if (o.getStatus() == OrderStatus.PENDING || o.getStatus() == OrderStatus.ACCEPTED) {
                 assigned++;
                 if (upcomingOrder == null) upcomingOrder = o;
             } else {
@@ -121,8 +122,8 @@ public class PlumberController {
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<User> getProfile() {
-        return ResponseEntity.ok(currentUser.require());
+    public ResponseEntity<com.pqc.core.dto.CurrentUserProfileResponse> getProfile() {
+        return ResponseEntity.ok(com.pqc.core.dto.CurrentUserProfileResponse.from(com.pqc.core.dto.AuthUserDto.from(currentUser.require())));
     }
 
     @GetMapping("/kyc")
@@ -153,17 +154,19 @@ public class PlumberController {
         return ResponseEntity.status(201).body(toKycResponse(user, plumberKycRepository.save(kyc)));
     }
 
+
     @GetMapping("/orders/{orderId}/material-request")
     public ResponseEntity<List<MaterialRequestSummaryResponse>> getMaterialRequestByOrder(@PathVariable Long orderId) {
         List<MaterialRequestSummaryResponse> response = plumberMaterialService.serviceOrderRequests(orderId);
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/material-requests/{requestId}")
-    public ResponseEntity<MaterialRequestDetailResponse> getMaterialRequestById(@PathVariable Long requestId) {
-        MaterialRequestDetailResponse response = plumberMaterialService.plumberRequestDetails(requestId);
-        return ResponseEntity.ok(response);
-    }
+    // Handled in MaterialPickupController to prevent Spring MVC route collision
+    // @GetMapping("/material-requests/{requestId}")
+    // public ResponseEntity<MaterialRequestDetailResponse> getMaterialRequestById(@PathVariable Long requestId) {
+    //     MaterialRequestDetailResponse response = plumberMaterialService.plumberRequestDetails(requestId);
+    //     return ResponseEntity.ok(response);
+    // }
 
     @GetMapping("/material-requests/{requestId}/tracking")
     public ResponseEntity<List<Map<String, Object>>> getMaterialTracking(@PathVariable Long requestId) {

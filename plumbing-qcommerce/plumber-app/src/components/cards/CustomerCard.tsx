@@ -1,3 +1,4 @@
+import { SvgActionCall, SvgActionChat } from '../../assets/svg';
 import React from 'react';
 import {
   StyleSheet,
@@ -50,10 +51,10 @@ export function CustomerCard({
       {showActions && (
         <View style={styles.actions}>
           <TouchableOpacity style={styles.iconButton} onPress={onCallPress}>
-            <Text style={styles.icon}>📞</Text>
+            <SvgActionCall width={18} height={18} color="#2563EB" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton} onPress={onChatPress}>
-            <Text style={styles.icon}>💬</Text>
+            <SvgActionChat width={18} height={18} color="#2563EB" />
           </TouchableOpacity>
         </View>
       )}

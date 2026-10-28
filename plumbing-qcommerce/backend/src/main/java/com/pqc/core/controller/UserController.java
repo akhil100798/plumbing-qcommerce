@@ -3,6 +3,7 @@ package com.pqc.core.controller;
 import com.pqc.core.entity.User;
 import com.pqc.core.service.UserService;
 import com.pqc.core.security.CurrentUser;
+import com.pqc.core.service.PlumberEligibilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,23 +19,27 @@ public class UserController {
     private final UserService userService;
     private final CurrentUser currentUser;
     private final com.pqc.core.repository.PlumberKycRepository plumberKycRepository;
+    private final PlumberEligibilityService plumberEligibilityService;
 
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<User> getCurrentUser() {
+    public ResponseEntity<com.pqc.core.dto.CurrentUserProfileResponse> getCurrentUser() {
         User user = currentUser.require();
         if (user.getRole() == com.pqc.core.entity.Role.PLUMBER) {
             plumberKycRepository.findByPlumberId(user.getId()).ifPresent(kyc -> {
                 user.setAvailability(kyc.getAvailabilityStatus() == com.pqc.core.entity.PlumberAvailabilityStatus.ONLINE);
             });
         }
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(com.pqc.core.dto.CurrentUserProfileResponse.from(com.pqc.core.dto.AuthUserDto.from(user)));
     }
 
     @PostMapping("/me/availability")
     @PreAuthorize("hasRole('PLUMBER')")
-    public ResponseEntity<User> updateAvailability(@RequestBody AvailabilityRequest request) {
+    public ResponseEntity<com.pqc.core.dto.CurrentUserProfileResponse> updateAvailability(@RequestBody AvailabilityRequest request) {
         User user = currentUser.require();
+        if (request.availability()) {
+            plumberEligibilityService.requireOnlineEligibility(user);
+        }
         com.pqc.core.entity.PlumberKyc kyc = plumberKycRepository.findByPlumberId(user.getId())
                 .orElseGet(() -> com.pqc.core.entity.PlumberKyc.builder()
                         .plumberId(user.getId())
@@ -45,7 +50,7 @@ public class UserController {
                 : com.pqc.core.entity.PlumberAvailabilityStatus.OFFLINE);
         plumberKycRepository.save(kyc);
         user.setAvailability(request.availability());
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(com.pqc.core.dto.CurrentUserProfileResponse.from(com.pqc.core.dto.AuthUserDto.from(user)));
     }
 
     public record AvailabilityRequest(boolean availability) {}

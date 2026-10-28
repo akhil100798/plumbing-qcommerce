@@ -98,6 +98,7 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
       setTimeout(() => {
         setLoading(false);
         navigation.replace('ServiceCompletion', {
+          orderId: serviceOrderId,
           plumberName: plumberName,
         });
       }, 1500);
@@ -115,6 +116,7 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
           text: 'OK',
           onPress: () => {
             navigation.replace('ServiceCompletion', {
+              orderId: serviceOrderId,
               plumberName: plumberName,
             });
           },

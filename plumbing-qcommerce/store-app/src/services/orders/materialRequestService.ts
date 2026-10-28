@@ -75,8 +75,20 @@ export const materialRequestService = {
 
   prepareOrder: async (requestId: number): Promise<MaterialRequest> => {
     try {
-      await apiClient.post(ENDPOINTS.materialRequests.approve(requestId));
-      await apiClient.post(ENDPOINTS.materialRequests.reserve(requestId));
+      try {
+        await apiClient.post(ENDPOINTS.materialRequests.approve(requestId));
+      } catch (err: any) {
+        if (err?.response?.status !== 409) {
+          throw err;
+        }
+      }
+      try {
+        await apiClient.post(ENDPOINTS.materialRequests.reserve(requestId));
+      } catch (err: any) {
+        if (err?.response?.status !== 409) {
+          throw err;
+        }
+      }
       const response = await apiClient.post(ENDPOINTS.materialRequests.prepare(requestId));
       const mapped = mapRequest(response.data);
       updateLocalRequest(mapped);
@@ -88,6 +100,19 @@ export const materialRequestService = {
 
   completePreparation: async (requestId: number): Promise<MaterialRequest> => {
     try {
+      const details = await apiClient.get(ENDPOINTS.materialRequests.details(requestId));
+      const items = details.data?.items || [];
+      const packedQuantities: Record<number, number> = {};
+      items.forEach((item: any) => {
+        const pId = item.productId || item.id;
+        const qty = item.quantity || item.requestedQuantity || 0;
+        if (pId && qty > 0) {
+          packedQuantities[pId] = qty;
+        }
+      });
+      if (Object.keys(packedQuantities).length > 0) {
+        await apiClient.post(`/store/material-requests/${requestId}/packing`, { packedQuantities });
+      }
       const response = await apiClient.post(ENDPOINTS.materialRequests.ready(requestId));
       const mapped = mapRequest(response.data);
       updateLocalRequest(mapped);

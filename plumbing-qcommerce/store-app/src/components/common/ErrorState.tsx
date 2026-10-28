@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, spacing, typography } from '../../theme';
 import { PrimaryButton } from './PrimaryButton';
+import { StoreIcon } from './StoreIcon';
 
 interface ErrorStateProps {
   message: string;
@@ -11,7 +12,9 @@ interface ErrorStateProps {
 export const ErrorState: React.FC<ErrorStateProps> = ({ message, onRetry }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.emoji}>⚠️</Text>
+      <View style={styles.iconContainer}>
+        <StoreIcon name="warning" size={48} color={colors.error} />
+      </View>
       <Text style={styles.title}>Something went wrong</Text>
       <Text style={styles.message}>{message}</Text>
       {onRetry && (
@@ -32,8 +35,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.huge,
   },
-  emoji: {
-    fontSize: 48,
+  iconContainer: {
     marginBottom: spacing.md,
   },
   title: {
@@ -49,6 +51,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   button: {
-    width: 120,
+    width: 200,
   },
 });
+
+export default ErrorState;

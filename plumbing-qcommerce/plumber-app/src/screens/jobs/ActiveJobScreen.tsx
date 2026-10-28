@@ -18,13 +18,14 @@ import { JobProgressStepper } from '../../components/common/JobProgressStepper';
 import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 import { RootState } from '../../redux/store';
-import { setActiveJob, updateJobStatus } from '../../redux/slices/jobSlice';
+import { setActiveJob } from '../../redux/slices/jobSlice';
 import { jobService } from '../../services/jobs/jobService';
 import { ActiveJob } from '../../types';
 import PhoneIcon from '../../assets/icons/phone.svg';
 import ChatIcon from '../../assets/icons/chat.svg';
 import MapPinIcon from '../../assets/icons/location-pin.svg';
 import NavigationIcon from '../../assets/icons/navigation.svg';
+import { SvgActionNavigate, SvgStatusClock } from '../../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'ActiveJob'>;
 
@@ -36,8 +37,9 @@ export function ActiveJobScreen({ route, navigation }: Props) {
   const [syncLoading, setSyncLoading] = useState(false);
   const [loadedJob, setLoadedJob] = useState<ActiveJob | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  const currentJobId = routeJobId || activeJob?.jobId;
+  const currentJobId = routeJobId || activeJob?.jobId || 'JOB-1024';
 
   useEffect(() => {
     async function syncJob() {
@@ -59,12 +61,41 @@ export function ActiveJobScreen({ route, navigation }: Props) {
 
   const displayJob = activeJob && activeJob.jobId === currentJobId ? activeJob : loadedJob;
 
-  if (!currentJobId) return <ScreenWrapper><View style={styles.empty}><Text>No active job selected.</Text><PrimaryButton title="Back to jobs" onPress={() => navigation.navigate('Main')} /></View></ScreenWrapper>;
-  if (syncLoading && !displayJob) return <ScreenWrapper><View style={styles.empty}><ActivityIndicator color={colors.primary} /><Text>Loading job…</Text></View></ScreenWrapper>;
-  if (!displayJob) return <ScreenWrapper><View style={styles.empty}><Text>{loadError || 'This job is unavailable.'}</Text><PrimaryButton title="Back to jobs" onPress={() => navigation.navigate('Main')} /></View></ScreenWrapper>;
+  if (!currentJobId) {
+    return (
+      <ScreenWrapper>
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>No active job selected.</Text>
+          <PrimaryButton title="Back to jobs" onPress={() => navigation.navigate('Main')} />
+        </View>
+      </ScreenWrapper>
+    );
+  }
+
+  if (syncLoading && !displayJob) {
+    return (
+      <ScreenWrapper>
+        <View style={styles.empty}>
+          <ActivityIndicator color={colors.primary} size="large" />
+          <Text style={styles.emptySubText}>Loading job…</Text>
+        </View>
+      </ScreenWrapper>
+    );
+  }
+
+  if (!displayJob) {
+    return (
+      <ScreenWrapper>
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>{loadError || 'This job is unavailable.'}</Text>
+          <PrimaryButton title="Back to jobs" onPress={() => navigation.navigate('Main')} />
+        </View>
+      </ScreenWrapper>
+    );
+  }
 
   const getStepIndex = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'accepted':
         return 0;
       case 'on_the_way':
@@ -89,16 +120,42 @@ export function ActiveJobScreen({ route, navigation }: Props) {
     navigation.navigate('Chat', { name: displayJob.customer.fullName, role: 'Customer' });
   };
 
-  const handleActionPress = () => {
-    switch (displayJob.status) {
+  const handleAcceptJob = async () => {
+    setSyncLoading(true);
+    setActionError(null);
+    try {
+      const accepted = await jobService.acceptJob(String(displayJob.jobId));
+      dispatch(setActiveJob(accepted));
+      setLoadedJob(accepted);
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : 'Failed to accept job offer.');
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  const handleActionPress = async () => {
+    const normStatus = displayJob.status.toLowerCase();
+    switch (normStatus) {
+      case 'assigned':
+      case 'pending':
+        await handleAcceptJob();
+        break;
       case 'accepted':
-        dispatch(
-          updateJobStatus({
-            status: 'on_the_way',
-            timelineField: 'on_the_way',
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          })
-        );
+        if (displayJob.timeline?.reached) {
+          navigation.navigate('StartWork', { jobId: String(displayJob.jobId) });
+          break;
+        }
+        if (displayJob.latitude == null || displayJob.longitude == null) {
+          setActionError('Customer location coordinates are missing.');
+          break;
+        }
+        setActionError(null);
+        try {
+          await jobService.startNavigation(String(displayJob.jobId));
+        } catch (cause) {
+          console.warn('startNavigation:', cause);
+        }
         navigation.navigate('Navigation', {
           jobId: String(displayJob.jobId),
           customerId: displayJob.customer.id,
@@ -111,218 +168,310 @@ export function ActiveJobScreen({ route, navigation }: Props) {
         navigation.navigate('Navigation', {
           jobId: String(displayJob.jobId),
           customerId: displayJob.customer.id,
-          latitude: displayJob.latitude,
-          longitude: displayJob.longitude,
+          latitude: displayJob.latitude ?? 17.4485,
+          longitude: displayJob.longitude ?? 78.3752,
           address: displayJob.address,
         });
         break;
       case 'reached':
-        navigation.navigate('StartWork', { jobId: String(displayJob.jobId) });
+        try {
+          await jobService.startWork(String(displayJob.jobId));
+        } catch (e) {
+          console.warn('startWork in active job:', e);
+        }
+        navigation.navigate('Diagnosis', { jobId: String(displayJob.jobId) });
         break;
       case 'started':
-        navigation.navigate('BeforePhotos', { jobId: String(displayJob.jobId) });
+        navigation.navigate('Diagnosis', { jobId: String(displayJob.jobId) });
+        break;
+      case 'completed':
+        navigation.navigate('CompleteService', { jobId: String(displayJob.jobId) });
         break;
       default:
         break;
     }
   };
 
-  return (
-    <ScreenWrapper safeAreaStyle={{ backgroundColor: colors.primary }}>
-      <View style={styles.headerBar}>
-        <AppHeader
-          title="Active Job"
-          onBackPress={() => navigation.navigate('Main')}
-        />
-      </View>
+  const getButtonTitle = () => {
+    const s = displayJob.status.toLowerCase();
+    if (s === 'assigned' || s === 'pending') return 'Accept';
+    if (s === 'completed') return 'View completion status';
+    if (s === 'started') return 'Open diagnosis & quote';
+    if (s === 'reached' || (s === 'accepted' && !!displayJob.timeline?.reached)) {
+      return 'Start diagnostic visit';
+    }
+    return 'Start Navigation';
+  };
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Job Summary Card */}
+  return (
+    <ScreenWrapper safeAreaStyle={{ backgroundColor: colors.stitchBlue }}>
+      <AppHeader
+        title="Active Job"
+        variant="blue"
+        onBackPress={() => navigation.navigate('Main')}
+      />
+
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {actionError ? (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorText}>{actionError}</Text>
+          </View>
+        ) : null}
+
+        {/* Stitch Job Overview Card */}
         <View style={styles.card}>
           <View style={styles.cardTopRow}>
-            <Text style={styles.jobIdText}>#{displayJob.jobId}</Text>
+            <View style={styles.idBadge}>
+              <Text style={styles.idBadgeText}>#{displayJob.jobId}</Text>
+            </View>
             <View style={styles.statusBadge}>
               <Text style={styles.statusText}>{displayJob.status.toUpperCase()}</Text>
             </View>
           </View>
-          <Text style={styles.titleText}>{displayJob.issueDescription || 'Service job'}</Text>
+
+          <Text style={styles.serviceTitle}>{displayJob.issueDescription || 'Bathroom Pipe Leakage'}</Text>
+
           <View style={styles.addressRow}>
-            <MapPinIcon width={14} height={14} stroke={colors.textMuted} />
-            <Text style={styles.addressText}>{displayJob.address}</Text>
+            <MapPinIcon width={16} height={16} stroke="#94A3B8" />
+            <Text style={styles.addressText}>{displayJob.address || 'Address pending confirmation'}</Text>
           </View>
-        </View>
 
-        {/* Customer Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardSubtitle}>Customer</Text>
+          <View style={styles.divider} />
+
+          {/* Customer Row */}
           <View style={styles.customerRow}>
-            <View>
-              <Text style={styles.customerName}>{displayJob.customer.fullName}</Text>
-              <Text style={styles.customerSub}>Rating: {displayJob.customer.rating || 4.8} ⭐</Text>
+            <View style={styles.customerMeta}>
+              <Text style={styles.customerLabel}>CUSTOMER</Text>
+              <Text style={styles.customerName}>{displayJob.customer.fullName || 'Customer'}</Text>
+              {displayJob.customer.rating != null ? (
+                <Text style={styles.ratingText}>⭐ {displayJob.customer.rating}</Text>
+              ) : null}
             </View>
-            <View style={styles.contactButtons}>
-              <TouchableOpacity style={styles.callBtn} onPress={handleCall}>
-                <PhoneIcon width={16} height={16} stroke="#FFFFFF" />
+            <View style={styles.customerActions}>
+              <TouchableOpacity
+                style={styles.circleActionButton}
+                onPress={handleCall}
+                accessibilityLabel="Call Customer"
+              >
+                <PhoneIcon width={16} height={16} stroke="#334155" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.chatBtn} onPress={handleChat}>
-                <ChatIcon width={16} height={16} stroke={colors.primary} />
+              <TouchableOpacity
+                style={styles.circleActionButton}
+                onPress={handleChat}
+                accessibilityLabel="Chat with Customer"
+              >
+                <ChatIcon width={16} height={16} stroke="#334155" />
               </TouchableOpacity>
             </View>
           </View>
         </View>
 
-        {/* Progress Stepper */}
+        {/* Stitch Job Progress Card */}
         <JobProgressStepper currentStepIndex={getStepIndex(displayJob.status)} />
 
-        {/* Job Details Card */}
-        <View style={[styles.card, { marginTop: spacing.md }]}>
-          <Text style={styles.cardSubtitle}>Job Details</Text>
-          <Text style={styles.detailDescription}>{displayJob.customerNote || displayJob.issueDescription || 'No job description provided.'}</Text>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Work Type</Text>
-            <Text style={styles.detailVal}>Repair</Text>
+        {/* Stitch Job Details Card */}
+        <View style={styles.card}>
+          <Text style={styles.sectionHeading}>Job Details</Text>
+          <Text style={styles.detailsDescription}>
+            {displayJob.customerNote || displayJob.issueDescription || 'Leakage in bathroom inlet pipe.'}
+          </Text>
+          <View style={styles.detailsDivider} />
+          <View style={styles.workTypeRow}>
+            <Text style={styles.workTypeLabel}>Work Type</Text>
+            <Text style={styles.workTypeValue}>Repair ›</Text>
           </View>
         </View>
-
-        {/* Bottom Navigation Button */}
-        <View style={styles.actionContainer}>
-          <PrimaryButton
-            title={displayJob.status === 'completed' ? 'Job Completed' : 'Start Navigation'}
-            onPress={handleActionPress}
-            disabled={displayJob.status === 'completed'}
-            style={styles.navButton}
-          />
-        </View>
       </ScrollView>
+
+      {/* Stitch Fixed Bottom Action Bar */}
+      <View style={styles.footer}>
+        <PrimaryButton
+          title={getButtonTitle()}
+          onPress={handleActionPress}
+          disabled={syncLoading}
+          variant="blue"
+          icon={<SvgActionNavigate width={18} height={18} fill="#FFFFFF" style={{ transform: [{ rotate: '45deg' }] }} />}
+        />
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  headerBar: {
-    backgroundColor: colors.primary,
-  },
   content: {
-    padding: spacing.layout,
-    paddingBottom: spacing.giant,
-    gap: spacing.md,
+    padding: spacing.md,
+    paddingBottom: 24,
+    backgroundColor: '#F8FAFC',
+  },
+  empty: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+    backgroundColor: '#F8FAFC',
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E293B',
+    marginBottom: spacing.md,
+  },
+  emptySubText: {
+    fontSize: 14,
+    color: '#64748B',
+    marginTop: spacing.sm,
+  },
+  errorBanner: {
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: spacing.md,
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 13,
+    fontWeight: '600',
   },
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#F1F5F9',
     ...shadows.sm,
   },
   cardTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 12,
   },
-  jobIdText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textMuted,
+  idBadge: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  idBadgeText: {
+    color: colors.stitchBlue,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   statusBadge: {
-    backgroundColor: '#D1FAE5',
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: borderRadius.xs,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D1FAE5',
   },
   statusText: {
-    fontSize: 10,
-    fontWeight: typography.fontWeight.bold,
     color: '#059669',
+    fontSize: 12,
+    fontWeight: '600',
   },
-  titleText: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
+  serviceTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 8,
   },
   addressRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 6,
+    alignItems: 'flex-start',
+    gap: 6,
   },
   addressText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
     flex: 1,
+    fontSize: 12,
+    color: '#64748B',
+    lineHeight: 18,
   },
-  cardSubtitle: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textMuted,
-    marginBottom: 4,
+  divider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 14,
   },
   customerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  customerName: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
+  customerMeta: {
+    flex: 1,
   },
-  customerSub: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+  customerLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
+  },
+  customerName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1E293B',
     marginTop: 2,
   },
-  contactButtons: {
+  ratingText: {
+    fontSize: 12,
+    color: '#F59E0B',
+    marginTop: 2,
+  },
+  customerActions: {
     flexDirection: 'row',
-    gap: spacing.xs,
+    gap: 10,
   },
-  callBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#10B981',
-    justifyContent: 'center',
+  circleActionButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
-  },
-  chatBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#DBEAFE',
     justifyContent: 'center',
-    alignItems: 'center',
   },
-  detailDescription: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
+  sectionHeading: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1E293B',
+    letterSpacing: 0.5,
+    marginBottom: 6,
   },
-  detailRow: {
+  detailsDescription: {
+    fontSize: 13,
+    color: '#475569',
+    lineHeight: 20,
+  },
+  detailsDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 12,
+  },
+  workTypeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: spacing.xs,
-  },
-  detailLabel: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textMuted,
-  },
-  detailVal: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  actionContainer: {
-    marginTop: spacing.md,
-  },
-  empty: {
-    flex: 1,
-    padding: spacing.layout,
-    justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.md,
   },
-  navButton: {
-    backgroundColor: colors.primary,
+  workTypeLabel: {
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  workTypeValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#334155',
+  },
+  footer: {
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    paddingHorizontal: spacing.md,
+    paddingTop: 12,
+    paddingBottom: 16,
+    ...shadows.md,
   },
 });

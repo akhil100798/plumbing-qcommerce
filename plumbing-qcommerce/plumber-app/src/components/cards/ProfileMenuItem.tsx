@@ -28,7 +28,7 @@ export function ProfileMenuItem({
       {rightElement ? (
         rightElement
       ) : (
-        <Text style={styles.chevron}>➔</Text>
+        <Text style={styles.chevron}>›</Text>
       )}
     </Container>
   );

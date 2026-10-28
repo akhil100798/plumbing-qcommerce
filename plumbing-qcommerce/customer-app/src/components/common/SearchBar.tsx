@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 
 import { borderRadius, colors, spacing, typography } from '../../theme';
+import { SvgActionsSearch } from '../../assets/svg';
 
 interface SearchBarProps {
   placeholder: string;
@@ -26,7 +27,7 @@ export function SearchBar({
 }: SearchBarProps) {
   return (
     <Pressable style={styles.container} onPress={onFocus}>
-      <Text style={styles.searchIcon}>🔍</Text>
+      <View style={{ justifyContent: 'center', alignItems: 'center', marginRight: spacing.sm }}><SvgActionsSearch width={18} height={18} stroke={colors.textSecondary} /></View>
       {editable ? (
         <TextInput
           style={styles.input}

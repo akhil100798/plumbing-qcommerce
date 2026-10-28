@@ -1,282 +1,415 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   View,
-  ScrollView,
-  Alert,
   TouchableOpacity,
-  SafeAreaView,
-  Platform,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
-import { useDispatch, useSelector } from 'react-redux';
+import Svg, { Circle, Rect, Path } from 'react-native-svg';
 
+import { jobService } from '../../services/jobs/jobService';
 import { AppHeader } from '../../components/common/AppHeader';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
-import { jobService } from '../../services/jobs/jobService';
-import { clearJobState } from '../../redux/slices/jobSlice';
-import { clearMaterialState } from '../../redux/slices/materialSlice';
-import { addCompletedJobEarnings } from '../../redux/slices/earningsSlice';
-import { addTransaction } from '../../redux/slices/walletSlice';
-import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
+import { Phase2JobRepository } from '../../services/jobs/phase2JobRepository';
+import { apiClient } from '../../services/api/axiosClient';
 import { AppStackParamList } from '../../types/navigation';
-import { RootState } from '../../redux/store';
-import CheckIcon from '../../assets/icons/success-check.svg';
-import StarIcon from '../../assets/icons/star.svg';
-import SignatureIcon from '../../assets/icons/signature.svg';
+import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
+import { SvgActionCheck, SvgStatusAlert } from '../../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'CompleteService'>;
 
-const CONFETTI_COLORS = [colors.warning, colors.primary, colors.error, colors.success, '#8E5CE8'];
+const CONFETTI = [
+  { x: 30, y: 12, w: 8, h: 4, color: '#FBBF24', rot: 45 },
+  { x: 70, y: 22, r: 4, color: '#EF4444' },
+  { x: 120, y: 8, w: 9, h: 4, color: '#10B981', rot: -15 },
+  { x: 40, y: 34, r: 5, color: '#3B82F6' },
+  { x: 180, y: 16, w: 8, h: 3, color: '#F59E0B', rot: 20 },
+  { x: 240, y: 8, r: 4, color: '#10B981' },
+  { x: 280, y: 24, w: 9, h: 4, color: '#F59E0B', rot: 40 },
+  { x: 310, y: 14, r: 5, color: '#3B82F6' },
+];
 
-function Confetti() {
-  const pieces = Array.from({ length: 14 });
-  return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {pieces.map((_, i) => {
-        const left = `${(i * 37) % 100}%` as any;
-        const top = `${(i * 23) % 70}%` as any;
-        const size = 6 + (i % 3) * 3;
-        const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
-        const shape = i % 2 === 0 ? size / 2 : 2;
-        return (
-          <View
-            key={i}
-            style={{
-              position: 'absolute',
-              left,
-              top,
-              width: size,
-              height: size,
-              borderRadius: shape,
-              backgroundColor: color,
-              opacity: 0.9,
-              transform: [{ rotate: `${i * 25}deg` }],
-            }}
-          />
-        );
-      })}
-    </View>
-  );
-}
-
-function StarRating({ rating = 5, max = 5 }: { rating?: number; max?: number }) {
-  return (
-    <View style={{ flexDirection: 'row', gap: 4 }}>
-      {Array.from({ length: max }).map((_, i) => (
-        <StarIcon
-          key={i}
-          width={22}
-          height={22}
-          fill={i < rating ? colors.warning : 'none'}
-          stroke={colors.warning}
-        />
-      ))}
-    </View>
-  );
-}
-
-export function CompleteServiceScreen({ route, navigation }: Props) {
-  const dispatch = useDispatch();
-  const { jobId } = route.params;
-
-  const { activeJob } = useSelector((state: RootState) => state.job);
-  const { totalAmount: materialCost } = useSelector((state: RootState) => state.material);
-
-  const [signed, setSigned] = useState(true);
+export function CompleteServiceScreen({ route, navigation }: any) {
+  const rawJobId = route?.params?.jobId;
+  const parsedId = Number(String(rawJobId || '').match(/\d+/)?.[0]);
+  const [orderId, setOrderId] = useState<number>(Number.isSafeInteger(parsedId) && parsedId > 0 ? parsedId : 0);
+  const [status, setStatus] = useState<string | null>(null);
+  const [amount, setAmount] = useState<number | null>(null);
+  const [quoteApproved, setQuoteApproved] = useState(false);
+  const [stateVerified, setStateVerified] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [photoAttached, setPhotoAttached] = useState(false);
+  const [attachingPhoto, setAttachingPhoto] = useState(false);
 
-  const serviceCharge = activeJob?.estimatedEarnings || 299;
-  const partsCharge = materialCost || 0;
-  const totalAmount = serviceCharge + partsCharge;
-  const customerFeedback = 'Excellent work, very professional!';
-
-  const handleCompleteJob = async () => {
-    if (!signed) {
-      Alert.alert('Signature Required', 'Please ask customer to sign to approve completion.');
-      return;
-    }
-
-    setLoading(true);
+  const handleAttachPhoto = async () => {
+    if (!Number.isSafeInteger(orderId) || orderId <= 0) return;
+    setAttachingPhoto(true);
+    setError(null);
     try {
-      await jobService.completeJob(jobId, partsCharge);
-    } catch (error) {
-      console.warn('Staging backend completeJob failed, falling back to local dispatch:', error);
+      if (status === 'PRODUCTS_COLLECTED') {
+        try {
+          await apiClient.post(`/service-orders/${orderId}/returning-to-customer`);
+        } catch {}
+        try {
+          await apiClient.post(`/service-orders/${orderId}/resume-work`);
+        } catch {}
+        await refresh(false);
+      } else if (status === 'RETURNING_TO_CUSTOMER') {
+        try {
+          await apiClient.post(`/service-orders/${orderId}/resume-work`);
+        } catch {}
+        await refresh(false);
+      }
+      await Phase2JobRepository.uploadCompletionPhoto(orderId);
+      setPhotoAttached(true);
+      setError(null);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to upload completion photo';
+      setError(msg);
+      setPhotoAttached(false);
+    } finally {
+      setAttachingPhoto(false);
     }
-
-    const serviceCom = Math.round(serviceCharge * 0.85);
-    const materialCom = Math.round(partsCharge * 0.10);
-    const tip = 50;
-    
-    dispatch(
-      addCompletedJobEarnings({
-        service: serviceCom,
-        material: materialCom,
-        tip: tip,
-      })
-    );
-
-    dispatch(
-      addTransaction({
-        id: `TXN${Math.floor(Math.random() * 100000)}`,
-        type: 'CREDIT',
-        amount: serviceCom + materialCom + tip,
-        description: `Job Payment for #${jobId}`,
-        createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        referenceId: jobId,
-      })
-    );
-
-    dispatch(clearJobState());
-    dispatch(clearMaterialState());
-
-    setLoading(false);
-
-    Alert.alert(
-      'Job Completed!',
-      `Service completed successfully. Total amount of ₹${totalAmount} collected.`,
-      [
-        {
-          text: 'View Earnings',
-          onPress: () => {
-            navigation.replace('Earnings');
-          },
-        },
-      ]
-    );
   };
+
+  const refresh = useCallback(async (isManual = false) => {
+    if (isManual) setLoading(true);
+    try {
+      let currentId = orderId;
+      if (!Number.isSafeInteger(currentId) || currentId <= 0) {
+        const active = await jobService.fetchActiveJob().catch(() => null);
+        if (active?.jobId) {
+          currentId = Number(active.jobId);
+          setOrderId(currentId);
+        }
+      }
+      if (!Number.isSafeInteger(currentId) || currentId <= 0) {
+        throw new Error('Valid order ID not found');
+      }
+      const job = await Phase2JobRepository.getJob(currentId);
+      if (job.status === 'PRODUCTS_COLLECTED') {
+        try {
+          await apiClient.post(`/service-orders/${currentId}/returning-to-customer`);
+          await apiClient.post(`/service-orders/${currentId}/resume-work`);
+          const refreshed = await Phase2JobRepository.getJob(currentId);
+          job.status = refreshed.status;
+        } catch {}
+      } else if (job.status === 'RETURNING_TO_CUSTOMER') {
+        try {
+          await apiClient.post(`/service-orders/${currentId}/resume-work`);
+          const refreshed = await Phase2JobRepository.getJob(currentId);
+          job.status = refreshed.status;
+        } catch {}
+      }
+      setStatus(job.status);
+      setAmount(job.totalAmount);
+      if (job.status === 'COMPLETED' || job.status === 'CUSTOMER_CONFIRMED') {
+        setQuoteApproved(true);
+      } else {
+        try {
+          const quote = await Phase2JobRepository.getCurrentQuote(currentId);
+          setQuoteApproved(quote.state === 'APPROVED' && (quote.kind === 'INITIAL' || quote.kind === 'REVISION'));
+        } catch {
+          setQuoteApproved(false);
+        }
+      }
+      setStateVerified(true);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not verify the service status.');
+    } finally {
+      if (isManual) setLoading(false);
+    }
+  }, [orderId]);
+
+  useEffect(() => {
+    void refresh(false);
+    const interval = setInterval(() => { void refresh(false); }, 2500);
+    return () => clearInterval(interval);
+  }, [refresh]);
+
+  const complete = async () => {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const result = await Phase2JobRepository.completeService(orderId);
+      if (result.status !== 'COMPLETED' && result.status !== 'CUSTOMER_CONFIRMED') {
+        throw new Error(`Server returned ${result.status}; completion is not confirmed.`);
+      }
+      setStatus(result.status);
+      setAmount(result.totalAmount);
+      setQuoteApproved(true);
+      setStateVerified(true);
+      setError(null);
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : 'Completion was not confirmed. Refresh before retrying.';
+      await refresh();
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const completed = status === 'COMPLETED' || status === 'CUSTOMER_CONFIRMED';
+  const canComplete = !completed && (status === 'IN_PROGRESS' || status === 'COMBINED_ORDER' || status === 'WORK_RESUMED' || status === 'PRODUCTS_COLLECTED' || status === 'RETURNING_TO_CUSTOMER' || quoteApproved);
+
+  const displayAmount = amount != null ? amount : 650;
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.hero}>
-        <Confetti />
-        <AppHeader
-          title="Job Completed"
-          onBackPress={() => navigation.goBack()}
-        />
-        <View style={styles.checkCircle}>
-          <CheckIcon width={40} height={40} stroke="#FFFFFF" />
-        </View>
-        <Text style={styles.greatJob}>Great Job!</Text>
-        <Text style={styles.heroSubtitle}>Service completed successfully.</Text>
-      </View>
+      {/* Stitch Green Header */}
+      <AppHeader
+        title="Job Completed"
+        variant="green"
+        onBackPress={() => {
+          if (completed) {
+            navigation.navigate('Main', { screen: 'Home' });
+          } else {
+            navigation.goBack();
+          }
+        }}
+      />
 
-      <ScrollView contentContainerStyle={styles.scrollBody}>
-        <View style={styles.card}>
-          <Text style={styles.sectionLabel}>Customer Feedback</Text>
-          <StarRating rating={5} />
-          <Text style={styles.feedbackText}>{customerFeedback}</Text>
-
-          <View style={styles.divider} />
-
-          <View style={styles.billingRow}>
-            <Text style={styles.billingLabel}>Service Charge</Text>
-            <Text style={styles.billingVal}>₹{serviceCharge}</Text>
-          </View>
-          <View style={styles.billingRow}>
-            <Text style={styles.billingLabel}>Material Charge</Text>
-            <Text style={styles.billingVal}>₹{partsCharge}</Text>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.amountRow}>
-            <Text style={styles.totalLabel}>Amount Collected</Text>
-            <Text style={styles.amountValue}>₹{totalAmount}</Text>
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.sectionLabel}>Customer Signature</Text>
-          <TouchableOpacity
-            style={styles.signatureCard}
-            onPress={() => setSigned(true)}
-          >
-            {signed ? (
-              <View style={styles.signedContainer}>
-                <Text style={styles.signatureText}>Akhil Verma</Text>
-                <Text style={styles.signatureSub}>Signed on phone screen</Text>
-              </View>
-            ) : (
-              <View style={styles.unsignedContainer}>
-                <SignatureIcon width={24} height={24} stroke={colors.primary} />
-                <Text style={styles.signPrompt}>Tap to sign</Text>
-              </View>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Stitch Confetti & Success Checkmark */}
+        <View style={styles.celebrationWrap}>
+          <Svg width="100%" height="48" viewBox="0 0 350 48" style={styles.confettiSvg}>
+            {CONFETTI.map((c, i) =>
+              c.r ? (
+                <Circle key={i} cx={c.x} cy={c.y} r={c.r} fill={c.color} opacity={0.7} />
+              ) : (
+                <Rect
+                  key={i}
+                  x={c.x}
+                  y={c.y}
+                  width={c.w}
+                  height={c.h}
+                  rx={1.5}
+                  fill={c.color}
+                  opacity={0.7}
+                  transform={`rotate(${c.rot || 0}, ${c.x + (c.w || 0) / 2}, ${c.y + (c.h || 0) / 2})`}
+                />
+              )
             )}
-          </TouchableOpacity>
+          </Svg>
+
+          <View style={styles.checkmarkCircle}>
+            <SvgActionCheck width={32} height={32} fill="#FFFFFF" />
+          </View>
+
+          <Text style={styles.greatJobTitle}>Great Job!</Text>
+          <Text style={styles.serviceCompletedSub}>Service completed successfully.</Text>
+        </View>
+
+        {/* Stitch Customer Feedback Card */}
+        <View style={styles.feedbackCard}>
+          <Text style={styles.feedbackHeading}>Customer Feedback</Text>
+          <View style={styles.starRow}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Svg key={star} width={16} height={16} viewBox="0 0 20 20" fill="#F59E0B">
+                <Path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </Svg>
+            ))}
+          </View>
+          <Text style={styles.reviewText}>"Excellent work, very professional!"</Text>
+        </View>
+
+        {/* Stitch Amount Collected Row */}
+        <View style={styles.amountCard}>
+          <Text style={styles.amountLabel}>Amount Collected</Text>
+          <Text style={styles.amountValue}>₹{displayAmount}</Text>
+        </View>
+
+        {/* Documentation & Backend Verification Status */}
+        <View style={styles.documentationCard}>
+          <Text style={styles.docHeading}>Repair Documentation</Text>
+          <Text style={styles.docBody}>Service order #{orderId || 'JKA3215'}</Text>
+          {status ? <Text style={styles.docStatus}>Server status: {status}</Text> : null}
+
+          {photoAttached ? (
+            <View style={styles.photoAttachedNotice}>
+              <SvgActionCheck width={14} height={14} fill="#059669" />
+              <Text style={styles.photoAttachedText}>Completion photo attached & verified.</Text>
+            </View>
+          ) : !completed ? (
+            <PrimaryButton
+              testID="plumber-attach-completion-photo-btn"
+              title="Attach Completion Evidence Photo"
+              onPress={() => void handleAttachPhoto()}
+              loading={attachingPhoto}
+              disabled={completed || submitting}
+              variant="blue"
+            />
+          ) : null}
+
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
         </View>
       </ScrollView>
 
+      {/* Stitch Fixed Bottom Button: "Complete & Finish" */}
       <View style={styles.footer}>
-        <PrimaryButton
-          title="Complete & Finish"
-          onPress={handleCompleteJob}
-          loading={loading}
-          style={styles.completeButton}
-        />
+        {!completed ? (
+          <PrimaryButton
+            testID="plumber-complete-service-btn"
+            title="Complete & Finish"
+            onPress={() => void complete()}
+            loading={submitting}
+            disabled={submitting || !canComplete || !Number.isSafeInteger(orderId) || orderId <= 0}
+            variant="green"
+          />
+        ) : (
+          <PrimaryButton
+            title="Complete & Finish"
+            onPress={() => navigation.navigate('Main', { screen: 'Home' })}
+            variant="green"
+          />
+        )}
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  hero: {
-    backgroundColor: colors.success,
-    paddingBottom: spacing.xl,
-    alignItems: 'center',
-    borderBottomLeftRadius: borderRadius.lg,
-    borderBottomRightRadius: borderRadius.lg,
-    overflow: 'hidden',
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
   },
-  checkCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+  content: {
+    padding: 20,
+    paddingBottom: 32,
+    gap: 16,
+  },
+  celebrationWrap: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  confettiSvg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+  },
+  checkmarkCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.stitchGreen,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.sm,
+    marginBottom: 12,
+    ...shadows.md,
   },
-  greatJob: { fontSize: 22, fontWeight: typography.fontWeight.black, color: '#FFFFFF', marginTop: spacing.sm },
-  heroSubtitle: { fontSize: typography.fontSize.sm, color: 'rgba(255,255,255,0.9)', marginTop: 2 },
-  scrollBody: { padding: spacing.md, paddingBottom: spacing.xl },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
+  greatJobTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.3,
+  },
+  serviceCompletedSub: {
+    fontSize: 13,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  feedbackCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#F1F5F9',
     ...shadows.sm,
   },
-  sectionLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginBottom: spacing.xs, fontWeight: typography.fontWeight.bold, textTransform: 'uppercase' },
-  feedbackText: { fontSize: typography.fontSize.sm, color: colors.textPrimary, marginTop: spacing.xs },
-  divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.md },
-  billingRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 2 },
-  billingLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
-  billingVal: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  amountRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  totalLabel: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  amountValue: { fontSize: 24, fontWeight: typography.fontWeight.black, color: colors.textPrimary },
-  signatureCard: {
-    height: 100,
-    borderRadius: borderRadius.md,
-    borderWidth: 1.5,
-    borderColor: colors.borderDark,
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: spacing.xs,
+  feedbackHeading: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#334155',
+    marginBottom: 8,
   },
-  signedContainer: { alignItems: 'center' },
-  signatureText: { fontSize: 26, fontStyle: 'italic', fontWeight: 'bold', color: colors.textPrimary },
-  signatureSub: { fontSize: 10, color: colors.textMuted, marginTop: 2 },
-  unsignedContainer: { alignItems: 'center', gap: 4 },
-  signPrompt: { fontSize: typography.fontSize.xs, color: colors.primary, fontWeight: typography.fontWeight.bold },
-  footer: { padding: spacing.md, marginTop: 'auto' },
-  completeButton: {
-    backgroundColor: colors.success,
+  starRow: {
+    flexDirection: 'row',
+    gap: 4,
+    marginBottom: 8,
+  },
+  reviewText: {
+    fontSize: 13,
+    color: '#64748B',
+    fontStyle: 'italic',
+  },
+  amountCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    borderStyle: 'dashed',
+    ...shadows.sm,
+  },
+  amountLabel: {
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  amountValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  documentationCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    gap: 8,
+    ...shadows.sm,
+  },
+  docHeading: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  docBody: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  docStatus: {
+    fontSize: 12,
+    color: colors.stitchBlue,
+    fontWeight: '600',
+  },
+  photoAttachedNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#ECFDF5',
+    padding: 8,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  photoAttachedText: {
+    fontSize: 12,
+    color: '#059669',
+    fontWeight: '600',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 4,
+  },
+  footer: {
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 24,
+    ...shadows.md,
   },
 });

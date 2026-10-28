@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
+import { SvgServicesLock } from '../../assets/svg';
 
 interface MaterialItem {
   name: string;
@@ -21,7 +22,7 @@ interface MaterialCardProps {
 export function MaterialCard({ items, totalAmount }: MaterialCardProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🔒 Materials Required</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md }}><SvgServicesLock width={16} height={16} stroke={colors.textPrimary} style={{ marginRight: 6 }} /><Text style={[styles.title, { marginBottom: 0 }]}>Materials Required</Text></View>
       <View style={styles.list}>
         {items.map((item, idx) => (
           <View key={idx} style={styles.row}>

@@ -9,6 +9,7 @@ import com.pqc.core.entity.*;
 import com.pqc.core.repository.*;
 import com.pqc.core.scheduler.OutboxPoller;
 import com.pqc.core.service.PaymentService;
+import com.pqc.core.service.PaymentOperationService;
 import com.pqc.core.service.RefreshTokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,6 +73,9 @@ class SecurityAndHardeningIntegrationTest {
 
     @Autowired
     PaymentService paymentService;
+
+    @Autowired
+    PaymentOperationRepository paymentOperationRepository;
 
     @Autowired
     DeliveryController deliveryController;
@@ -198,6 +202,9 @@ class SecurityAndHardeningIntegrationTest {
         order.setStatus(OrderStatus.COMPLETED);
         order = serviceOrderRepository.saveAndFlush(order);
 
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                customer1.getEmail(), null, List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))));
+
         PaymentRequest successRequest = new PaymentRequest(order.getId(), "pm_card_visa", order.getTotalAmount(), "INR");
         PaymentResponse response = paymentService.processPayment(successRequest);
         assertThat(response.getStatus()).isEqualTo("SUCCESS");
@@ -206,13 +213,112 @@ class SecurityAndHardeningIntegrationTest {
         ServiceOrder paidOrder = serviceOrderRepository.findById(order.getId()).orElseThrow();
         assertThat(paidOrder.getStatus()).isEqualTo(OrderStatus.PAID);
 
-        paidOrder.setStatus(OrderStatus.COMPLETED);
-        serviceOrderRepository.saveAndFlush(paidOrder);
-
-        PaymentRequest failRequest = new PaymentRequest(order.getId(), "pm_instrument_fail", order.getTotalAmount(), "INR");
+        ServiceOrder failingOrder = serviceOrderRepository.saveAndFlush(ServiceOrder.builder()
+                .customer(customer1).description("Gateway failure").requestType(RequestType.NEARBY_AUTO)
+                .totalAmount(new BigDecimal("250.00")).build());
+        failingOrder.setStatus(OrderStatus.COMPLETED);
+        failingOrder = serviceOrderRepository.saveAndFlush(failingOrder);
+        PaymentRequest failRequest = new PaymentRequest(failingOrder.getId(), "pm_instrument_fail",
+                failingOrder.getTotalAmount(), "INR");
         PaymentResponse failResponse = paymentService.processPayment(failRequest);
         assertThat(failResponse.getStatus()).isEqualTo("FAILED");
-        assertThat(failResponse.getMessage()).contains("MockPaymentGateway: payment capture failed");
+        assertThat(failResponse.getMessage()).isEqualTo("Payment gateway rejected the capture.");
+    }
+
+    @Test
+    void customerCannotPayAnotherCustomersOrder() {
+        ServiceOrder order = serviceOrderRepository.saveAndFlush(ServiceOrder.builder()
+                .customer(customer1).description("Owned by customer one").requestType(RequestType.NEARBY_AUTO)
+                .totalAmount(new BigDecimal("250.00")).build());
+        order.setStatus(OrderStatus.COMPLETED);
+        serviceOrderRepository.saveAndFlush(order);
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                customer2.getEmail(), null, List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))));
+
+        assertThatThrownBy(() -> paymentService.processPayment(new PaymentRequest(order.getId(), "pm_card_visa", new BigDecimal("250.00"), "INR")))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void manipulatedPaymentAmountIsRejectedWithoutChangingAuthoritativeAmount() {
+        ServiceOrder order = serviceOrderRepository.saveAndFlush(ServiceOrder.builder()
+                .customer(customer1).description("Amount test").requestType(RequestType.NEARBY_AUTO)
+                .totalAmount(new BigDecimal("250.00")).build());
+        order.setStatus(OrderStatus.COMPLETED);
+        serviceOrderRepository.saveAndFlush(order);
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                customer1.getEmail(), null, List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))));
+
+        PaymentResponse response = paymentService.processPayment(new PaymentRequest(order.getId(), "pm_card_visa", new BigDecimal("1.00"), "INR"));
+        assertThat(response.getStatus()).isEqualTo("FAILED");
+        assertThat(serviceOrderRepository.findById(order.getId()).orElseThrow().getTotalAmount())
+                .isEqualByComparingTo("250.00");
+    }
+
+    @Test
+    void paymentCurrencyMustBePresentAndMatchAuthoritativeCurrency() {
+        ServiceOrder order = serviceOrderRepository.saveAndFlush(ServiceOrder.builder()
+                .customer(customer1).description("Currency test").requestType(RequestType.NEARBY_AUTO)
+                .totalAmount(new BigDecimal("250.00")).build());
+        order.setStatus(OrderStatus.COMPLETED);
+        serviceOrderRepository.saveAndFlush(order);
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                customer1.getEmail(), null, List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))));
+
+        assertThat(paymentService.processPayment(new PaymentRequest(order.getId(), "pm_card_visa", order.getTotalAmount(), "USD")).getStatus())
+                .isEqualTo("FAILED");
+        assertThat(paymentService.processPayment(new PaymentRequest(order.getId(), "pm_card_visa", order.getTotalAmount(), null)).getStatus())
+                .isEqualTo("FAILED");
+    }
+
+    @Test
+    void gatewayFailureCanBeRetriedWithSameOperation() {
+        ServiceOrder order = serviceOrderRepository.saveAndFlush(ServiceOrder.builder()
+                .customer(customer1).description("Retryable gateway failure").requestType(RequestType.NEARBY_AUTO)
+                .totalAmount(new BigDecimal("250.00")).build());
+        order.setStatus(OrderStatus.COMPLETED);
+        serviceOrderRepository.saveAndFlush(order);
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                customer1.getEmail(), null, List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))));
+
+        PaymentRequest failing = new PaymentRequest(order.getId(), "pm_instrument_fail", order.getTotalAmount(), "INR");
+        assertThat(paymentService.processPayment(failing).getStatus()).isEqualTo("FAILED");
+        assertThat(paymentOperationRepository.findByServiceOrderIdAndPurpose(order.getId(),
+                PaymentOperationService.PURPOSE).orElseThrow().getStatus()).isEqualTo(PaymentOperationStatus.FAILED);
+
+        PaymentResponse retry = paymentService.processPayment(new PaymentRequest(order.getId(), "pm_card_visa",
+                order.getTotalAmount(), "INR"));
+        assertThat(retry.getStatus()).isEqualTo("SUCCESS");
+    }
+
+    @Test
+    void successfulPaymentCannotBeCapturedAgainSequentially() {
+        ServiceOrder order = serviceOrderRepository.saveAndFlush(ServiceOrder.builder()
+                .customer(customer1).description("Retry test").requestType(RequestType.NEARBY_AUTO)
+                .totalAmount(new BigDecimal("250.00")).build());
+        order.setStatus(OrderStatus.COMPLETED);
+        serviceOrderRepository.saveAndFlush(order);
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                customer1.getEmail(), null, List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))));
+        PaymentRequest request = new PaymentRequest(order.getId(), "pm_card_visa", order.getTotalAmount(), "INR");
+
+        assertThat(paymentService.processPayment(request).getStatus()).isEqualTo("SUCCESS");
+        assertThat(paymentService.processPayment(request).getStatus()).isEqualTo("FAILED");
+        assertThat(serviceOrderRepository.findById(order.getId()).orElseThrow().getStatus()).isEqualTo(OrderStatus.PAID);
+    }
+
+    @Test
+    void alreadyPaidOrderDoesNotCreateOrCaptureAnotherOperation() {
+        ServiceOrder order = serviceOrderRepository.saveAndFlush(ServiceOrder.builder()
+                .customer(customer1).description("Already paid").requestType(RequestType.NEARBY_AUTO)
+                .totalAmount(new BigDecimal("250.00")).status(OrderStatus.PAID).build());
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                customer1.getEmail(), null, List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))));
+
+        assertThat(paymentService.processPayment(new PaymentRequest(order.getId(), "pm_card_visa",
+                order.getTotalAmount(), "INR")).getStatus()).isEqualTo("FAILED");
+        assertThat(paymentOperationRepository.findByServiceOrderIdAndPurpose(order.getId(),
+                PaymentOperationService.PURPOSE)).isEmpty();
     }
 
     @Test

@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 
 import { borderRadius, colors, spacing, typography } from '../../theme';
+import { SvgActionsSend } from '../../assets/svg';
 
 interface ChatInputProps {
   value: string;
@@ -31,7 +32,7 @@ export function ChatInput({ value, onChangeText, onSend }: ChatInputProps) {
         onPress={onSend}
         disabled={!value.trim()}
       >
-        <Text style={styles.sendIcon}>➔</Text>
+        <SvgActionsSend width={16} height={16} stroke={colors.surface} />
       </TouchableOpacity>
     </View>
   );

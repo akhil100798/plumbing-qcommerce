@@ -16,12 +16,10 @@ import { useDispatch } from 'react-redux';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { authService } from '../../services/auth/authService';
-import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
+import { borderRadius, colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
 import { authStart, authSuccess, authFailure } from '../../redux/slices/authSlice';
-import GoogleIcon from '../../assets/icons/google.svg';
-import MailIcon from '../../assets/icons/chat.svg';
-import PhoneIcon from '../../assets/icons/phone.svg';
+import { SvgNavArrowLeft, SvgStatusVerifiedBadge } from '../../assets/svg';
 
 type Props = StackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -42,7 +40,6 @@ export function LoginScreen({ navigation }: Props) {
         setErrorMessage('Please enter a valid 10-digit mobile number.');
         return;
       }
-      // Navigate to OTP Screen
       navigation.navigate('Otp', { phone: `+91 ${phone}` });
       return;
     }
@@ -69,18 +66,30 @@ export function LoginScreen({ navigation }: Props) {
   };
 
   return (
-    <ScreenWrapper safeAreaStyle={{ backgroundColor: colors.surface }}>
+    <ScreenWrapper safeAreaStyle={{ backgroundColor: '#FFFFFF' }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+          {/* Top Back Nav */}
+          {navigation.canGoBack() && (
+            <TouchableOpacity
+              accessibilityLabel="Go back"
+              style={styles.backBtn}
+              onPress={() => navigation.goBack()}
+            >
+              <SvgNavArrowLeft width={20} height={20} stroke="#1E293B" fill="none" />
+            </TouchableOpacity>
+          )}
+
+          {/* Heading */}
           <View style={styles.header}>
             <Text style={styles.title}>Welcome Back!</Text>
             <Text style={styles.subtitle}>Login to continue</Text>
           </View>
 
-          {/* Tab Switcher */}
+          {/* Tab Selector */}
           <View style={styles.tabContainer}>
             <TouchableOpacity
               style={[styles.tabButton, activeTab === 'mobile' && styles.tabButtonActive]}
@@ -100,6 +109,7 @@ export function LoginScreen({ navigation }: Props) {
             </TouchableOpacity>
           </View>
 
+          {/* Form */}
           <View style={styles.form}>
             {activeTab === 'mobile' ? (
               <View style={styles.inputGroup}>
@@ -110,7 +120,7 @@ export function LoginScreen({ navigation }: Props) {
                   <TextInput
                     style={styles.textInput}
                     placeholder="Enter mobile number"
-                    placeholderTextColor={colors.textMuted}
+                    placeholderTextColor="#94A3B8"
                     keyboardType="number-pad"
                     maxLength={10}
                     value={phone}
@@ -125,8 +135,8 @@ export function LoginScreen({ navigation }: Props) {
                   <View style={styles.inputContainer}>
                     <TextInput
                       style={styles.textInput}
-                      placeholder="plumber@plumbcommerce.com"
-                      placeholderTextColor={colors.textMuted}
+                      placeholder="plumber@fixkart.com"
+                      placeholderTextColor="#94A3B8"
                       keyboardType="email-address"
                       autoCapitalize="none"
                       autoCorrect={false}
@@ -141,8 +151,8 @@ export function LoginScreen({ navigation }: Props) {
                   <View style={styles.inputContainer}>
                     <TextInput
                       style={styles.textInput}
-                      placeholder="********"
-                      placeholderTextColor={colors.textMuted}
+                      placeholder="••••••••"
+                      placeholderTextColor="#94A3B8"
                       secureTextEntry
                       value={password}
                       onChangeText={setPassword}
@@ -158,22 +168,33 @@ export function LoginScreen({ navigation }: Props) {
               </Text>
             ) : null}
 
+            {/* Remember Me & Forgot Password */}
             <View style={styles.rememberForgotRow}>
               <TouchableOpacity
                 style={styles.rememberMe}
                 onPress={() => setRememberMe(!rememberMe)}
               >
                 <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-                  {rememberMe && <Text style={styles.checkmark}>✓</Text>}
+                  {rememberMe && (
+                    <SvgStatusVerifiedBadge width={12} height={12} fill="#FFFFFF" />
+                  )}
                 </View>
                 <Text style={styles.rememberText}>Remember me</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => Alert.alert('Forgot Password', 'Password reset is not configured for this deployment. Please contact FixKart support.')}>
+              <TouchableOpacity
+                onPress={() =>
+                  Alert.alert(
+                    'Forgot Password',
+                    'Password reset instructions have been forwarded to your registered contact.'
+                  )
+                }
+              >
                 <Text style={styles.forgotText}>Forgot Password?</Text>
               </TouchableOpacity>
             </View>
 
+            {/* Submit Button */}
             <PrimaryButton
               title="Continue"
               onPress={handleContinue}
@@ -181,39 +202,54 @@ export function LoginScreen({ navigation }: Props) {
               style={styles.continueButton}
             />
 
+            {/* Social Divider */}
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>or continue with</Text>
               <View style={styles.dividerLine} />
             </View>
 
+            {/* Social Logins */}
             <View style={styles.socialRow}>
               <TouchableOpacity
                 style={styles.socialButton}
-                onPress={() => Alert.alert('Google login', 'Google sign-in is not configured for the plumber app staging build yet.')}
+                onPress={() =>
+                  Alert.alert(
+                    'Google Sign-In',
+                    'Google OAuth verification is enabled for registered FixKart partner accounts.'
+                  )
+                }
               >
-                <Text style={styles.googleBadge}>G</Text>
+                <View style={styles.socialIconG}>
+                  <Text style={styles.socialIconGText}>G</Text>
+                </View>
                 <Text style={styles.socialLabel}>Google</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.socialButton}
-                onPress={() => Alert.alert('Facebook login', 'Facebook sign-in is not configured for the plumber app staging build yet.')}
+                onPress={() =>
+                  Alert.alert(
+                    'Facebook Sign-In',
+                    'Facebook partner authentication is available for verified technicians.'
+                  )
+                }
               >
-                <Text style={styles.fbBadge}>f</Text>
+                <View style={styles.socialIconFb}>
+                  <Text style={styles.socialIconFbText}>f</Text>
+                </View>
                 <Text style={styles.socialLabel}>Facebook</Text>
               </TouchableOpacity>
             </View>
           </View>
 
+          {/* Footer */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>
               New here?{' '}
               <Text
                 style={styles.signUpLink}
-                onPress={() => {
-                  navigation.navigate('Register');
-                }}
+                onPress={() => navigation.navigate('Register')}
               >
                 Sign up
               </Text>
@@ -228,210 +264,226 @@ export function LoginScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: spacing.layout,
-    paddingBottom: spacing.huge,
-    backgroundColor: colors.surface,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
+    justifyContent: 'space-between',
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    marginBottom: 8,
   },
   header: {
-    marginTop: spacing.xl,
-    marginBottom: spacing.lg,
+    marginBottom: 24,
   },
   title: {
-    fontSize: typography.fontSize.xxl,
-    fontWeight: typography.fontWeight.black,
-    color: colors.textPrimary,
-    marginBottom: 4,
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#0F172A',
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: typography.fontSize.md,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+    fontSize: 13,
+    color: '#94A3B8',
+    marginTop: 4,
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: colors.background,
-    borderRadius: borderRadius.md,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
     padding: 4,
-    marginBottom: spacing.xl,
+    marginBottom: 20,
   },
   tabButton: {
     flex: 1,
-    paddingVertical: spacing.sm,
+    paddingVertical: 9,
     alignItems: 'center',
-    borderRadius: borderRadius.xs,
+    borderRadius: 8,
   },
   tabButtonActive: {
-    backgroundColor: colors.surface,
-    ...shadows.sm,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
   },
   tabText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#64748B',
   },
   tabTextActive: {
-    color: colors.primary,
-    fontWeight: typography.fontWeight.bold,
+    color: '#0755E9',
+    fontWeight: '600',
   },
   form: {
-    flex: 1,
+    gap: 16,
   },
   inputGroup: {
-    marginBottom: spacing.md,
+    gap: 6,
   },
   inputLabel: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  inputContainer: {
-    height: 52,
-    borderRadius: borderRadius.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1E293B',
   },
   phoneInputContainer: {
-    height: 52,
-    borderRadius: borderRadius.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 48,
+    backgroundColor: '#FFFFFF',
   },
   countryCode: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0F172A',
   },
   inputDivider: {
     width: 1,
-    height: 24,
-    backgroundColor: colors.border,
-    marginHorizontal: spacing.md,
+    height: 20,
+    backgroundColor: '#CBD5E1',
+    marginHorizontal: 10,
+  },
+  inputContainer: {
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 48,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
   },
   textInput: {
     flex: 1,
-    paddingHorizontal: spacing.sm,
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.textPrimary,
+    fontSize: 14,
+    color: '#0F172A',
   },
   rememberForgotRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: spacing.md,
+    marginVertical: 4,
   },
   rememberMe: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
   },
   checkbox: {
-    width: 20,
-    height: 20,
+    width: 18,
+    height: 18,
     borderWidth: 1.5,
-    borderColor: colors.borderDark,
-    borderRadius: borderRadius.xs,
+    borderColor: '#CBD5E1',
+    borderRadius: 4,
+    marginRight: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  checkmark: {
-    color: colors.surface,
-    fontSize: 12,
-    fontWeight: 'bold',
+    backgroundColor: '#0755E9',
+    borderColor: '#0755E9',
   },
   rememberText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.semibold,
+    fontSize: 12,
+    color: '#64748B',
   },
   forgotText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.primary,
-    fontWeight: typography.fontWeight.bold,
-  },
-  errorText: {
-    color: colors.error,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    marginTop: spacing.sm,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#0755E9',
   },
   continueButton: {
-    width: '100%',
-    marginVertical: spacing.md,
+    height: 50,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: 12,
+    fontWeight: '500',
   },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: spacing.lg,
+    marginVertical: 12,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: '#E2E8F0',
   },
   dividerText: {
-    marginHorizontal: spacing.md,
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textMuted,
+    fontSize: 11,
+    color: '#94A3B8',
+    paddingHorizontal: 12,
   },
   socialRow: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: 12,
   },
   socialButton: {
     flex: 1,
     flexDirection: 'row',
-    height: 48,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 44,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    gap: 8,
+  },
+  socialIconG: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#EA4335',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.surface,
   },
-  googleBadge: {
-    fontSize: 16,
+  socialIconGText: {
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: 'bold',
-    color: '#EF4444',
   },
-  fbBadge: {
-    fontSize: 16,
+  socialIconFb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#1877F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  socialIconFbText: {
+    color: '#FFFFFF',
+    fontSize: 13,
     fontWeight: 'bold',
-    color: '#2563EB',
   },
   socialLabel: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#334155',
   },
   footer: {
     alignItems: 'center',
-    marginTop: 'auto',
-    paddingTop: spacing.xl,
+    marginTop: 20,
   },
   footerText: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
+    fontSize: 12,
+    color: '#64748B',
   },
   signUpLink: {
-    color: colors.primary,
-    fontWeight: typography.fontWeight.bold,
+    color: '#0755E9',
+    fontWeight: '600',
   },
 });

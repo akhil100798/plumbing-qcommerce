@@ -7,9 +7,10 @@ import {
 } from 'react-native';
 
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
+import { SvgNavigationArrowRight } from '../../assets/svg';
 
 interface SupportOptionCardProps {
-  icon: string;
+  icon: React.ReactNode | string;
   title: string;
   description: string;
   onPress: () => void;
@@ -24,13 +25,13 @@ export function SupportOptionCard({
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.iconCircle}>
-        <Text style={styles.icon}>{icon}</Text>
+        typeof icon === 'string' ? <Text style={styles.icon}>{icon}</Text> : icon
       </View>
       <View style={styles.content}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.description}>{description}</Text>
       </View>
-      <Text style={styles.arrow}>→</Text>
+      <SvgNavigationArrowRight width={16} height={16} stroke={colors.textSecondary} />
     </TouchableOpacity>
   );
 }

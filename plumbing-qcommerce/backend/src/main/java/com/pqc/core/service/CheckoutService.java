@@ -13,12 +13,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.Comparator;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class CheckoutService {
 
     private final ProductRepository productRepository;
@@ -26,17 +31,38 @@ public class CheckoutService {
     private final StockRepository stockRepository;
     private final InventoryReservationRepository reservationRepository;
     private final ProductOrderRepository orderRepository;
+    private final ProductOrderItemRepository itemRepository;
     private final UserRepository userRepository;
     private final CurrentUser currentUser;
     private final OutboxEventRepository outboxRepository;
     private final ServiceOrderRepository serviceOrderRepository;
     private final DeliveryOtpService deliveryOtpService;
+    private final PaymentOperationRepository paymentOperationRepository;
+    private final PaymentGatewayAdapter paymentGatewayAdapter;
+    private final LaunchPolicyService launchPolicyService;
 
     /**
      * Reserve Stock - Phase 1 Inventory reservation logic
      */
     @Transactional
     public ProductOrder reserveStock(Long customerId, Long storeId, List<CartItemDTO> cartItems) {
+        if (storeId == null || storeId <= 0) {
+            throw new IllegalArgumentException("Store ID must be positive");
+        }
+        if (cartItems == null || cartItems.isEmpty()) {
+            throw new IllegalArgumentException("Items list cannot be empty");
+        }
+
+        Set<Long> productIds = new HashSet<>();
+        for (CartItemDTO item : cartItems) {
+            if (item == null || item.getProductId() == null || item.getQuantity() == null || item.getQuantity() <= 0) {
+                throw new IllegalArgumentException("Each checkout item requires a product and a positive quantity");
+            }
+            if (!productIds.add(item.getProductId())) {
+                throw new IllegalArgumentException("A product may appear only once in a checkout");
+            }
+        }
+
         User actor = currentUser.require();
         if (actor.getRole() != Role.CUSTOMER || !actor.getId().equals(customerId)) {
             if (actor.getRole() == Role.PLUMBER) {
@@ -71,7 +97,7 @@ public class CheckoutService {
             Product product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new RuntimeException("Product not found: " + item.getProductId()));
 
-            Stock stock = stockRepository.findByStoreIdAndProductId(storeId, item.getProductId())
+            Stock stock = stockRepository.findForUpdateByStoreIdAndProductId(storeId, item.getProductId())
                     .orElseThrow(() -> new RuntimeException("Product " + product.getName() + " is not available at store " + store.getName()));
 
             if (stock.getAvailableQuantity() < item.getQuantity()) {
@@ -131,8 +157,39 @@ public class CheckoutService {
      */
     @Transactional
     public void confirmPayment(Long orderId) {
-        ProductOrder order = orderRepository.findById(orderId)
+        ProductOrder discovered = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+        ServiceOrder linked = discovered.getServiceOrder() == null ? null
+                : serviceOrderRepository.findByIdForUpdate(discovered.getServiceOrder().getId()).orElseThrow();
+        ProductOrder order = linked == null ? discovered : orderRepository.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+        if (linked != null) itemRepository.findByOrderIdForUpdate(orderId);
+
+        if (order.getStatus() == ProductOrderStatus.CONFIRMED) {
+            // Confirmation is intentionally idempotent: a repeated activation must not
+            // decrement reserved stock or emit a second dispatch event.
+            return;
+        }
+
+        // Support plumber-assisted material orders linked to a service order
+        if (linked != null) {
+            User caller = currentUser.require();
+            if (caller.getRole() != Role.CUSTOMER && caller.getRole() != Role.ADMIN) {
+                throw new AccessDeniedException("Only the customer or admin may authorize material payment.");
+            }
+            if (caller.getRole() == Role.CUSTOMER && linked.getCustomer() != null
+                    && !linked.getCustomer().getId().equals(caller.getId())) {
+                throw new AccessDeniedException("Customer does not own this service order.");
+            }
+            if (caller.getRole() == Role.ADMIN) {
+                log.warn("[SECURITY-AUDIT] Admin user ID {} initiated material payment confirmation for service order #{} on behalf of customer #{}.",
+                        caller.getId(), linked.getId(), linked.getCustomer() != null ? linked.getCustomer().getId() : "null");
+            }
+            log.info("Processing customer payment authorization for linked material order #{} (status: {})",
+                    orderId, order.getStatus());
+            recordMaterialPaymentOperation(linked.getId(), order);
+            return;
+        }
 
         if (order.getStatus() != ProductOrderStatus.PENDING) {
             throw new IllegalStateException("Order #" + orderId + " is not pending payment.");
@@ -141,10 +198,11 @@ public class CheckoutService {
         order.setStatus(ProductOrderStatus.CONFIRMED);
         orderRepository.save(order);
 
-        List<InventoryReservation> reservations = reservationRepository.findByOrderId(orderId);
+        List<InventoryReservation> reservations = linked == null
+                ? reservationRepository.findByOrderId(orderId) : lockedReservations(orderId);
         List<Stock> stocksToSave = new ArrayList<>();
 
-        for (InventoryReservation res : reservations) {
+        for (InventoryReservation res : reservations.stream().sorted(reservationStockOrder()).toList()) {
             if (res.getStatus() == ReservationStatus.PENDING) {
                 res.setStatus(ReservationStatus.CONFIRMED);
                 Stock stock = res.getStock();
@@ -157,7 +215,7 @@ public class CheckoutService {
         stockRepository.saveAll(stocksToSave);
 
         // ---- Phase 3: Combined Order handling ----
-        Optional<ServiceOrder> linkedServiceOrder = Optional.ofNullable(order.getServiceOrder());
+        Optional<ServiceOrder> linkedServiceOrder = Optional.ofNullable(linked);
         String eventType = "ORDER_CONFIRMED";
         String topic = "order-confirmed";
 
@@ -202,8 +260,18 @@ public class CheckoutService {
      */
     @Transactional
     public void releaseReservation(Long orderId) {
-        ProductOrder order = orderRepository.findById(orderId)
+        ProductOrder discovered = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+        ServiceOrder linked = discovered.getServiceOrder() == null ? null
+                : serviceOrderRepository.findByIdForUpdate(discovered.getServiceOrder().getId()).orElseThrow();
+        ProductOrder order = linked == null ? discovered : orderRepository.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+        if (linked != null) itemRepository.findByOrderIdForUpdate(orderId);
+
+        if (order.getStatus() == ProductOrderStatus.CANCELLED) {
+            return;
+        }
+
 
         if (order.getStatus() != ProductOrderStatus.PENDING) {
             throw new IllegalStateException("Cannot release stock for non-pending order: " + orderId);
@@ -212,10 +280,11 @@ public class CheckoutService {
         order.setStatus(ProductOrderStatus.CANCELLED);
         orderRepository.save(order);
 
-        List<InventoryReservation> reservations = reservationRepository.findByOrderId(orderId);
+        List<InventoryReservation> reservations = linked == null
+                ? reservationRepository.findByOrderId(orderId) : lockedReservations(orderId);
         List<Stock> stocksToSave = new ArrayList<>();
 
-        for (InventoryReservation res : reservations) {
+        for (InventoryReservation res : reservations.stream().sorted(reservationStockOrder()).toList()) {
             if (res.getStatus() == ReservationStatus.PENDING) {
                 res.setStatus(ReservationStatus.RELEASED);
                 Stock stock = res.getStock();
@@ -228,6 +297,22 @@ public class CheckoutService {
         reservationRepository.saveAll(reservations);
         stockRepository.saveAll(stocksToSave);
         log.info("Released stock reservations for cancelled order #{}", orderId);
+    }
+
+    private List<InventoryReservation> lockedReservations(Long orderId) {
+        List<InventoryReservation> discovered = reservationRepository.findByOrderId(orderId);
+        discovered.stream()
+                .sorted(reservationStockOrder())
+                .forEach(reservation -> stockRepository.findForUpdateByStoreIdAndProductId(
+                        reservation.getStock().getStore().getId(), reservation.getStock().getProduct().getId())
+                        .orElseThrow(() -> new IllegalStateException("Stock not found for reservation " + reservation.getId())));
+        return reservationRepository.findByOrderIdForUpdate(orderId);
+    }
+
+    private Comparator<InventoryReservation> reservationStockOrder() {
+        return Comparator.comparing((InventoryReservation r) -> r.getStock().getStore().getId())
+                .thenComparing(r -> r.getStock().getProduct().getId())
+                .thenComparing(InventoryReservation::getId);
     }
 
     /**
@@ -286,6 +371,106 @@ public class CheckoutService {
                 throw new AccessDeniedException("You do not have permission to manage orders for this store.");
             }
         }
+    }
+
+    public com.pqc.core.dto.OrderDetailDTO getOrderByIdForUser(Long id, User user) {
+        ProductOrder order = orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + id));
+
+        if (!order.getCustomer().getId().equals(user.getId())
+                && (order.getDeliveryPartner() == null || !order.getDeliveryPartner().getId().equals(user.getId()))
+                && user.getRole() != Role.ADMIN
+                && user.getRole() != Role.STORE_MANAGER) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied to this order");
+        }
+
+        List<com.pqc.core.dto.OrderDetailDTO.OrderItemDetail> items = order.getItems().stream()
+                .map(item -> com.pqc.core.dto.OrderDetailDTO.OrderItemDetail.builder()
+                        .productId(item.getProduct() != null ? item.getProduct().getId() : null)
+                        .productName(item.getProduct() != null ? item.getProduct().getName() : "Unknown")
+                        .quantity(item.getQuantity())
+                        .price(item.getPrice())
+                        .build())
+                .toList();
+
+        com.pqc.core.dto.OrderDetailDTO.OrderDetailDTOBuilder builder = com.pqc.core.dto.OrderDetailDTO.builder()
+                .id(order.getId())
+                .customerId(order.getCustomer().getId())
+                .storeId(order.getStore().getId())
+                .storeName(order.getStore().getName())
+                .totalAmount(order.getTotalAmount())
+                .status(order.getStatus().name())
+                .deliveryPartnerName(order.getDeliveryPartner() != null ? order.getDeliveryPartner().getFullName() : null)
+                .deliveryPartnerPhone(order.getDeliveryPartner() != null ? order.getDeliveryPartner().getPhone() : null)
+                .deliveryOtp(null)
+                .estimatedDeliveryAt(order.getEstimatedDeliveryAt())
+                .createdAt(order.getCreatedAt())
+                .items(items);
+
+        if (order.getServiceOrder() != null) {
+            ServiceOrder so = order.getServiceOrder();
+            builder.serviceOrderId(so.getId())
+                    .serviceOrderStatus(so.getStatus().name())
+                    .assignedPlumberName(so.getPlumber() != null ? so.getPlumber().getFullName() : null)
+                    .assignedPlumberPhone(so.getPlumber() != null ? so.getPlumber().getPhone() : null);
+        }
+
+        return builder.build();
+    }
+
+    public List<com.pqc.core.dto.OrderDetailResponse> getOrdersByStatusForUser(ProductOrderStatus status, User user) {
+        List<ProductOrder> orders;
+        if (user.getRole() == Role.ADMIN) {
+            orders = orderRepository.findByStatus(status);
+        } else if (user.getRole() == Role.STORE_MANAGER) {
+            orders = orderRepository.findAll().stream()
+                    .filter(order -> order.getStore() != null)
+                    .filter(order -> order.getStore().getManager() != null)
+                    .filter(order -> order.getStore().getManager().getId().equals(user.getId()))
+                    .filter(order -> order.getStatus() == status)
+                    .toList();
+        } else {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Only store managers and admins can list product orders by status");
+        }
+        return orders.stream().map(this::mapToResponse).toList();
+    }
+
+    public List<com.pqc.core.dto.OrderDetailResponse> getCustomerMaterialRequestsForUser(Long customerId) {
+        return orderRepository.findByCustomerIdAndServiceOrderIsNotNull(customerId).stream()
+                .map(this::mapToResponse).toList();
+    }
+
+    public List<com.pqc.core.dto.OrderDetailResponse> getPlumberMaterialRequestsForUser(Long plumberId) {
+        return orderRepository.findByServiceOrder_Plumber_Id(plumberId).stream()
+                .map(this::mapToResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.pqc.core.dto.OrderDetailResponse> getStoreMaterialRequestsForUser(User user) {
+        List<ProductOrder> orders;
+        if (user.getRole() == Role.ADMIN) {
+            orders = orderRepository.findAll().stream().filter(order -> order.getServiceOrder() != null).toList();
+        } else {
+            orders = orderRepository.findByStore_Manager_IdAndServiceOrderIsNotNull(user.getId());
+            if (orders.isEmpty()) {
+                orders = orderRepository.findAll().stream().filter(order -> order.getServiceOrder() != null).toList();
+            }
+        }
+        return orders.stream()
+                .filter(order -> order.getStatus() != ProductOrderStatus.CANCELLED)
+                .map(this::mapToResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductOrder> getMyOrders(Long customerId) {
+        List<ProductOrder> orders = orderRepository.findByCustomerId(customerId);
+        for (ProductOrder order : orders) {
+            if (order.getItems() != null) {
+                order.getItems().size();
+            }
+        }
+        return orders;
     }
 
     public com.pqc.core.dto.OrderDetailResponse mapToResponse(ProductOrder order) {
@@ -422,5 +607,79 @@ public class CheckoutService {
 
         log.info("Order #{} handed over to rider. Status updated to OUT_FOR_DELIVERY.", id);
         return mapToResponse(saved);
+    }
+
+    private void recordMaterialPaymentOperation(Long serviceOrderId, ProductOrder materialOrder) {
+        // Prevent payment capture in invalid product-order states
+        if (materialOrder.getStatus() == ProductOrderStatus.CANCELLED
+                || materialOrder.getStatus() == ProductOrderStatus.REJECTED
+                || materialOrder.getStatus() == ProductOrderStatus.FAILED) {
+            throw new IllegalStateException("Cannot capture payment for material order #" + materialOrder.getId()
+                    + " in terminal/invalid status: " + materialOrder.getStatus());
+        }
+
+        // Verify amount is non-null and strictly positive
+        BigDecimal amount = materialOrder.getTotalAmount();
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Material order #" + materialOrder.getId()
+                    + " has invalid payable amount: " + amount);
+        }
+
+        String purpose = "MATERIAL_ORDER_CAPTURE_V1";
+        Optional<PaymentOperation> existing = paymentOperationRepository.findByServiceOrderIdAndPurpose(serviceOrderId, purpose);
+        if (existing.isPresent()) {
+            PaymentOperation op = existing.get();
+            if (op.getStatus() == PaymentOperationStatus.CAPTURED) {
+                log.info("Material payment operation already captured for service order #{}: tx {}",
+                        serviceOrderId, op.getGatewayTransactionId());
+                return;
+            }
+            if (op.getStatus() == PaymentOperationStatus.REQUIRES_RECONCILIATION) {
+                throw new IllegalStateException("Material payment requires reconciliation before retry.");
+            }
+        }
+
+        String idempotencyKey = "service-order:" + serviceOrderId + ":material-order:" + materialOrder.getId() + ":capture:v1";
+        String currency = launchPolicyService != null ? launchPolicyService.authoritativeCurrency() : "INR";
+
+        // Route payment capture through the supported mock payment gateway abstraction
+        final String transactionId;
+        try {
+            transactionId = paymentGatewayAdapter.capturePayment(
+                    materialOrder.getId(),
+                    amount,
+                    "mock_customer_instrument",
+                    currency,
+                    idempotencyKey
+            );
+        } catch (Exception gatewayFailure) {
+            PaymentOperation failedOp = existing.orElseGet(() -> PaymentOperation.builder()
+                    .serviceOrderId(serviceOrderId)
+                    .purpose(purpose)
+                    .idempotencyKey(idempotencyKey)
+                    .amount(amount)
+                    .currency(currency)
+                    .build());
+            failedOp.setStatus(PaymentOperationStatus.FAILED);
+            failedOp.setFailureReason(gatewayFailure.getMessage() != null ? gatewayFailure.getMessage() : "Gateway capture rejected");
+            paymentOperationRepository.save(failedOp);
+            log.warn("Payment gateway rejected material capture for order #{}: {}", materialOrder.getId(), gatewayFailure.getMessage());
+            throw new IllegalStateException("Payment gateway rejected material payment capture.", gatewayFailure);
+        }
+
+        PaymentOperation operation = existing.orElseGet(() -> PaymentOperation.builder()
+                .serviceOrderId(serviceOrderId)
+                .purpose(purpose)
+                .idempotencyKey(idempotencyKey)
+                .amount(amount)
+                .currency(currency)
+                .build());
+
+        operation.setStatus(PaymentOperationStatus.CAPTURED);
+        operation.setGatewayTransactionId(transactionId);
+        operation.setFailureReason(null);
+        paymentOperationRepository.save(operation);
+        log.info("Recorded customer payment capture via gateway for material order #{} linked to service order #{}: amount {} {}, txId {}",
+                materialOrder.getId(), serviceOrderId, currency, amount, transactionId);
     }
 }

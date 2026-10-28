@@ -7,17 +7,16 @@ import {
   View,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
+import { useDispatch } from 'react-redux';
 
 import { AppHeader } from '../../components/common/AppHeader';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
 import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { OTPInput } from '../../components/forms/OTPInput';
 import { authService } from '../../services/auth/authService';
-import { colors, spacing, typography, borderRadius } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
-import { useDispatch } from 'react-redux';
 import { authSuccess, authFailure } from '../../redux/slices/authSlice';
-import ShieldIcon from '../../assets/icons/shield-verified.svg';
+import { SvgStatusVerifiedBadge, SvgMatMaterialApproval } from '../../assets/svg';
 
 type Props = StackScreenProps<AuthStackParamList, 'Otp'>;
 
@@ -69,22 +68,25 @@ export function OtpScreen({ route, navigation }: Props) {
   const ss = String(timer % 60).padStart(2, '0');
 
   return (
-    <ScreenWrapper safeAreaStyle={{ backgroundColor: colors.surface }}>
+    <ScreenWrapper safeAreaStyle={{ backgroundColor: '#FFFFFF' }}>
       <AppHeader title="Verify Number" onBackPress={() => navigation.goBack()} />
-      
-      <View style={styles.content}>
+
+      <View style={styles.container}>
+        {/* Verification Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Verify Your Number</Text>
           <Text style={styles.subtitle}>
-            Enter the 6-digit code sent to
+            Enter the 6-digit code sent to{'\n'}
+            <Text style={styles.phoneHighlight}>{phone}</Text>
           </Text>
-          <Text style={styles.phoneText}>{phone}</Text>
         </View>
 
+        {/* 6-digit OTP Inputs */}
         <View style={styles.otpWrapper}>
           <OTPInput length={6} onCodeChanged={setCode} />
         </View>
 
+        {/* Resend Timer */}
         <View style={styles.resendRow}>
           {timer > 0 ? (
             <Text style={styles.timerText}>
@@ -97,95 +99,149 @@ export function OtpScreen({ route, navigation }: Props) {
           )}
         </View>
 
-        <View style={styles.securityWrapper}>
-          <View style={styles.shieldBadge}>
-            <ShieldIcon width={40} height={40} stroke={colors.primary} />
+        {/* Radiating Concentric Security Shield Illustration */}
+        <View style={styles.shieldSection}>
+          <View style={styles.outerRing} />
+          <View style={styles.middleRing} />
+          <View style={styles.diamondBox} />
+          <View style={styles.shieldCard}>
+            <SvgStatusVerifiedBadge width={48} height={48} fill="#2563EB" />
           </View>
-          <Text style={styles.securityText}>Your data is safe with us</Text>
         </View>
 
-        <PrimaryButton
-          title="Verify & Continue"
-          onPress={handleVerify}
-          loading={loading}
-          disabled={code.length < 6}
-          style={styles.verifyButton}
-        />
+        {/* Action Button & Trust Badge */}
+        <View style={styles.bottomSection}>
+          <PrimaryButton
+            title="Verify & Continue"
+            onPress={handleVerify}
+            loading={loading}
+            style={styles.verifyBtn}
+          />
+
+          <View style={styles.trustBadge}>
+            <SvgMatMaterialApproval width={14} height={14} stroke="#94A3B8" fill="none" />
+            <Text style={styles.trustText}>Your data is safe with us</Text>
+          </View>
+        </View>
       </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
+  container: {
     flex: 1,
-    paddingHorizontal: spacing.layout,
-    paddingTop: spacing.xl,
-    backgroundColor: colors.surface,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 24,
+    justifyContent: 'space-between',
+    paddingBottom: 24,
   },
   header: {
-    alignItems: 'flex-start',
-    marginBottom: spacing.xl,
+    alignItems: 'center',
+    marginTop: 16,
   },
   title: {
-    fontSize: typography.fontSize.xxl,
-    fontWeight: typography.fontWeight.black,
-    color: colors.textPrimary,
-    marginBottom: 4,
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#0F172A',
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 20,
   },
-  phoneText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-    marginTop: 2,
+  phoneHighlight: {
+    fontWeight: '700',
+    color: '#0F172A',
   },
   otpWrapper: {
-    marginVertical: spacing.md,
+    marginVertical: 18,
     alignItems: 'center',
   },
   resendRow: {
-    alignItems: 'flex-start',
-    marginVertical: spacing.sm,
+    alignItems: 'center',
+    marginBottom: 16,
   },
   timerText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
+    fontSize: 12,
+    color: '#64748B',
   },
   timerHighlight: {
-    color: colors.primary,
-    fontWeight: typography.fontWeight.bold,
+    color: '#0755E9',
+    fontWeight: '600',
   },
   resendLink: {
-    fontSize: typography.fontSize.xs,
-    color: colors.primary,
-    fontWeight: typography.fontWeight.bold,
+    fontSize: 13,
+    color: '#0755E9',
+    fontWeight: '600',
   },
-  securityWrapper: {
+  shieldSection: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: spacing.xl,
-    gap: spacing.xs,
+    alignItems: 'center',
+    position: 'relative',
+    minHeight: 180,
   },
-  shieldBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  outerRing: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
     backgroundColor: '#EFF6FF',
+    opacity: 0.6,
+  },
+  middleRing: {
+    position: 'absolute',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: '#DBEAFE',
+    opacity: 0.5,
+  },
+  diamondBox: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 24,
+    backgroundColor: '#EFF6FF',
+    transform: [{ rotate: '45deg' }],
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  shieldCard: {
+    width: 90,
+    height: 104,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 4,
   },
-  securityText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textMuted,
-    fontWeight: typography.fontWeight.medium,
+  bottomSection: {
+    gap: 16,
+    alignItems: 'center',
   },
-  verifyButton: {
-    marginBottom: spacing.xl,
+  verifyBtn: {
     width: '100%',
+    height: 50,
+    borderRadius: 12,
+  },
+  trustBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  trustText: {
+    fontSize: 12,
+    color: '#94A3B8',
   },
 });

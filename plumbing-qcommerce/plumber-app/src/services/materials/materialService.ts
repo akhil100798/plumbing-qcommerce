@@ -1,6 +1,6 @@
 import { apiClient } from '../api/axiosClient';
 import { ENDPOINTS } from '../api/endpoints';
-import { createBackendUnavailableError } from '../mockPolicy';
+import { canUseDevMockFallbacks, createBackendUnavailableError, warnUsingDevMockFallback } from '../mockPolicy';
 import { MaterialItem, MaterialRequest, Store } from '../../types';
 
 export interface MaterialRequestSummary {
@@ -20,15 +20,54 @@ const parseServiceOrderId = (serviceOrderId: string): number => {
   return orderId;
 };
 
+const MOCK_STORES: Store[] = [
+  { id: 1, name: 'FixKart Quick Hub - Indiranagar', address: '100ft Rd, HAL 2nd Stage, Indiranagar', latitude: 12.9716, longitude: 77.6412 },
+  { id: 2, name: 'FixKart Partner Store - Koramangala', address: '80ft Rd, 4th Block, Koramangala', latitude: 12.9352, longitude: 77.6245 },
+  { id: 3, name: 'Metro Plumbing Supplies - HSR', address: '27th Main Rd, Sector 1, HSR Layout', latitude: 12.9121, longitude: 77.6446 },
+];
+
+const MOCK_STORE_INVENTORY: MaterialItem[] = [
+  { productId: 101, name: 'PVC Elbow 1/2 inch 90-Deg', price: 45, quantity: 0, availableQuantity: 35 },
+  { productId: 102, name: 'PVC Pipe 1/2 inch (3 meters)', price: 120, quantity: 0, availableQuantity: 20 },
+  { productId: 103, name: 'Thread Seal Teflon Tape (12m)', price: 25, quantity: 0, availableQuantity: 50 },
+  { productId: 104, name: 'PVC Solvent Cement 100ml', price: 85, quantity: 0, availableQuantity: 18 },
+  { productId: 105, name: 'Brass Ball Valve 1/2 inch', price: 260, quantity: 0, availableQuantity: 12 },
+  { productId: 106, name: 'Flexible Waste Pipe (Sink)', price: 95, quantity: 0, availableQuantity: 24 },
+  { productId: 107, name: 'Angle Valve Chrome Plated', price: 340, quantity: 0, availableQuantity: 15 },
+  { productId: 108, name: 'Rubber Gasket O-Ring Pack', price: 40, quantity: 0, availableQuantity: 40 },
+];
+
+const MOCK_TRACKING_DETAIL = {
+  id: 101,
+  status: 'READY_FOR_PICKUP',
+  storeName: 'FixKart Quick Hub - Indiranagar',
+  storeAddress: '100ft Rd, HAL 2nd Stage, Indiranagar',
+  totalAmount: 375,
+  storeConfirmedAt: new Date().toISOString(),
+  plumberArrivedAt: null,
+  plumberCollectedAt: null,
+  collectionConfirmedAt: null,
+  notes: 'Counter #3 - Ready for Plumber pickup',
+  items: [
+    { productName: 'PVC Elbow 1/2 inch', requestedQuantity: 2, reservedQuantity: 2 },
+    { productName: 'PVC Pipe 1/2 inch (3ft)', requestedQuantity: 1, reservedQuantity: 1 },
+    { productName: 'Thread Seal Tape', requestedQuantity: 1, reservedQuantity: 1 },
+  ],
+};
+
 export const materialService = {
   listMyRequests: async (): Promise<MaterialRequestSummary[]> => {
     try {
       const response = await apiClient.get<MaterialRequestSummary[]>('/plumber/material-requests');
       return response.data;
     } catch (error) {
+      if (canUseDevMockFallbacks()) {
+        return [{ id: 101, serviceOrderId: 1024, storeName: 'FixKart Quick Hub', status: 'READY_FOR_PICKUP', totalAmount: 375 }];
+      }
       throw createBackendUnavailableError('Material requests', error);
     }
   },
+
   // ── Store Discovery ──────────────────────────────────────────────────────
 
   getAvailableStores: async (): Promise<Store[]> => {
@@ -42,6 +81,10 @@ export const materialService = {
         longitude: s.longitude,
       }));
     } catch (error) {
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Store list', error);
+        return MOCK_STORES;
+      }
       throw createBackendUnavailableError('Store list', error);
     }
   },
@@ -60,6 +103,10 @@ export const materialService = {
           availableQuantity: stock.availableQuantity,
         }));
     } catch (error) {
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Store inventory', error);
+        return MOCK_STORE_INVENTORY;
+      }
       throw createBackendUnavailableError('Store inventory', error);
     }
   },
@@ -77,6 +124,9 @@ export const materialService = {
         image: item.imageUrl,
       }));
     } catch (error) {
+      if (canUseDevMockFallbacks()) {
+        return MOCK_STORE_INVENTORY.filter(i => i.name.toLowerCase().includes(query.toLowerCase()));
+      }
       throw createBackendUnavailableError('Material catalog search', error);
     }
   },
@@ -116,6 +166,14 @@ export const materialService = {
 
       return { id: order.id, totalAmount, items: mappedItems };
     } catch (error) {
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Create material request', error);
+        return {
+          id: 101,
+          totalAmount: 375,
+          items: items.map(i => ({ productId: i.productId, name: `Part #${i.productId}`, price: 125, quantity: i.quantity })),
+        };
+      }
       throw createBackendUnavailableError('Material request creation', error);
     }
   },
@@ -128,6 +186,7 @@ export const materialService = {
     try {
       await apiClient.put(ENDPOINTS.DELIVERY.MATERIAL_REQUEST(requestId), { storeId, items });
     } catch (error) {
+      if (canUseDevMockFallbacks()) return;
       throw createBackendUnavailableError('Material request update', error);
     }
   },
@@ -136,6 +195,7 @@ export const materialService = {
     try {
       await apiClient.post(ENDPOINTS.DELIVERY.CANCEL(requestId), { reason });
     } catch (error) {
+      if (canUseDevMockFallbacks()) return;
       throw createBackendUnavailableError('Material request cancellation', error);
     }
   },
@@ -152,6 +212,7 @@ export const materialService = {
       if (order.status === 'REQUESTED' || order.status === 'STORE_REVIEWING') return 'PENDING_APPROVAL';
       return 'APPROVED';
     } catch (error) {
+      if (canUseDevMockFallbacks()) return 'APPROVED';
       throw createBackendUnavailableError('Material request status', error);
     }
   },
@@ -161,6 +222,10 @@ export const materialService = {
       const response = await apiClient.get<any>(ENDPOINTS.DELIVERY.STATUS(orderId));
       return response.data;
     } catch (error) {
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Material details', error);
+        return MOCK_TRACKING_DETAIL;
+      }
       throw createBackendUnavailableError('Material request details', error);
     }
   },
@@ -170,6 +235,7 @@ export const materialService = {
       const response = await apiClient.get<any[]>(ENDPOINTS.DELIVERY.HISTORY(requestId));
       return response.data || [];
     } catch (error) {
+      if (canUseDevMockFallbacks()) return [];
       throw createBackendUnavailableError('Material request history', error);
     }
   },
@@ -180,6 +246,7 @@ export const materialService = {
     try {
       await apiClient.post(ENDPOINTS.DELIVERY.ARRIVED(requestId));
     } catch (error) {
+      if (canUseDevMockFallbacks()) return;
       throw createBackendUnavailableError('Mark arrived at store', error);
     }
   },
@@ -188,6 +255,7 @@ export const materialService = {
     try {
       await apiClient.post(ENDPOINTS.DELIVERY.COLLECT(requestId));
     } catch (error) {
+      if (canUseDevMockFallbacks()) return;
       throw createBackendUnavailableError('Confirm material collection', error);
     }
   },

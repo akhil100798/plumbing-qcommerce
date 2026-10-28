@@ -34,7 +34,7 @@ public class Store {
     @NotNull(message = "Store longitude is required")
     private Double longitude;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "manager_id", nullable = false)
     private User manager;
 }

@@ -4,9 +4,20 @@ export const colors = {
   primaryDark: '#1E40AF',
   primaryLight: '#DBEAFE',
 
+  // Stitch Design System Tokens (DESIGN.md)
+  stitchNavy: '#002885',
+  stitchBlue: '#003BB8',
+  stitchAction: '#0755E9',
+  stitchGreen: '#009B45',
+  stitchLightGreen: '#ECFDF5',
+  stitchSurface: '#F8FAFC',
+  stitchCard: '#FFFFFF',
+  stitchBorder: '#E2E8F0',
+  stitchAlert: '#EF4444',
+
   // Status indicators
-  success: '#20C45A',      // FixKart Brand Success Green
-  successLight: '#D1FAE5',
+  success: '#009B45',      // Stitch Emerald Success Green
+  successLight: '#ECFDF5',
   warning: '#F59E0B',      // Amber Yellow
   warningLight: '#FEF3C7',
   error: '#EF4444',        // Red
@@ -14,6 +25,7 @@ export const colors = {
   errorLight: '#FEE2E2',
 
   // Neutrals
+  white: '#FFFFFF',
   background: '#F8FAFC',   // Slate Background
   surface: '#FFFFFF',
   textPrimary: '#0F172A',  // Slate 900
@@ -23,6 +35,6 @@ export const colors = {
   borderDark: '#CBD5E1',   // Slate 300
 
   // Decorative
-  accent: '#7DD3BC',       // Soft teal
+  accent: '#0755E9',       // Action blue accent
   darkOverlay: 'rgba(15, 23, 42, 0.4)',
 };

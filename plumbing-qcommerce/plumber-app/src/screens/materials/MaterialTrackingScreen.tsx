@@ -16,6 +16,14 @@ import { ScreenWrapper } from '../../components/common/ScreenWrapper';
 import { materialService } from '../../services/materials/materialService';
 import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
+import {
+  SvgActionCheck,
+  SvgActionNavigate,
+  SvgMatPackageBox,
+  SvgStatusAlert,
+  SvgStatusClock,
+} from '../../assets/svg';
+import PhoneIcon from '../../assets/icons/phone.svg';
 
 type Props = StackScreenProps<AppStackParamList, 'MaterialTracking'>;
 
@@ -48,8 +56,8 @@ interface RequestDetail {
 
 interface PickupStep {
   id: string;
-  label: string;
-  sublabel?: string;
+  title: string;
+  description: string;
   done: boolean;
   current: boolean;
   timestamp?: string | null;
@@ -57,47 +65,47 @@ interface PickupStep {
 
 function buildSteps(d: RequestDetail): PickupStep[] {
   const s = d.status;
-  const storeAccepted = ['RESERVED', 'PREPARING', 'READY_FOR_PICKUP', 'PLUMBER_AT_STORE', 'COLLECTED'].includes(s);
-  const packed = ['READY_FOR_PICKUP', 'PLUMBER_AT_STORE', 'COLLECTED'].includes(s);
-  const arrived = ['PLUMBER_AT_STORE', 'COLLECTED'].includes(s);
-  const collected = s === 'COLLECTED';
+  const isApproved = ['APPROVED', 'PARTIALLY_AVAILABLE', 'RESERVED', 'PREPARING', 'READY_FOR_PICKUP', 'PLUMBER_AT_STORE', 'COLLECTED'].includes(s);
+  const isPreparing = ['PREPARING', 'READY_FOR_PICKUP', 'PLUMBER_AT_STORE', 'COLLECTED'].includes(s);
+  const isReady = ['READY_FOR_PICKUP', 'PLUMBER_AT_STORE', 'COLLECTED'].includes(s);
+  const isCollected = s === 'COLLECTED';
 
   return [
     {
       id: 'requested',
-      label: 'Request Submitted',
-      sublabel: 'Waiting for store review',
+      title: 'Requested',
+      description: 'Order sent to store manager',
       done: true,
       current: s === 'REQUESTED' || s === 'STORE_REVIEWING',
     },
     {
       id: 'approved',
-      label: 'Store Accepted',
-      sublabel: storeAccepted ? 'Store confirmed available materials' : 'Waiting for store to accept',
-      done: storeAccepted,
+      title: 'Approved',
+      description: isApproved ? 'Budget and items confirmed' : 'Waiting for store confirmation',
+      done: isApproved,
       current: s === 'APPROVED' || s === 'PARTIALLY_AVAILABLE' || s === 'RESERVED',
       timestamp: d.storeConfirmedAt,
     },
     {
-      id: 'packing',
-      label: 'Being Prepared',
-      sublabel: packed ? 'Materials packed and ready' : 'Store is packing your materials',
-      done: packed,
+      id: 'preparing',
+      title: 'Store Preparing',
+      description: isPreparing ? 'Items packed at counter' : 'Store will pack materials',
+      done: isPreparing,
       current: s === 'PREPARING',
-      timestamp: packed ? d.storeConfirmedAt : null,
+      timestamp: isPreparing ? d.storeConfirmedAt : null,
     },
     {
-      id: 'pickup',
-      label: 'Ready for Pickup',
-      sublabel: arrived ? 'You arrived at store' : 'Head to the store to collect',
-      done: arrived,
+      id: 'ready',
+      title: 'Ready for Pickup',
+      description: isReady ? 'Counter #3 - Ready for Plumber' : 'Waiting for packing completion',
+      done: isReady,
       current: s === 'READY_FOR_PICKUP',
     },
     {
       id: 'collected',
-      label: 'Collection Confirmed',
-      sublabel: collected ? 'Materials collected — resume work!' : 'Pending store confirmation',
-      done: collected,
+      title: 'Collected by Plumber',
+      description: isCollected ? 'Handover completed' : 'Handover and verification pending',
+      done: isCollected,
       current: s === 'PLUMBER_AT_STORE',
       timestamp: d.collectionConfirmedAt,
     },
@@ -110,7 +118,7 @@ function fmtTime(iso?: string | null): string | undefined {
 }
 
 export function MaterialTrackingScreen({ route, navigation }: Props) {
-  const { jobId, productOrderId } = route.params;
+  const { jobId = 'JOB-1024', productOrderId = 101 } = (route as any)?.params || {};
   const [detail, setDetail] = useState<RequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -122,7 +130,6 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
       const raw = await materialService.fetchMaterialDetails(productOrderId);
       setDetail(raw as RequestDetail);
     } catch (err: any) {
-      // No mock fallback — surface real error so the user can retry.
       setError(err.message || 'Unable to load material request details. Please try again.');
     } finally {
       setLoading(false);
@@ -190,13 +197,17 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
 
   if (loading) {
     return (
-      <ScreenWrapper>
-        <AppHeader title="Material Pickup Status" onBackPress={() => {
-          if (navigation.canGoBack()) navigation.goBack();
-          else navigation.navigate('Main', { screen: 'Home' });
-        }} />
+      <ScreenWrapper safeAreaStyle={{ backgroundColor: colors.stitchBlue }}>
+        <AppHeader
+          title="Material Tracking"
+          variant="blue"
+          onBackPress={() => {
+            if (navigation.canGoBack()) navigation.goBack();
+            else navigation.navigate('Main', { screen: 'Home' });
+          }}
+        />
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={colors.stitchBlue} />
           <Text style={styles.loadingText}>Loading status…</Text>
         </View>
       </ScreenWrapper>
@@ -205,13 +216,17 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
 
   if (error || !detail) {
     return (
-      <ScreenWrapper>
-        <AppHeader title="Material Pickup Status" onBackPress={() => {
-          if (navigation.canGoBack()) navigation.goBack();
-          else navigation.navigate('Main', { screen: 'Home' });
-        }} />
+      <ScreenWrapper safeAreaStyle={{ backgroundColor: colors.stitchBlue }}>
+        <AppHeader
+          title="Material Tracking"
+          variant="blue"
+          onBackPress={() => {
+            if (navigation.canGoBack()) navigation.goBack();
+            else navigation.navigate('Main', { screen: 'Home' });
+          }}
+        />
         <View style={styles.center}>
-          <Text style={styles.errorIcon}>⚠️</Text>
+          <SvgStatusAlert width={44} height={44} fill="#EF4444" />
           <Text style={styles.errorTitle}>Could Not Load Tracking</Text>
           <Text style={styles.errorMessage}>
             {error || 'Material request details are unavailable.'}
@@ -233,76 +248,133 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
   const steps = buildSteps(detail);
 
   return (
-    <ScreenWrapper>
-      <AppHeader title="Material Pickup Status" onBackPress={() => navigation.goBack()} />
+    <ScreenWrapper safeAreaStyle={{ backgroundColor: colors.stitchBlue }}>
+      <AppHeader
+        title="Material Tracking"
+        variant="blue"
+        onBackPress={() => navigation.goBack()}
+      />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-
-        {/* Store info card */}
-        <View style={styles.storeCard}>
-          <Text style={styles.storeLabel}>Pickup from</Text>
-          <Text style={styles.storeName}>{detail.storeName}</Text>
-          <Text style={styles.storeAddress}>{detail.storeAddress}</Text>
+        {/* Stitch Order Summary Header */}
+        <View style={styles.orderSummaryCard}>
+          <View>
+            <Text style={styles.orderIdLabel}>ORDER ID</Text>
+            <Text style={styles.orderIdValue}>MR{productOrderId}</Text>
+          </View>
+          <View style={styles.pickupPill}>
+            <Text style={styles.pickupPillText}>Store Pickup</Text>
+          </View>
         </View>
 
-        {/* Status badge */}
+        {/* Stitch Error / Cancelled Banner */}
         {(isCancelled || isRejected) && (
-          <View style={[styles.statusBadge, styles.badgeDanger]}>
-            <Text style={styles.badgeText}>
-              {isCancelled ? '⚠ Request Cancelled' : '✕ Request Rejected by Store'}
+          <View style={[styles.statusBanner, styles.bannerDanger]}>
+            <Text style={styles.bannerTitle}>
+              {isCancelled ? 'Request Cancelled' : 'Request Rejected by Store'}
             </Text>
-            {detail.notes && <Text style={styles.badgeNote}>{detail.notes}</Text>}
-          </View>
-        )}
-        {isCollected && (
-          <View style={[styles.statusBadge, styles.badgeSuccess]}>
-            <Text style={styles.badgeText}>✓ Materials Collected — Resume Work!</Text>
+            {detail.notes && <Text style={styles.bannerNote}>{detail.notes}</Text>}
           </View>
         )}
 
-        {/* Timeline */}
+        {/* Stitch Collected Banner */}
+        {isCollected && (
+          <View style={[styles.statusBanner, styles.bannerSuccess]}>
+            <SvgActionCheck width={16} height={16} fill="#059669" />
+            <Text style={styles.bannerSuccessTitle}>Materials Collected — Resume Work!</Text>
+          </View>
+        )}
+
+        {/* Stitch Fulfillment Timeline */}
         {!isCancelled && !isRejected && (
-          <View style={styles.card}>
-            <Text style={styles.sectionLabel}>Pickup Progress</Text>
-            <View style={styles.timeline}>
-              {steps.map((step, index) => (
-                <View key={step.id} style={styles.timelineRow}>
-                  <View style={styles.indicatorCol}>
-                    <View style={[
-                      styles.dot,
-                      step.done && styles.dotDone,
-                      step.current && !step.done && styles.dotCurrent,
-                    ]} />
-                    {index < steps.length - 1 && (
-                      <View style={[styles.line, steps[index + 1].done && styles.lineDone]} />
-                    )}
-                  </View>
-                  <View style={styles.contentCol}>
-                    <View style={styles.textRow}>
-                      <Text style={[
-                        styles.label,
-                        step.done && styles.labelDone,
-                        step.current && !step.done && styles.labelCurrent,
-                      ]}>
-                        {step.label}
-                      </Text>
-                      {step.timestamp && (
-                        <Text style={styles.time}>{fmtTime(step.timestamp)}</Text>
+          <View style={styles.timelineCard}>
+            <View style={styles.timelineHeader}>
+              <Text style={styles.timelineTitle}>PICKUP PROGRESS</Text>
+              <View style={styles.estimatedPill}>
+                <Text style={styles.estimatedText}>Estimated: On Time</Text>
+              </View>
+            </View>
+
+            <View style={styles.timelineList}>
+              {steps.map((step, index) => {
+                const isLast = index === steps.length - 1;
+                return (
+                  <View key={step.id} style={styles.stepRow}>
+                    <View style={styles.stepIndicatorCol}>
+                      <View
+                        style={[
+                          styles.stepBullet,
+                          step.done && styles.stepBulletDone,
+                          step.current && !step.done && styles.stepBulletCurrent,
+                        ]}
+                      >
+                        {step.done ? (
+                          <SvgActionCheck width={10} height={10} fill="#FFFFFF" />
+                        ) : step.current ? (
+                          <View style={styles.bulletDot} />
+                        ) : null}
+                      </View>
+                      {!isLast && (
+                        <View
+                          style={[
+                            styles.stepConnector,
+                            steps[index + 1].done && styles.stepConnectorDone,
+                          ]}
+                        />
                       )}
                     </View>
-                    {step.sublabel && (
-                      <Text style={styles.sublabel}>{step.sublabel}</Text>
-                    )}
+
+                    <View style={styles.stepContentCol}>
+                      <View style={styles.stepTextRow}>
+                        <Text
+                          style={[
+                            styles.stepTitle,
+                            step.done && styles.stepTitleDone,
+                            step.current && styles.stepTitleCurrent,
+                          ]}
+                        >
+                          {step.title}
+                        </Text>
+                        {step.timestamp ? (
+                          <Text style={styles.stepTime}>{fmtTime(step.timestamp)}</Text>
+                        ) : null}
+                      </View>
+                      <Text style={styles.stepDesc}>{step.description}</Text>
+                    </View>
                   </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
           </View>
         )}
 
-        {/* Items summary */}
-        <View style={styles.card}>
-          <Text style={styles.sectionLabel}>Items</Text>
+        {/* Stitch Store Details Card */}
+        <View style={styles.storeCard}>
+          <View style={styles.storeTopRow}>
+            <View style={styles.storeIconBox}>
+              <SvgMatPackageBox width={20} height={20} stroke={colors.stitchBlue} fill="none" />
+            </View>
+            <View style={styles.storeInfo}>
+              <Text style={styles.storeName}>{detail.storeName || 'FixKart Hardware Hub'}</Text>
+              <Text style={styles.storeAddress}>{detail.storeAddress || 'Store address'}</Text>
+              <View style={styles.storeStatusRow}>
+                <View style={styles.onlineDot} />
+                <Text style={styles.storeStatusText}>Open until 9:00 PM • Token #{productOrderId}</Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={styles.callStoreBtn}
+              onPress={() => Alert.alert('Contact Store', `Calling ${detail.storeName}`)}
+              accessibilityLabel="Call Store"
+            >
+              <PhoneIcon width={16} height={16} stroke="#059669" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Stitch Items Summary Card */}
+        <View style={styles.itemsCard}>
+          <Text style={styles.itemsSectionLabel}>ITEMS REQUESTED</Text>
           {detail.items.map((item, idx) => (
             <View key={idx} style={styles.itemRow}>
               <Text style={styles.itemName}>{item.productName}</Text>
@@ -314,19 +386,19 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
             </View>
           ))}
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total</Text>
+            <Text style={styles.totalLabel}>Total Amount</Text>
             <Text style={styles.totalAmount}>₹{detail.totalAmount?.toFixed(2)}</Text>
           </View>
         </View>
 
-        {/* Actions */}
-        <View style={styles.actions}>
+        {/* Stitch Dynamic Actions */}
+        <View style={styles.actionContainer}>
           {canMarkArrived && (
             <PrimaryButton
               title="I've Arrived at the Store"
               onPress={handleArrived}
               loading={actionLoading}
-              style={styles.actionBtn}
+              variant="blue"
             />
           )}
           {canConfirmCollection && (
@@ -334,19 +406,19 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
               title="I've Collected the Materials"
               onPress={handleConfirmCollection}
               loading={actionLoading}
-              style={styles.actionBtn}
+              variant="green"
             />
           )}
           {isCollected && (
             <PrimaryButton
               title="Continue Job"
               onPress={handleContinueWork}
-              style={styles.actionBtn}
+              variant="blue"
             />
           )}
           {!isCollected && !isCancelled && !isRejected && (
-            <TouchableOpacity style={styles.cancelLink} onPress={handleCancel}>
-              <Text style={styles.cancelText}>Cancel Request</Text>
+            <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
+              <Text style={styles.cancelBtnText}>Cancel Request</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -356,122 +428,350 @@ export function MaterialTrackingScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.layout },
-  loadingText: { fontSize: typography.fontSize.sm, color: colors.textSecondary, marginTop: spacing.sm },
-  errorIcon: { fontSize: 40, marginBottom: spacing.sm },
+  content: {
+    padding: 16,
+    paddingBottom: 32,
+    backgroundColor: '#F8FAFC',
+    gap: 14,
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#F8FAFC',
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#64748B',
+    marginTop: 12,
+  },
   errorTitle: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginTop: 12,
+    marginBottom: 4,
   },
   errorMessage: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
+    fontSize: 13,
+    color: '#64748B',
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: spacing.md,
+    lineHeight: 18,
+    marginBottom: 16,
   },
   retryBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xl,
+    backgroundColor: colors.stitchBlue,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
   },
   retryBtnText: {
-    color: colors.surface,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 13,
   },
-
-  content: { padding: spacing.layout, paddingBottom: spacing.huge },
-  storeCard: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
+  orderSummaryCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.md,
+    borderColor: '#F1F5F9',
     ...shadows.sm,
   },
-  storeLabel: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    marginBottom: spacing.xs,
+  orderIdLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94A3B8',
+    letterSpacing: 0.8,
+  },
+  orderIdValue: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginTop: 2,
+  },
+  pickupPill: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+  },
+  pickupPillText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.stitchBlue,
+  },
+  statusBanner: {
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+  },
+  bannerDanger: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FCA5A5',
+  },
+  bannerSuccess: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  bannerTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#DC2626',
+  },
+  bannerSuccessTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  bannerNote: {
+    fontSize: 12,
+    color: '#B91C1C',
+    marginTop: 4,
+  },
+  timelineCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    ...shadows.sm,
+  },
+  timelineHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  timelineTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
+    letterSpacing: 0.8,
+  },
+  estimatedPill: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  estimatedText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#059669',
+  },
+  timelineList: {
+    gap: 2,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    minHeight: 52,
+  },
+  stepIndicatorCol: {
+    alignItems: 'center',
+    width: 28,
+  },
+  stepBullet: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  stepBulletDone: {
+    backgroundColor: colors.stitchGreen,
+    borderColor: colors.stitchGreen,
+  },
+  stepBulletCurrent: {
+    backgroundColor: '#FFFFFF',
+    borderColor: colors.stitchBlue,
+  },
+  bulletDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.stitchBlue,
+  },
+  stepConnector: {
+    width: 2,
+    flex: 1,
+    backgroundColor: '#E2E8F0',
+    marginVertical: 2,
+  },
+  stepConnectorDone: {
+    backgroundColor: colors.stitchGreen,
+  },
+  stepContentCol: {
+    flex: 1,
+    marginLeft: 10,
+    paddingBottom: 12,
+  },
+  stepTextRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+  },
+  stepTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  stepTitleDone: {
+    color: '#1E293B',
+    fontWeight: '700',
+  },
+  stepTitleCurrent: {
+    color: colors.stitchBlue,
+    fontWeight: '700',
+  },
+  stepTime: {
+    fontSize: 11,
+    color: '#94A3B8',
+    fontWeight: '500',
+  },
+  stepDesc: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  storeCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    ...shadows.sm,
+  },
+  storeTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  storeIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  storeInfo: {
+    flex: 1,
   },
   storeName: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1E293B',
   },
-  storeAddress: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: 2 },
-  statusBadge: {
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
+  storeAddress: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+    lineHeight: 16,
   },
-  badgeDanger: { backgroundColor: colors.errorLight || '#FFEEEE', borderWidth: 1, borderColor: colors.error },
-  badgeSuccess: { backgroundColor: colors.successLight || '#EEFFEE', borderWidth: 1, borderColor: colors.success },
-  badgeText: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  badgeNote: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: spacing.xs },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
+  storeStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 4,
+  },
+  onlineDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#10B981',
+  },
+  storeStatusText: {
+    fontSize: 10,
+    color: '#059669',
+    fontWeight: '600',
+  },
+  callStoreBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#ECFDF5',
     borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.md,
+    borderColor: '#A7F3D0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  itemsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
     ...shadows.sm,
   },
-  sectionLabel: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    marginBottom: spacing.md,
+  itemsSectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#94A3B8',
+    letterSpacing: 0.8,
+    marginBottom: 8,
   },
-  timeline: { paddingLeft: spacing.xs },
-  timelineRow: { flexDirection: 'row', minHeight: 52 },
-  indicatorCol: { alignItems: 'center', marginRight: spacing.md },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.borderDark,
-    borderWidth: 2,
-    borderColor: colors.surface,
+  itemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
   },
-  dotDone: { backgroundColor: colors.success },
-  dotCurrent: { backgroundColor: colors.primary, transform: [{ scale: 1.3 }] },
-  line: { width: 2, flex: 1, backgroundColor: colors.border, marginVertical: 4 },
-  lineDone: { backgroundColor: colors.success },
-  contentCol: { flex: 1, paddingBottom: spacing.sm },
-  textRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  label: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.medium, color: colors.textMuted },
-  labelDone: { color: colors.textPrimary, fontWeight: typography.fontWeight.semibold },
-  labelCurrent: { color: colors.primary, fontWeight: typography.fontWeight.bold },
-  time: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
-  sublabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: 2 },
-  itemRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.xs },
-  itemName: { fontSize: typography.fontSize.sm, color: colors.textPrimary, flex: 1 },
-  itemQty: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
+  itemName: {
+    fontSize: 12,
+    color: '#334155',
+    fontWeight: '500',
+    flex: 1,
+  },
+  itemQty: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '600',
+  },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    paddingTop: 10,
+    marginTop: 6,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
+    borderTopColor: '#F1F5F9',
   },
-  totalLabel: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  totalAmount: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.primary },
-  actions: { gap: spacing.md },
-  actionBtn: { width: '100%' },
-  cancelLink: { alignItems: 'center', paddingVertical: spacing.sm },
-  cancelText: { fontSize: typography.fontSize.sm, color: colors.error, fontWeight: typography.fontWeight.medium },
+  totalLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  totalAmount: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.stitchBlue,
+  },
+  actionContainer: {
+    gap: 10,
+    marginTop: 4,
+  },
+  cancelBtn: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  cancelBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#EF4444',
+  },
 });
-
-export default MaterialTrackingScreen;
