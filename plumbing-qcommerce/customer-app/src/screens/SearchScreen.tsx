@@ -164,7 +164,7 @@ export function SearchScreen({ navigation }: Props) {
                   style={styles.trendingItem}
                   onPress={() => handleSelectSearch(item)}
                 >
-                  <Text style={styles.trendingIcon}>📈</Text>
+                  <Text style={styles.trendingIcon}>HOT</Text>
                   <Text style={styles.trendingText}>{item}</Text>
                 </TouchableOpacity>
               ))}

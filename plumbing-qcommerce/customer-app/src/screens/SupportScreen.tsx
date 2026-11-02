@@ -63,19 +63,19 @@ export function SupportScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.sectionTitle}>Contact Channels</Text>
         <SupportOptionCard
-          icon="💬"
+          icon="CHAT"
           title="Chat with Us"
           description="Initiate an emergency live chat session with support agents"
           onPress={() => alert('Launching customer live support chat...')}
         />
         <SupportOptionCard
-          icon="📞"
+          icon="CALL"
           title="Call Support"
           description="Speak to our 24/7 helpdesk helpline at +1-800-PLUMBCO"
           onPress={() => alert('Dialing +1-800-PLUMBCO emergency helpline...')}
         />
         <SupportOptionCard
-          icon="🎟️"
+          icon="TICKET"
           title="Raise a Ticket"
           description="Report issues regarding order delivery shortages or service delays"
           onPress={() => alert('Opening ticket registration forms...')}
@@ -123,9 +123,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44, height: 44, borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,

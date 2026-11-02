@@ -125,7 +125,7 @@ export function ServiceCompletionScreen({ route, navigation }: Props) {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.successHeader}>
             <View style={styles.successBadge}>
-              <Text style={styles.checkEmoji}>✓</Text>
+              <Text style={styles.checkEmoji}>DONE</Text>
             </View>
             <Text style={styles.successTitle}>Service Completed!</Text>
             <Text style={styles.successSub}>

@@ -22,6 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Configuration
 @EnableWebSecurity
@@ -33,7 +34,10 @@ public class SecurityConfig {
     private final RateLimitingFilter rateLimitingFilter;
     private final UserDetailsService userDetailsService;
 
-    @Value("${app.cors.allowed-origins:http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,http://localhost:3101,http://localhost:19007,http://localhost:19008,http://localhost:19009,http://localhost:3000,http://127.0.0.1:8081,http://127.0.0.1:8082,http://127.0.0.1:8083,http://127.0.0.1:8084,http://127.0.0.1:3101}")
+    private static final Pattern VERCEL_PREVIEW_PATTERN =
+            Pattern.compile("^https://[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*\\.vercel\\.app$");
+
+    @Value("${app.cors.allowed-origins:http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3101,http://localhost:19007,http://localhost:19008,http://localhost:19009,http://127.0.0.1:8081,http://127.0.0.1:8082,http://127.0.0.1:8083,http://127.0.0.1:8084,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002,http://127.0.0.1:3101}")
     private String allowedOrigins;
 
     @Bean
@@ -54,9 +58,14 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(request -> {
                 org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
-                config.setAllowedOrigins(resolveAllowedOrigins());
-                config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-                config.setAllowedHeaders(java.util.List.of("*"));
+                String requestOrigin = request.getHeader("Origin");
+                if (requestOrigin != null && isOriginPermitted(requestOrigin)) {
+                    config.setAllowedOrigins(List.of(requestOrigin));
+                } else {
+                    config.setAllowedOrigins(resolveAllowedOrigins());
+                }
+                config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+                config.setAllowedHeaders(List.of("*"));
                 config.setAllowCredentials(true);
                 return config;
             }))
@@ -109,6 +118,16 @@ public class SecurityConfig {
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    private boolean isOriginPermitted(String origin) {
+        if (origin == null || origin.isBlank() || origin.contains("*")) {
+            return false;
+        }
+        if (resolveAllowedOrigins().contains(origin)) {
+            return true;
+        }
+        return VERCEL_PREVIEW_PATTERN.matcher(origin).matches();
     }
 
     private List<String> resolveAllowedOrigins() {

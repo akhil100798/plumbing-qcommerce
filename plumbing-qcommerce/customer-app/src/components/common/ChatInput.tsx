@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    minHeight: 40,
+    minHeight: 44,
     maxHeight: 100,
     backgroundColor: colors.background,
     borderRadius: borderRadius.md,
@@ -62,9 +62,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   sendBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44, height: 44, borderRadius: 22,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',

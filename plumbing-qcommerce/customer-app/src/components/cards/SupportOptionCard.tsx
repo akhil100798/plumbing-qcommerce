@@ -25,7 +25,7 @@ export function SupportOptionCard({
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.iconCircle}>
-        typeof icon === 'string' ? <Text style={styles.icon}>{icon}</Text> : icon
+        {typeof icon === 'string' ? <Text style={styles.icon}>{icon}</Text> : icon}
       </View>
       <View style={styles.content}>
         <Text style={styles.title}>{title}</Text>

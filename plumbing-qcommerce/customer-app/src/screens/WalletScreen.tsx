@@ -116,7 +116,7 @@ export function WalletScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('Offers')}
           activeOpacity={0.8}
         >
-          <Text style={styles.offersPromoEmoji}>🎉</Text>
+          <Text style={styles.offersPromoEmoji}>OFFER</Text>
           <View style={styles.offersPromoText}>
             <Text style={styles.offersPromoTitle}>View Active Offers & Coupons</Text>
             <Text style={styles.offersPromoSub}>Save up to 50% on plumbing tools and services</Text>
@@ -165,7 +165,7 @@ export function WalletScreen({ navigation }: Props) {
           <View key={tx.id} style={styles.txRow}>
             <View style={styles.txLeft}>
               <View style={[styles.txIconCircle, tx.type === 'credit' ? styles.txCreditIcon : styles.txDebitIcon]}>
-                <Text style={styles.txIconText}>{tx.type === 'credit' ? '📥' : '📤'}</Text>
+                <Text style={styles.txIconText}>{tx.type === 'credit' ? '+' : '-'}</Text>
               </View>
               <View>
                 <Text style={styles.txTitle}>{tx.title}</Text>
@@ -198,9 +198,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44, height: 44, borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,

@@ -24,12 +24,12 @@ interface IssueItem {
 }
 
 const issues: IssueItem[] = [
-  { id: 'pipe', name: 'Leaking or damaged pipe', icon: '🚰' },
-  { id: 'tap', name: 'Tap or faucet problem', icon: '🚿' },
-  { id: 'toilet', name: 'Blocked or faulty toilet', icon: '🚽' },
-  { id: 'tank', name: 'Water tank problem', icon: '🛢️' },
-  { id: 'motor', name: 'Water pump or motor', icon: '⚙️' },
-  { id: 'other', name: 'Something else / not sure', icon: '🛠️' },
+  { id: 'pipe', name: 'Leaking or damaged pipe', icon: 'PIPE' },
+  { id: 'tap', name: 'Tap or faucet problem', icon: 'TAP' },
+  { id: 'toilet', name: 'Blocked or faulty toilet', icon: 'TOILET' },
+  { id: 'tank', name: 'Water tank problem', icon: 'TANK' },
+  { id: 'motor', name: 'Water pump or motor', icon: 'MOTOR' },
+  { id: 'other', name: 'Something else / not sure', icon: 'OTHER' },
 ];
 
 export function BookPlumberScreen({ navigation }: Props) {
@@ -125,7 +125,7 @@ export function BookPlumberScreen({ navigation }: Props) {
                 <Text style={styles.radioSub}>Request service as soon as possible</Text>
               </View>
             </View>
-            <Text style={styles.accentText}>⚡ Fast</Text>
+            <Text style={styles.accentText}>Fast</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -141,7 +141,7 @@ export function BookPlumberScreen({ navigation }: Props) {
                 <Text style={styles.radioSub}>Choose specific date & time</Text>
               </View>
             </View>
-            <Text style={styles.accentText}>📅 Plan</Text>
+            <Text style={styles.accentText}>Plan</Text>
           </TouchableOpacity>
 
           {scheduleOption === 'schedule' ? <TextInput value={scheduledForInput} onChangeText={setScheduledForInput} placeholder="YYYY-MM-DDTHH:mm" style={styles.descriptionInput} /> : null}
@@ -175,9 +175,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44, height: 44, borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,

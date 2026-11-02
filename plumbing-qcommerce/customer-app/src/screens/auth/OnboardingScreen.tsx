@@ -201,9 +201,13 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   skipButton: {
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 20,
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 22,
     backgroundColor: colors.surfaceSubtle,
   },
   skipText: {

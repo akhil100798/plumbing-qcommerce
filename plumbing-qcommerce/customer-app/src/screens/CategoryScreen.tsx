@@ -22,14 +22,14 @@ interface CategoryItem {
 }
 
 const categoriesData: CategoryItem[] = [
-  { id: 1, name: 'Pipes', icon: '🪵' },
-  { id: 2, name: 'Fittings', icon: '⚙️' },
-  { id: 3, name: 'Taps', icon: '🚰' },
-  { id: 4, name: 'Sanitaryware', icon: '🚽' },
-  { id: 5, name: 'Water Tanks', icon: '🛢️' },
-  { id: 6, name: 'Tools', icon: '🛠️' },
-  { id: 7, name: 'Electrical', icon: '🔌' },
-  { id: 8, name: 'All Categories', icon: '🗂️' },
+  { id: 1, name: 'Pipes', icon: 'PIPE' },
+  { id: 2, name: 'Fittings', icon: 'FIT' },
+  { id: 3, name: 'Taps', icon: 'TAP' },
+  { id: 4, name: 'Sanitaryware', icon: 'SAN' },
+  { id: 5, name: 'Water Tanks', icon: 'TNK' },
+  { id: 6, name: 'Tools', icon: 'TOOL' },
+  { id: 7, name: 'Electrical', icon: 'ELEC' },
+  { id: 8, name: 'All Categories', icon: 'ALL' },
 ];
 
 export function CategoryScreen({ navigation }: Props) {
@@ -90,9 +90,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44, height: 44, borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,

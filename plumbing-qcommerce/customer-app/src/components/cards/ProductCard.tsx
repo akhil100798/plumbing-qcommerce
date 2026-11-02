@@ -341,9 +341,7 @@ const styles = StyleSheet.create({
   addButton: {
     backgroundColor: colors.secondary, // Stitch Emerald
     paddingHorizontal: spacing.md,
-    paddingVertical: 7,
-    borderRadius: 10,
-    minWidth: 64,
+    paddingVertical: 10, borderRadius: 10, minWidth: 72, minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -358,13 +356,11 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.secondary,
     borderRadius: 8,
-    backgroundColor: colors.surface,
-    height: 32,
+    backgroundColor: colors.surface, height: 44,
     overflow: 'hidden',
   },
   quantityBtn: {
-    width: 24,
-    height: '100%',
+    width: 36, height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.secondaryLight,

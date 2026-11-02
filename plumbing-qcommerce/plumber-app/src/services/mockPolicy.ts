@@ -25,12 +25,7 @@ const isLocalUrl = (urlString: string) => {
 
 const isLocalDevelopmentApi = () => isLocalUrl(BACKEND_URL);
 
-export const canUseDevMockFallbacks = () => {
-  if (process.env.NODE_ENV === 'test') {
-    return false;
-  }
-  return true;
-};
+export const canUseDevMockFallbacks = () => false;
 
 export const warnUsingDevMockFallback = (feature: string, error: unknown) => {
   if (canUseDevMockFallbacks()) {

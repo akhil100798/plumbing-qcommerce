@@ -30,7 +30,7 @@ export function ProfileMenuItem({
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.left}>
         <View style={styles.iconCircle}>
-          typeof icon === 'string' ? <Text style={styles.icon}>{icon}</Text> : icon
+          {typeof icon === 'string' ? <Text style={styles.icon}>{icon}</Text> : icon}
         </View>
         <View style={styles.textContainer}>
           <Text style={[styles.title, { color: textColor }]}>{title}</Text>

@@ -52,7 +52,7 @@ export function OrderConfirmationScreen({ route, navigation }: Props) {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.animationSection}>
           <Animated.View style={[styles.checkmarkCircle, { transform: [{ scale: scaleAnim }] }]}>
-            <Text style={styles.checkmarkEmoji}>✓</Text>
+            <Text style={styles.checkmarkEmoji}>DONE</Text>
           </Animated.View>
           <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
             <Text style={styles.successTitle}>Order Placed!</Text>
@@ -78,14 +78,14 @@ export function OrderConfirmationScreen({ route, navigation }: Props) {
           <View style={styles.divider} />
 
           <View style={styles.addressBlock}>
-            <Text style={styles.addressTitle}>📍 Shipping Address</Text>
+            <Text style={styles.addressTitle}>Shipping Address</Text>
             <Text style={styles.addressText}>{address}</Text>
           </View>
 
           <View style={styles.divider} />
 
           <View style={styles.etaRow}>
-            <Text style={styles.etaEmoji}>⚡</Text>
+            <Text style={styles.etaEmoji}>ETA</Text>
             <View>
               <Text style={styles.etaTitle}>Estimated Delivery</Text>
               <Text style={styles.etaValueText}>{eta}</Text>

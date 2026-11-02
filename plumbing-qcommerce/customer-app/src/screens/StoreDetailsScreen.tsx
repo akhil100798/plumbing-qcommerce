@@ -51,10 +51,10 @@ export function StoreDetailsScreen({ route, navigation }: Props) {
             price: stock.product.price,
             categoryName: catName,
             icon: stock.product.name.toLowerCase().includes('tap')
-              ? '🚰'
+              ? 'TAP'
               : stock.product.name.toLowerCase().includes('elbow')
-              ? '🔩'
-              : '🛢️',
+              ? 'VALVE'
+              : 'TANK',
           };
         });
         setProducts(mapped);
@@ -92,11 +92,11 @@ export function StoreDetailsScreen({ route, navigation }: Props) {
       {/* Store Profile Card */}
       <View style={styles.profileSection}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>🏪</Text>
+          <Text style={styles.avatarText}>STORE</Text>
         </View>
         <View style={styles.profileInfo}>
           <Text style={styles.profileName}>{storeName}</Text>
-          <Text style={styles.profileSub}>Verified Hardware Partner • ⭐ 4.7 (120 reviews)</Text>
+          <Text style={styles.profileSub}>Verified Hardware Partner • Rating 4.7 (120 reviews)</Text>
           <Text style={styles.profileAddress}>Plot 45, Kavuri Hills Rd, Madhapur, Hyderabad</Text>
         </View>
       </View>
@@ -173,9 +173,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44, height: 44, borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,

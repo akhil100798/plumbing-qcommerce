@@ -107,7 +107,7 @@ export function AddressManagementScreen({ navigation }: Props) {
                 style={styles.deleteBtn}
                 onPress={() => handleDelete(item.id)}
               >
-                <Text style={styles.deleteText}>🗑️ Delete</Text>
+                <Text style={styles.deleteText}>Delete</Text>
               </TouchableOpacity>
             </View>
           ))
@@ -142,9 +142,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44, height: 44, borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,
@@ -181,7 +179,11 @@ const styles = StyleSheet.create({
     top: spacing.md,
     backgroundColor: colors.errorLight,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: 8,
+    minHeight: 44,
+    minWidth: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: borderRadius.sm,
     borderWidth: 1,
     borderColor: '#FCA5A5',
