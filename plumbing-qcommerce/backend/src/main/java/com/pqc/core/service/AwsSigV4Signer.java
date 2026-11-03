@@ -2,6 +2,7 @@ package com.pqc.core.service;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.ZoneOffset;
@@ -70,6 +71,63 @@ public class AwsSigV4Signer {
         result.put("Authorization", authHeader);
         result.put("Host", host);
         return result;
+    }
+
+    public static String generatePresignedUrl(
+            String httpMethod,
+            String endpoint,
+            String uriPath,
+            String host,
+            String region,
+            String service,
+            String accessKey,
+            String secretKey,
+            long expirationSeconds) {
+
+        String normalizedEndpoint = endpoint != null ? endpoint.trim() : "";
+        while (normalizedEndpoint.endsWith("/")) {
+            normalizedEndpoint = normalizedEndpoint.substring(0, normalizedEndpoint.length() - 1);
+        }
+        String normalizedPath = uriPath != null ? uriPath.trim() : "";
+        if (!normalizedPath.startsWith("/")) {
+            normalizedPath = "/" + normalizedPath;
+        }
+        long effectiveExpires = (expirationSeconds <= 0) ? 3600 : Math.min(expirationSeconds, 604800L);
+
+        ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+        String amzDate = now.format(DATE_FORMATTER);
+        String dateStamp = now.format(DATE_ONLY_FORMATTER);
+        String credentialScope = dateStamp + "/" + region + "/" + service + "/aws4_request";
+
+        String canonicalHeaders = "host:" + host + "\n";
+        String signedHeaders = "host";
+
+        String canonicalQueryString = "X-Amz-Algorithm=AWS4-HMAC-SHA256"
+                + "&X-Amz-Credential=" + URLEncoder.encode(accessKey + "/" + credentialScope, StandardCharsets.UTF_8)
+                + "&X-Amz-Date=" + amzDate
+                + "&X-Amz-Expires=" + effectiveExpires
+                + "&X-Amz-SignedHeaders=" + signedHeaders;
+
+        String canonicalRequest = httpMethod + "\n"
+                + normalizedPath + "\n"
+                + canonicalQueryString + "\n"
+                + canonicalHeaders + "\n"
+                + signedHeaders + "\n"
+                + "UNSIGNED-PAYLOAD";
+
+        String stringToSign = "AWS4-HMAC-SHA256\n"
+                + amzDate + "\n"
+                + credentialScope + "\n"
+                + hex(sha256(canonicalRequest.getBytes(StandardCharsets.UTF_8)));
+
+        byte[] signingKey = getSignatureKey(secretKey, dateStamp, region, service);
+        String signature = hex(hmacSha256(signingKey, stringToSign));
+
+        return normalizedEndpoint + normalizedPath + "?" + canonicalQueryString + "&X-Amz-Signature=" + signature;
+    }
+
+    public static String calculateSha256Hex(byte[] data) {
+        return hex(sha256(data != null ? data : new byte[0]));
     }
 
     private static byte[] sha256(byte[] data) {

@@ -18,6 +18,7 @@ import { AppStackParamList } from '../types/navigation';
 import { RootState } from '../redux/store';
 import { addToCart, removeFromCart } from '../redux/slices/cartSlice';
 import { apiClient } from '../services/apiClient';
+import { SvgNavigationArrowLeft } from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'StoreDetails'>;
 
@@ -83,8 +84,8 @@ export function StoreDetailsScreen({ route, navigation }: Props) {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.title}>{storeName}</Text>
       </View>

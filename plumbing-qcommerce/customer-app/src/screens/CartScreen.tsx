@@ -17,6 +17,7 @@ import { addToCart, removeFromCart } from '../redux/slices/cartSlice';
 import { RootState } from '../redux/store';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
+import { SvgNavigationArrowLeft, SvgPlumbingCpvcElbow } from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'Cart'>;
 
@@ -66,8 +67,8 @@ export function CartScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>� �</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
         </TouchableOpacity>
         <View>
           <Text style={styles.title}>My Cart</Text>
@@ -81,7 +82,7 @@ export function CartScreen({ navigation }: Props) {
             <Text style={styles.deliveryLabel}>Delivering to</Text>
             <Text style={styles.deliveryAddress}>Home - 500081</Text>
           </View>
-          <TouchableOpacity style={styles.changeBtn} onPress={() => navigation.navigate('AddressManagement')}>
+          <TouchableOpacity style={styles.changeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => navigation.navigate('AddressManagement')}>
             <Text style={styles.changeBtnText}>Change</Text>
           </TouchableOpacity>
         </View>
@@ -90,7 +91,7 @@ export function CartScreen({ navigation }: Props) {
           {items.map((item) => (
             <View key={item.id} style={styles.itemRow}>
               <View style={styles.itemImagePlaceholder}>
-                <Text style={styles.itemIcon}>�a"️</Text>
+                <SvgPlumbingCpvcElbow width={24} height={24} stroke={colors.primary} />
               </View>
 
               <View style={styles.itemDetails}>
@@ -98,15 +99,15 @@ export function CartScreen({ navigation }: Props) {
                   {item.name}
                 </Text>
                 <Text style={styles.itemSpecs}>{item.specs}</Text>
-                <Text style={styles.itemPrice}>��{item.price}</Text>
+                <Text style={styles.itemPrice}>₹{item.price}</Text>
               </View>
 
               <View style={styles.qtyController}>
-                <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQty(item.id, -1)}>
+                <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQty(item.id, -1)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                   <Text style={styles.qtyBtnText}>-</Text>
                 </TouchableOpacity>
                 <Text style={styles.qtyText}>{item.qty}</Text>
-                <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQty(item.id, 1)}>
+                <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQty(item.id, 1)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                   <Text style={styles.qtyBtnText}>+</Text>
                 </TouchableOpacity>
               </View>
@@ -132,19 +133,19 @@ export function CartScreen({ navigation }: Props) {
           <Text style={styles.billTitle}>Bill Details</Text>
           <View style={styles.billRow}>
             <Text style={styles.billLabel}>Item Total</Text>
-            <Text style={styles.billValue}>��{itemTotal}</Text>
+            <Text style={styles.billValue}>₹{itemTotal}</Text>
           </View>
           <View style={styles.billRow}>
             <Text style={styles.billLabel}>Delivery Fee</Text>
-            <Text style={styles.billValue}>��{deliveryFee}</Text>
+            <Text style={styles.billValue}>₹{deliveryFee}</Text>
           </View>
           <View style={styles.billRow}>
             <Text style={styles.billLabel}>Handling Fee</Text>
-            <Text style={styles.billValue}>��{handlingFee}</Text>
+            <Text style={styles.billValue}>₹{handlingFee}</Text>
           </View>
           <View style={[styles.billRow, styles.billRowTotal]}>
             <Text style={styles.billTotalLabel}>To Pay</Text>
-            <Text style={styles.billTotalValue}>��{grandTotal}</Text>
+            <Text style={styles.billTotalValue}>₹{grandTotal}</Text>
           </View>
         </View>
       </ScrollView>

@@ -28,7 +28,7 @@ import java.util.Set;
 @Slf4j
 public class PaymentConfigurationValidator {
 
-    private static final Set<String> SUPPORTED_PROVIDERS = Set.of("mock", "razorpay", "stripe");
+    private static final Set<String> SUPPORTED_PROVIDERS = Set.of("mock", "razorpay", "stripe", "cod");
 
     private final Environment environment;
     private final PaymentGatewayAdapter paymentGatewayAdapter;

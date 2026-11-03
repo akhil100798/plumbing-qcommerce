@@ -4,15 +4,18 @@ import com.pqc.core.entity.PaymentOperation;
 import com.pqc.core.entity.PaymentOperationStatus;
 import com.pqc.core.repository.PaymentOperationRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentOperationService {
     public static final String PURPOSE = "SERVICE_ORDER_CAPTURE_V1";
 
@@ -21,22 +24,42 @@ public class PaymentOperationService {
     public record CaptureClaim(PaymentOperation operation, boolean acquired) {}
 
     public PaymentOperation getOrCreate(Long orderId, BigDecimal amount, String currency) {
+        return getOrCreate(orderId, amount, currency, null);
+    }
+
+    public PaymentOperation getOrCreate(Long orderId, BigDecimal amount, String currency, String idempotencyKey) {
+        String effectiveKey = (idempotencyKey != null && !idempotencyKey.isBlank())
+                ? idempotencyKey.trim()
+                : ("service-order:" + orderId + ":capture:v1");
+
         try {
             return repository.findByServiceOrderIdAndPurpose(orderId, PURPOSE)
-                    .orElseGet(() -> createIfAbsent(orderId, amount, currency));
+                    .orElseGet(() -> createIfAbsent(orderId, amount, currency, effectiveKey));
         } catch (DataIntegrityViolationException duplicate) {
             return repository.findByServiceOrderIdAndPurpose(orderId, PURPOSE)
                     .orElseThrow(() -> duplicate);
         }
     }
 
+    public Optional<PaymentOperation> findByOrderId(Long orderId) {
+        if (orderId == null) {
+            return Optional.empty();
+        }
+        return repository.findByServiceOrderIdAndPurpose(orderId, PURPOSE);
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     protected PaymentOperation createIfAbsent(Long orderId, BigDecimal amount, String currency) {
+        return createIfAbsent(orderId, amount, currency, "service-order:" + orderId + ":capture:v1");
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    protected PaymentOperation createIfAbsent(Long orderId, BigDecimal amount, String currency, String idempotencyKey) {
         return repository.findByServiceOrderIdAndPurpose(orderId, PURPOSE)
                 .orElseGet(() -> repository.saveAndFlush(PaymentOperation.builder()
                         .serviceOrderId(orderId)
                         .purpose(PURPOSE)
-                        .idempotencyKey("service-order:" + orderId + ":capture:v1")
+                        .idempotencyKey(idempotencyKey)
                         .status(PaymentOperationStatus.INITIATED)
                         .amount(amount)
                         .currency(currency)

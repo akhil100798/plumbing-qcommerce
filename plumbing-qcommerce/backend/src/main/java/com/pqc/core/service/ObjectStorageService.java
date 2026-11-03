@@ -11,4 +11,8 @@ public interface ObjectStorageService {
     void delete(String storageKey) throws IOException;
     boolean exists(String storageKey);
     boolean isRemote();
+
+    default String generatePresignedUploadUrl(String storageKey, String contentType, long expirationSeconds) {
+        return null;
+    }
 }

@@ -12,6 +12,14 @@ import {
 import { SupportOptionCard } from '../components/cards/SupportOptionCard';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
+import {
+  SvgNavigationArrowLeft,
+  SvgNavigationChevronUp,
+  SvgNavigationChevronDown,
+  SvgActionsChat,
+  SvgActionsCall,
+  SvgProfileDocumentLegal,
+} from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'Support'>;
 
@@ -54,8 +62,8 @@ export function SupportScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.title}>Help & Support</Text>
       </View>
@@ -63,19 +71,19 @@ export function SupportScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.sectionTitle}>Contact Channels</Text>
         <SupportOptionCard
-          icon="CHAT"
+          icon={<SvgActionsChat width={22} height={22} stroke={colors.primary} />}
           title="Chat with Us"
           description="Initiate an emergency live chat session with support agents"
           onPress={() => alert('Launching customer live support chat...')}
         />
         <SupportOptionCard
-          icon="CALL"
+          icon={<SvgActionsCall width={22} height={22} stroke={colors.primary} />}
           title="Call Support"
           description="Speak to our 24/7 helpdesk helpline at +1-800-PLUMBCO"
           onPress={() => alert('Dialing +1-800-PLUMBCO emergency helpline...')}
         />
         <SupportOptionCard
-          icon="TICKET"
+          icon={<SvgProfileDocumentLegal width={22} height={22} stroke={colors.primary} />}
           title="Raise a Ticket"
           description="Report issues regarding order delivery shortages or service delays"
           onPress={() => alert('Opening ticket registration forms...')}
@@ -92,7 +100,11 @@ export function SupportScreen({ navigation }: Props) {
                 activeOpacity={0.8}
               >
                 <Text style={styles.faqQuestion}>{faq.q}</Text>
-                <Text style={styles.faqArrow}>{expanded ? '▲' : '▼'}</Text>
+                {expanded ? (
+                  <SvgNavigationChevronUp width={16} height={16} stroke={colors.textSecondary} />
+                ) : (
+                  <SvgNavigationChevronDown width={16} height={16} stroke={colors.textSecondary} />
+                )}
               </TouchableOpacity>
               {expanded && (
                 <View style={styles.faqAnswerContainer}>

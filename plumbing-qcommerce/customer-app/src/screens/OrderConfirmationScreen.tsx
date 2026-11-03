@@ -13,6 +13,7 @@ import { PrimaryButton } from '../components/common/PrimaryButton';
 import { SecondaryButton } from '../components/common/SecondaryButton';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
+import { SvgStatusCheckCircle, SvgServicesTimer } from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'OrderConfirmation'>;
 
@@ -52,7 +53,7 @@ export function OrderConfirmationScreen({ route, navigation }: Props) {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.animationSection}>
           <Animated.View style={[styles.checkmarkCircle, { transform: [{ scale: scaleAnim }] }]}>
-            <Text style={styles.checkmarkEmoji}>DONE</Text>
+            <SvgStatusCheckCircle width={48} height={48} stroke="#059669" />
           </Animated.View>
           <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
             <Text style={styles.successTitle}>Order Placed!</Text>
@@ -85,7 +86,7 @@ export function OrderConfirmationScreen({ route, navigation }: Props) {
           <View style={styles.divider} />
 
           <View style={styles.etaRow}>
-            <Text style={styles.etaEmoji}>ETA</Text>
+            <SvgServicesTimer width={24} height={24} stroke={colors.primary} />
             <View>
               <Text style={styles.etaTitle}>Estimated Delivery</Text>
               <Text style={styles.etaValueText}>{eta}</Text>

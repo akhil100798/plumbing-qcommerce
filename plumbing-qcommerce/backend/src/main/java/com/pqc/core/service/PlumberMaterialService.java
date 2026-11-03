@@ -5,6 +5,7 @@ import com.pqc.core.entity.*;
 import com.pqc.core.repository.*;
 import com.pqc.core.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -31,6 +32,22 @@ public class PlumberMaterialService {
     private final CurrentUser currentUser;
     private final LaunchPolicyService launchPolicyService;
     private final Phase2AuthorizationService phase2AuthorizationService;
+    private final ObjectProvider<OutboxEventRepository> outboxRepositoryProvider;
+
+    private void saveToOutbox(String aggregateId, String type, String topic, String payload) {
+        OutboxEventRepository outbox = outboxRepositoryProvider != null ? outboxRepositoryProvider.getIfAvailable() : null;
+        if (outbox != null) {
+            OutboxEvent event = OutboxEvent.builder()
+                    .aggregateId(aggregateId)
+                    .aggregateType("PRODUCT_ORDER")
+                    .eventType(type)
+                    .topic(topic)
+                    .payload(payload)
+                    .processed(false)
+                    .build();
+            outbox.save(event);
+        }
+    }
 
     private void recordServiceOrderHistory(Long orderId, OrderStatus prev, OrderStatus next, User actor, String reason) {
         if (serviceOrderHistoryRepo != null && orderId != null) {
@@ -78,6 +95,8 @@ public class PlumberMaterialService {
         OrderStatus prevJobStatus = job.getStatus();
         job.setStore(store); job.setStatus(OrderStatus.MATERIALS_REQUIRED); jobs.save(job);
         recordServiceOrderHistory(job.getId(), prevJobStatus, OrderStatus.MATERIALS_REQUIRED, plumber, "Materials required for job");
+        saveToOutbox(String.valueOf(saved.getId()), "MATERIAL_REQUESTED", "material-events",
+                String.format("{\"orderId\":%d,\"jobId\":%d,\"storeId\":%d,\"status\":\"REQUESTED\"}", saved.getId(), job.getId(), store.getId()));
         return toDetail(saved);
     }
 
@@ -167,6 +186,8 @@ public class PlumberMaterialService {
 
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.CANCELLED, actor, reason);
+        saveToOutbox(String.valueOf(saved.getId()), "MATERIAL_CANCELLED", "material-events",
+                String.format("{\"orderId\":%d,\"status\":\"CANCELLED\"}", saved.getId()));
         return toDetail(saved);
     }
 
@@ -234,6 +255,8 @@ public class PlumberMaterialService {
         recordServiceOrderHistory(request.getServiceOrder().getId(), prevJobStatus, OrderStatus.WAITING_FOR_STORE, plumber, "Material request submitted to store");
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.STORE_REVIEWING, plumber, null);
+        saveToOutbox(String.valueOf(saved.getId()), "MATERIAL_STORE_REVIEWING", "material-events",
+                String.format("{\"orderId\":%d,\"status\":\"STORE_REVIEWING\"}", saved.getId()));
         return toDetail(saved);
     }
 
@@ -408,6 +431,8 @@ public class PlumberMaterialService {
         }
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.READY_FOR_PICKUP, manager, null);
+        saveToOutbox(String.valueOf(saved.getId()), "MATERIAL_READY", "material-events",
+                String.format("{\"orderId\":%d,\"status\":\"READY_FOR_PICKUP\"}", saved.getId()));
         return toDetail(saved);
     }
 
@@ -477,6 +502,8 @@ public class PlumberMaterialService {
         }
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.COLLECTED, manager, null);
+        saveToOutbox(String.valueOf(saved.getId()), "MATERIAL_COLLECTED", "material-events",
+                String.format("{\"orderId\":%d,\"status\":\"COLLECTED\"}", saved.getId()));
         return toDetail(saved);
     }
 
@@ -552,6 +579,8 @@ public class PlumberMaterialService {
         if (reason != null) request.setNotes(reason);
         ProductOrder saved = requests.save(request);
         recordHistory(saved.getId(), prev, ProductOrderStatus.CANCELLED, actor, reason);
+        saveToOutbox(String.valueOf(saved.getId()), "MATERIAL_CANCELLED", "material-events",
+                String.format("{\"orderId\":%d,\"status\":\"CANCELLED\"}", saved.getId()));
         return toDetail(saved);
     }
 

@@ -18,6 +18,7 @@ import { OrderRepository } from '../services/orders/orderRepository';
 import { CartRepository } from '../services/cart/cartRepository';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
+import { SvgNavigationArrowLeft, SvgStatusAlertCircle, SvgTrackingScooterEnroute } from '../assets/svg';
 type Props = StackScreenProps<AppStackParamList, 'MaterialApproval'>;
 const mockMaterials = [
   { name: 'CPVC Pipe 1 Inch (3 meters)', qty: 2, price: 180 },
@@ -132,14 +133,14 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>Back</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.title}>Material Approval</Text>
       </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.requestBanner}>
-          <Text style={styles.bannerEmoji}>!</Text>
+          <SvgStatusAlertCircle width={28} height={28} stroke={colors.primary} />
           <View style={styles.bannerTextContainer}>
             <Text style={styles.bannerTitle}>Materials Requested</Text>
             <Text style={styles.bannerSub}>
@@ -169,7 +170,7 @@ export function MaterialApprovalScreen({ route, navigation }: Props) {
           </View>
         )}
         <View style={styles.noticeCard}>
-          <Text style={styles.noticeEmoji}>Truck</Text>
+          <SvgTrackingScooterEnroute width={28} height={28} stroke={colors.primary} />
           <Text style={styles.noticeText}>
             {mockFallbackEnabled
               ? 'These materials will be delivered to your house via our instant 15-minute delivery partner.'

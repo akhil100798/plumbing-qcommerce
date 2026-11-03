@@ -442,7 +442,7 @@ export function HomeScreen({ navigation }: any) {
         issueType: `${selectedCategoryLabel} - ${selectedService.title}`,
         issueCategory: selectedCategory,
         description: `${selectedCategoryLabel} - ${selectedService.title}`,
-        urgency: 'NORMAL',
+        urgency: 'URGENT',
         scheduledFor: null,
       });
     } catch (error: any) {

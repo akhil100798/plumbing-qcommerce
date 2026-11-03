@@ -196,7 +196,19 @@ public class R2ObjectStorageService implements ObjectStorageService {
         try {
             HttpResponse<byte[]> response = httpClient.send(reqBuilder.build(), HttpResponse.BodyHandlers.ofByteArray());
             if (response.statusCode() == 200) {
-                return new ByteArrayResource(response.body());
+                byte[] data = response.body();
+                String actualSha256 = AwsSigV4Signer.calculateSha256Hex(data);
+                var checksumHeader = response.headers().firstValue("x-amz-checksum-sha256")
+                        .or(() -> response.headers().firstValue("x-amz-meta-sha256"));
+                if (checksumHeader.isPresent()) {
+                    String expectedHash = checksumHeader.get().trim();
+                    if (!expectedHash.equalsIgnoreCase(actualSha256)) {
+                        throw new IOException("Integrity violation: SHA-256 checksum mismatch for " + storageKey
+                                + " (expected: " + expectedHash + ", actual: " + actualSha256 + ")");
+                    }
+                }
+                log.debug("Loaded object {} from R2 with verified SHA-256: {}", storageKey, actualSha256);
+                return new ByteArrayResource(data);
             } else if (response.statusCode() == 404) {
                 throw new FileNotFoundException("Photo not found in Cloudflare R2: " + storageKey);
             } else {
@@ -259,5 +271,53 @@ public class R2ObjectStorageService implements ObjectStorageService {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    @Override
+    public String generatePresignedUploadUrl(String storageKey, String contentType, long expirationSeconds) {
+        long effectiveExpires = (expirationSeconds <= 0) ? 3600 : expirationSeconds;
+        if (!isConfigured()) {
+            log.info("[STORAGE-R2-SIMULATED] Live R2 credentials not configured. Generating simulated S3 V4 pre-signed URL for key: {}", storageKey);
+            String b = (bucket != null && !bucket.isBlank()) ? bucket : "fixkart-photos";
+            String dateStamp = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+            String amzDate = java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC)
+                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'"));
+            String dummySig = java.util.UUID.randomUUID().toString().replace("-", "") + "00000000000000000000000000000000";
+            return "https://r2-simulated.fixkart.internal/" + b + "/" + storageKey
+                    + "?X-Amz-Algorithm=AWS4-HMAC-SHA256"
+                    + "&X-Amz-Credential=simulated_access_key%2F" + dateStamp + "%2Fauto%2Fs3%2Faws4_request"
+                    + "&X-Amz-Date=" + amzDate
+                    + "&X-Amz-Expires=" + effectiveExpires
+                    + "&X-Amz-SignedHeaders=host"
+                    + "&X-Amz-Signature=" + dummySig.substring(0, 64);
+        }
+
+        String uriPath = "/" + bucket + "/" + storageKey;
+        URI fullUri = URI.create(endpoint + uriPath);
+        String host = fullUri.getHost() + (fullUri.getPort() != -1 ? ":" + fullUri.getPort() : "");
+        return AwsSigV4Signer.generatePresignedUrl(
+                "PUT",
+                endpoint,
+                uriPath,
+                host,
+                region,
+                "s3",
+                accessKey,
+                secretKey,
+                effectiveExpires
+        );
+    }
+
+    public Resource loadAndVerifySha256(String storageKey, String expectedSha256) throws IOException {
+        Resource resource = load(storageKey);
+        if (expectedSha256 != null && !expectedSha256.isBlank()) {
+            byte[] bytes = resource.getContentAsByteArray();
+            String actualSha256 = AwsSigV4Signer.calculateSha256Hex(bytes);
+            if (!actualSha256.equalsIgnoreCase(expectedSha256.trim())) {
+                throw new IOException("Integrity violation: SHA-256 checksum mismatch for " + storageKey
+                        + " (expected: " + expectedSha256 + ", actual: " + actualSha256 + ")");
+            }
+        }
+        return resource;
     }
 }

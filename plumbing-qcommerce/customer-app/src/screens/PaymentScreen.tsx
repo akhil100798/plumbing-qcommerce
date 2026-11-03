@@ -6,16 +6,44 @@ import { PrimaryButton } from '../components/common/PrimaryButton';
 import { canUseDevMockFallbacks } from '../services/mockPolicy';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
+import {
+  SvgNavigationArrowLeft,
+  SvgPaymentUpi,
+  SvgPaymentCard,
+  SvgPaymentWallet,
+  SvgPaymentCash,
+} from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'Payment'>;
-interface PaymentOption { id: string; title: string; subtitle: string; icon: string; }
+
+interface PaymentOption {
+  id: string;
+  title: string;
+  subtitle: string;
+}
 
 const paymentOptions: PaymentOption[] = [
-  { id: 'upi', title: 'UPI', subtitle: 'Pay using any UPI app', icon: '??' },
-  { id: 'card', title: 'Credit / Debit Card', subtitle: 'Visa, Mastercard, RuPay', icon: '??' },
-  { id: 'wallet', title: 'Wallets', subtitle: 'PhonePe, Paytm, Amazon Pay', icon: '??' },
-  { id: 'cod', title: 'Cash on Delivery', subtitle: 'Pay cash when delivered', icon: '??' },
+  { id: 'upi', title: 'UPI', subtitle: 'Pay using any UPI app' },
+  { id: 'card', title: 'Credit / Debit Card', subtitle: 'Visa, Mastercard, RuPay' },
+  { id: 'wallet', title: 'Wallets', subtitle: 'PhonePe, Paytm, Amazon Pay' },
+  { id: 'cod', title: 'Cash on Delivery', subtitle: 'Pay cash when delivered' },
 ];
+
+const renderPaymentIcon = (id: string, selected: boolean) => {
+  const strokeColor = selected ? colors.primary : colors.textPrimary;
+  switch (id) {
+    case 'upi':
+      return <SvgPaymentUpi width={22} height={22} stroke={strokeColor} />;
+    case 'card':
+      return <SvgPaymentCard width={22} height={22} stroke={strokeColor} />;
+    case 'wallet':
+      return <SvgPaymentWallet width={22} height={22} stroke={strokeColor} />;
+    case 'cod':
+      return <SvgPaymentCash width={22} height={22} stroke={strokeColor} />;
+    default:
+      return <SvgPaymentCard width={22} height={22} stroke={strokeColor} />;
+  }
+};
 
 export function PaymentScreen({ route, navigation }: Props) {
   const { totalAmount } = route.params;
@@ -44,21 +72,47 @@ export function PaymentScreen({ route, navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}><Text style={styles.backButtonText}>?</Text></TouchableOpacity>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
+        </TouchableOpacity>
         <Text style={styles.title}>Payment Methods</Text>
       </View>
 
       <View style={styles.stepperContainer}>
-        <View style={styles.step}><View style={styles.stepDot}><Text style={styles.stepNumber}>1</Text></View><Text style={styles.stepLabel}>Address</Text></View>
+        <View style={styles.step}>
+          <View style={styles.stepDot}>
+            <Text style={styles.stepNumber}>1</Text>
+          </View>
+          <Text style={styles.stepLabel}>Address</Text>
+        </View>
         <View style={styles.stepLine} />
-        <View style={styles.step}><View style={[styles.stepDot, styles.stepDotActive]}><Text style={styles.stepNumber}>2</Text></View><Text style={styles.stepLabelActive}>Payment</Text></View>
+        <View style={styles.step}>
+          <View style={[styles.stepDot, styles.stepDotActive]}>
+            <Text style={styles.stepNumber}>2</Text>
+          </View>
+          <Text style={styles.stepLabelActive}>Payment</Text>
+        </View>
         <View style={styles.stepLine} />
-        <View style={styles.step}><View style={styles.stepDot}><Text style={styles.stepNumber}>3</Text></View><Text style={styles.stepLabel}>Confirm</Text></View>
+        <View style={styles.step}>
+          <View style={styles.stepDot}>
+            <Text style={styles.stepNumber}>3</Text>
+          </View>
+          <Text style={styles.stepLabel}>Confirm</Text>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {!devMode && (
-          <View style={styles.noticeCard}><Text style={styles.noticeTitle}>Staging limitation</Text><Text style={styles.noticeText}>Payment confirmation is disabled to avoid fake order success. Use backend-supported cart flows only.</Text></View>
+          <View style={styles.noticeCard}>
+            <Text style={styles.noticeTitle}>Staging limitation</Text>
+            <Text style={styles.noticeText}>
+              Payment confirmation is disabled to avoid fake order success. Use backend-supported cart flows only.
+            </Text>
+          </View>
         )}
 
         <Text style={styles.sectionHeader}>PAYMENT METHODS</Text>
@@ -66,10 +120,22 @@ export function PaymentScreen({ route, navigation }: Props) {
           {paymentOptions.map((opt) => {
             const selected = selectedId === opt.id;
             return (
-              <TouchableOpacity key={opt.id} style={[styles.card, selected && styles.cardSelected]} onPress={() => setSelectedId(opt.id)} activeOpacity={0.8}>
-                <View style={styles.iconWrapper}><Text style={styles.icon}>{opt.icon}</Text></View>
-                <View style={styles.copy}><Text style={styles.cardTitle}>{opt.title}</Text><Text style={styles.cardSubtitle}>{opt.subtitle}</Text></View>
-                <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>{selected && <View style={styles.radioInner} />}</View>
+              <TouchableOpacity
+                key={opt.id}
+                style={[styles.card, selected && styles.cardSelected]}
+                onPress={() => setSelectedId(opt.id)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.iconWrapper}>
+                  {renderPaymentIcon(opt.id, selected)}
+                </View>
+                <View style={styles.copy}>
+                  <Text style={styles.cardTitle}>{opt.title}</Text>
+                  <Text style={styles.cardSubtitle}>{opt.subtitle}</Text>
+                </View>
+                <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
+                  {selected && <View style={styles.radioInner} />}
+                </View>
               </TouchableOpacity>
             );
           })}
@@ -77,7 +143,12 @@ export function PaymentScreen({ route, navigation }: Props) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <PrimaryButton title={devMode ? `Pay ?${totalAmount}` : 'Checkout unavailable in staging'} onPress={handlePay} loading={loading} style={styles.payBtn} />
+        <PrimaryButton
+          title={devMode ? `Pay ₹${totalAmount}` : 'Checkout unavailable in staging'}
+          onPress={handlePay}
+          loading={loading}
+          style={styles.payBtn}
+        />
       </View>
     </SafeAreaView>
   );
@@ -85,34 +156,116 @@ export function PaymentScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.layout, paddingVertical: spacing.md, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border, gap: spacing.md },
-  backButton: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.layout,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    gap: spacing.md,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+  },
   backButtonText: { fontSize: 22, color: colors.textPrimary, fontWeight: 'bold' },
   title: { fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  stepperContainer: { flexDirection: 'row', backgroundColor: colors.surface, paddingVertical: spacing.md, paddingHorizontal: spacing.xl, justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1.5, borderBottomColor: colors.border },
+  stepperContainer: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1.5,
+    borderBottomColor: colors.border,
+  },
   step: { alignItems: 'center', gap: 4 },
-  stepDot: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.borderDark, justifyContent: 'center', alignItems: 'center' },
+  stepDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.borderDark,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   stepDotActive: { backgroundColor: colors.primary },
   stepNumber: { fontSize: 12, color: colors.surface, fontWeight: 'bold' },
   stepLabel: { fontSize: 10, color: colors.textMuted, fontWeight: typography.fontWeight.bold },
   stepLabelActive: { fontSize: 10, color: colors.primary, fontWeight: typography.fontWeight.bold },
-  stepLine: { flex: 1, height: 2, backgroundColor: colors.border, marginHorizontal: spacing.sm, marginBottom: 14 },
+  stepLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: colors.border,
+    marginHorizontal: spacing.sm,
+    marginBottom: 14,
+  },
   scrollContent: { padding: spacing.layout, paddingBottom: spacing.huge },
-  noticeCard: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, borderRadius: borderRadius.md, padding: spacing.md, marginBottom: spacing.md },
-  noticeTitle: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, marginBottom: spacing.xs },
+  noticeCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  noticeTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
   noticeText: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
-  sectionHeader: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold, color: colors.textSecondary, marginBottom: spacing.sm, letterSpacing: 0.5 },
+  sectionHeader: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+    letterSpacing: 0.5,
+  },
   optionsList: { gap: spacing.sm },
-  card: { flexDirection: 'row', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, borderRadius: borderRadius.md, padding: spacing.md, alignItems: 'center' },
+  card: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    alignItems: 'center',
+    minHeight: 56,
+  },
   cardSelected: { borderColor: colors.primary },
-  iconWrapper: { width: 40, height: 40, borderRadius: 8, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center', marginRight: spacing.md },
+  iconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
   icon: { fontSize: 20 },
   copy: { flex: 1 },
   cardTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
   cardSubtitle: { fontSize: typography.fontSize.xs, color: colors.textSecondary, fontWeight: typography.fontWeight.medium, marginTop: 2 },
-  radioOuter: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.borderDark, alignItems: 'center', justifyContent: 'center', marginLeft: spacing.sm },
+  radioOuter: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: colors.borderDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: spacing.sm,
+  },
   radioOuterSelected: { borderColor: colors.primary },
   radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary },
   footer: { padding: spacing.layout, borderTopWidth: 1.5, borderTopColor: colors.border, backgroundColor: colors.surface },
-  payBtn: { width: '100%' },
+  payBtn: { width: '100%', minHeight: 48 },
 });

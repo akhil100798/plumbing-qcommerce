@@ -92,6 +92,12 @@ function createEdgeApp(options = {}) {
 
     const app = express();
     app.use((req, res, next) => {
+        const correlationId = req.headers['x-correlation-id'] || req.headers['x-request-id'] || require('crypto').randomUUID();
+        req.correlationId = correlationId;
+        res.setHeader('X-Correlation-ID', correlationId);
+        next();
+    });
+    app.use((req, res, next) => {
         const origin = req.headers.origin;
         if (origin && !isOriginAllowed(origin)) {
             return res.status(403).json({ error: 'CORS origin not allowed' });
