@@ -4,19 +4,19 @@ services:
     runtime: docker
     rootDir: backend
     plan: free
+    autoDeploy: false
     healthCheckPath: /actuator/health
     envVars:
       - key: SPRING_PROFILES_ACTIVE
-        value: prod,staging
+        value: prod
       - key: APP_SCHEDULING_ENABLED
         value: false
-      # Legacy demo seeding is intentionally disabled on the prod+staging
-      # Render service. The staging-only admin seeder below is the only seed
-      # enabled for QA.
+      # Seeding is disabled on production Render deployment to preserve data integrity
+      # and satisfy SeedProperties / DatabaseIsolationRuntimeGuard.
       - key: APP_DEMO_SEED_ENABLED
         value: false
       - key: APP_SEED_STAGING_ADMIN_ENABLED
-        value: true
+        value: false
       - key: APP_SEED_DEMO_PASSWORD
         sync: false
       - key: PORT
@@ -40,7 +40,7 @@ services:
       - key: CORS_ALLOWED_ORIGINS
         sync: false
       - key: SMS_PROVIDER
-        value: disabled
+        value: mock
       - key: MONGO_URI
         sync: false
       - key: KAFKA_BOOTSTRAP_SERVERS
@@ -53,3 +53,4 @@ services:
         sync: false
       - key: KAFKA_SASL_MECHANISM
         sync: false
+

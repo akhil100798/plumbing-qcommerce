@@ -65,7 +65,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
-@Profile("!prod & (local | dev | demo | test)")
+@Profile("!prod & (local | local-staging | dev | demo | test)")
 @ConditionalOnProperty(
     prefix = "app.seed",
     name = "admin-demo-enabled",

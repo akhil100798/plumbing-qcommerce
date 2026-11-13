@@ -18,6 +18,7 @@ import { AppStackParamList } from '../types/navigation';
 import { RootState } from '../redux/store';
 import { addToCart, removeFromCart } from '../redux/slices/cartSlice';
 import { apiClient } from '../services/apiClient';
+import { SvgNavigationArrowLeft } from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'StoreDetails'>;
 
@@ -51,10 +52,10 @@ export function StoreDetailsScreen({ route, navigation }: Props) {
             price: stock.product.price,
             categoryName: catName,
             icon: stock.product.name.toLowerCase().includes('tap')
-              ? '🚰'
+              ? 'TAP'
               : stock.product.name.toLowerCase().includes('elbow')
-              ? '🔩'
-              : '🛢️',
+              ? 'VALVE'
+              : 'TANK',
           };
         });
         setProducts(mapped);
@@ -83,8 +84,8 @@ export function StoreDetailsScreen({ route, navigation }: Props) {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.title}>{storeName}</Text>
       </View>
@@ -92,11 +93,11 @@ export function StoreDetailsScreen({ route, navigation }: Props) {
       {/* Store Profile Card */}
       <View style={styles.profileSection}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>🏪</Text>
+          <Text style={styles.avatarText}>STORE</Text>
         </View>
         <View style={styles.profileInfo}>
           <Text style={styles.profileName}>{storeName}</Text>
-          <Text style={styles.profileSub}>Verified Hardware Partner • ⭐ 4.7 (120 reviews)</Text>
+          <Text style={styles.profileSub}>Verified Hardware Partner • Rating 4.7 (120 reviews)</Text>
           <Text style={styles.profileAddress}>Plot 45, Kavuri Hills Rd, Madhapur, Hyderabad</Text>
         </View>
       </View>
@@ -173,9 +174,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44, height: 44, borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,

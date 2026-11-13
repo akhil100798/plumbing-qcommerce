@@ -191,10 +191,7 @@ public class AuthController {
         try {
             GoogleTokenVerifierService.GoogleClaims claims = googleTokenVerifierService.verifyToken(request.getIdToken());
 
-            User user = userRepository.findAll().stream()
-                    .filter(u -> claims.sub().equals(u.getProviderId()))
-                    .findFirst()
-                    .orElse(null);
+            User user = userRepository.findByProviderId(claims.sub()).orElse(null);
 
             if (user == null) {
                 User existingUserByEmail = userRepository.findByEmail(claims.email()).orElse(null);

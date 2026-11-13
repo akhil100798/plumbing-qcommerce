@@ -111,7 +111,7 @@ export function ProfileScreen({ navigation }: Props) {
           </View>
           <View style={styles.statBoxDivider} />
           <View style={styles.statBox}>
-            <Text style={styles.statVal}>4.8 ★</Text>
+            <Text style={styles.statVal}>4.8</Text>
             <Text style={styles.statLabel}>Rating</Text>
           </View>
         </View>
@@ -119,35 +119,35 @@ export function ProfileScreen({ navigation }: Props) {
         <Text style={styles.sectionTitle}>Account & Services</Text>
 
         <ProfileMenuItem
-          icon="👛"
+          icon="WALLET"
           title="Wallet & Offers"
           subtitle="View balance, add money, and browse active promos"
           onPress={() => navigation.navigate('Wallet')}
         />
 
         <ProfileMenuItem
-          icon="📍"
+          icon="LOCATION"
           title="Address Management"
           subtitle="Manage your home, office, and other saved addresses"
           onPress={() => navigation.navigate('AddressManagement')}
         />
 
         <ProfileMenuItem
-          icon="💳"
+          icon="PAYMENT"
           title="Payment Methods"
           subtitle="Saved UPIs, debit cards, and wallets"
           onPress={() => navigation.navigate('PaymentMethods')}
         />
 
         <ProfileMenuItem
-          icon="⚙️"
+          icon="SETTINGS"
           title="Settings"
           subtitle="Notifications, permissions, and app preferences"
           onPress={() => navigation.navigate('Settings')}
         />
 
         <ProfileMenuItem
-          icon="❓"
+          icon="SUPPORT"
           title="Help & Support"
           subtitle="Frequently asked questions and support chats"
           onPress={() => navigation.navigate('Support')}
@@ -155,7 +155,7 @@ export function ProfileScreen({ navigation }: Props) {
 
         <View style={styles.logoutContainer}>
           <ProfileMenuItem
-            icon="🚪"
+            icon="LOGOUT"
             title="Log Out"
             onPress={handleLogout}
             showArrow={false}

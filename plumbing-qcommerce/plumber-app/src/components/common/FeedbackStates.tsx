@@ -1,3 +1,4 @@
+import { SvgStatusAlert, SvgIllEmptyJobs } from '../../assets/svg';
 import React from 'react';
 import {
   ActivityIndicator,
@@ -35,13 +36,13 @@ interface EmptyStateProps {
 export function EmptyState({
   title,
   description,
-  icon = '📭',
+  icon = '',
   actionTitle,
   onActionPress,
 }: EmptyStateProps) {
   return (
     <View style={styles.center}>
-      <Text style={styles.iconText}>{icon}</Text>
+      {icon ? <Text style={styles.iconText}>{icon}</Text> : <SvgIllEmptyJobs width={64} height={64} />}
       <Text style={styles.titleText}>{title}</Text>
       <Text style={styles.descriptionText}>{description}</Text>
       {actionTitle && onActionPress && (
@@ -69,7 +70,7 @@ export function ErrorState({
 }: ErrorStateProps) {
   return (
     <View style={styles.center}>
-      <Text style={styles.errorIconText}>⚠️</Text>
+      <SvgStatusAlert width={48} height={48} color="#EF4444" />
       <Text style={styles.titleText}>Something Went Wrong</Text>
       <Text style={styles.errorDescriptionText}>{message}</Text>
       {onRetry && (

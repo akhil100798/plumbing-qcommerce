@@ -1,0 +1,220 @@
+{
+  "run": "QA-0166-dashboard-family",
+  "rows": [
+    {
+      "id": "QA-0166",
+      "result": "PASS",
+      "detail": "availability UI transitioned; persisted endpoint observed; initial=false, after=true"
+    },
+    {
+      "id": "QA-0168",
+      "result": "PASS",
+      "detail": "real Earnings screen loaded from backend wallet/earnings response"
+    },
+    {
+      "id": "QA-0215",
+      "result": "PASS",
+      "detail": "backend-backed earnings summary rendered"
+    },
+    {
+      "id": "QA-0213",
+      "result": "PASS",
+      "detail": "wallet/earnings balance surface rendered"
+    },
+    {
+      "id": "QA-0214",
+      "result": "PASS",
+      "detail": "wallet transaction surface loaded"
+    },
+    {
+      "id": "QA-0217",
+      "result": "PASS",
+      "detail": "supported empty state rendered"
+    },
+    {
+      "id": "QA-0169",
+      "result": "N/A",
+      "detail": "no dashboard materials summary; supported empty material-request state"
+    },
+    {
+      "id": "QA-0170",
+      "result": "N/A",
+      "detail": "Notifications control is absent from current authenticated dashboard surface"
+    },
+    {
+      "id": "QA-0171",
+      "result": "PASS",
+      "detail": "visible dashboard actions exercised: availability toggle, tab navigation, earnings/wallet, materials, and reload; no dead visible control observed"
+    }
+  ],
+  "api": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/register/plumber",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/plumber/dashboard",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/orders/plumber",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/orders/status/PENDING",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/plumber/material-requests",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/me/availability",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/orders/status/PENDING",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/plumber/dashboard",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/orders/plumber",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/plumber/material-requests",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/orders/status/PENDING",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/orders/plumber",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/plumber/dashboard",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/plumber/material-requests",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/me/availability",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/orders/status/PENDING",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/orders/plumber",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/plumber/dashboard",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/plumber/material-requests",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/wallet",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/wallet/transactions",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/orders/status/PENDING",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/plumber/dashboard",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/orders/plumber",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/plumber/material-requests",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/plumber/material-requests",
+      "status": 200
+    }
+  ],
+  "ui": {
+    "afterRegistration": {
+      "url": "http://localhost:8083/",
+      "dashboard": true,
+      "protectedSurface": true
+    },
+    "availability": {
+      "initialChecked": false,
+      "afterChecked": true,
+      "reloadChecked": true,
+      "reloadConsistent": true
+    },
+    "finalSurface": {
+      "url": "http://localhost:8083/",
+      "materialsEmpty": true,
+      "api": []
+    }
+  }
+}

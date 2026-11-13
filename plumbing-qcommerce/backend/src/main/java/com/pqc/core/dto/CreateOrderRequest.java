@@ -8,8 +8,17 @@ import lombok.Data;
  */
 @Data
 public class CreateOrderRequest {
+    private String issueCategory;
     private String description;
     private Double latitude;
     private Double longitude;
     private String requestType = "NEARBY_AUTO";
+    private String addressLine1;
+    private String addressLine2;
+    private String landmark;
+    private String city;
+    private String postalCode;
+    private String contactPhone;
+    private String urgency;
+    private java.time.LocalDateTime scheduledFor;
 }

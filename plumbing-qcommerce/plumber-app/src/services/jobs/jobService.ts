@@ -1,18 +1,16 @@
 import { apiClient } from '../api/axiosClient';
 import { ENDPOINTS } from '../api/endpoints';
-import { MOCK_ACTIVE_JOB, MOCK_JOB_OFFER } from '../mocks/mockData';
-import {
-  canUseDevMockFallbacks,
-  createBackendUnavailableError,
-  warnUsingDevMockFallback,
-} from '../mockPolicy';
+import { canUseDevMockFallbacks, createBackendUnavailableError, warnUsingDevMockFallback } from '../mockPolicy';
 import { ActiveJob, JobOffer } from '../../types';
+import { MOCK_ACTIVE_JOB, MOCK_JOB_OFFER } from '../mocks/mockData';
 
-const fallbackLocation = (order: any) => {
+const serviceLocation = (order: any) => {
+  const address = [order.addressLine1, order.addressLine2, order.landmark, order.city, order.postalCode].filter(Boolean).join(', ');
+  if (address) return address;
   if (order.customerLatitude != null && order.customerLongitude != null) {
     return `Lat ${Number(order.customerLatitude).toFixed(4)}, Lng ${Number(order.customerLongitude).toFixed(4)}`;
   }
-  return 'Customer service location';
+  return 'Address unavailable';
 };
 
 const parseServiceOrderId = (jobId: string): number => {
@@ -27,15 +25,13 @@ const parseServiceOrderId = (jobId: string): number => {
 const mapServiceOrderToOffer = (order: any): JobOffer => ({
   jobId: String(order.id),
   customerId: String(order.customer?.id || order.customerId || ''),
-  customerName: order.customer?.fullName || order.customerName || 'Customer',
-  customerRating: 4.8,
-  distance: 2.4,
-  location: fallbackLocation(order),
-  latitude: Number(order.customerLatitude ?? order.latitude ?? 17.4485),
-  longitude: Number(order.customerLongitude ?? order.longitude ?? 78.3741),
-  estimatedEarnings: Number(order.totalAmount ?? order.serviceCharge ?? 299),
+  customerName: order.customer?.fullName || order.customerName,
+  location: serviceLocation(order),
+  latitude: order.customerLatitude ?? order.latitude ?? null,
+  longitude: order.customerLongitude ?? order.longitude ?? null,
+  estimatedEarnings: null,
   issueDescription: order.description,
-  category: order.requestType || 'Service',
+  category: order.issueCategory || order.requestType,
 });
 
 const mapServiceOrderToActiveJob = (order: any, status?: ActiveJob['status']): ActiveJob => {
@@ -56,17 +52,17 @@ const mapServiceOrderToActiveJob = (order: any, status?: ActiveJob['status']): A
     jobId: String(order.id),
     customer: {
       id: String(order.customer?.id || order.customerId || ''),
-      fullName: order.customer?.fullName || order.customerName || 'Customer',
-      phone: order.customer?.phone || order.customerPhone || '',
-      rating: 4.8,
+      fullName: order.customer?.fullName || order.customerName || null,
+      phone: order.customer?.phone || order.customerPhone || null,
+      rating: order.customer?.rating ?? order.customerRating ?? null,
     },
     status: mappedStatus,
-    address: fallbackLocation(order),
-    latitude: Number(order.customerLatitude ?? order.latitude ?? 17.4485),
-    longitude: Number(order.customerLongitude ?? order.longitude ?? 78.3741),
+    address: serviceLocation(order),
+    latitude: order.customerLatitude ?? order.latitude ?? null,
+    longitude: order.customerLongitude ?? order.longitude ?? null,
     customerNote: order.description,
-    estimatedEarnings: Number(order.totalAmount ?? order.serviceCharge ?? 299),
-    partsCharge: Number(order.partsCharge ?? 0),
+    estimatedEarnings: null,
+    partsCharge: null,
     timeline: {
       accepted: order.acceptedAt,
       reached: order.arrivedAt,
@@ -79,7 +75,7 @@ const mapServiceOrderToActiveJob = (order: any, status?: ActiveJob['status']): A
 export const jobService = {
   fetchIncomingJobs: async (): Promise<JobOffer[]> => {
     try {
-      const response = await apiClient.get<any[]>(ENDPOINTS.ORDERS.BY_STATUS('PENDING'));
+      const response = await apiClient.get<any[]>(ENDPOINTS.ORDERS.OFFERS);
       return (response.data || []).map(mapServiceOrderToOffer);
     } catch (error) {
       if (canUseDevMockFallbacks()) {
@@ -95,19 +91,29 @@ export const jobService = {
       const cleanId = parseServiceOrderId(jobId);
       const response = await apiClient.patch<any>(ENDPOINTS.ORDERS.ACCEPT(cleanId));
       return mapServiceOrderToActiveJob(response.data, 'accepted');
-    } catch (error) {
+    } catch (error: any) {
       if (canUseDevMockFallbacks()) {
-        warnUsingDevMockFallback('Accept plumber job', error);
-        return {
-          ...MOCK_ACTIVE_JOB,
-          jobId,
-          timeline: {
-            assigned: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            accepted: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          },
-        };
+        warnUsingDevMockFallback('Accept job', error);
+        return { ...MOCK_ACTIVE_JOB, jobId: String(jobId || 'JOB-1024'), status: 'accepted' };
       }
+      if (error?.response?.status === 409) throw new Error('This job was accepted by another plumber.');
+      if (error?.response?.status === 401 || error?.response?.status === 403) throw new Error('You are not eligible to accept this job.');
       throw createBackendUnavailableError('Accept plumber job', error);
+    }
+  },
+
+  rejectJob: async (jobId: string): Promise<void> => {
+    try {
+      const cleanId = parseServiceOrderId(jobId);
+      await apiClient.patch<any>(ENDPOINTS.ORDERS.REJECT(cleanId));
+    } catch (error: any) {
+      if (canUseDevMockFallbacks()) {
+        warnUsingDevMockFallback('Decline job', error);
+        return;
+      }
+      if (error?.response?.status === 409) throw new Error('This job is no longer available.');
+      if (error?.response?.status === 401 || error?.response?.status === 403) throw new Error('You are not eligible to decline this job.');
+      throw createBackendUnavailableError('Decline plumber job', error);
     }
   },
 
@@ -116,10 +122,7 @@ export const jobService = {
       const cleanId = parseServiceOrderId(jobId);
       await apiClient.patch<any>(`/orders/${cleanId}/start-navigation`);
     } catch (error) {
-      if (canUseDevMockFallbacks()) {
-        warnUsingDevMockFallback('Start navigation', error);
-        return;
-      }
+      if (canUseDevMockFallbacks()) return;
       throw createBackendUnavailableError('Start navigation', error);
     }
   },
@@ -129,6 +132,7 @@ export const jobService = {
       const cleanId = parseServiceOrderId(jobId);
       await apiClient.patch<any>(ENDPOINTS.ORDERS.ARRIVE(cleanId));
     } catch (error) {
+      if (canUseDevMockFallbacks()) return;
       throw createBackendUnavailableError('Mark arrived', error);
     }
   },
@@ -140,16 +144,8 @@ export const jobService = {
       return mapServiceOrderToActiveJob(response.data, 'started');
     } catch (error) {
       if (canUseDevMockFallbacks()) {
-        warnUsingDevMockFallback('Start plumber job', error);
-        return {
-          ...MOCK_ACTIVE_JOB,
-          jobId,
-          status: 'started',
-          timeline: {
-            ...MOCK_ACTIVE_JOB.timeline,
-            started: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          },
-        };
+        warnUsingDevMockFallback('Start work', error);
+        return { ...MOCK_ACTIVE_JOB, jobId: String(jobId || 'JOB-1024'), status: 'started' };
       }
       throw createBackendUnavailableError('Start plumber job', error);
     }
@@ -164,17 +160,8 @@ export const jobService = {
       return mapServiceOrderToActiveJob(response.data, 'completed');
     } catch (error) {
       if (canUseDevMockFallbacks()) {
-        warnUsingDevMockFallback('Complete plumber job', error);
-        return {
-          ...MOCK_ACTIVE_JOB,
-          jobId,
-          status: 'completed',
-          partsCharge: partsCharge || 0,
-          timeline: {
-            ...MOCK_ACTIVE_JOB.timeline,
-            completed: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          },
-        };
+        warnUsingDevMockFallback('Complete job', error);
+        return { ...MOCK_ACTIVE_JOB, jobId: String(jobId || 'JOB-1024'), status: 'completed' };
       }
       throw createBackendUnavailableError('Complete plumber job', error);
     }
@@ -189,16 +176,21 @@ export const jobService = {
         (order) =>
           order.status === 'ACCEPTED' ||
           order.status === 'IN_PROGRESS' ||
-          order.status === 'COMBINED_ORDER'
+          order.status === 'COMBINED_ORDER' ||
+          order.status === 'MATERIALS_REQUIRED' ||
+          order.status === 'WAITING_FOR_STORE' ||
+          order.status === 'READY_FOR_PRODUCT_PICKUP' ||
+          order.status === 'PLUMBER_COLLECTING_PRODUCTS' ||
+          order.status === 'PRODUCTS_COLLECTED' ||
+          order.status === 'RETURNING_TO_CUSTOMER' ||
+          order.status === 'WORK_RESUMED' ||
+          order.status === 'COMPLETED'
       );
       if (!activeOrder) return null;
-
-      // Let mapServiceOrderToActiveJob infer status from all fields (including arrivedAt)
       return mapServiceOrderToActiveJob(activeOrder);
     } catch (error) {
       if (canUseDevMockFallbacks()) {
-        warnUsingDevMockFallback('Fetch active job', error);
-        return null;
+        return MOCK_ACTIVE_JOB;
       }
       throw createBackendUnavailableError('Fetch active job', error);
     }
@@ -210,6 +202,9 @@ export const jobService = {
       const response = await apiClient.get<any>(ENDPOINTS.ORDERS.GET_BY_ID(cleanId));
       return mapServiceOrderToActiveJob(response.data);
     } catch (error) {
+      if (canUseDevMockFallbacks()) {
+        return { ...MOCK_ACTIVE_JOB, jobId: String(jobId || 'JOB-1024') };
+      }
       throw createBackendUnavailableError('Fetch job by ID', error);
     }
   },

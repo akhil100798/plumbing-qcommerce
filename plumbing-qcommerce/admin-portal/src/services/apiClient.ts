@@ -1,4 +1,22 @@
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8081";
+export function resolveAdminBaseUrl(env: Record<string, string | undefined> = process.env): string {
+  const url = env.NEXT_PUBLIC_API_BASE_URL || env.NEXT_PUBLIC_BACKEND_URL;
+  const isStaging = env.NEXT_PUBLIC_APP_ENV === 'staging' || env.VERCEL_ENV === 'preview';
+
+  if (url) {
+    if (url.includes('plumbing-qcommerce.onrender.com') && isStaging) {
+      throw new Error('Staging/preview admin build cannot target production backend URL');
+    }
+    return url.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+  }
+
+  if (isStaging) {
+    throw new Error('NEXT_PUBLIC_API_BASE_URL is required for staging/preview builds');
+  }
+
+  return 'http://localhost:8081';
+}
+
+const BACKEND_URL = resolveAdminBaseUrl();
 const TOKEN_KEY = "pqc_admin_token";
 
 export class ApiError extends Error {

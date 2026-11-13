@@ -18,7 +18,7 @@ export default function DynamicPricingPanel({ data, loading }: DynamicPricingPan
   if (loading || !data) {
     return (
       <div className="empty-state">
-        <span style={{ fontSize: "1.5rem" }}>📡</span>
+        <span style={{ fontSize: "1.2rem", fontWeight: 700, color: "#38bdf8" }}>SURGE</span>
         <span>Fetching demand signals…</span>
       </div>
     );
@@ -29,8 +29,8 @@ export default function DynamicPricingPanel({ data, loading }: DynamicPricingPan
     data.surgeLevel === "MODERATE" ? "surge-moderate"  : "surge-normal";
 
   const surgeEmoji =
-    data.surgeLevel === "HIGH"     ? "🔴" :
-    data.surgeLevel === "MODERATE" ? "🟡" : "🟢";
+    data.surgeLevel === "HIGH"     ? "HIGH" :
+    data.surgeLevel === "MODERATE" ? "MOD" : "NORM";
 
   return (
     <div style={{ textAlign: "center" }}>
@@ -52,7 +52,7 @@ export default function DynamicPricingPanel({ data, loading }: DynamicPricingPan
           background: "rgba(255,255,255,0.03)", borderRadius: "8px",
           border: "1px solid rgba(255,255,255,0.07)"
         }}>
-          <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>🚚 Delivery Fee</span>
+          <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>Delivery Fee</span>
           <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#f1f5f9" }}>
             {data.deliverySurgeMultiplier}×
           </span>
@@ -63,7 +63,7 @@ export default function DynamicPricingPanel({ data, loading }: DynamicPricingPan
           background: "rgba(255,255,255,0.03)", borderRadius: "8px",
           border: "1px solid rgba(255,255,255,0.07)"
         }}>
-          <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>🔧 Platform Fee</span>
+          <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>Platform Fee</span>
           <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#f1f5f9" }}>
             {data.platformFeeMultiplier}×
           </span>
@@ -74,14 +74,14 @@ export default function DynamicPricingPanel({ data, loading }: DynamicPricingPan
           background: "rgba(255,255,255,0.03)", borderRadius: "8px",
           border: "1px solid rgba(255,255,255,0.07)"
         }}>
-          <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>📋 Active Orders</span>
+          <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>Active Orders</span>
           <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#14b8a6" }}>
             {data.activeOrders}
           </span>
         </div>
         {data.isPeakHour && (
           <div className="badge badge-amber" style={{ justifyContent: "center", padding: "6px" }}>
-            ⚡ Peak Hour Active
+            Peak Hour Active
           </div>
         )}
       </div>

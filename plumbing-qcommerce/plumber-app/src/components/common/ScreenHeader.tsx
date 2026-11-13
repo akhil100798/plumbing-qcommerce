@@ -1,3 +1,4 @@
+import { SvgNavSettings } from '../../assets/svg';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
@@ -40,7 +41,7 @@ export function ScreenHeader({
       <View style={[styles.side, styles.rightSide]}>
         {rightIcon && onRightPress ? (
           <TouchableOpacity onPress={onRightPress} hitSlop={hitSlop} accessibilityLabel="Action">
-            <Text style={styles.rightText}>⚙</Text>
+            <SvgNavSettings width={20} height={20} color="#FFFFFF" />
           </TouchableOpacity>
         ) : null}
       </View>

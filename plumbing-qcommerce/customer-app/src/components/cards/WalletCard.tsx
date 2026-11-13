@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
+import { SvgPaymentBriefcase } from '../../assets/svg';
 
 interface WalletCardProps {
   balance: number;
@@ -24,7 +25,7 @@ export function WalletCard({ balance, onAddMoney, style }: WalletCardProps) {
           <Text style={styles.cardTitle}>PlumbCommerce Wallet</Text>
           <Text style={styles.cardStatus}>Active • Instant Refunds Enabled</Text>
         </View>
-        <Text style={styles.cardLogo}>💼</Text>
+        <SvgPaymentBriefcase width={24} height={24} stroke="#FFFFFF" />
       </View>
 
       <View style={styles.middleRow}>

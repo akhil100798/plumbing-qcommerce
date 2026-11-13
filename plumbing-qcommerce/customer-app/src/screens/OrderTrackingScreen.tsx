@@ -8,6 +8,7 @@ import { PrimaryButton } from '../components/common/PrimaryButton';
 import { canUseDevMockFallbacks } from '../services/mockPolicy';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
+import { SvgNavigationArrowLeft, SvgActionsCall, SvgActionsChat, SvgStatusCheckCircle } from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'OrderTracking'>;
 interface TrackingStep { title: string; time?: string; completed: boolean; active: boolean; }
@@ -43,7 +44,9 @@ export function OrderTrackingScreen({ route, navigation }: Props) {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}><Text style={styles.backButtonText}>?</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
+          </TouchableOpacity>
           <Text style={styles.title}>Order #{orderId}</Text>
         </View>
 
@@ -69,7 +72,7 @@ export function OrderTrackingScreen({ route, navigation }: Props) {
               {steps.map((step, idx) => (
                 <View key={idx} style={styles.timelineRow}>
                   <View style={styles.timelineIndicator}>
-                    <View style={[styles.indicatorDot, step.completed && styles.dotCompleted, step.active && styles.dotActive]}>{step.completed && <Text style={styles.checkIcon}>?</Text>}</View>
+                    <View style={[styles.indicatorDot, step.completed && styles.dotCompleted, step.active && styles.dotActive]}>{step.completed && <SvgStatusCheckCircle width={14} height={14} stroke="#059669" />}</View>
                     {idx < steps.length - 1 && <View style={styles.indicatorLine} />}
                   </View>
                   <View style={styles.timelineCopy}><Text style={[styles.stepTitle, step.active && styles.stepTitleActive, !step.completed && !step.active && styles.stepTitleMuted]}>{step.title}</Text>{step.time && <Text style={styles.stepTime}>{step.time}</Text>}</View>
@@ -79,10 +82,14 @@ export function OrderTrackingScreen({ route, navigation }: Props) {
           </View>
 
           <View style={styles.partnerCard}>
-            <View style={styles.partnerInfo}><View style={styles.avatar}><Text style={styles.avatarText}>D</Text></View><View><Text style={styles.partnerName}>Ravi Kumar</Text><Text style={styles.partnerMeta}>Your Delivery Partner • ? 4.8</Text></View></View>
+            <View style={styles.partnerInfo}><View style={styles.avatar}><Text style={styles.avatarText}>D</Text></View><View><Text style={styles.partnerName}>Ravi Kumar</Text><Text style={styles.partnerMeta}>Your Delivery Partner â€¢ 4.8</Text></View></View>
             <View style={styles.actions}>
-              <TouchableOpacity style={styles.actionCircleBtn} onPress={() => Linking.openURL('tel:+919876543210').catch(() => Alert.alert('Helpline call failed'))}><Text style={styles.actionEmoji}>??</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.actionCircleBtn} onPress={() => navigation.navigate('Chat', { name: 'Ravi Kumar', role: 'Delivery Partner' })}><Text style={styles.actionEmoji}>??</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.actionCircleBtn} onPress={() => Linking.openURL('tel:+919876543210').catch(() => Alert.alert('Helpline call failed'))} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <SvgActionsCall width={20} height={20} stroke={colors.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionCircleBtn} onPress={() => navigation.navigate('Chat', { name: 'Ravi Kumar', role: 'Delivery Partner' })} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <SvgActionsChat width={20} height={20} stroke={colors.primary} />
+              </TouchableOpacity>
             </View>
           </View>
 

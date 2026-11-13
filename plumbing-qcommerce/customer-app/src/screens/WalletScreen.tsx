@@ -16,6 +16,7 @@ import { PrimaryButton } from '../components/common/PrimaryButton';
 import { Toast } from '../components/common/Toast';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
+import { SvgNavigationArrowLeft, SvgNavigationArrowRight, SvgEcommerceOffer } from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'Wallet'>;
 
@@ -102,8 +103,8 @@ export function WalletScreen({ navigation }: Props) {
         onHide={() => setToastVisible(false)}
       />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.title}>My Wallet</Text>
       </View>
@@ -116,12 +117,12 @@ export function WalletScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('Offers')}
           activeOpacity={0.8}
         >
-          <Text style={styles.offersPromoEmoji}>🎉</Text>
+          <SvgEcommerceOffer width={28} height={28} stroke={colors.primary} />
           <View style={styles.offersPromoText}>
             <Text style={styles.offersPromoTitle}>View Active Offers & Coupons</Text>
             <Text style={styles.offersPromoSub}>Save up to 50% on plumbing tools and services</Text>
           </View>
-          <Text style={styles.offersPromoArrow}>→</Text>
+          <SvgNavigationArrowRight width={20} height={20} stroke={colors.primary} />
         </TouchableOpacity>
 
         {/* Add Money Input form */}
@@ -165,7 +166,7 @@ export function WalletScreen({ navigation }: Props) {
           <View key={tx.id} style={styles.txRow}>
             <View style={styles.txLeft}>
               <View style={[styles.txIconCircle, tx.type === 'credit' ? styles.txCreditIcon : styles.txDebitIcon]}>
-                <Text style={styles.txIconText}>{tx.type === 'credit' ? '📥' : '📤'}</Text>
+                <Text style={styles.txIconText}>{tx.type === 'credit' ? '+' : '-'}</Text>
               </View>
               <View>
                 <Text style={styles.txTitle}>{tx.title}</Text>
@@ -198,9 +199,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44, height: 44, borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,

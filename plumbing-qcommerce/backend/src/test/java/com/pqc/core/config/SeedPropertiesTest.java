@@ -42,7 +42,7 @@ class SeedPropertiesTest {
 
         assertThatThrownBy(() -> properties.validate())
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Production configuration violation");
+                .hasMessageContaining("Seeding cannot be enabled");
     }
 
     @Test
@@ -52,7 +52,7 @@ class SeedPropertiesTest {
 
         assertThatThrownBy(() -> properties.validate())
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Production configuration violation");
+                .hasMessageContaining("Seeding cannot be enabled");
     }
 
     @Test
@@ -62,7 +62,7 @@ class SeedPropertiesTest {
 
         assertThatThrownBy(() -> properties.validate())
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Production configuration violation");
+                .hasMessageContaining("Seeding cannot be enabled");
     }
 
     @Test
@@ -88,13 +88,24 @@ class SeedPropertiesTest {
     }
 
     @Test
+    void whenStagingAdminModeActiveAndDemoSeedEnabled_shouldThrowIllegalStateException() {
+        when(env.getActiveProfiles()).thenReturn(new String[]{"staging"});
+        when(env.getProperty("app.seed.staging-admin-enabled", Boolean.class, false)).thenReturn(true);
+        properties.setDemoEnabled(true);
+
+        assertThatThrownBy(() -> properties.validate())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Seeding cannot be enabled");
+    }
+
+    @Test
     void whenMixedProdAndDemoProfileActiveAndAdminDemoSeedEnabled_shouldThrowIllegalStateException() {
         when(env.getActiveProfiles()).thenReturn(new String[]{"prod", "demo"});
         properties.setAdminDemoEnabled(true);
 
         assertThatThrownBy(() -> properties.validate())
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Production configuration violation");
+                .hasMessageContaining("Seeding cannot be enabled");
     }
 
     @Test

@@ -12,6 +12,7 @@ import {
 
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
 import { animation, useNativeDriver } from '../../theme/animation';
+import { SvgJobComplete } from '../../assets/svg';
 
 interface PrimaryButtonProps {
   title: string;
@@ -19,10 +20,13 @@ interface PrimaryButtonProps {
   loading?: boolean;
   disabled?: boolean;
   success?: boolean;
+  variant?: 'blue' | 'green' | 'danger';
+  icon?: React.ReactNode;
   iconLeft?: React.ReactNode;
   iconRight?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
+  testID?: string;
 }
 
 export function PrimaryButton({
@@ -31,10 +35,13 @@ export function PrimaryButton({
   loading = false,
   disabled = false,
   success = false,
+  variant = 'blue',
+  icon,
   iconLeft,
   iconRight,
   style,
   accessibilityLabel,
+  testID,
 }: PrimaryButtonProps) {
   const scale = useRef(new Animated.Value(1)).current;
   const isInteractionDisabled = disabled || loading || success;
@@ -57,9 +64,16 @@ export function PrimaryButton({
     }).start();
   };
 
+  const getVariantStyle = () => {
+    if (variant === 'green') return styles.greenButton;
+    if (variant === 'danger') return styles.dangerButton;
+    return styles.blueButton;
+  };
+
   return (
     <Animated.View style={{ transform: [{ scale }], width: style ? undefined : 'auto' }}>
       <Pressable
+        testID={testID}
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -68,6 +82,7 @@ export function PrimaryButton({
         accessibilityLabel={accessibilityLabel || title}
         style={({ pressed }) => [
           styles.button,
+          getVariantStyle(),
           success && styles.successButton,
           style,
           isInteractionDisabled && !success && styles.disabledButton,
@@ -78,13 +93,14 @@ export function PrimaryButton({
           <ActivityIndicator color={colors.surface} size="small" />
         ) : success ? (
           <View style={styles.contentRow}>
-            <Text style={styles.text}>✓ Success</Text>
+            <SvgJobComplete width={18} height={18} stroke="#FFFFFF" fill="none" style={{ marginRight: 6 }} />
+            <Text style={styles.text}>Success</Text>
           </View>
         ) : (
           <View style={styles.contentRow}>
             {iconLeft && <View style={styles.iconLeftContainer}>{iconLeft}</View>}
             <Text style={styles.text}>{title}</Text>
-            {iconRight && <View style={styles.iconRightContainer}>{iconRight}</View>}
+            {(iconRight || icon) && <View style={styles.iconRightContainer}>{iconRight || icon}</View>}
           </View>
         )}
       </Pressable>
@@ -94,7 +110,6 @@ export function PrimaryButton({
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: colors.primary,
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
@@ -104,17 +119,27 @@ const styles = StyleSheet.create({
     minWidth: 132,
     ...shadows.sm,
   },
+  blueButton: {
+    backgroundColor: '#0755E9',
+  },
+  greenButton: {
+    backgroundColor: '#009B45',
+  },
+  dangerButton: {
+    backgroundColor: '#EF4444',
+  },
   successButton: {
-    backgroundColor: colors.success,
+    backgroundColor: '#009B45',
   },
   disabledButton: {
     opacity: 0.5,
   },
   pressedButton: {
-    backgroundColor: colors.primaryDark,
+    opacity: 0.9,
+    transform: [{ scale: 0.99 }],
   },
   text: {
-    color: colors.surface,
+    color: '#FFFFFF',
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.bold,
   },

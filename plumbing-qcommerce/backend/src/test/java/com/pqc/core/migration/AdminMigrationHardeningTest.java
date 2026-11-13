@@ -20,6 +20,10 @@ class AdminMigrationHardeningTest {
         Flyway.configure()
                 .dataSource(dataSource)
                 .baselineOnMigrate(true)
+                // V25 contains PostgreSQL-only partial-index syntax and V23 uses PostgreSQL timestamptz.
+                // It is verified by Postgres migration tests; this H2 test covers
+                // the portable admin migrations through V9 only.
+                .target("9")
                 .locations("classpath:db/migration")
                 .load()
                 .migrate();

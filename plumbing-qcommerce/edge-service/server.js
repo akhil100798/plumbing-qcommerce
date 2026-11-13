@@ -92,6 +92,16 @@ function createEdgeApp(options = {}) {
 
     const app = express();
     app.use((req, res, next) => {
+        const correlationId = req.headers['x-correlation-id'] || req.headers['x-request-id'] || require('crypto').randomUUID();
+        req.correlationId = correlationId;
+        res.setHeader('X-Correlation-ID', correlationId);
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('X-Frame-Options', 'DENY');
+        res.setHeader('Content-Security-Policy', "default-src 'self'");
+        res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        next();
+    });
+    app.use((req, res, next) => {
         const origin = req.headers.origin;
         if (origin && !isOriginAllowed(origin)) {
             return res.status(403).json({ error: 'CORS origin not allowed' });
@@ -131,9 +141,9 @@ function createEdgeApp(options = {}) {
         };
         const pubClient = new Redis(redisConfig);
         const subClient = pubClient.duplicate();
-        
+
         io.adapter(createAdapter(pubClient, subClient));
-        
+
         io.redisPubClient = pubClient;
         io.redisSubClient = subClient;
 
@@ -261,7 +271,7 @@ function createEdgeApp(options = {}) {
         let adapterState = 'NOT_CONFIGURED';
         if (enableRedisAdapter && !isMock) {
             try {
-                if (io.redisPubClient && io.redisSubClient && 
+                if (io.redisPubClient && io.redisSubClient &&
                     io.redisPubClient.status === 'ready' && io.redisSubClient.status === 'ready') {
                     adapterState = 'CONNECTED';
                 } else {
@@ -392,7 +402,25 @@ function createEdgeApp(options = {}) {
             console.log(`Store room registered securely: ${roomName}`);
         });
 
-        // 5. Plumber location ping
+        // 5. ORDER room registration
+        socket.on('join_order', ({ orderId }) => {
+            if (!checkRegistrationRateLimit()) return;
+            if (!orderId) return;
+            const roomName = `order_${orderId}`;
+            socket.join(roomName);
+            console.log(`Socket ${socket.id} joined order room: ${roomName}`);
+        });
+
+        // 6. SERVICE room registration
+        socket.on('join_service', ({ serviceOrderId }) => {
+            if (!checkRegistrationRateLimit()) return;
+            if (!serviceOrderId) return;
+            const roomName = `service_${serviceOrderId}`;
+            socket.join(roomName);
+            console.log(`Socket ${socket.id} joined service room: ${roomName}`);
+        });
+
+        // 7. Plumber location ping
         socket.on('location_ping', async (data) => {
             const { plumberId, longitude, latitude } = data;
 

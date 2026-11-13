@@ -1,0 +1,72 @@
+[
+  {
+    "name": "customer",
+    "url": "http://localhost:8092",
+    "finalUrl": "http://localhost:8092/",
+    "title": "Onboarding",
+    "text": "Skip\nPlumbing Help\nIn Minutes\nBook plumbers, order materials or get expert solutions at your doorstep.\nNext",
+    "links": [],
+    "buttons": [
+      "Next"
+    ],
+    "inputs": 0,
+    "consoleMessages": [
+      {
+        "type": "warning",
+        "text": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md"
+      }
+    ],
+    "failedRequests": [],
+    "error": null
+  },
+  {
+    "name": "plumber",
+    "url": "http://localhost:8093",
+    "finalUrl": "http://localhost:8093/",
+    "title": "Login",
+    "text": "Welcome Back!\nLogin to continue\nMobile\nEmail\nMobile Number\n+91\nRemember me\nForgot Password?\nContinue\nor continue with\nG\nGoogle\nf\nFacebook\nNew here? Sign up",
+    "links": [],
+    "buttons": [
+      "Continue"
+    ],
+    "inputs": 1,
+    "consoleMessages": [],
+    "failedRequests": [],
+    "error": null
+  },
+  {
+    "name": "store",
+    "url": "http://localhost:8094",
+    "finalUrl": "http://localhost:8094/",
+    "title": "Login",
+    "text": "FixKart\nSTORE PARTNER APP\nWelcome Back!\nLog in to manage and fulfill your inventory orders.\nEMAIL ADDRESS\nPASSWORD\nRemember me\nForgot Password?\nLog In\nWant to register a store? \nRegister Store",
+    "links": [],
+    "buttons": [
+      "Log In"
+    ],
+    "inputs": 2,
+    "consoleMessages": [
+      {
+        "type": "warning",
+        "text": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md"
+      }
+    ],
+    "failedRequests": [],
+    "error": null
+  },
+  {
+    "name": "admin",
+    "url": "http://localhost:3100",
+    "finalUrl": "http://localhost:3100/",
+    "title": "PlumbCommerce | Super Admin Portal",
+    "text": "P\nPlumbCommerce\n\nAdmin Portal\n\nEmail\nPassword\nSign in",
+    "links": [],
+    "buttons": [
+      "Sign in"
+    ],
+    "inputs": 2,
+    "consoleMessages": [],
+    "failedRequests": [],
+    "error": null
+  }
+]

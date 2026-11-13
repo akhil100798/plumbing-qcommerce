@@ -14,6 +14,7 @@ import { OfferCard } from '../components/cards/OfferCard';
 import { Toast } from '../components/common/Toast';
 import { colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
+import { SvgNavigationArrowLeft } from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'Offers'>;
 
@@ -74,8 +75,8 @@ export function OffersScreen({ navigation }: Props) {
         onHide={() => setToastVisible(false)}
       />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.title}>Offers & Coupons</Text>
       </View>

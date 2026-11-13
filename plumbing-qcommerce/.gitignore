@@ -109,7 +109,7 @@ test_run.txt
 qa-evidence/
 evidence/
 docs/
-reports/
+# reports/
 playwright-report/
 test-results/
 store-app/.expo/

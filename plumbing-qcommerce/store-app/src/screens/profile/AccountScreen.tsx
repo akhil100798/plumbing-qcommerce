@@ -1,29 +1,29 @@
 import React from 'react';
-import { StyleSheet, Text, View, ScrollView, Alert, TouchableOpacity } from 'react-native';
-import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { AppHeader } from '../../components/common/AppHeader';
-import { ProfileMenuItem } from '../../components/cards/WalletReviewsPromoCards';
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+} from 'react-native';
+import { colors, borderRadius, spacing, typography } from '../../theme';
 import { useAppDispatch, useAppSelector } from '../../redux/store';
 import { logout } from '../../redux/slices/authSlice';
 import { authService } from '../../services/auth/authService';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
-
-import ProfileIcon from '../../assets/icons/profile.svg';
-import NotificationIcon from '../../assets/icons/notification.svg';
-import SettingsIcon from '../../assets/icons/settings.svg';
-import ReviewsIcon from '../../assets/icons/reviews.svg';
-import WarehouseIcon from '../../assets/icons/warehouse.svg';
-import BarcodeIcon from '../../assets/icons/barcode.svg';
+import { StoreIcon } from '../../components/common/StoreIcon';
 
 export const AccountScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const dispatch = useAppDispatch();
-  const user = useAppSelector(state => state.auth.storeUser);
+  const user = useAppSelector((state) => state.auth.storeUser);
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to log out of the Store App?', [
+    Alert.alert('Logout', 'Are you sure you want to log out of the Store Partner App?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Logout',
@@ -32,101 +32,344 @@ export const AccountScreen = () => {
           await authService.logout();
           dispatch(logout());
           navigation.navigate('Auth', { screen: 'Login' });
-        }
-      }
+        },
+      },
     ]);
   };
 
-  const handleItemPress = (item: string) => {
-    switch (item) {
-      case 'profile':
-        navigation.navigate('StoreProfile');
-        break;
-      case 'materials':
-        navigation.navigate('MaterialRequests');
-        break;
-      case 'notifications':
-        navigation.navigate('Notifications');
-        break;
-      case 'language':
-        Alert.alert('App Language', 'English (United States)\nSystem Default');
-        break;
-      case 'help':
-        Alert.alert('Help & Support', 'This is static support information for staging.\nSupport Email: partner.support@plumbcommerce.com\nHelpline: 1800-456-9210');
-        break;
-      case 'privacy':
-        Alert.alert('Privacy Policy', 'This informational legal text is static in staging and not loaded from the backend.');
-        break;
-      case 'terms':
-        Alert.alert('Terms & Conditions', 'This informational legal text is static in staging and not loaded from the backend.');
-        break;
-    }
-  };
-
   const getInitials = (name?: string) => {
-    if (!name) return 'SP';
+    if (!name) return 'RS';
     return name
       .split(' ')
-      .map(n => n[0])
+      .filter(Boolean)
+      .map((n) => n[0])
       .slice(0, 2)
       .join('')
       .toUpperCase();
   };
 
+  const userName = user?.fullName || 'Rahul Sharma';
+  const initials = getInitials(userName);
+
   return (
-    <ScreenWrapper style={styles.container}>
-      <AppHeader title="Account" />
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.profileHeader}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{getInitials(user?.fullName)}</Text>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
+
+      {/* Top Header */}
+      <View style={styles.header}>
+        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>Account & Settings</Text>
+        <View style={{ width: 24 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Profile Card (Pixel Refined) */}
+        <View style={styles.profileCard}>
+          <View style={styles.profileLeft}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
+            <View style={styles.profileMeta}>
+              <Text style={styles.userName}>{userName}</Text>
+              <Text style={styles.userRole}>Store Partner</Text>
+            </View>
           </View>
-          <View style={styles.userDetails}>
-            <Text style={styles.userName}>{user?.fullName || 'Store account'}</Text>
-            <Text style={styles.userEmail}>{user?.email || 'Unavailable in staging'}</Text>
-            <Text style={styles.userRole}>Store account</Text>
+          <View style={styles.verifiedBadge}>
+            <StoreIcon name="verified" size={13} color="#10B981" />
+            <Text style={styles.verifiedText}>Verified</Text>
           </View>
         </View>
 
-        <View style={styles.noticeCard}>
-          <Text style={styles.noticeText}>Help, privacy, and terms content on this screen remains static informational content in staging.</Text>
-        </View>
-
+        {/* Settings Menu Card */}
         <View style={styles.menuCard}>
-          <ProfileMenuItem icon={ProfileIcon} label="Profile Settings" onPress={() => handleItemPress('profile')} />
-          <ProfileMenuItem icon={WarehouseIcon} label="Material Requests" onPress={() => handleItemPress('materials')} />
-          <ProfileMenuItem icon={NotificationIcon} label="Notification Settings" onPress={() => handleItemPress('notifications')} />
-          <ProfileMenuItem icon={SettingsIcon} label="App Language" onPress={() => handleItemPress('language')} />
+          {/* Personal Information */}
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('StoreProfile')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuItemLeft}>
+              <StoreIcon name="account" size={19} color={colors.textSecondary} />
+              <Text style={styles.menuItemLabel}>Personal Information</Text>
+            </View>
+            <StoreIcon name="arrow-right" size={15} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          {/* Store & KYC */}
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('StoreProfile')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuItemLeft}>
+              <StoreIcon name="store" size={19} color={colors.textSecondary} />
+              <Text style={styles.menuItemLabel}>Store & KYC</Text>
+            </View>
+            <StoreIcon name="arrow-right" size={15} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          {/* Bank Details & Payouts */}
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('Wallet')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuItemLeft}>
+              <StoreIcon name="wallet" size={19} color={colors.textSecondary} />
+              <Text style={styles.menuItemLabel}>Bank Details & Payouts</Text>
+            </View>
+            <StoreIcon name="arrow-right" size={15} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          {/* Notification Settings */}
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('Notifications')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuItemLeft}>
+              <StoreIcon name="notification" size={19} color={colors.textSecondary} />
+              <Text style={styles.menuItemLabel}>Notification Settings</Text>
+            </View>
+            <StoreIcon name="arrow-right" size={15} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          {/* Offers & Promotions */}
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('OffersPromotions')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuItemLeft}>
+              <StoreIcon name="promotion" size={19} color={colors.textSecondary} />
+              <Text style={styles.menuItemLabel}>Offers & Promotions</Text>
+            </View>
+            <StoreIcon name="arrow-right" size={15} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          {/* Reviews & Ratings */}
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('ReviewsRatings')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuItemLeft}>
+              <StoreIcon name="review" size={19} color={colors.textSecondary} />
+              <Text style={styles.menuItemLabel}>Reviews & Ratings</Text>
+            </View>
+            <StoreIcon name="arrow-right" size={15} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          {/* App Settings */}
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() =>
+              Alert.alert('App Settings', 'Store Partner App Version: 2.1.0 (Production Build)\nAuto-refresh interval: 3 seconds')
+            }
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuItemLeft}>
+              <StoreIcon name="filter" size={19} color={colors.textSecondary} />
+              <Text style={styles.menuItemLabel}>App Settings</Text>
+            </View>
+            <StoreIcon name="arrow-right" size={15} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          {/* Help & Support */}
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() =>
+              Alert.alert(
+                'Help & Support',
+                'FixKart Store Partner Helpline:\nPhone: 1800-456-9210\nEmail: partner.support@fixkart.com\nHours: 7:00 AM – 10:00 PM (All Days)'
+              )
+            }
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuItemLeft}>
+              <StoreIcon name="support" size={19} color={colors.textSecondary} />
+              <Text style={styles.menuItemLabel}>Help & Support</Text>
+            </View>
+            <StoreIcon name="arrow-right" size={15} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          {/* About FixKart Partner App */}
+          <TouchableOpacity
+            style={[styles.menuItem, styles.menuItemLast]}
+            onPress={() =>
+              Alert.alert(
+                'About FixKart Partner App',
+                'FixKart Store Partner v2.1.0\nCounter Fulfillment & Plumber Quick-Commerce Platform\n© 2025 FixKart Inc. All rights reserved.'
+              )
+            }
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuItemLeft}>
+              <StoreIcon name="security" size={19} color={colors.textSecondary} />
+              <Text style={styles.menuItemLabel}>About FixKart Partner App</Text>
+            </View>
+            <StoreIcon name="arrow-right" size={15} color={colors.textMuted} />
+          </TouchableOpacity>
         </View>
 
-        <View style={[styles.menuCard, { marginTop: spacing.md }]}>
-          <ProfileMenuItem icon={ReviewsIcon} label="Help & Support" onPress={() => handleItemPress('help')} />
-          <ProfileMenuItem icon={WarehouseIcon} label="Privacy Policy" onPress={() => handleItemPress('privacy')} />
-          <ProfileMenuItem icon={BarcodeIcon} label="Terms & Conditions" onPress={() => handleItemPress('terms')} />
-        </View>
-
-        <TouchableOpacity activeOpacity={0.8} style={styles.logoutBtn} onPress={handleLogout}>
+        {/* Logout Card */}
+        <TouchableOpacity
+          style={styles.logoutCard}
+          onPress={handleLogout}
+          activeOpacity={0.8}
+        >
+          <StoreIcon name="close" size={19} color="#EF4444" />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
-    </ScreenWrapper>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: colors.background },
-  scroll: { padding: spacing.layout },
-  profileHeader: { backgroundColor: colors.card, borderRadius: borderRadius.md, padding: spacing.lg, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.border, ...shadows.sm, marginBottom: spacing.md },
-  avatar: { width: 60, height: 60, borderRadius: borderRadius.round, backgroundColor: 'rgba(37, 99, 235, 0.08)', justifyContent: 'center', alignItems: 'center', marginRight: spacing.lg },
-  avatarText: { fontSize: 28 },
-  userDetails: { flex: 1 },
-  userName: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  userEmail: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: 2 },
-  userRole: { fontSize: 10, color: colors.primary, fontWeight: typography.fontWeight.bold, marginTop: 4 },
-  noticeCard: { backgroundColor: colors.card, borderRadius: borderRadius.md, padding: spacing.md, borderWidth: 1, borderColor: colors.border, ...shadows.sm, marginBottom: spacing.lg },
-  noticeText: { fontSize: typography.fontSize.xs, color: colors.textSecondary },
-  menuCard: { backgroundColor: colors.card, borderRadius: borderRadius.md, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.border, ...shadows.sm },
-  logoutBtn: { height: 48, borderRadius: borderRadius.md, backgroundColor: 'rgba(239, 68, 68, 0.08)', borderWidth: 1.5, borderColor: colors.danger, justifyContent: 'center', alignItems: 'center', marginTop: spacing.xl, marginBottom: spacing.xl },
-  logoutText: { color: colors.danger, fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold },
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  scrollContent: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xxl,
+  },
+  profileCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  profileLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#1D4ED8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: colors.surface,
+    fontSize: 18,
+    fontWeight: typography.fontWeight.bold,
+    letterSpacing: 0.5,
+  },
+  profileMeta: {
+    marginLeft: spacing.md,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  userRole: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: borderRadius.round,
+    gap: 4,
+  },
+  verifiedText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+  menuCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: spacing.md,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  menuItemLast: {
+    borderBottomWidth: 0,
+  },
+  menuItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  menuItemLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#0F172A',
+  },
+  logoutCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  logoutText: {
+    fontSize: 14.5,
+    fontWeight: '600',
+    color: '#EF4444',
+  },
 });
+
 export default AccountScreen;

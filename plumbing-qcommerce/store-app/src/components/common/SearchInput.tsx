@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, TextInput, View, Text, TouchableOpacity } from 'react-native';
-import { colors, borderRadius, spacing, typography } from '../../theme';
+import { StyleSheet, TextInput, View, TouchableOpacity } from 'react-native';
+import { colors, borderRadius, spacing } from '../../theme';
+import { StoreIcon } from './StoreIcon';
 
 interface SearchInputProps {
   value: string;
@@ -17,7 +18,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
 }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.searchEmoji}>🔍</Text>
+      <StoreIcon name="search" size={16} color={colors.textSecondary} />
       <TextInput
         style={styles.input}
         value={value}
@@ -26,8 +27,8 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         placeholderTextColor={colors.textMuted}
       />
       {value.length > 0 && onClear && (
-        <TouchableOpacity onPress={onClear} style={styles.clearButton}>
-          <Text style={styles.clearEmoji}>❌</Text>
+        <TouchableOpacity onPress={onClear} style={styles.clearButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <StoreIcon name="close" size={14} color={colors.textMuted} />
         </TouchableOpacity>
       )}
     </View>
@@ -45,22 +46,16 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.border,
   },
-  searchEmoji: {
-    fontSize: 14,
-    marginRight: spacing.sm,
-    color: colors.textSecondary,
-  },
   input: {
     flex: 1,
-    fontSize: typography.fontSize.sm,
+    height: '100%',
+    marginLeft: spacing.sm,
     color: colors.textPrimary,
-    paddingVertical: 0,
+    fontSize: 14,
   },
   clearButton: {
     padding: spacing.xs,
   },
-  clearEmoji: {
-    fontSize: 10,
-    color: colors.textMuted,
-  },
 });
+
+export default SearchInput;

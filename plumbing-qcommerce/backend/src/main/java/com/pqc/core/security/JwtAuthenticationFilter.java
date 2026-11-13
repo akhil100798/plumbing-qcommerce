@@ -15,7 +15,6 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import org.springframework.data.redis.core.StringRedisTemplate;
 import java.io.IOException;
 
 @Component
@@ -25,7 +24,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
-    private final StringRedisTemplate redisTemplate;
+    private final TokenRevocationService tokenRevocationService;
 
     @Override
     protected void doFilterInternal(
@@ -45,19 +44,37 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         jwt = authHeader.substring(7);
         try {
-            // 1. Check for Revocation (Fail-safe: Allow if Redis/Service fails)
+            // 1. Check for Revocation (Fail-closed)
+            String jti;
             try {
-                String jti = jwtService.extractJti(jwt);
-                if (jti != null) {
-                    Boolean isBlacklisted = redisTemplate.hasKey("blacklist:" + jti);
-                    if (Boolean.TRUE.equals(isBlacklisted)) {
-                        log.warn("Access denied for blacklisted token JTI: {}", jti);
+                jti = jwtService.extractJti(jwt);
+            } catch (Exception e) {
+                log.warn("Invalid JWT structure or signature: {}", e.getMessage());
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"status\":401,\"error\":\"UNAUTHORIZED\",\"message\":\"Invalid token format or signature.\"}");
+                return;
+            }
+
+            if (jti != null) {
+                try {
+                    String path = request.getRequestURI();
+                    boolean isLogoutEndpoint = path != null && path.endsWith("/auth/logout");
+
+                    if (!isLogoutEndpoint && tokenRevocationService.isRevoked(jti)) {
+                        log.warn("Access denied for revoked token JTI: {}", jti);
                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"status\":401,\"error\":\"UNAUTHORIZED\",\"message\":\"Token has been revoked.\"}");
                         return;
                     }
+                } catch (Exception e) {
+                    log.error("Token revocation verification failed (failing closed): {}", e.getMessage());
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"status\":401,\"error\":\"UNAUTHORIZED\",\"message\":\"Authentication verification unavailable.\"}");
+                    return;
                 }
-            } catch (Exception e) {
-                log.warn("Revocation check failed (skipping): {}", e.getMessage());
             }
 
             // 2. Standard Context Setting

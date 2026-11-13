@@ -17,9 +17,12 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
     Optional<User> findByEmail(String email);
     Optional<User> findByPhone(String phone);
+    Optional<User> findByProviderId(String providerId);
     long countByRole(Role role);
     long countByRoleIn(Collection<Role> roles);
     Page<User> findByRoleIn(Collection<Role> roles, Pageable pageable);
     long countByRoleAndStatus(Role role, UserStatus status);
     List<User> findByRole(Role role);
+    List<User> findByRoleOrderByIdAsc(Role role);
+    List<User> findAllByIdInOrderByIdAsc(java.util.Collection<Long> ids);
 }

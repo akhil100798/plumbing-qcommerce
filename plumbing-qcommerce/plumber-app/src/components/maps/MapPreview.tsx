@@ -1,3 +1,4 @@
+import { SvgStatusLocationPin } from '../../assets/svg';
 import React from 'react';
 import {
   StyleSheet,
@@ -37,7 +38,7 @@ export function MapPreview({
         <View style={styles.roadVertical} />
         <View style={styles.markerContainer}>
           <View style={styles.pin}>
-            <Text style={styles.pinIcon}>📍</Text>
+            <SvgStatusLocationPin width={20} height={20} color="#EF4444" />
           </View>
           <Text style={styles.pinLabel}>{title}</Text>
         </View>
@@ -62,7 +63,7 @@ export function MapPreview({
   if (!MapView || !Marker) {
     return (
       <View style={[styles.container, { height }, styles.fallback]}>
-        <Text style={styles.fallbackText}>🗺️ Map View Fallback</Text>
+        <Text style={styles.fallbackText}>Map View Fallback</Text>
       </View>
     );
   }

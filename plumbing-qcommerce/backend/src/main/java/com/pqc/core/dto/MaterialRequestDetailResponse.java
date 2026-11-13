@@ -25,6 +25,8 @@ public record MaterialRequestDetailResponse(
         List<MaterialRequestItemResponse> items,
         LocalDateTime createdAt,
         LocalDateTime storeConfirmedAt,
+        LocalDateTime preparingStartedAt,
+        LocalDateTime readyForPickupAt,
         LocalDateTime plumberArrivedAt,
         LocalDateTime plumberCollectedAt,
         LocalDateTime collectionConfirmedAt

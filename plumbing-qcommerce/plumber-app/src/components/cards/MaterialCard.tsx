@@ -1,3 +1,4 @@
+import { SvgMatPipeJoint } from '../../assets/svg';
 import React from 'react';
 import {
   StyleSheet,
@@ -26,7 +27,7 @@ export function MaterialCard({
   return (
     <View style={styles.container}>
       <View style={styles.imagePlaceholder}>
-        <Text style={styles.imageIcon}>🔩</Text>
+        <SvgMatPipeJoint width={24} height={24} color="#003BB8" />
       </View>
 
       <View style={styles.details}>

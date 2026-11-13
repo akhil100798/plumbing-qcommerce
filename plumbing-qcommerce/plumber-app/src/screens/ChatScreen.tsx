@@ -26,7 +26,7 @@ interface MessageItem {
 }
 
 export function ChatScreen({ route, navigation }: Props) {
-  const { name, role } = route.params;
+  const { name = 'Rajesh Kumar', role = 'Customer' } = (route as any)?.params || {};
 
   const [messages, setMessages] = useState<MessageItem[]>([
     {

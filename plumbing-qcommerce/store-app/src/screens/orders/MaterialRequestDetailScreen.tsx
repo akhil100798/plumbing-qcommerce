@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,17 +14,17 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { AppStackParamList } from '../../types/navigation';
 import { materialRequestService } from '../../services/orders/materialRequestService';
 import { MaterialRequest } from '../../types';
-import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
-import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
+import { StoreIcon } from '../../components/common/StoreIcon';
+import { colors, borderRadius, spacing, typography } from '../../theme';
 
 type Props = StackScreenProps<AppStackParamList, 'MaterialRequestDetail'>;
 
-const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  PENDING:    { label: 'Pending Review',    color: colors.accentOrange,     bg: colors.accentOrangeLight },
-  PREPARING:  { label: 'Being Prepared',    color: '#2E9AE0',               bg: '#E7F5FE' },
-  READY:      { label: 'Ready for Pickup',  color: colors.accentGreen,      bg: colors.accentGreenLight },
-  COMPLETED:  { label: 'Collected',         color: '#6B7280',               bg: '#F3F4F6' },
-  CANCELLED:  { label: 'Cancelled',         color: colors.error,            bg: colors.errorLight || '#FEE2E2' },
+const STATUS_LABELS: Record<string, { label: string; color: string; bg: string; borderColor: string }> = {
+  PENDING: { label: 'Requested', color: '#D97706', bg: '#FEF3C7', borderColor: '#FDE68A' },
+  PREPARING: { label: 'Being Prepared', color: '#0284C7', bg: '#E0F2FE', borderColor: '#BAE6FD' },
+  READY: { label: 'Ready for Counter Pickup', color: '#059669', bg: '#ECFDF5', borderColor: '#A7F3D0' },
+  COMPLETED: { label: 'Collected by Plumber', color: '#4B5563', bg: '#F3F4F6', borderColor: '#E5E7EB' },
+  CANCELLED: { label: 'Cancelled', color: colors.error, bg: '#FEF2F2', borderColor: '#FEE2E2' },
 };
 
 export function MaterialRequestDetailScreen({ route, navigation }: Props) {
@@ -34,22 +34,31 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const loadRequest = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const req = await materialRequestService.getById(requestId);
-      setRequest(req);
-    } catch (err: any) {
-      setError(err.message || 'Unable to load material request. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [requestId]);
+  const loadRequest = useCallback(
+    async (isInitial = false) => {
+      if (isInitial) setLoading(true);
+      setError(null);
+      try {
+        const req = await materialRequestService.getById(requestId);
+        setRequest(req);
+      } catch (err: any) {
+        if (isInitial) setError(err.message || 'Unable to load material request. Please try again.');
+      } finally {
+        if (isInitial) setLoading(false);
+      }
+    },
+    [requestId]
+  );
 
   useEffect(() => {
-    loadRequest();
-  }, [loadRequest]);
+    loadRequest(true);
+    const interval = setInterval(() => {
+      if (!actionLoading) {
+        void loadRequest(false);
+      }
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [loadRequest, actionLoading]);
 
   const handlePrepare = async () => {
     if (!request) return;
@@ -57,7 +66,7 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
     try {
       const updated = await materialRequestService.prepareOrder(request.id as number);
       setRequest(updated);
-      Alert.alert('Preparation Started', 'Materials are now being prepared for plumber pickup.');
+      Alert.alert('Preparation Started', 'Materials are now marked as preparing for counter pickup.');
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Could not start preparation.');
     } finally {
@@ -71,7 +80,10 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
     try {
       const updated = await materialRequestService.completePreparation(request.id as number);
       setRequest(updated);
-      Alert.alert('Ready for Pickup', 'Store has confirmed materials are packed and ready for plumber pickup.');
+      Alert.alert(
+        'Ready for Pickup',
+        'Store has confirmed items are packed and ready at counter for plumber.'
+      );
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Could not mark as ready.');
     } finally {
@@ -85,7 +97,10 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
     try {
       const updated = await materialRequestService.confirmCollection(request.id as number);
       setRequest(updated);
-      Alert.alert('Collection Confirmed', 'Plumber has collected all materials. Request complete.');
+      Alert.alert(
+        'Collection Confirmed',
+        'Plumber has verified and collected all requested materials.'
+      );
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Could not confirm collection.');
     } finally {
@@ -94,9 +109,18 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
   };
 
   const rawStatus = (request as any)?.rawStatus || '';
-  const canPrepare  = rawStatus === 'REQUESTED' || rawStatus === 'STORE_REVIEWING' || rawStatus === 'APPROVED' || rawStatus === 'PARTIALLY_AVAILABLE';
-  const canReady    = rawStatus === 'RESERVED' || rawStatus === 'PREPARING';
-  const canConfirm  = rawStatus === 'READY_FOR_PICKUP' || rawStatus === 'PLUMBER_AT_STORE';
+  const canPrepare =
+    rawStatus === 'REQUESTED' ||
+    rawStatus === 'STORE_REVIEWING' ||
+    rawStatus === 'APPROVED' ||
+    rawStatus === 'PARTIALLY_AVAILABLE' ||
+    request?.status === 'PENDING';
+  const canReady =
+    rawStatus === 'RESERVED' || rawStatus === 'PREPARING' || request?.status === 'PREPARING';
+  const canConfirm =
+    rawStatus === 'READY_FOR_PICKUP' ||
+    rawStatus === 'PLUMBER_AT_STORE' ||
+    request?.status === 'READY';
 
   const statusConfig = STATUS_LABELS[request?.status || 'PENDING'] || STATUS_LABELS.PENDING;
 
@@ -112,156 +136,235 @@ export function MaterialRequestDetailScreen({ route, navigation }: Props) {
             else navigation.navigate('MaterialRequests');
           }}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.headerButton}
         >
-          <ArrowLeftIcon width={24} height={24} stroke={colors.textPrimary} />
+          <StoreIcon name="arrow-left" size={20} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          Material Request
-        </Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>Material Request #{requestId}</Text>
+        <View style={{ width: 36 }} />
       </View>
 
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading request…</Text>
+          <Text style={styles.loadingText}>Loading request details...</Text>
         </View>
       ) : error ? (
         <View style={styles.center}>
-          <Text style={styles.errorIcon}>⚠️</Text>
+          <StoreIcon name="warning" size={40} color={colors.error} />
           <Text style={styles.errorTitle}>Could Not Load Request</Text>
           <Text style={styles.errorMessage}>{error}</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={loadRequest}>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => void loadRequest(true)}>
             <Text style={styles.retryBtnText}>Retry</Text>
           </TouchableOpacity>
         </View>
       ) : request ? (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Status Header Card */}
+          <View style={styles.statusCard}>
+            <View style={styles.idRow}>
+              <View>
+                <Text style={styles.requestSubtitle}>COUNTER PICKUP REQUEST</Text>
+                <Text style={styles.requestIdText}>REQ-{request.id}</Text>
+              </View>
+              <View
+                style={[
+                  styles.statusBadge,
+                  { backgroundColor: statusConfig.bg, borderColor: statusConfig.borderColor },
+                ]}
+              >
+                <Text style={[styles.statusBadgeText, { color: statusConfig.color }]}>
+                  {statusConfig.label}
+                </Text>
+              </View>
+            </View>
 
-          {/* Request ID & status */}
-          <View style={styles.idRow}>
-            <Text style={styles.requestId}>Request #{request.id}</Text>
-            <View style={[styles.statusPill, { backgroundColor: statusConfig.bg }]}>
-              <Text style={[styles.statusPillText, { color: statusConfig.color }]}>
-                {statusConfig.label}
+            <View style={styles.metaGrid}>
+              <View style={styles.metaCol}>
+                <Text style={styles.metaLabel}>Service Order</Text>
+                <Text style={styles.metaVal}>#{request.serviceOrderId}</Text>
+              </View>
+              <View style={styles.metaCol}>
+                <Text style={styles.metaLabel}>Date Requested</Text>
+                <Text style={styles.metaVal}>
+                  {new Date(request.createdAt).toLocaleDateString('en-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </Text>
+              </View>
+              <View style={styles.metaCol}>
+                <Text style={styles.metaLabel}>Store Node</Text>
+                <Text style={styles.metaVal}>Store #{request.storeId}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Assigned Plumber Card */}
+          <View style={styles.card}>
+            <View style={styles.cardTitleRow}>
+              <StoreIcon name="plumber" size={18} color={colors.primary} />
+              <Text style={styles.cardTitle}>Assigned Plumber</Text>
+            </View>
+            <View style={styles.plumberDetailRow}>
+              <View style={styles.plumberAvatar}>
+                <StoreIcon name="plumber" size={20} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1, marginLeft: spacing.md }}>
+                <Text style={styles.plumberName}>
+                  {request.plumberName || 'Assigned Technician'}
+                </Text>
+                <Text style={styles.plumberSubtitle}>
+                  Authorized to inspect & pick up materials at store counter
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Material Items Card */}
+          <View style={styles.card}>
+            <View style={styles.cardTitleRow}>
+              <StoreIcon name="package" size={18} color={colors.primary} />
+              <Text style={styles.cardTitle}>Requested Items Breakdown</Text>
+            </View>
+
+            {(request.items || []).map((item, idx) => (
+              <View key={idx} style={styles.itemRow}>
+                <View style={styles.itemIconBox}>
+                  <StoreIcon name="plumbing-fitting" size={20} color={colors.primary} />
+                </View>
+                <View style={styles.itemInfo}>
+                  <Text style={styles.itemName}>{item.productName}</Text>
+                  <Text style={styles.itemSubText}>Verified in counter stock</Text>
+                </View>
+                <View style={styles.itemQtyBox}>
+                  <Text style={styles.itemQtyVal}>{item.quantity} pcs</Text>
+                </View>
+              </View>
+            ))}
+
+            {request.items?.length === 0 && (
+              <Text style={styles.emptyItems}>No item lines available.</Text>
+            )}
+
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Total Estimated Value</Text>
+              <Text style={styles.totalValue}>
+                ₹{request.totalAmount ? request.totalAmount.toFixed(2) : '0.00'}
               </Text>
             </View>
           </View>
 
-          {/* Meta card */}
-          <View style={styles.card}>
-            <Row label="Service Order" value={`#${request.serviceOrderId}`} />
-            <Row label="Assigned Plumber" value={request.plumberName || 'Plumber Assigned'} />
-            <Row label="Store ID" value={`${request.storeId}`} />
-            <Row label="Requested On" value={new Date(request.createdAt).toLocaleDateString('en-IN', {
-              day: '2-digit', month: 'short', year: 'numeric'
-            })} />
-            {(request as any).rawStatus && (
-              <Row label="Backend Status" value={(request as any).rawStatus} />
-            )}
+          {/* Fulfillment Instructions */}
+          <View style={styles.instructionsBox}>
+            <StoreIcon name="store" size={18} color={colors.primary} />
+            <Text style={styles.instructionsText}>
+              Pack and place items on the counter pickup shelf. Verify plumber identity before handing over materials.
+            </Text>
           </View>
 
-          {/* Product rows */}
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Requested Materials</Text>
-            {(request.items || []).map((item, idx) => (
-              <View key={idx} style={styles.itemRow}>
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemName}>{item.productName}</Text>
-                </View>
-                <View style={styles.itemQtyBlock}>
-                  <Text style={styles.itemQtyLabel}>Requested</Text>
-                  <Text style={styles.itemQtyVal}>{item.quantity}</Text>
-                </View>
-              </View>
-            ))}
-            {request.items?.length === 0 && (
-              <Text style={styles.emptyItems}>No item details available.</Text>
-            )}
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total Amount</Text>
-              <Text style={styles.totalValue}>₹{request.totalAmount?.toFixed(2)}</Text>
-            </View>
-          </View>
-
-          {/* Workflow actions */}
-          <View style={styles.actions}>
+          {/* Status-Driven Workflow Action Buttons */}
+          <View style={styles.actionContainer}>
             {canPrepare && (
               <TouchableOpacity
+                testID="store-start-prep-btn"
+                accessibilityRole="button"
                 style={[styles.actionBtn, styles.actionBtnPrimary, actionLoading && styles.actionBtnDisabled]}
                 onPress={handlePrepare}
                 disabled={actionLoading}
+                activeOpacity={0.85}
               >
                 {actionLoading ? (
                   <ActivityIndicator size="small" color={colors.surface} />
                 ) : (
-                  <Text style={styles.actionBtnText}>Start Preparation</Text>
+                  <>
+                    <StoreIcon name="packing" size={18} color={colors.surface} />
+                    <Text style={styles.actionBtnText}>Start Preparation</Text>
+                  </>
                 )}
               </TouchableOpacity>
             )}
+
             {canReady && (
               <TouchableOpacity
+                testID="store-ready-pickup-btn"
+                accessibilityRole="button"
                 style={[styles.actionBtn, styles.actionBtnSuccess, actionLoading && styles.actionBtnDisabled]}
                 onPress={handleReady}
                 disabled={actionLoading}
+                activeOpacity={0.85}
               >
                 {actionLoading ? (
                   <ActivityIndicator size="small" color={colors.surface} />
                 ) : (
-                  <Text style={styles.actionBtnText}>Mark Ready for Pickup</Text>
+                  <>
+                    <StoreIcon name="success" size={18} color={colors.surface} />
+                    <Text style={styles.actionBtnText}>Mark Ready for Pickup</Text>
+                  </>
                 )}
               </TouchableOpacity>
             )}
+
             {canConfirm && (
               <TouchableOpacity
+                testID="store-confirm-collected-btn"
+                accessibilityRole="button"
                 style={[styles.actionBtn, styles.actionBtnSuccess, actionLoading && styles.actionBtnDisabled]}
                 onPress={handleConfirmCollection}
                 disabled={actionLoading}
+                activeOpacity={0.85}
               >
                 {actionLoading ? (
                   <ActivityIndicator size="small" color={colors.surface} />
                 ) : (
-                  <Text style={styles.actionBtnText}>Confirm Plumber Collected</Text>
+                  <>
+                    <StoreIcon name="success" size={18} color={colors.surface} />
+                    <Text style={styles.actionBtnText}>Confirm Plumber Collected</Text>
+                  </>
                 )}
               </TouchableOpacity>
             )}
+
             {request.status === 'COMPLETED' && (
               <View style={styles.completedBanner}>
-                <Text style={styles.completedText}>✓ Plumber Collected — Request Complete</Text>
+                <StoreIcon name="success" size={20} color="#059669" />
+                <Text style={styles.completedBannerText}>
+                  Materials Collected by Plumber · Request Complete
+                </Text>
               </View>
             )}
           </View>
-
         </ScrollView>
       ) : null}
     </SafeAreaView>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  headerButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headerTitle: {
-    fontSize: typography.fontSize.md,
+    fontSize: 16,
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
   },
@@ -269,22 +372,25 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.layout,
+    padding: spacing.xl,
+    minHeight: 280,
   },
-  loadingText: { fontSize: typography.fontSize.sm, color: colors.textSecondary },
-  errorIcon: { fontSize: 40, marginBottom: spacing.sm },
+  loadingText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: spacing.md,
+  },
   errorTitle: {
-    fontSize: typography.fontSize.md,
+    fontSize: 15,
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
-    textAlign: 'center',
+    marginTop: spacing.md,
   },
   errorMessage: {
-    fontSize: typography.fontSize.sm,
+    fontSize: 12,
     color: colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
+    marginTop: 4,
   },
   retryBtn: {
     backgroundColor: colors.primary,
@@ -295,92 +401,239 @@ const styles = StyleSheet.create({
   },
   retryBtnText: {
     color: colors.surface,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
+    fontSize: 13,
+    fontWeight: '700',
   },
-  content: { padding: spacing.layout, paddingBottom: spacing.huge },
+  content: {
+    padding: spacing.lg,
+    paddingBottom: 48,
+  },
+  statusCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+  },
   idRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.md,
   },
-  requestId: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.black,
-    color: colors.textPrimary,
+  requestSubtitle: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.primary,
+    letterSpacing: 0.5,
   },
-  statusPill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: borderRadius.round,
-  },
-  statusPillText: { fontSize: 12, fontWeight: typography.fontWeight.bold },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.sm,
-  },
-  sectionTitle: {
-    fontSize: typography.fontSize.sm,
+  requestIdText: {
+    fontSize: 18,
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
+    marginTop: 2,
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: borderRadius.round,
+    borderWidth: 1,
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  metaGrid: {
+    flexDirection: 'row',
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  metaCol: {
+    flex: 1,
+  },
+  metaLabel: {
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+  metaVal: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginTop: 2,
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
     marginBottom: spacing.md,
   },
-  infoRow: {
+  cardTitleRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    gap: 8,
+    marginBottom: spacing.md,
   },
-  infoLabel: { fontSize: 13, color: colors.textSecondary },
-  infoValue: { fontSize: 13, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, flex: 1, textAlign: 'right' },
+  cardTitle: {
+    fontSize: 13.5,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  plumberDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  plumberAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+  },
+  plumberName: {
+    fontSize: 14,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  plumberSubtitle: {
+    fontSize: 11.5,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
   itemRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.sm,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  itemInfo: { flex: 1 },
-  itemName: { fontSize: typography.fontSize.sm, color: colors.textPrimary, fontWeight: typography.fontWeight.medium },
-  itemQtyBlock: { alignItems: 'flex-end' },
-  itemQtyLabel: { fontSize: 10, color: colors.textMuted, textTransform: 'uppercase' },
-  itemQtyVal: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  emptyItems: { fontSize: typography.fontSize.sm, color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.md },
+  itemIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  itemInfo: {
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+  itemName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  itemSubText: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  itemQtyBox: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    backgroundColor: '#F1F5F9',
+    borderRadius: borderRadius.sm,
+  },
+  itemQtyVal: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  emptyItems: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingVertical: spacing.md,
+  },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: spacing.md,
     paddingTop: spacing.sm,
   },
-  totalLabel: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  totalValue: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.black, color: colors.primary },
-  actions: { gap: spacing.md, marginTop: spacing.sm },
+  totalLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  totalValue: {
+    fontSize: 16,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
+  },
+  instructionsBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+    gap: 10,
+  },
+  instructionsText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#1E40AF',
+    lineHeight: 16,
+  },
+  actionContainer: {
+    gap: 12,
+  },
   actionBtn: {
-    height: 52,
+    height: 50,
     borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  actionBtnPrimary: { backgroundColor: colors.primary },
-  actionBtnSuccess: { backgroundColor: colors.accentGreen },
-  actionBtnDisabled: { opacity: 0.6 },
-  actionBtnText: { color: colors.surface, fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold },
+  actionBtnPrimary: {
+    backgroundColor: colors.primary,
+  },
+  actionBtnSuccess: {
+    backgroundColor: '#059669',
+  },
+  actionBtnDisabled: {
+    opacity: 0.6,
+  },
+  actionBtnText: {
+    color: colors.surface,
+    fontSize: 14,
+    fontWeight: typography.fontWeight.bold,
+  },
   completedBanner: {
-    backgroundColor: colors.accentGreenLight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ECFDF5',
     borderRadius: borderRadius.md,
     padding: spacing.md,
-    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    gap: 8,
   },
-  completedText: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.accentGreen },
+  completedBannerText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#059669',
+  },
 });
 
 export default MaterialRequestDetailScreen;

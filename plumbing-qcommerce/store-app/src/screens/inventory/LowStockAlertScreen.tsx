@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,82 +11,180 @@ import {
 } from 'react-native';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
-import ArrowLeftIcon from '../../assets/icons/arrow-left.svg';
-import WarehouseIcon from '../../assets/icons/warehouse.svg';
+import { StoreIcon } from '../../components/common/StoreIcon';
 import { colors, borderRadius, spacing, typography } from '../../theme';
 
-const lowStockItems = [
+interface LowStockItem {
+  id: string;
+  name: string;
+  stockLeft: number;
+  reorderLevel: number;
+  icon: 'pvc-elbow' | 'brass-valve' | 'cpvc-pipe' | 'thread-tape';
+  supplier: string;
+}
+
+const initialLowStockItems: LowStockItem[] = [
   {
     id: '1',
-    name: 'PVC Elbow 1/2 inch',
-    left: 'Only 2 left',
-    reorderLevel: 'Reorder Level: 10',
+    name: 'PVC Elbow 1/2 Inch',
+    stockLeft: 4,
+    reorderLevel: 10,
+    icon: 'pvc-elbow',
+    supplier: 'Astral Pipes Ltd.',
   },
   {
     id: '2',
-    name: 'Brass Angle Valve 1/2 inch',
-    left: 'Only 4 left',
-    reorderLevel: 'Reorder Level: 10',
+    name: 'Brass Angle Valve 1/2 Inch',
+    stockLeft: 3,
+    reorderLevel: 10,
+    icon: 'brass-valve',
+    supplier: 'Supreme Hardware',
   },
   {
     id: '3',
-    name: 'CPVC Pipe 1/2 inch (3m)',
-    left: 'Only 6 left',
-    reorderLevel: 'Reorder Level: 15',
+    name: 'CPVC Pipe 1/2 Inch (3m)',
+    stockLeft: 5,
+    reorderLevel: 15,
+    icon: 'cpvc-pipe',
+    supplier: 'Ashirvad Pipes',
   },
   {
     id: '4',
     name: 'PTFE Thread Tape (10m)',
-    left: 'Only 5 left',
-    reorderLevel: 'Reorder Level: 10',
+    stockLeft: 8,
+    reorderLevel: 20,
+    icon: 'thread-tape',
+    supplier: 'FixKart Direct',
   },
 ];
 
 export function LowStockAlertScreen() {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
+  const [items, setItems] = useState<LowStockItem[]>(initialLowStockItems);
+  const [reorderedIds, setReorderedIds] = useState<Record<string, boolean>>({});
 
-  const handleReorder = (itemName: string) => {
-    Alert.alert('Reorder Submitted', `Purchase request generated for ${itemName}.`);
+  const handleReorder = (item: LowStockItem) => {
+    Alert.alert(
+      'Create Purchase Order',
+      `Generate procurement request to supplier ${item.supplier} for 50 units of ${item.name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm PO',
+          onPress: () => {
+            setReorderedIds((prev) => ({ ...prev, [item.id]: true }));
+            Alert.alert('PO Created', `Purchase order sent to ${item.supplier}. Expected delivery in 24 hours.`);
+          },
+        },
+      ]
+    );
+  };
+
+  const handleReorderAll = () => {
+    Alert.alert(
+      'Bulk Reorder',
+      `Generate purchase orders for all ${items.length} critical items from registered suppliers?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Order All',
+          onPress: () => {
+            const allReordered: Record<string, boolean> = {};
+            items.forEach((it) => (allReordered[it.id] = true));
+            setReorderedIds(allReordered);
+            Alert.alert('Bulk Orders Placed', 'All replenishment orders submitted successfully.');
+          },
+        },
+      ]
+    );
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
 
-      {/* Header */}
+      {/* Top Navigation Bar */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <ArrowLeftIcon width={24} height={24} stroke={colors.textPrimary} />
+        <TouchableOpacity
+          onPress={() => {
+            if (navigation.canGoBack()) navigation.goBack();
+            else navigation.navigate('Main', { screen: 'InventoryTab' });
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.headerButton}
+        >
+          <StoreIcon name="arrow-left" size={20} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Low Stock Alert</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: 36 }} />
       </View>
 
+      {/* Shortage Count Banner */}
+      <View style={styles.banner}>
+        <View style={styles.bannerIconContainer}>
+          <StoreIcon name="warning" size={20} color={colors.error} />
+        </View>
+        <View style={styles.bannerTextContainer}>
+          <Text style={styles.bannerTitle}>
+            {items.length} items below minimum threshold
+          </Text>
+          <Text style={styles.bannerSubtitle}>
+            Restock now to prevent counter shortages during plumber pickups.
+          </Text>
+        </View>
+        <TouchableOpacity style={styles.bulkButton} onPress={handleReorderAll}>
+          <Text style={styles.bulkButtonText}>Order All</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Items List */}
       <FlatList
-        data={lowStockItems}
+        data={items}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingTop: spacing.md }}
+        contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <View style={styles.itemCard}>
-            <View style={styles.itemImage}>
-              <WarehouseIcon width={24} height={24} stroke={colors.textMuted} />
+        renderItem={({ item }) => {
+          const isOrdered = reorderedIds[item.id];
+          return (
+            <View style={styles.itemCard}>
+              <View style={styles.itemThumb}>
+                <StoreIcon name={item.icon} size={28} color={colors.error} />
+              </View>
+
+              <View style={styles.itemInfo}>
+                <Text style={styles.itemName} numberOfLines={1}>
+                  {item.name}
+                </Text>
+                <Text style={styles.stockLeftText}>Stock Left: {item.stockLeft}</Text>
+                <Text style={styles.reorderLevelText}>
+                  Reorder Level: {item.reorderLevel} · {item.supplier}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.reorderButton, isOrdered && styles.reorderButtonCompleted]}
+                onPress={() => handleReorder(item)}
+                disabled={isOrdered}
+                activeOpacity={0.7}
+              >
+                {isOrdered ? (
+                  <View style={styles.orderedRow}>
+                    <StoreIcon name="success" size={12} color="#059669" />
+                    <Text style={styles.orderedText}>Ordered</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.reorderButtonText}>Reorder</Text>
+                )}
+              </TouchableOpacity>
             </View>
-            <View style={{ flex: 1, marginLeft: spacing.md }}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemLeft}>{item.left}</Text>
-              <Text style={styles.itemReorder}>{item.reorderLevel}</Text>
-            </View>
-            <TouchableOpacity style={styles.reorderButton} onPress={() => handleReorder(item.name)}>
-              <Text style={styles.reorderButtonText}>Reorder</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          );
+        }}
         ListFooterComponent={
           <TouchableOpacity
             style={styles.viewAllButton}
             onPress={() => navigation.navigate('Main', { screen: 'InventoryTab' })}
           >
+            <StoreIcon name="inventory" size={16} color={colors.primary} />
             <Text style={styles.viewAllText}>View All Inventory</Text>
           </TouchableOpacity>
         }
@@ -96,52 +194,164 @@ export function LowStockAlertScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: {
+    flex: 1,
+    backgroundColor: colors.surface,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
     backgroundColor: colors.surface,
   },
-  headerTitle: { fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
+  headerButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
+    borderBottomWidth: 1,
+    borderBottomColor: '#FEE2E2',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    gap: 12,
+  },
+  bannerIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bannerTextContainer: {
+    flex: 1,
+  },
+  bannerTitle: {
+    fontSize: 13,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.error,
+  },
+  bannerSubtitle: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  bulkButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.error,
+  },
+  bulkButtonText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.surface,
+  },
+  listContent: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xxl,
+  },
   itemCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: colors.border,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  itemImage: {
-    width: 50,
-    height: 50,
-    borderRadius: borderRadius.sm,
-    backgroundColor: colors.background,
+  itemThumb: {
+    width: 52,
+    height: 52,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  itemName: { fontSize: 13.5, fontWeight: typography.fontWeight.bold, color: colors.textPrimary },
-  itemLeft: { fontSize: typography.fontSize.xs, color: colors.accentRed, marginTop: 3, fontWeight: '600' },
-  itemReorder: { fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: 2 },
+  itemInfo: {
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+  itemName: {
+    fontSize: 14,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+  },
+  stockLeftText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.error,
+    marginTop: 2,
+  },
+  reorderLevelText: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
   reorderButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.accentRed,
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    borderColor: colors.error,
+    backgroundColor: colors.surface,
   },
-  reorderButtonText: { color: colors.accentRed, fontSize: 12, fontWeight: '700' },
-  viewAllButton: {
+  reorderButtonCompleted: {
+    borderColor: '#A7F3D0',
+    backgroundColor: '#ECFDF5',
+  },
+  reorderButtonText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.error,
+  },
+  orderedRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    marginBottom: spacing.lg,
+    gap: 4,
   },
-  viewAllText: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.primary },
+  orderedText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: spacing.lg,
+    marginTop: spacing.sm,
+  },
+  viewAllText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.primary,
+  },
 });
 
 export default LowStockAlertScreen;

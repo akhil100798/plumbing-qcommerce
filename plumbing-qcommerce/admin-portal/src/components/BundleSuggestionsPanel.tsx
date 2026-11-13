@@ -20,9 +20,9 @@ interface BundleSuggestionsPanelProps {
 }
 
 const SERVICE_TYPE_LABELS: Record<string, string> = {
-  NEARBY_AUTO:    "🚨 Quick Assign",
-  STORE_ROUTED:   "🏪 Store Routed",
-  DIRECT_PLUMBER: "👨‍🔧 Direct Plumber",
+  NEARBY_AUTO:    "Quick Assign",
+  STORE_ROUTED:   "Store Routed",
+  DIRECT_PLUMBER: "Direct Plumber",
 };
 
 export default function BundleSuggestionsPanel({
@@ -94,7 +94,7 @@ export default function BundleSuggestionsPanel({
             <div key={i} className="product-chip animate-fade-in-up"
               style={{ animationDelay: `${i * 60}ms` }}>
               <span style={{ fontSize: "0.825rem", fontWeight: 600, color: "#f1f5f9" }}>
-                🔩 {s.name}
+                {s.name}
               </span>
               <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>{s.reason}</span>
             </div>

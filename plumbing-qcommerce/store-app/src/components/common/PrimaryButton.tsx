@@ -12,6 +12,7 @@ import {
 
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
 import { animation } from '../../theme/animation';
+import { StoreIcon } from './StoreIcon';
 
 interface PrimaryButtonProps {
   title: string;
@@ -78,7 +79,8 @@ export function PrimaryButton({
           <ActivityIndicator color={colors.surface} size="small" />
         ) : success ? (
           <View style={styles.contentRow}>
-            <Text style={styles.text}>✓ Success</Text>
+            <StoreIcon name="success" size={16} color={colors.surface} />
+            <Text style={[styles.text, { marginLeft: 6 }]}>Success</Text>
           </View>
         ) : (
           <View style={styles.contentRow}>
@@ -130,3 +132,5 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
   },
 });
+
+export default PrimaryButton;

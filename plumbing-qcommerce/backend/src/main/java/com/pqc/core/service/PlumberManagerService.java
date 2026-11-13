@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
 
-@Service @RequiredArgsConstructor
+@Service @RequiredArgsConstructor @Transactional(readOnly = true)
 public class PlumberManagerService {
     private static final List<OrderStatus> ACTIVE=List.of(OrderStatus.ACCEPTED,OrderStatus.IN_PROGRESS,OrderStatus.COMBINED_ORDER), DONE=List.of(OrderStatus.COMPLETED,OrderStatus.PAID);
     private final UserRepository userRepository; private final PlumberKycRepository plumberKycRepository; private final ServiceOrderRepository serviceOrderRepository; private final SettlementRepository settlementRepository;

@@ -49,7 +49,13 @@ export const authService = {
   },
 
   logout: async (): Promise<void> => {
-    setAuthToken(null);
-    setRefreshToken(null);
+    try {
+      await apiClient.post(ENDPOINTS.auth.logout);
+    } catch (error) {
+      console.warn('Backend logout failed or was unreachable:', error);
+    } finally {
+      setAuthToken(null);
+      setRefreshToken(null);
+    }
   }
 };

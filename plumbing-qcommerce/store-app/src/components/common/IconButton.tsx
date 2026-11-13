@@ -18,6 +18,8 @@ export const IconButton: React.FC<IconButtonProps> = ({
       style={[styles.button, style]}
       onPress={onPress}
       activeOpacity={0.7}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      accessibilityRole="button"
     >
       <Text style={styles.emoji}>{emoji}</Text>
     </TouchableOpacity>
@@ -26,8 +28,10 @@ export const IconButton: React.FC<IconButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
+    minWidth: 44,
+    minHeight: 44,
     borderRadius: borderRadius.sm,
     backgroundColor: colors.background,
     justifyContent: 'center',

@@ -17,6 +17,7 @@ import { AppStackParamList } from '../types/navigation';
 import { RootState } from '../redux/store';
 import { markAsRead, markAllRead, setNotifications } from '../redux/slices/notificationsSlice';
 import { NotificationRepository } from '../services/notifications/notificationRepository';
+import { SvgNavigationArrowLeft } from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'Notifications'>;
 
@@ -60,8 +61,8 @@ export function NotificationsScreen({ navigation }: Props) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.left}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonText}>←</Text>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.title}>Notifications</Text>
         </View>

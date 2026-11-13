@@ -179,7 +179,9 @@ const styles = StyleSheet.create({
   actionButton: {
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.md,
-    height: 32,
+    height: 44,
+    minHeight: 44,
+    minWidth: 44,
     borderRadius: borderRadius.xs,
     justifyContent: 'center',
     alignItems: 'center',

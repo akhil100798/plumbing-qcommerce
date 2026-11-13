@@ -1,0 +1,277 @@
+{
+  "run": "QA-store-auth-inventory-family",
+  "rows": [
+    {
+      "id": "QA-0243",
+      "result": "FAIL",
+      "detail": "registration did not reach Store dashboard"
+    },
+    {
+      "id": "QA-0288",
+      "result": "PASS",
+      "detail": "Store account/settings surface loaded"
+    },
+    {
+      "id": "QA-0289",
+      "result": "PASS",
+      "detail": "manager role and store identity rendered"
+    },
+    {
+      "id": "QA-0242",
+      "result": "FAIL",
+      "detail": "invalid Store credentials produced bounded UI feedback"
+    },
+    {
+      "id": "QA-0244",
+      "result": "PASS",
+      "detail": "duplicate Store registration produced bounded feedback"
+    },
+    {
+      "id": "QA-0299",
+      "result": "PASS",
+      "detail": "catalog product attached through supported Add Product UI route"
+    },
+    {
+      "id": "QA-0252",
+      "result": "PASS",
+      "detail": "dashboard/inventory family has a real low-stock status surface"
+    },
+    {
+      "id": "QA-0257",
+      "result": "PASS",
+      "detail": "isolated inventory product rendered with details"
+    },
+    {
+      "id": "QA-0248",
+      "result": "N/A",
+      "detail": "Store login source has no password visibility control"
+    },
+    {
+      "id": "QA-0257",
+      "result": "PASS",
+      "detail": "product details screen rendered"
+    },
+    {
+      "id": "QA-0262",
+      "result": "FAIL",
+      "detail": "supported UI increase persisted"
+    },
+    {
+      "id": "QA-0263",
+      "result": "PASS",
+      "detail": "supported UI decrease submitted and returned without error"
+    },
+    {
+      "id": "QA-0264",
+      "result": "PASS",
+      "detail": "zero stock accepted and displayed"
+    },
+    {
+      "id": "QA-0266",
+      "result": "FAIL",
+      "detail": "negative stock rejected by bounded UI validation"
+    },
+    {
+      "id": "QA-0268",
+      "result": "FAIL",
+      "detail": "decimal stock rejected by bounded UI validation"
+    },
+    {
+      "id": "QA-0267",
+      "result": "PASS",
+      "detail": "very large isolated stock value handled without UI crash"
+    },
+    {
+      "id": "QA-0261",
+      "result": "PASS",
+      "detail": "stock update control completed through supported UI"
+    },
+    {
+      "id": "QA-0269",
+      "result": "FAIL",
+      "detail": "restored stock persisted after reload"
+    }
+  ],
+  "api": [
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/register/store",
+      "status": 201
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/stores/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/stores/me/inventory",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/register/store",
+      "status": 409
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/stores/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/stores/me/inventory",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/catalog/categories",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/store/material-requests",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/catalog/products",
+      "status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/stores/me/inventory",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/stores/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/stores/me/inventory",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/catalog/categories",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/store/material-requests",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/stores/me/inventory",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/catalog/categories",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/stores/me/inventory",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/catalog/categories",
+      "status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/stores/11/inventory/1",
+      "status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/stores/11/inventory/1",
+      "status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/stores/11/inventory/1",
+      "status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/stores/11/inventory/1",
+      "status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/stores/11/inventory/1",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/stores/me",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/stores/me/inventory",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/catalog/categories",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/store/material-requests",
+      "status": 200
+    }
+  ],
+  "ui": {
+    "dialogs": [
+      "Are you sure you want to sign out of the FixKart Store Manager App?"
+    ],
+    "final": {
+      "url": "http://localhost:8084/",
+      "apiErrors": [
+        {
+          "method": "GET",
+          "path": "/api/v1/stores/me/inventory",
+          "status": 401
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/auth/login",
+          "status": 401
+        },
+        {
+          "method": "POST",
+          "path": "/api/v1/auth/register/store",
+          "status": 409
+        }
+      ]
+    }
+  }
+}
