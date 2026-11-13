@@ -124,7 +124,13 @@ export function CartScreen({ navigation }: Props) {
             onChangeText={setCoupon}
             autoCapitalize="characters"
           />
-          <TouchableOpacity style={styles.couponBtn} onPress={handleApplyCoupon}>
+          <TouchableOpacity
+            style={styles.couponBtn}
+            onPress={handleApplyCoupon}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Apply coupon code"
+          >
             <Text style={styles.couponBtnText}>Apply</Text>
           </TouchableOpacity>
         </View>

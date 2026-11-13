@@ -17,6 +17,7 @@ import { PrimaryButton } from '../components/common/PrimaryButton';
 import { OrderRepository } from '../services/orders/orderRepository';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
+import { SvgStatusCheckCircle } from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'ServiceCompletion'>;
 
@@ -125,7 +126,7 @@ export function ServiceCompletionScreen({ route, navigation }: Props) {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.successHeader}>
             <View style={styles.successBadge}>
-              <Text style={styles.checkEmoji}>DONE</Text>
+              <SvgStatusCheckCircle width={32} height={32} stroke="#059669" />
             </View>
             <Text style={styles.successTitle}>Service Completed!</Text>
             <Text style={styles.successSub}>

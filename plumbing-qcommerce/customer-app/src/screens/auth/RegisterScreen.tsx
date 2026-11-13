@@ -19,6 +19,7 @@ import { AuthRepository } from '../../services/auth/authRepository';
 import { AuthResponse } from '../../services/auth/authTypes';
 import { borderRadius, colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
+import { SvgNavigationArrowLeft } from '../../assets/svg';
 
 type Props = StackScreenProps<AuthStackParamList, 'Register'>;
 
@@ -107,10 +108,11 @@ export function RegisterScreen({ navigation }: Props) {
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Go back to login"
           >
-            <Text style={styles.backChevron}>‹</Text>
+            <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
           </TouchableOpacity>
 
           <View style={styles.headingSection}>

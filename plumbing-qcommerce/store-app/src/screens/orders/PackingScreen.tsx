@@ -294,6 +294,7 @@ const styles = StyleSheet.create({
   },
   checkTextCol: {
     flex: 1,
+    minWidth: 0,
   },
   itemTitle: {
     fontSize: typography.fontSize.sm,
@@ -314,7 +315,8 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 6,
     backgroundColor: '#F1F5F9',
-    marginLeft: spacing.sm,
+    marginLeft: spacing.xs,
+    flexShrink: 0,
   },
   stateTagText: {
     fontSize: 9,

@@ -27,7 +27,7 @@ export function MainTabNavigator() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: colors.stitchBlue,
-        tabBarInactiveTintColor: '#94A3B8',
+        tabBarInactiveTintColor: colors.textMuted, // Uses '#475569' (7.58:1 on white, passes >= 4.5:1)
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarIcon: ({ color, focused }) => {

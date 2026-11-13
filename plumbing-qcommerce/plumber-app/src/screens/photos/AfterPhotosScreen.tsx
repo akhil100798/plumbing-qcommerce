@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 import { View, Text, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 
@@ -20,12 +21,37 @@ export function AfterPhotosScreen({ route, navigation }: Props) {
   ]);
 
   const handleAddPhoto = async () => {
-    const mockPhotos = [
-      'https://images.unsplash.com/photo-1542013936693-8848e574047a?auto=format&fit=crop&q=80&w=400',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=400',
-    ];
-    const nextUri = mockPhotos[photos.length % mockPhotos.length];
-    setPhotos((prev) => [...prev, nextUri]);
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      let result;
+      if (permission.granted) {
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          quality: 0.8,
+        });
+      } else {
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          quality: 0.8,
+        });
+      }
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setPhotos((prev) => [...prev, result.assets[0].uri]);
+      }
+    } catch (err) {
+      console.warn('Camera capture error, falling back to gallery:', err);
+      try {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          quality: 0.8,
+        });
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          setPhotos((prev) => [...prev, result.assets[0].uri]);
+        }
+      } catch (galleryErr) {
+        Alert.alert('Camera Error', 'Could not open camera or image gallery.');
+      }
+    }
   };
 
   const handleRemovePhoto = (index: number) => {

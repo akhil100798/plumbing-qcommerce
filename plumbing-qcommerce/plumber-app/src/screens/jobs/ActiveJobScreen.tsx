@@ -25,7 +25,7 @@ import PhoneIcon from '../../assets/icons/phone.svg';
 import ChatIcon from '../../assets/icons/chat.svg';
 import MapPinIcon from '../../assets/icons/location-pin.svg';
 import NavigationIcon from '../../assets/icons/navigation.svg';
-import { SvgActionNavigate, SvgStatusClock } from '../../assets/svg';
+import { SvgActionNavigate, SvgStatusClock, SvgStatusStar } from '../../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'ActiveJob'>;
 
@@ -244,7 +244,10 @@ export function ActiveJobScreen({ route, navigation }: Props) {
               <Text style={styles.customerLabel}>CUSTOMER</Text>
               <Text style={styles.customerName}>{displayJob.customer.fullName || 'Customer'}</Text>
               {displayJob.customer.rating != null ? (
-                <Text style={styles.ratingText}>⭐ {displayJob.customer.rating}</Text>
+                <View style={styles.ratingRow}>
+                  <SvgStatusStar width={13} height={13} fill="#FBBF24" stroke="#F59E0B" />
+                  <Text style={styles.ratingText}>{displayJob.customer.rating}</Text>
+                </View>
               ) : null}
             </View>
             <View style={styles.customerActions}>
@@ -416,10 +419,16 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     marginTop: 2,
   },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
   ratingText: {
     fontSize: 12,
     color: '#F59E0B',
-    marginTop: 2,
+    fontWeight: '600',
   },
   customerActions: {
     flexDirection: 'row',

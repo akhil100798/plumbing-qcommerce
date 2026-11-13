@@ -18,6 +18,7 @@ import { PlumberCard } from '../components/cards/PlumberCard';
 import { PrimaryButton } from '../components/common/PrimaryButton';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
+import { SvgNavigationArrowLeft } from '../assets/svg';
 
 import { PlumberRepository } from '../services/plumbers/plumberRepository';
 
@@ -81,8 +82,14 @@ export function PlumberConfirmationScreen({ route, navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>?</Text>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary || '#1E293B'} />
         </TouchableOpacity>
         <Text style={styles.title}>Confirm Booking</Text>
       </View>

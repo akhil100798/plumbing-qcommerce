@@ -21,7 +21,7 @@ import { borderRadius, colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
 import { loginSuccess } from '../../redux/slices/authSlice';
 import { AuthRepository } from '../../services/auth/authRepository';
-import { SvgServicesLock } from '../../assets/svg';
+import { SvgServicesLock, SvgNavigationArrowLeft } from '../../assets/svg';
 
 type Props = StackScreenProps<AuthStackParamList, 'Otp'>;
 
@@ -121,10 +121,11 @@ export function OtpScreen({ route, navigation }: Props) {
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <Text style={styles.backChevron}>‹</Text>
+            <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Verify OTP</Text>
           <View style={{ width: 36 }} />

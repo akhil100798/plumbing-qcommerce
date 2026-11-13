@@ -25,6 +25,16 @@ import { AppStackParamList } from '../types/navigation';
 import { addToCart } from '../redux/slices/cartSlice';
 import { ProductRepository } from '../services/products/productRepository';
 import { ProductDTO } from '../services/products/productTypes';
+import {
+  SvgNavigationArrowLeft,
+  SvgNavigationCart,
+  SvgActionsShare,
+  SvgPlumbingCpvcElbow,
+  SvgStatusStarFilled,
+  SvgTrackingScooterEnroute,
+  SvgStatusShieldGuarantee,
+  SvgStatusCheckVerified,
+} from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'ProductDetails'>;
 
@@ -109,22 +119,22 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>?</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Cart')}>
-            <Text style={styles.iconEmoji}>Cart</Text>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Cart')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <SvgNavigationCart width={20} height={20} stroke={colors.textPrimary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => Alert.alert('Share product', `${product.name} - Rs.${product.price}`)}>
-            <Text style={styles.iconEmoji}>Share</Text>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => Alert.alert('Share product', `${product.name} - Rs.${product.price}`)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <SvgActionsShare width={20} height={20} stroke={colors.textPrimary} />
           </TouchableOpacity>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.imageGallery}>
-          <Text style={styles.largeEmoji}>??</Text>
+          <SvgPlumbingCpvcElbow width={80} height={80} stroke={colors.primary} />
         </View>
 
         <View style={styles.detailsBlock}>
@@ -133,7 +143,7 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
           <Text style={styles.subtitle}>(20mm) 3 Meter</Text>
 
           <View style={styles.ratingRow}>
-            <Text style={styles.star}>?</Text>
+            <SvgStatusStarFilled width={16} height={16} fill="#F59E0B" stroke="#F59E0B" />
             <Text style={styles.ratingValue}>4.5</Text>
             <Text style={styles.reviewsCount}>(120 Reviews)</Text>
             <View style={styles.dividerDot} />
@@ -141,15 +151,15 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
           </View>
 
           <View style={styles.priceRow}>
-            <Text style={styles.price}>?{product.price}</Text>
-            <Text style={styles.originalPrice}>?{product.price + 30}</Text>
+            <Text style={styles.price}>₹{product.price}</Text>
+            <Text style={styles.originalPrice}>₹{product.price + 30}</Text>
             <View style={styles.discountBadge}>
               <Text style={styles.discountText}>12% OFF</Text>
             </View>
           </View>
 
           <View style={styles.deliveryWidget}>
-            <Text style={styles.deliveryIcon}>??</Text>
+            <SvgTrackingScooterEnroute width={20} height={20} stroke={colors.primary} />
             <Text style={styles.deliveryText}>
               Delivery in <Text style={styles.deliveryBold}>20 mins</Text> from Sai Pipes (0.8 km)
             </Text>
@@ -157,11 +167,11 @@ export function ProductDetailsScreen({ route, navigation }: Props) {
 
           <View style={styles.badgesRow}>
             <View style={styles.badge}>
-              <Text style={styles.badgeIcon}>???</Text>
+              <SvgStatusShieldGuarantee width={16} height={16} stroke="#059669" />
               <Text style={styles.badgeText}>Genuine Product</Text>
             </View>
             <View style={styles.badge}>
-              <Text style={styles.badgeIcon}>??</Text>
+              <SvgStatusCheckVerified width={16} height={16} stroke="#059669" />
               <Text style={styles.badgeText}>GST Bill</Text>
             </View>
           </View>

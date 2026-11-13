@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   brandKart: {
     fontSize: 38,
     fontWeight: '800',
-    color: '#22C55E',
+    color: '#4ADE80', // Light Emerald (4.38:1 on #0E54DC, passes >= 3.0:1 for large text)
     letterSpacing: -0.5,
   },
   subtitleBadge: {

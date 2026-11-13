@@ -53,8 +53,12 @@ public class CheckoutService {
             throw new IllegalArgumentException("Items list cannot be empty");
         }
 
+        List<CartItemDTO> sortedCartItems = cartItems.stream()
+                .sorted(Comparator.comparing(CartItemDTO::getProductId))
+                .toList();
+
         Set<Long> productIds = new HashSet<>();
-        for (CartItemDTO item : cartItems) {
+        for (CartItemDTO item : sortedCartItems) {
             if (item == null || item.getProductId() == null || item.getQuantity() == null || item.getQuantity() <= 0) {
                 throw new IllegalArgumentException("Each checkout item requires a product and a positive quantity");
             }
@@ -93,7 +97,7 @@ public class CheckoutService {
                 .totalAmount(BigDecimal.ZERO) // temporary
                 .build();
 
-        for (CartItemDTO item : cartItems) {
+        for (CartItemDTO item : sortedCartItems) {
             Product product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new RuntimeException("Product not found: " + item.getProductId()));
 
@@ -191,6 +195,16 @@ public class CheckoutService {
             return;
         }
 
+        User caller = currentUser.require();
+        if (caller.getRole() != Role.ADMIN && caller.getRole() != Role.STORE_MANAGER) {
+            if (caller.getRole() != Role.CUSTOMER) {
+                throw new AccessDeniedException("Only the customer, store manager, or admin may confirm payment.");
+            }
+            if (order.getCustomer() != null && !order.getCustomer().getId().equals(caller.getId())) {
+                throw new AccessDeniedException("Customer does not own this order.");
+            }
+        }
+
         if (order.getStatus() != ProductOrderStatus.PENDING) {
             throw new IllegalStateException("Order #" + orderId + " is not pending payment.");
         }
@@ -270,6 +284,16 @@ public class CheckoutService {
 
         if (order.getStatus() == ProductOrderStatus.CANCELLED) {
             return;
+        }
+
+        User caller = currentUser.require();
+        if (caller.getRole() != Role.ADMIN && caller.getRole() != Role.STORE_MANAGER) {
+            if (caller.getRole() != Role.CUSTOMER) {
+                throw new AccessDeniedException("Only the customer, store manager, or admin may release reservation.");
+            }
+            if (order.getCustomer() != null && !order.getCustomer().getId().equals(caller.getId())) {
+                throw new AccessDeniedException("Customer does not own this order.");
+            }
         }
 
 

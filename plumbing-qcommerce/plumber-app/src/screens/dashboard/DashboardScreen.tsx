@@ -139,6 +139,7 @@ export function DashboardScreen({ navigation }: Props) {
               onValueChange={updateAvailability}
               trackColor={{ false: '#CBD5E1', true: '#10B981' }}
               thumbColor="#FFFFFF"
+              style={{ minHeight: 44, minWidth: 44 }}
             />
           </View>
         </View>
@@ -303,7 +304,7 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 11,
     fontWeight: '500',
-    color: '#94A3B8',
+    color: colors.textMuted, // Uses '#475569' (7.58:1 on white, passes >= 4.5:1)
   },
   userName: {
     fontSize: 16,
@@ -492,6 +493,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#10B981',
     borderRadius: 12,
     paddingVertical: 12,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

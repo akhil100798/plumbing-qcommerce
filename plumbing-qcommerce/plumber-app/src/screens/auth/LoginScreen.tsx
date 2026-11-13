@@ -183,6 +183,8 @@ export function LoginScreen({ navigation }: Props) {
               </TouchableOpacity>
 
               <TouchableOpacity
+                style={styles.forgotBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={() =>
                   Alert.alert(
                     'Forgot Password',
@@ -245,15 +247,14 @@ export function LoginScreen({ navigation }: Props) {
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              New here?{' '}
-              <Text
-                style={styles.signUpLink}
-                onPress={() => navigation.navigate('Register')}
-              >
-                Sign up
-              </Text>
-            </Text>
+            <Text style={styles.footerText}>New here?</Text>
+            <TouchableOpacity
+              style={styles.signUpBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              onPress={() => navigation.navigate('Register')}
+            >
+              <Text style={styles.signUpLink}>Sign up</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -302,8 +303,10 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 9,
+    paddingVertical: 11,
+    minHeight: 44,
     alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 8,
   },
   tabButtonActive: {
@@ -366,6 +369,8 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
+    height: '100%',
+    minHeight: 44,
     fontSize: 14,
     color: '#0F172A',
   },
@@ -378,6 +383,7 @@ const styles = StyleSheet.create({
   rememberMe: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 44,
   },
   checkbox: {
     width: 18,
@@ -396,6 +402,10 @@ const styles = StyleSheet.create({
   rememberText: {
     fontSize: 12,
     color: '#64748B',
+  },
+  forgotBtn: {
+    minHeight: 44,
+    justifyContent: 'center',
   },
   forgotText: {
     fontSize: 12,
@@ -475,12 +485,21 @@ const styles = StyleSheet.create({
     color: '#334155',
   },
   footer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     marginTop: 20,
   },
   footerText: {
     fontSize: 12,
     color: '#64748B',
+  },
+  signUpBtn: {
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   signUpLink: {
     color: '#0755E9',

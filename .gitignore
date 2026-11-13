@@ -7,13 +7,19 @@ package-lock.json
 scripts/
 stitch-designs/
 stitch_fixkart_store_partner_ui/
-FIXKART_ANDROID_E2E_EVIDENCE/
-FIXKART_PLUMBER_ANDROID_EVIDENCE/
-FIXKART_STORE_COMPLETE_21_SCREEN_AUDIT/
-FIXKART_STORE_UI_EVIDENCE/
-FIXKART_SVG_MIGRATION_EVIDENCE/
-FIXKART_FULL_PLATFORM_AUDIT/
 plumbing-qcommerce/plumbing-qcommerce/
-FIXKART_CLOUD_DEPLOYMENT_PHASE_2/
 *.dump
 
+# Temporary dumps & agent caches
+tmp_*.txt
+.agents/
+
+# Staging test photo binaries
+plumbing-qcommerce/backend/uploads/service-order-photos/*.jpg
+!plumbing-qcommerce/backend/uploads/service-order-photos/3e95602e-d266-42d3-81e2-529fa8a9d32a.jpg
+!plumbing-qcommerce/backend/uploads/service-order-photos/6a1a8628-af9a-4ad4-a09b-266622e412a5.jpg
+
+# UAT test evidence & screenshot suites
+FIXKART_*/
+!FIXKART_PHASE7_RC1_VERDICT.md
+!FIXKART_G_STACK_E2E_AUDIT_REPORT.md

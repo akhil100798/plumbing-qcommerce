@@ -32,6 +32,7 @@ import { setActiveProductOrder, updateProductOrderStatus } from '../redux/slices
 import { AppIcon } from '../components/common/AppIcon';
 import { IconBadge } from '../components/common/IconBadge';
 import { AnimatedBanner } from '../components/common/AnimatedBanner';
+import { SvgNavigationChevronDown } from '../assets/svg';
 
 import LocationPinIcon from '../assets/icons/location-pin.svg';
 import NotificationIcon from '../assets/icons/notification.svg';
@@ -242,7 +243,7 @@ export function HomeScreen({ navigation }: any) {
       Alert.alert('Delivery Rider Assigned', `${data.deliveryPartnerName} has picked up your materials and is out for delivery!`);
     });
 
-    // Phase 3: Plumber requested parts mid-job � show payment approval card
+    // Phase 3: Plumber requested parts mid-job  show payment approval card
     newSocket.on('MATERIAL_PAYMENT_REQUIRED', (data: MaterialPaymentRequest) => {
       console.log('Received MATERIAL_PAYMENT_REQUIRED:', data);
       setMaterialPaymentRequest(data);
@@ -416,8 +417,8 @@ export function HomeScreen({ navigation }: any) {
       setIsApprovingPayment(false);
       setMaterialPaymentRequest(null);
       Alert.alert(
-        '�S& Payment Approved!',
-        'Parts are being dispatched to your plumber�"s location. Work will resume shortly.'
+        'S& Payment Approved!',
+        'Parts are being dispatched to your plumber\'s location. Work will resume shortly.'
       );
     } catch (err: any) {
       setIsApprovingPayment(false);
@@ -562,10 +563,10 @@ export function HomeScreen({ navigation }: any) {
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.trackingContent}>
-          {/* Phase 3: Material Payment Approval Card � floats at top if request is pending */}
+          {/* Phase 3: Material Payment Approval Card -> floats at top if request is pending */}
           {materialPaymentRequest && (
             <View style={styles.materialApprovalCard}>
-              <Text style={styles.materialApprovalEyebrow}>�x� Parts Needed by Your Plumber</Text>
+              <Text style={styles.materialApprovalEyebrow}>Parts Needed by Your Plumber</Text>
               <Text style={styles.materialApprovalTitle}>{materialPaymentRequest.plumberName} needs supplies</Text>
               <Text style={styles.materialApprovalMsg}>{materialPaymentRequest.message}</Text>
               <View style={styles.materialApprovalAmountRow}>
@@ -646,7 +647,7 @@ export function HomeScreen({ navigation }: any) {
         <View style={styles.locationSelector}>
           <AppIcon icon={LocationPinIcon} size={18} color={colors.primary} />
           <Text style={styles.locationTitle}>Hyderabad</Text>
-          <Text style={styles.dropdownArrow}>��</Text>
+          <SvgNavigationChevronDown width={14} height={14} stroke={colors.textPrimary} />
         </View>
         <IconBadge count={unreadCount}>
           <TouchableOpacity
@@ -663,7 +664,7 @@ export function HomeScreen({ navigation }: any) {
           <Text style={styles.greetingText}>Good Evening,</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={styles.profileName}>Akhil</Text>
-            <Text style={[styles.greetingText, { marginLeft: 6 }]}>�x9</Text>
+            
           </View>
         </View>
 
@@ -679,6 +680,7 @@ export function HomeScreen({ navigation }: any) {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          {...({ role: 'region', 'aria-label': 'Promotions carousel' } as any)}
           style={styles.promoCarousel}
           contentContainerStyle={styles.promoCarouselContent}
         >
@@ -724,7 +726,11 @@ export function HomeScreen({ navigation }: any) {
         <View style={styles.storesSection}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Nearby Stores</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Main', { screen: 'StoreTab' })}>
+            <TouchableOpacity
+              style={styles.seeAllBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              onPress={() => navigation.navigate('Main', { screen: 'StoreTab' })}
+            >
               <Text style={styles.seeAllLink}>See all</Text>
             </TouchableOpacity>
           </View>
@@ -903,9 +909,11 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   notificationBell: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    minWidth: 44,
+    minHeight: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,
@@ -1040,6 +1048,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.md,
   },
+  seeAllBtn: {
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   seeAllLink: {
     fontSize: typography.fontSize.sm,
     color: colors.primary,
@@ -1049,7 +1063,17 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   categoryRail: { gap: 10, paddingBottom: 16 },
-  categoryChip: { backgroundColor: '#FFFFFF', borderRadius: 999, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: '#E5E7EB' },
+  categoryChip: { 
+    backgroundColor: '#FFFFFF', 
+    borderRadius: 999, 
+    paddingHorizontal: 16, 
+    paddingVertical: 10, 
+    minHeight: 44, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    borderWidth: 1, 
+    borderColor: '#E5E7EB' 
+  },
   categoryChipActive: { backgroundColor: '#111827', borderColor: '#111827' },
   categoryText: { color: '#374151', fontSize: 14, fontWeight: '800' },
   categoryTextActive: { color: '#FFFFFF' },
@@ -1103,14 +1127,23 @@ const styles = StyleSheet.create({
   productName: { color: '#111827', fontSize: 16, fontWeight: '800' },
   productPrice: { color: '#11A683', fontSize: 14, fontWeight: '800', marginTop: 2 },
   productCategory: { color: '#9CA3AF', fontSize: 11, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
-  addButton: { backgroundColor: '#111827', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
+  addButton: { 
+    backgroundColor: '#111827', 
+    borderRadius: 10, 
+    paddingHorizontal: 12, 
+    paddingVertical: 8, 
+    minHeight: 44, 
+    minWidth: 48, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
   addButtonText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
   otpInputContainer: { backgroundColor: '#EFF6FF', borderRadius: 18, padding: 16, marginTop: 18, borderWidth: 2, borderStyle: 'dashed', borderColor: '#3B82F6' },
   otpInputLabel: { color: '#1D4ED8', fontSize: 14, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.5 },
   otpInputSub: { color: '#4B5563', fontSize: 12, fontWeight: '700', marginVertical: 6, lineHeight: 18 },
   otpInputRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
   otpTextInput: { flex: 1, height: 52, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#BFDBFE', paddingHorizontal: 16, fontSize: 18, fontWeight: '900', color: '#1E3A8A', letterSpacing: 4, textAlign: 'center' },
-  // Phase 3 � Material Payment Approval Card
+  // Phase 3 - Material Payment Approval Card
   materialApprovalCard: { margin: 18, marginBottom: 0, backgroundColor: '#FFFBEB', borderRadius: 24, padding: 18, borderWidth: 2, borderColor: '#F59E0B' },
   materialApprovalEyebrow: { color: '#92400E', fontSize: 12, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.5 },
   materialApprovalTitle: { color: '#111827', fontSize: 20, fontWeight: '900', marginTop: 6 },
@@ -1126,6 +1159,7 @@ const styles = StyleSheet.create({
   promoCarousel: {
     marginVertical: spacing.md,
     height: 180,
+    overflow: 'hidden',
   },
   promoCarouselContent: {
     paddingHorizontal: spacing.layout,

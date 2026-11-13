@@ -22,6 +22,7 @@ import { AppStackParamList } from '../types/navigation';
 
 import { ProductRepository } from '../services/products/productRepository';
 import { ProductDTO } from '../services/products/productTypes';
+import { SvgNavigationArrowLeft, SvgActionsFilter, SvgActionsSort } from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'ProductListing'>;
 
@@ -115,18 +116,28 @@ export function ProductListingScreen({ route, navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>?</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.title}>{categoryName}</Text>
       </View>
 
       <View style={styles.filterRow}>
-        <TouchableOpacity style={styles.filterBtn} onPress={() => Alert.alert('Filter', 'Product filters are coming soon. Use category search for now.') }>
-          <Text style={styles.filterBtnText}>?? Filter</Text>
+        <TouchableOpacity
+          style={styles.filterBtn}
+          onPress={() => Alert.alert('Filter', 'Product filters are coming soon. Use category search for now.')}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <SvgActionsFilter width={14} height={14} stroke={colors.textSecondary} />
+          <Text style={styles.filterBtnText}>Filter</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.filterBtn} onPress={() => Alert.alert('Sort', 'Sorting is coming soon. Products are currently shown by backend relevance.')}>
-          <Text style={styles.filterBtnText}>Sort ??</Text>
+        <TouchableOpacity
+          style={styles.filterBtn}
+          onPress={() => Alert.alert('Sort', 'Sorting is coming soon. Products are currently shown by backend relevance.')}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={styles.filterBtnText}>Sort</Text>
+          <SvgActionsSort width={14} height={14} stroke={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -223,6 +234,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   filterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 44,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: 9999,

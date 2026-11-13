@@ -255,6 +255,7 @@ export function LoginScreen({ navigation }: Props) {
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityRole="button"
                 accessibilityLabel="Toggle password visibility"
               >
@@ -263,7 +264,11 @@ export function LoginScreen({ navigation }: Props) {
             </View>
 
             <View style={styles.forgotRow}>
-              <TouchableOpacity onPress={() => notify('Password Reset', 'Please contact support to reset your password.')}>
+              <TouchableOpacity
+                onPress={() => notify('Password Reset', 'Please contact support to reset your password.')}
+                style={styles.forgotPasswordBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
                 <Text style={styles.forgotText}>Forgot password?</Text>
               </TouchableOpacity>
             </View>
@@ -303,7 +308,11 @@ export function LoginScreen({ navigation }: Props) {
           {/* Signup Redirect Footer */}
           <View style={styles.footerRow}>
             <Text style={styles.footerPrompt}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Register')}
+              style={styles.signUpBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
               <Text style={styles.footerLink}>Sign up now</Text>
             </TouchableOpacity>
           </View>
@@ -411,7 +420,12 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   eyeBtn: {
-    padding: 6,
+    width: 44,
+    height: 44,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   eyeText: {
     fontSize: 14,
@@ -420,6 +434,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     marginTop: 4,
     marginBottom: spacing.md,
+  },
+  forgotPasswordBtn: {
+    minHeight: 44,
+    justifyContent: 'center',
   },
   forgotText: {
     fontSize: 12,
@@ -479,6 +497,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: spacing.xl,
+  },
+  signUpBtn: {
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
   },
   footerPrompt: {
     fontSize: 13,

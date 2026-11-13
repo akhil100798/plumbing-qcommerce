@@ -207,9 +207,13 @@ export const DashboardScreen = () => {
           >
             <View style={styles.metricTopRow}>
               <View style={[styles.metricIconBox, { backgroundColor: '#E8F7EE' }]}>
-                <StoreIcon name="rupee" size={16} color="#1EA34A" />
+                <StoreIcon name="rupee" size={14} color="#1EA34A" />
               </View>
-              <Text style={[styles.metricValue, styles.salesValueText]} numberOfLines={1}>
+              <Text
+                style={[styles.metricValue, styles.salesValueText]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
                 {formattedRevenue}
               </Text>
             </View>
@@ -243,7 +247,11 @@ export const DashboardScreen = () => {
         {/* Order Status Section */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Order Status</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}>
+          <TouchableOpacity
+            style={styles.viewAllBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            onPress={() => navigation.navigate('Main', { screen: 'OrdersTab' })}
+          >
             <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
         </View>
@@ -307,7 +315,11 @@ export const DashboardScreen = () => {
         {/* Live Plumber Material Order Desk */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Plumber Material Requests</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Main', { screen: 'MaterialsTab' })}>
+          <TouchableOpacity
+            style={styles.viewAllBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            onPress={() => navigation.navigate('Main', { screen: 'MaterialsTab' })}
+          >
             <Text style={styles.viewAllText}>Queue ({matRequests.length})</Text>
           </TouchableOpacity>
         </View>
@@ -364,7 +376,11 @@ export const DashboardScreen = () => {
         {/* Low Stock Alerts */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Low Stock Alerts</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('LowStockAlert')}>
+          <TouchableOpacity
+            style={styles.viewAllBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            onPress={() => navigation.navigate('LowStockAlert')}
+          >
             <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
         </View>
@@ -418,9 +434,11 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   notificationBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    minWidth: 44,
+    minHeight: 44,
+    borderRadius: 22,
     backgroundColor: '#F8FAFC',
     justifyContent: 'center',
     alignItems: 'center',
@@ -469,6 +487,12 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.medium,
     color: colors.textSecondary,
   },
+  viewAllBtn: {
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   viewAllText: {
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.semibold,
@@ -482,7 +506,8 @@ const styles = StyleSheet.create({
   metricCard: {
     flex: 1,
     backgroundColor: colors.surface,
-    padding: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: 8,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: '#EAECEF',
@@ -491,12 +516,13 @@ const styles = StyleSheet.create({
   metricTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: 2,
     marginBottom: spacing.xs,
+    flexShrink: 0,
   },
   metricIconBox: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
     borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
@@ -507,7 +533,8 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   salesValueText: {
-    fontSize: 14,
+    fontSize: 13,
+    letterSpacing: -0.3,
   },
   metricLabel: {
     fontSize: 11,
@@ -554,7 +581,11 @@ const styles = StyleSheet.create({
   pickupActionBtn: {
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: borderRadius.round,
   },
   pickupActionText: {
@@ -645,6 +676,7 @@ const styles = StyleSheet.create({
   matBtn: {
     flex: 1,
     paddingVertical: 8,
+    minHeight: 44,
     borderRadius: borderRadius.sm,
     alignItems: 'center',
     justifyContent: 'center',
@@ -697,10 +729,14 @@ const styles = StyleSheet.create({
   },
   reorderBtn: {
     paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingVertical: 8,
+    minHeight: 44,
+    minWidth: 44,
     borderRadius: borderRadius.sm,
     borderWidth: 1,
     borderColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   reorderBtnText: {
     fontSize: typography.fontSize.xs,

@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 
 import { borderRadius, colors, spacing, typography } from '../../theme';
+import { SvgStatusStar } from '../../assets/svg';
 
 interface RatingBadgeProps {
   rating: number;
@@ -22,7 +23,7 @@ export function RatingBadge({
 }: RatingBadgeProps) {
   return (
     <View style={[styles.container, style]}>
-      <Text style={styles.star}>⭐</Text>
+      <SvgStatusStar width={12} height={12} fill="#FBBF24" stroke="#F59E0B" style={styles.star} />
       <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
       {count !== undefined && (
         <Text style={styles.countText}>({count})</Text>
@@ -41,7 +42,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
   },
   star: {
-    fontSize: 12,
     marginRight: 4,
   },
   ratingText: {

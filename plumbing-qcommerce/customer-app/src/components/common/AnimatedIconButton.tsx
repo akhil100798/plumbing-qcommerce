@@ -46,6 +46,7 @@ export function AnimatedIconButton({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={disabled || loading}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       style={[
@@ -70,6 +71,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 8,
+    minWidth: 44,
+    minHeight: 44,
   },
   disabled: {
     opacity: 0.5,

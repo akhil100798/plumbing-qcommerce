@@ -42,6 +42,7 @@ export function StitchHeader({
           <TouchableOpacity
             onPress={onBack}
             style={styles.backButton}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Go back"
             activeOpacity={0.7}
@@ -66,6 +67,7 @@ export function StitchHeader({
         <TouchableOpacity
           onPress={onCartPress}
           style={styles.cartBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityLabel={`Shopping cart with ${cartCount} items`}
           activeOpacity={0.7}
@@ -102,9 +104,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    minWidth: 44,
+    minHeight: 44,
+    borderRadius: 22,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -142,9 +146,11 @@ const styles = StyleSheet.create({
     width: 8,
   },
   cartBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    minWidth: 44,
+    minHeight: 44,
+    borderRadius: 22,
     backgroundColor: '#F8FAFC',
     alignItems: 'center',
     justifyContent: 'center',

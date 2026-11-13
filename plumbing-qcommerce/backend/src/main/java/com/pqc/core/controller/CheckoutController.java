@@ -37,15 +37,25 @@ public class CheckoutController {
     }
 
     @PostMapping("/confirm/{orderId}")
-    public ResponseEntity<String> confirmPayment(@PathVariable Long orderId) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<java.util.Map<String, Object>> confirmPayment(@PathVariable Long orderId) {
         checkoutService.confirmPayment(orderId);
-        return ResponseEntity.ok("Payment confirmed and stock reservation finalized.");
+        return ResponseEntity.ok(java.util.Map.of(
+                "status", "SUCCESS",
+                "orderId", orderId,
+                "message", "Payment confirmed and stock reservation finalized."
+        ));
     }
 
     @PostMapping("/release/{orderId}")
-    public ResponseEntity<String> releaseReservation(@PathVariable Long orderId) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<java.util.Map<String, Object>> releaseReservation(@PathVariable Long orderId) {
         checkoutService.releaseReservation(orderId);
-        return ResponseEntity.ok("Stock reservation released back to inventory.");
+        return ResponseEntity.ok(java.util.Map.of(
+                "status", "SUCCESS",
+                "orderId", orderId,
+                "message", "Stock reservation released back to inventory."
+        ));
     }
 
     @GetMapping("/orders/status/{status}")

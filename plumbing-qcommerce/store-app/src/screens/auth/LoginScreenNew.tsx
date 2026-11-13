@@ -127,6 +127,7 @@ export function LoginScreen({ navigation }: Props) {
                 <TouchableOpacity
                   onPress={() => setShowPassword(!showPassword)}
                   style={styles.eyeButton}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
                 >
                   <StoreIcon
@@ -152,6 +153,8 @@ export function LoginScreen({ navigation }: Props) {
               </TouchableOpacity>
 
               <TouchableOpacity
+                style={styles.contactAdminBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 onPress={() => Alert.alert('Contact Administrator', 'Please reach out to support@fixkart.com to reset your partner store credentials.')}
               >
                 <Text style={styles.forgotText}>Contact admin</Text>
@@ -201,7 +204,11 @@ export function LoginScreen({ navigation }: Props) {
           {/* Footer Register Link */}
           <View style={styles.footerRow}>
             <Text style={styles.footerText}>New Store Partner? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register' as any)}>
+            <TouchableOpacity
+              style={styles.registerBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              onPress={() => navigation.navigate('Register' as any)}
+            >
               <Text style={styles.registerLink}>Register Store</Text>
             </TouchableOpacity>
           </View>
@@ -249,7 +256,7 @@ const styles = StyleSheet.create({
   brandKart: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#22C55E',
+    color: '#15803D',
   },
   partnerTag: {
     fontSize: 10,
@@ -299,12 +306,19 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
+    height: '100%',
+    minHeight: 44,
     fontSize: typography.fontSize.sm,
     color: colors.textPrimary,
     paddingVertical: 0,
   },
   eyeButton: {
-    padding: spacing.xs,
+    width: 44,
+    height: 44,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   optionsRow: {
     flexDirection: 'row',
@@ -316,6 +330,7 @@ const styles = StyleSheet.create({
   rememberMeRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 44,
   },
   checkbox: {
     width: 18,
@@ -335,6 +350,10 @@ const styles = StyleSheet.create({
   rememberMeText: {
     fontSize: typography.fontSize.xs,
     color: colors.textSecondary,
+  },
+  contactAdminBtn: {
+    minHeight: 44,
+    justifyContent: 'center',
   },
   forgotText: {
     fontSize: typography.fontSize.xs,
@@ -391,6 +410,12 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: typography.fontSize.sm,
     color: colors.textSecondary,
+  },
+  registerBtn: {
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   registerLink: {
     fontSize: typography.fontSize.sm,

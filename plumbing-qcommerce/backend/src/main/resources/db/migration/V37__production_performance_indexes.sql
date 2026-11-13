@@ -13,3 +13,4 @@ CREATE INDEX IF NOT EXISTS idx_stocks_store_product
 CREATE INDEX IF NOT EXISTS idx_outbox_events_unprocessed
     ON outbox_events (processed, created_at)
     WHERE processed = false;
+

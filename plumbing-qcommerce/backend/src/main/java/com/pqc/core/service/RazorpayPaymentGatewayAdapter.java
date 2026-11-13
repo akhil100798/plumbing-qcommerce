@@ -220,8 +220,11 @@ public class RazorpayPaymentGatewayAdapter implements PaymentGatewayAdapter {
             return MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8),
                     signatureHeader.trim().getBytes(StandardCharsets.UTF_8));
         }
-        // In sandbox simulation when no secret is configured, only accept sandbox signatures
-        return signatureHeader.startsWith("sim_") || "valid_signature".equals(signatureHeader);
+        // In sandbox simulation when no secret is configured, only accept sandbox signatures if not live configured
+        if (!isLiveConfigured()) {
+            return signatureHeader.startsWith("sim_") || "valid_signature".equals(signatureHeader);
+        }
+        return false;
     }
 
     private String basicAuthHeader() {
