@@ -1,6 +1,7 @@
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
+const { redis } = require('../services/redisService');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
@@ -51,14 +52,43 @@ const socketAuth = async (socket, next) => {
     try {
         // 1. Verify signature, expiry, and secret validity
         const verified = jwt.verify(cleanToken, EFFECTIVE_SECRET);
+        const userIdentifier = verified.sub || verified.id;
 
-        // 2. Query backend to fetch user profile details using the token
-        const userResponse = await axios.get(`${BACKEND_URL}/api/v1/users/me`, {
-            headers: { Authorization: `Bearer ${cleanToken}` },
-            timeout: 5000 // 5 seconds timeout
-        });
+        // Check Redis cache for user details (60s TTL)
+        let user = null;
+        const userCacheKey = `auth:user:${userIdentifier}`;
+        try {
+            if (redis && typeof redis.get === 'function') {
+                const cachedUser = await redis.get(userCacheKey);
+                if (cachedUser) {
+                    const parsed = JSON.parse(cachedUser);
+                    if (parsed && typeof parsed === 'object' && parsed.id) {
+                        user = parsed;
+                    }
+                }
+            }
+        } catch (cacheErr) {
+            console.warn(`[AUTH CACHE WARN] Redis read failed for ${userCacheKey}:`, cacheErr.message);
+        }
 
-        const user = userResponse.data;
+        // 2. Query backend to fetch user profile details using the token if not cached
+        if (!user) {
+            const userResponse = await axios.get(`${BACKEND_URL}/api/v1/users/me`, {
+                headers: { Authorization: `Bearer ${cleanToken}` },
+                timeout: 5000 // 5 seconds timeout
+            });
+            user = userResponse.data;
+            if (user && user.status !== 'INACTIVE') {
+                try {
+                    if (redis && typeof redis.set === 'function') {
+                        await redis.set(userCacheKey, JSON.stringify(user), 'EX', 60);
+                    }
+                } catch (cacheErr) {
+                    console.warn(`[AUTH CACHE WARN] Redis write failed for ${userCacheKey}:`, cacheErr.message);
+                }
+            }
+        }
+
         if (!user || user.status === 'INACTIVE') {
             console.error(`Socket Auth Failed: User is inactive or not found for email ${verified.sub}`);
             return next(new Error("Authentication error: User inactive or not found"));
@@ -80,23 +110,43 @@ const socketAuth = async (socket, next) => {
         } else if (user.role === 'DELIVERY_PARTNER') {
             socketUser.partnerId = user.id;
         } else if (user.role === 'STORE_MANAGER') {
-            // Fetch all stores to find the one managed by this user
+            const storeCacheKey = `auth:store:${user.id}`;
+            let cachedStoreId = null;
             try {
-                const storesResponse = await axios.get(`${BACKEND_URL}/api/v1/stores`, {
-                    headers: { Authorization: `Bearer ${cleanToken}` },
-                    timeout: 5000
-                });
-                const stores = storesResponse.data || [];
-                const managedStore = stores.find(s => s.manager && s.manager.id === user.id);
-                if (managedStore) {
-                    socketUser.storeId = managedStore.id;
-                } else {
-                    console.warn(`Socket Auth Warning: Store manager ${user.email} (ID: ${user.id}) does not manage any store.`);
+                if (redis && typeof redis.get === 'function') {
+                    cachedStoreId = await redis.get(storeCacheKey);
+                }
+            } catch (cacheErr) {
+                console.warn(`[AUTH CACHE WARN] Redis read failed for ${storeCacheKey}:`, cacheErr.message);
+            }
+
+            if (cachedStoreId !== null) {
+                socketUser.storeId = cachedStoreId === 'NONE' ? null : cachedStoreId;
+            } else {
+                // Fetch all stores to find the one managed by this user
+                try {
+                    const storesResponse = await axios.get(`${BACKEND_URL}/api/v1/stores`, {
+                        headers: { Authorization: `Bearer ${cleanToken}` },
+                        timeout: 5000
+                    });
+                    const stores = storesResponse.data || [];
+                    const managedStore = stores.find(s => s.manager && s.manager.id === user.id);
+                    if (managedStore) {
+                        socketUser.storeId = managedStore.id;
+                        if (redis && typeof redis.set === 'function') {
+                            await redis.set(storeCacheKey, managedStore.id, 'EX', 60).catch(() => {});
+                        }
+                    } else {
+                        console.warn(`Socket Auth Warning: Store manager ${user.email} (ID: ${user.id}) does not manage any store.`);
+                        socketUser.storeId = null;
+                        if (redis && typeof redis.set === 'function') {
+                            await redis.set(storeCacheKey, 'NONE', 'EX', 60).catch(() => {});
+                        }
+                    }
+                } catch (storeErr) {
+                    console.error("Socket Auth Error: Failed to resolve storeId for manager:", storeErr.message);
                     socketUser.storeId = null;
                 }
-            } catch (storeErr) {
-                console.error("Socket Auth Error: Failed to resolve storeId for manager:", storeErr.message);
-                socketUser.storeId = null;
             }
         }
 

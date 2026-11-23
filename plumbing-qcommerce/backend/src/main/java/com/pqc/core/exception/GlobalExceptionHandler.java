@@ -149,14 +149,18 @@ public class GlobalExceptionHandler {
         ));
     }
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex) {
-        log.error("Unhandled exception occurred: ", ex);
-        String msg = ex.getMessage();
+    public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex, HttpServletRequest request) {
+        String correlationId = request != null ? request.getHeader("X-Correlation-ID") : null;
+        if (correlationId == null || correlationId.isBlank()) {
+            correlationId = UUID.randomUUID().toString();
+        }
+        log.error("[ERROR-500] CorrelationId={}: Unhandled exception occurred", correlationId, ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
             "timestamp", LocalDateTime.now().toString(),
             "status", 500,
             "error", "Internal Server Error",
-            "message", msg != null ? msg : "An unexpected error occurred."
+            "message", "Internal server error",
+            "correlationId", correlationId
         ));
     }
 }

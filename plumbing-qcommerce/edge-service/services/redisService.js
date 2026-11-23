@@ -41,7 +41,7 @@ if (process.env.MOCK_EDGE === 'true') {
             return 'OK';
         },
         get: async (key) => {
-            const val = mockStore.get(key) || '1234';
+            const val = mockStore.get(key) || (key.startsWith('otp:') ? '1234' : null);
             console.log(`[MOCK REDIS] GET ${key} => ${key.startsWith('otp:') ? '[MASKED]' : val}`);
             return val;
         },
