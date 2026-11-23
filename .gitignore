@@ -13,6 +13,9 @@ plumbing-qcommerce/plumbing-qcommerce/
 # Temporary dumps & agent caches
 tmp_*.txt
 .agents/
+*.tsbuildinfo
+.next/
+dist/
 
 # Staging test photo binaries
 plumbing-qcommerce/backend/uploads/service-order-photos/*.jpg

@@ -2,9 +2,9 @@ name: PlumbCommerce CI/CD Release Gates
 
 on:
   push:
-    branches: [ main, master, phase12e-mobile-release-gates ]
+    branches: [ main, master, Development, Development-2, phase12e-mobile-release-gates ]
   pull_request:
-    branches: [ main, master, phase12e-mobile-release-gates ]
+    branches: [ main, master, Development, Development-2, phase12e-mobile-release-gates ]
 
 jobs:
   backend-gate:
