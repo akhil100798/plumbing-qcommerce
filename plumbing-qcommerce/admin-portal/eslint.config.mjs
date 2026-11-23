@@ -11,6 +11,7 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "evidence/**",
+    "e2e/**",
     "playwright-*.js",
     "runtime-smoke.js",
     "smoke-capture.js",

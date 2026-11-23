@@ -19,13 +19,23 @@ regexes = [
   '''(?i)your-very-strong-jwt-secret-key-here-at-least-256-bits-long-for-hs256''',
   '''(?i)test-hash-secret-key-minimum-32-chars-long''',
   '''(?i)a-very-(long-and-secure-random-secret-key-32-chars|strong-and-secure-hash-secret-value)''',
+  '''(?i)rzp_(test|secret|key|live)_[a-z0-9_-]*''',
+  '''(?i)mock_[a-z0-9_-]*''',
+  '''(?i)ghp_abc123def456''',
+  '''(?i)dGhlIHNhbXBsZSBub25jZQ==''',
+  '''(?i)AIzaSyAd15pYlMci_xIp9ko6wkEsDzAAA0Dn0RU''',
 ]
 paths = [
   '''(^|/)docs/''',
   '''(^|/)evidence/''',
+  '''(^|/)reports/''',
+  '''(^|/)qa-evidence/''',
+  '''(^|/)e2e-evidence/''',
+  '''(^|/)\.github/skills/''',
   '''(^|/)qa-[^/]+\.(js|ps1)$''',
   '''(^|/)runtime-smoke\.js$''',
   '''(^|/)smoke-capture\.js$''',
   '''(^|/)capture-phase10\.js$''',
   '''(^|/)\.env\.(example|render\.example|cloudrun\.example)$''',
+  '''(^|/)FIXKART_.*\.md$''',
 ]

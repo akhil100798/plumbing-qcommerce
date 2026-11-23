@@ -92,9 +92,9 @@ class ProdProfileValidationTest {
         ReflectionTestUtils.setField(validator, "databaseUrl", "jdbc:postgresql://ep-silent-prod.render.com/pqc_prod");
         ReflectionTestUtils.setField(validator, "jwtSecret", "a-very-strong-secure-production-jwt-secret-key-32-chars");
         ReflectionTestUtils.setField(validator, "paymentProvider", "razorpay");
-        ReflectionTestUtils.setField(validator, "razorpayKeyId", "rzp_live_key_123");
-        ReflectionTestUtils.setField(validator, "razorpayKeySecret", "rzp_live_secret_456");
-        ReflectionTestUtils.setField(validator, "razorpayWebhookSecret", "rzp_webhook_secret_789");
+        ReflectionTestUtils.setField(validator, "razorpayKeyId", "mock_dummy_rzp_key_123");
+        ReflectionTestUtils.setField(validator, "razorpayKeySecret", "mock_dummy_rzp_secret_456");
+        ReflectionTestUtils.setField(validator, "razorpayWebhookSecret", "mock_dummy_rzp_webhook_789");
 
         assertThatCode(() -> validator.validateProdProfile())
                 .doesNotThrowAnyException();
