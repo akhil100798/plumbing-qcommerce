@@ -1,5 +1,7 @@
 package com.pqc.core.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pqc.core.dto.PaymentRequest;
 import com.pqc.core.dto.PaymentResponse;
 import com.pqc.core.entity.OrderStatus;
@@ -11,6 +13,7 @@ import com.pqc.core.repository.ServiceOrderRepository;
 import com.pqc.core.security.CurrentUser;
 import com.pqc.core.service.CodPaymentGatewayAdapter;
 import com.pqc.core.service.LaunchPolicyService;
+import com.pqc.core.service.PaymentFinalizationService;
 import com.pqc.core.service.PaymentGatewayAdapter;
 import com.pqc.core.service.PaymentOperationService;
 import com.pqc.core.service.PaymentService;
@@ -46,11 +49,13 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final PaymentOperationService operationService;
+    private final PaymentFinalizationService finalizationService;
     private final ServiceOrderRepository orderRepository;
     private final CurrentUser currentUser;
     private final LaunchPolicyService launchPolicyService;
     private final PaymentGatewayAdapter paymentGatewayAdapter;
     private final RazorpayPaymentGatewayAdapter razorpayAdapter;
+    private final ObjectMapper objectMapper;
 
     @Value("${payment.razorpay.webhook-secret:${app.payment.razorpay.webhook-secret:${RAZORPAY_WEBHOOK_SECRET:}}}")
     private String webhookSecret;
@@ -59,18 +64,33 @@ public class PaymentController {
     public PaymentController(
             PaymentService paymentService,
             PaymentOperationService operationService,
+            @Autowired(required = false) PaymentFinalizationService finalizationService,
             ServiceOrderRepository orderRepository,
             CurrentUser currentUser,
             LaunchPolicyService launchPolicyService,
             PaymentGatewayAdapter paymentGatewayAdapter,
-            @Autowired(required = false) RazorpayPaymentGatewayAdapter razorpayAdapter) {
+            @Autowired(required = false) RazorpayPaymentGatewayAdapter razorpayAdapter,
+            @Autowired(required = false) ObjectMapper objectMapper) {
         this.paymentService = paymentService;
         this.operationService = operationService;
+        this.finalizationService = finalizationService;
         this.orderRepository = orderRepository;
         this.currentUser = currentUser;
         this.launchPolicyService = launchPolicyService;
         this.paymentGatewayAdapter = paymentGatewayAdapter;
         this.razorpayAdapter = razorpayAdapter;
+        this.objectMapper = (objectMapper != null) ? objectMapper : new ObjectMapper();
+    }
+
+    public PaymentController(
+            PaymentService paymentService,
+            PaymentOperationService operationService,
+            ServiceOrderRepository orderRepository,
+            CurrentUser currentUser,
+            LaunchPolicyService launchPolicyService,
+            PaymentGatewayAdapter paymentGatewayAdapter,
+            RazorpayPaymentGatewayAdapter razorpayAdapter) {
+        this(paymentService, operationService, null, orderRepository, currentUser, launchPolicyService, paymentGatewayAdapter, razorpayAdapter, null);
     }
 
     /**
@@ -107,11 +127,19 @@ public class PaymentController {
                     "message", "Order must be in COMPLETED or CUSTOMER_CONFIRMED status to initiate checkout."));
         }
 
-        BigDecimal amount = (request.getAmount() != null) ? request.getAmount() : order.getTotalAmount();
+        BigDecimal amount = order.getTotalAmount();
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
                     "status", "FAILED",
                     "message", "Order has no payable amount."));
+        }
+
+        if (request.getAmount() != null && request.getAmount().compareTo(amount) != 0) {
+            log.warn("[PAYMENT-INITIATE] Client tampered payment amount for order #{}: requested='{}' vs order='{}'",
+                    order.getId(), request.getAmount(), amount);
+            return ResponseEntity.badRequest().body(Map.of(
+                    "status", "FAILED",
+                    "message", "Payment amount does not match the order amount."));
         }
 
         String currency = (request.getCurrency() != null && !request.getCurrency().isBlank())
@@ -230,10 +258,11 @@ public class PaymentController {
     }
 
     /**
-     * Webhook endpoint verifying X-Razorpay-Signature HMAC SHA-256 against webhook secret.
+     * Webhook endpoint verifying X-Razorpay-Signature HMAC SHA-256 against webhook secret
+     * and idempotently mutating payment and order states.
      */
     @PostMapping(value = {"/webhook", "/webhook/razorpay", "/webhooks/razorpay"})
-    @Operation(summary = "Razorpay Webhook Handler", description = "Verifies HMAC SHA-256 signature against webhook secret.")
+    @Operation(summary = "Razorpay Webhook Handler", description = "Verifies HMAC SHA-256 signature against webhook secret and mutates state idempotently.")
     public ResponseEntity<Map<String, Object>> handleWebhook(
             @RequestHeader(value = "X-Razorpay-Signature", required = false) String signatureHeader,
             @RequestBody String rawPayload) {
@@ -261,11 +290,140 @@ public class PaymentController {
             ));
         }
 
-        log.info("[PAYMENT-WEBHOOK] Webhook successfully verified. Payload length: {} bytes.", rawPayload != null ? rawPayload.length() : 0);
-        return ResponseEntity.ok(Map.of(
-                "status", "ok",
-                "message", "Webhook verified and processed"
-        ));
+        log.info("[PAYMENT-WEBHOOK] Webhook signature verified. Processing payload...");
+
+        try {
+            processWebhookPayload(rawPayload);
+            return ResponseEntity.ok(Map.of(
+                    "status", "ok",
+                    "message", "Webhook verified and processed"
+            ));
+        } catch (Exception e) {
+            log.error("[PAYMENT-WEBHOOK] Error processing webhook event: {}", e.getMessage(), e);
+            // Never leak raw exception traces in webhook responses
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", "error",
+                    "message", "Failed to process webhook event"
+            ));
+        }
+    }
+
+    private void processWebhookPayload(String rawPayload) throws Exception {
+        if (rawPayload == null || rawPayload.isBlank()) {
+            return;
+        }
+
+        JsonNode root = objectMapper.readTree(rawPayload);
+        String event = root.path("event").asText("");
+        log.info("[PAYMENT-WEBHOOK] Processing event: {}", event);
+
+        JsonNode paymentEntity = root.path("payload").path("payment").path("entity");
+        JsonNode orderEntity = root.path("payload").path("order").path("entity");
+
+        Long orderId = extractOrderId(paymentEntity, orderEntity);
+        String paymentId = paymentEntity.path("id").asText(null);
+
+        switch (event) {
+            case "payment.captured", "order.paid" -> {
+                if (orderId == null) {
+                    log.warn("[PAYMENT-WEBHOOK] Event {} missing orderId in notes", event);
+                    return;
+                }
+                handlePaymentCaptured(orderId, paymentId);
+            }
+            case "payment.failed" -> {
+                if (orderId != null) {
+                    String reason = paymentEntity.path("error_description").asText("Payment failed on gateway");
+                    handlePaymentFailed(orderId, reason);
+                }
+            }
+            case "refund.processed" -> {
+                log.info("[PAYMENT-WEBHOOK] Refund processed for order #{} payment {}", orderId, paymentId);
+            }
+            default -> {
+                log.info("[PAYMENT-WEBHOOK] Unhandled event type: {}", event);
+            }
+        }
+    }
+
+    private Long extractOrderId(JsonNode paymentEntity, JsonNode orderEntity) {
+        if (!paymentEntity.isMissingNode()) {
+            JsonNode notes = paymentEntity.path("notes");
+            if (notes.has("order_id")) {
+                try {
+                    return Long.valueOf(notes.get("order_id").asText());
+                } catch (NumberFormatException ignored) {}
+            }
+            if (notes.has("serviceOrderId")) {
+                try {
+                    return Long.valueOf(notes.get("serviceOrderId").asText());
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        if (!orderEntity.isMissingNode()) {
+            JsonNode notes = orderEntity.path("notes");
+            if (notes.has("order_id")) {
+                try {
+                    return Long.valueOf(notes.get("order_id").asText());
+                } catch (NumberFormatException ignored) {}
+            }
+            if (notes.has("serviceOrderId")) {
+                try {
+                    return Long.valueOf(notes.get("serviceOrderId").asText());
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        return null;
+    }
+
+    private void handlePaymentCaptured(Long orderId, String transactionId) {
+        ServiceOrder order = orderRepository.findById(orderId).orElse(null);
+        if (order == null) {
+            log.warn("[PAYMENT-WEBHOOK] Order #{} not found during payment capture webhook", orderId);
+            return;
+        }
+
+        // Idempotent state check: if order is already PAID, return without double mutation
+        if (order.getStatus() == OrderStatus.PAID) {
+            log.info("[PAYMENT-WEBHOOK] Order #{} is already in PAID status. Idempotent webhook no-op.", orderId);
+            return;
+        }
+
+        String effectiveTxId = (transactionId != null && !transactionId.isBlank())
+                ? transactionId
+                : ("rzp_hook_" + orderId);
+
+        BigDecimal amount = order.getTotalAmount();
+        String currency = launchPolicyService.authoritativeCurrency();
+
+        PaymentOperation operation = operationService.getOrCreate(order.getId(), amount, currency);
+        if (operation.getStatus() == PaymentOperationStatus.CAPTURED) {
+            log.info("[PAYMENT-WEBHOOK] Payment operation #{} already CAPTURED. Idempotent webhook no-op.", operation.getId());
+            return;
+        }
+
+        PaymentOperationService.CaptureClaim claim = operationService.claimCapture(operation);
+        PaymentOperation claimed = claim.operation();
+
+        if (claimed.getStatus() == PaymentOperationStatus.CAPTURED) {
+            log.info("[PAYMENT-WEBHOOK] Claimed payment operation #{} already CAPTURED. Idempotent webhook no-op.", claimed.getId());
+            return;
+        }
+
+        finalizationService.finalizeCapture(claimed.getId(), effectiveTxId);
+        log.info("[PAYMENT-WEBHOOK] Successfully finalized payment capture for order #{} with transaction {}",
+                orderId, effectiveTxId);
+    }
+
+    private void handlePaymentFailed(Long orderId, String reason) {
+        Optional<PaymentOperation> operationOpt = operationService.findByOrderId(orderId);
+        operationOpt.ifPresent(op -> {
+            if (op.getStatus() != PaymentOperationStatus.CAPTURED) {
+                operationService.markFailed(op.getId(), reason);
+                log.info("[PAYMENT-WEBHOOK] Marked payment operation #{} failed for order #{}: {}",
+                        op.getId(), orderId, reason);
+            }
+        });
     }
 
     private boolean verifyWebhookHmac(String rawPayload, String signatureHeader) {

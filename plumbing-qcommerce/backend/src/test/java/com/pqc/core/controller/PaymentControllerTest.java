@@ -32,6 +32,7 @@ class PaymentControllerTest {
 
     @Mock private PaymentService paymentService;
     @Mock private PaymentOperationService operationService;
+    @Mock private PaymentFinalizationService finalizationService;
     @Mock private ServiceOrderRepository orderRepository;
     @Mock private CurrentUser currentUser;
     @Mock private LaunchPolicyService launchPolicyService;
@@ -47,11 +48,13 @@ class PaymentControllerTest {
         controller = new PaymentController(
                 paymentService,
                 operationService,
+                finalizationService,
                 orderRepository,
                 currentUser,
                 launchPolicyService,
                 paymentGatewayAdapter,
-                razorpayAdapter
+                razorpayAdapter,
+                new com.fasterxml.jackson.databind.ObjectMapper()
         );
         ReflectionTestUtils.setField(controller, "webhookSecret", webhookSecret);
     }
@@ -237,6 +240,165 @@ class PaymentControllerTest {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().get("status")).isEqualTo("ok");
         assertThat(response.getBody().get("message")).isEqualTo("Webhook verified and processed");
+    }
+
+    @Test
+    void initiateCheckout_withTamperedAmount_returnsBadRequest() {
+        User customer = User.builder().id(77L).role(Role.CUSTOMER).build();
+        ServiceOrder order = ServiceOrder.builder()
+                .id(80L)
+                .customer(customer)
+                .status(OrderStatus.CUSTOMER_CONFIRMED)
+                .totalAmount(new BigDecimal("1200.00"))
+                .build();
+
+        when(orderRepository.findById(80L)).thenReturn(Optional.of(order));
+        when(currentUser.require()).thenReturn(User.builder().id(77L).email("cust@fixkart.com").role(Role.CUSTOMER).build());
+
+        // Client attempts to supply a reduced/tampered amount (₹10 instead of ₹1200)
+        PaymentRequest request = PaymentRequest.builder()
+                .orderId(80L)
+                .amount(new BigDecimal("10.00"))
+                .build();
+
+        ResponseEntity<?> response = controller.initiateCheckout(request, null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        Map<?, ?> body = (Map<?, ?>) response.getBody();
+        assertThat(body).isNotNull();
+        assertThat(body.get("status")).isEqualTo("FAILED");
+        assertThat(body.get("message")).isEqualTo("Payment amount does not match the order amount.");
+        verify(razorpayAdapter, never()).createCheckoutOrder(any(), any(), any());
+    }
+
+    @Test
+    void webhook_withValidCapturedEvent_mutatesStateIdempotently() {
+        String payload = """
+                {
+                    "event": "payment.captured",
+                    "payload": {
+                        "payment": {
+                            "entity": {
+                                "id": "pay_live_test_789",
+                                "amount": 120000,
+                                "currency": "INR",
+                                "notes": {
+                                    "order_id": "85"
+                                }
+                            }
+                        }
+                    }
+                }
+                """;
+
+        when(razorpayAdapter.verifyWebhookSignature(payload, "valid_sig_header")).thenReturn(true);
+
+        ServiceOrder order = ServiceOrder.builder()
+                .id(85L)
+                .status(OrderStatus.COMPLETED)
+                .totalAmount(new BigDecimal("1200.00"))
+                .build();
+        when(orderRepository.findById(85L)).thenReturn(Optional.of(order));
+        when(launchPolicyService.authoritativeCurrency()).thenReturn("INR");
+
+        PaymentOperation initialOp = PaymentOperation.builder()
+                .id(101L)
+                .serviceOrderId(85L)
+                .status(PaymentOperationStatus.INITIATED)
+                .amount(new BigDecimal("1200.00"))
+                .currency("INR")
+                .build();
+
+        PaymentOperation claimedOp = PaymentOperation.builder()
+                .id(101L)
+                .serviceOrderId(85L)
+                .status(PaymentOperationStatus.CAPTURE_IN_PROGRESS)
+                .amount(new BigDecimal("1200.00"))
+                .currency("INR")
+                .build();
+
+        when(operationService.getOrCreate(85L, new BigDecimal("1200.00"), "INR")).thenReturn(initialOp);
+        when(operationService.claimCapture(initialOp)).thenReturn(new PaymentOperationService.CaptureClaim(claimedOp, true));
+
+        ResponseEntity<Map<String, Object>> response = controller.handleWebhook("valid_sig_header", payload);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().get("status")).isEqualTo("ok");
+        verify(finalizationService, times(1)).finalizeCapture(101L, "pay_live_test_789");
+    }
+
+    @Test
+    void webhook_duplicateCapturedDelivery_isIdempotentNoDoubleMutation() {
+        String payload = """
+                {
+                    "event": "payment.captured",
+                    "payload": {
+                        "payment": {
+                            "entity": {
+                                "id": "pay_live_test_789",
+                                "amount": 120000,
+                                "currency": "INR",
+                                "notes": {
+                                    "order_id": "86"
+                                }
+                            }
+                        }
+                    }
+                }
+                """;
+
+        when(razorpayAdapter.verifyWebhookSignature(payload, "valid_sig_header")).thenReturn(true);
+
+        // Order is already PAID from a previous delivery
+        ServiceOrder order = ServiceOrder.builder()
+                .id(86L)
+                .status(OrderStatus.PAID)
+                .totalAmount(new BigDecimal("1200.00"))
+                .build();
+        when(orderRepository.findById(86L)).thenReturn(Optional.of(order));
+
+        ResponseEntity<Map<String, Object>> response = controller.handleWebhook("valid_sig_header", payload);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().get("status")).isEqualTo("ok");
+        // Verify no double mutation occurred
+        verify(finalizationService, never()).finalizeCapture(any(), any());
+    }
+
+    @Test
+    void webhook_withPaymentFailedEvent_marksOperationFailed() {
+        String payload = """
+                {
+                    "event": "payment.failed",
+                    "payload": {
+                        "payment": {
+                            "entity": {
+                                "id": "pay_fail_111",
+                                "error_description": "Bank servers down",
+                                "notes": {
+                                    "order_id": "87"
+                                }
+                            }
+                        }
+                    }
+                }
+                """;
+
+        when(razorpayAdapter.verifyWebhookSignature(payload, "valid_sig_header")).thenReturn(true);
+
+        PaymentOperation operation = PaymentOperation.builder()
+                .id(102L)
+                .serviceOrderId(87L)
+                .status(PaymentOperationStatus.INITIATED)
+                .build();
+        when(operationService.findByOrderId(87L)).thenReturn(Optional.of(operation));
+
+        ResponseEntity<Map<String, Object>> response = controller.handleWebhook("valid_sig_header", payload);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(operationService, times(1)).markFailed(102L, "Bank servers down");
     }
 
     @Test
