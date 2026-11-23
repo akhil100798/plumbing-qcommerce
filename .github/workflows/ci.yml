@@ -113,6 +113,15 @@ jobs:
           cd plumbing-qcommerce/${{ matrix.app-directory }}
           npm ci
 
+      - name: Ensure Linux native Rolldown binding
+        if: runner.os == 'Linux'
+        run: |
+          cd plumbing-qcommerce/${{ matrix.app-directory }}
+          if [ -f node_modules/rolldown/package.json ]; then
+            ROLLDOWN_VER=$(node -p "require('./node_modules/rolldown/package.json').version")
+            node -e "require.resolve('@rolldown/binding-linux-x64-gnu')" 2>/dev/null || npm install --no-save "@rolldown/binding-linux-x64-gnu@${ROLLDOWN_VER}"
+          fi
+
       - name: Run typecheck
         run: |
           cd plumbing-qcommerce/${{ matrix.app-directory }}

@@ -41,6 +41,15 @@ jobs:
         working-directory: ${{ matrix.path }}
         run: npm ci
 
+      - name: Ensure Linux native Rolldown binding
+        if: runner.os == 'Linux'
+        working-directory: ${{ matrix.path }}
+        run: |
+          if [ -f node_modules/rolldown/package.json ]; then
+            ROLLDOWN_VER=$(node -p "require('./node_modules/rolldown/package.json').version")
+            node -e "require.resolve('@rolldown/binding-linux-x64-gnu')" 2>/dev/null || npm install --no-save "@rolldown/binding-linux-x64-gnu@${ROLLDOWN_VER}"
+          fi
+
       - name: Typecheck
         working-directory: ${{ matrix.path }}
         run: npm run typecheck
