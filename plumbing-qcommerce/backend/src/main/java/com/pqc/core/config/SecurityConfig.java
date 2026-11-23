@@ -35,7 +35,7 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
 
     private static final Pattern VERCEL_PREVIEW_PATTERN =
-            Pattern.compile("^https://fixkart(?:-[a-zA-Z0-9-]+)*(?:\\.[a-zA-Z0-9-]+)*\\.vercel\\.app$");
+            Pattern.compile("^https://(?:fixkart(?:-[a-zA-Z0-9-]+)*|admin-portal-ten-weld(?:-[a-zA-Z0-9-]+)*)(?:\\.[a-zA-Z0-9-]+)*\\.vercel\\.app$");
 
     @Value("${app.cors.allowed-origins:http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3101,http://localhost:19007,http://localhost:19008,http://localhost:19009,http://127.0.0.1:8081,http://127.0.0.1:8082,http://127.0.0.1:8083,http://127.0.0.1:8084,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002,http://127.0.0.1:3101}")
     private String allowedOrigins;
