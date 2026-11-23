@@ -10,7 +10,9 @@ services:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
       - key: APP_SCHEDULING_ENABLED
-        value: false
+        value: true
+      - key: APP_SCHEDULING_CORE_ENABLED
+        value: true
       # Seeding is disabled on production Render deployment to preserve data integrity
       # and satisfy SeedProperties / DatabaseIsolationRuntimeGuard.
       - key: APP_DEMO_SEED_ENABLED
