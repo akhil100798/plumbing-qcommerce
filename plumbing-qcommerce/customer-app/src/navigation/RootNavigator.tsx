@@ -41,6 +41,8 @@ export function RootNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator
+      id="root"
+        id="RootStack"
         screenOptions={{
           headerShown: false,
         }}

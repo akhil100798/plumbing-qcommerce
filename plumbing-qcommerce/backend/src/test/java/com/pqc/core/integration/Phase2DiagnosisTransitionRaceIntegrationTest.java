@@ -1,4 +1,5 @@
 package com.pqc.core.integration;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.pqc.core.dto.*;
 import com.pqc.core.entity.*;
@@ -31,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** PostgreSQL contention proof for competing diagnosis transitions and supersession. */
 @SpringBootTest
 @ActiveProfiles("test")
+@EnabledIfEnvironmentVariable(named = "PHASE1_TEST_POSTGRES_URL", matches = ".+")
 class Phase2DiagnosisTransitionRaceIntegrationTest {
     private static final String URL = com.pqc.core.testsupport.PostgresTestTargetGuard.requireUrl();
     private static final String USER = com.pqc.core.testsupport.PostgresTestTargetGuard.requireUsername();

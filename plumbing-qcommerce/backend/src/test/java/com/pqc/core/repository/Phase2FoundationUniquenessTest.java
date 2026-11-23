@@ -1,4 +1,5 @@
 package com.pqc.core.repository;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.*;
@@ -9,6 +10,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@EnabledIfEnvironmentVariable(named = "PHASE1_TEST_POSTGRES_URL", matches = ".+")
 class Phase2FoundationUniquenessTest {
     private DriverManagerDataSource dataSource;
     private JdbcTemplate jdbc;

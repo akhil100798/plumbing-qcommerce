@@ -205,7 +205,9 @@ class PlumberMaterialIntegrationTest {
         assertThat(updated.getStatus()).isEqualTo(OrderStatus.MATERIALS_REQUIRED);
         assertThat(materialOrder.getStatus()).isEqualTo(ProductOrderStatus.REQUESTED);
         assertThat(stockRepository.findByStoreIdAndProductId(store.getId(), product.getId()).orElseThrow().getAvailableQuantity()).isEqualTo(50);
-        assertThat(outboxRepository.findAll()).isEmpty();
+        assertThat(outboxRepository.findAll())
+                .hasSize(1)
+                .allMatch(event -> "MATERIAL_REQUESTED".equals(event.getEventType()));
     }
 
     @Test

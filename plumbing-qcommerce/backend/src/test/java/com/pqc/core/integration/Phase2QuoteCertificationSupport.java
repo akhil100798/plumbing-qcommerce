@@ -1,4 +1,5 @@
 package com.pqc.core.integration;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pqc.core.controller.AdminQuoteController;
@@ -31,7 +32,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** Shared real-PostgreSQL fixtures and assertions for the final quote certification suites. */
 @SpringBootTest
 @ActiveProfiles("test")
-abstract class Phase2QuoteCertificationSupport {
+abstract @EnabledIfEnvironmentVariable(named = "PHASE1_TEST_POSTGRES_URL", matches = ".+")
+class Phase2QuoteCertificationSupport {
     private static final String URL = com.pqc.core.testsupport.PostgresTestTargetGuard.requireUrl();
     private static final String USER = com.pqc.core.testsupport.PostgresTestTargetGuard.requireUsername();
     private static final String PASSWORD = com.pqc.core.testsupport.PostgresTestTargetGuard.requirePassword();

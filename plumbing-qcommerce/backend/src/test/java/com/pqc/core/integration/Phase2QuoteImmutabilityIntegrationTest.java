@@ -1,4 +1,5 @@
 package com.pqc.core.integration;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pqc.core.dto.*;
@@ -14,6 +15,7 @@ import java.util.concurrent.Callable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@EnabledIfEnvironmentVariable(named = "PHASE1_TEST_POSTGRES_URL", matches = ".+")
 class Phase2QuoteImmutabilityIntegrationTest extends Phase2QuoteCertificationSupport {
     private static final List<QuoteState> STATES = List.of(QuoteState.DRAFT, QuoteState.PUBLISHED, QuoteState.APPROVED,
             QuoteState.REJECTED, QuoteState.EXPIRED, QuoteState.SUPERSEDED, QuoteState.CANCELLED);

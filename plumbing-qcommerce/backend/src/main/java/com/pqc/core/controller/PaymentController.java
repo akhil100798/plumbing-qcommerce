@@ -206,46 +206,55 @@ public class PaymentController {
         // Enforce idempotency and replay guards when X-Idempotency-Key is provided
         if (idempotencyKey != null && !idempotencyKey.isBlank()) {
             String cleanKey = idempotencyKey.trim();
-            Optional<PaymentOperation> existingOpt = operationService.findByOrderId(request.getOrderId());
-            if (existingOpt.isPresent()) {
-                PaymentOperation existing = existingOpt.get();
-                // Check if the key conflicts with an already recorded operation for this order
-                if (existing.getIdempotencyKey() != null && !existing.getIdempotencyKey().equals(cleanKey)) {
-                    log.warn("[PAYMENT-IDEMPOTENCY] Conflicting idempotency key for order #{}: existing='{}' vs provided='{}'",
-                            request.getOrderId(), existing.getIdempotencyKey(), cleanKey);
-                    return ResponseEntity.status(HttpStatus.CONFLICT).body(PaymentResponse.builder()
-                            .status("FAILED")
-                            .message("Conflicting idempotency key for order #" + request.getOrderId())
-                            .build());
+            synchronized (("payment-order-lock:" + request.getOrderId()).intern()) {
+                Optional<PaymentOperation> existingOpt = operationService.findByOrderId(request.getOrderId());
+                if (existingOpt.isPresent()) {
+                    PaymentOperation existing = existingOpt.get();
+                    // Check if the key conflicts with an already recorded operation for this order
+                    if (existing.getIdempotencyKey() != null && !existing.getIdempotencyKey().equals(cleanKey)) {
+                        log.warn("[PAYMENT-IDEMPOTENCY] Conflicting idempotency key for order #{}: existing='{}' vs provided='{}'",
+                                request.getOrderId(), existing.getIdempotencyKey(), cleanKey);
+                        return ResponseEntity.status(HttpStatus.CONFLICT).body(PaymentResponse.builder()
+                                .status("FAILED")
+                                .message("Conflicting idempotency key for order #" + request.getOrderId())
+                                .build());
+                    }
+                    // Check if already captured -> Idempotent replay: return cached success response
+                    if (existing.getStatus() == PaymentOperationStatus.CAPTURED) {
+                        log.info("[PAYMENT-IDEMPOTENCY] Idempotent replay detected for order #{} with key '{}'",
+                                request.getOrderId(), cleanKey);
+                        return ResponseEntity.ok(PaymentResponse.builder()
+                                .transactionId(existing.getGatewayTransactionId())
+                                .status("SUCCESS")
+                                .message("Payment captured successfully via Payment Gateway.")
+                                .build());
+                    }
+                    // Check if already in progress -> Replay guard returns 409
+                    if (existing.getStatus() == PaymentOperationStatus.CAPTURE_IN_PROGRESS) {
+                        log.warn("[PAYMENT-IDEMPOTENCY] Payment capture already in progress for order #{} with key '{}'",
+                                request.getOrderId(), cleanKey);
+                        return ResponseEntity.status(HttpStatus.CONFLICT).body(PaymentResponse.builder()
+                                .status("FAILED")
+                                .message("Payment capture is already in progress.")
+                                .build());
+                    }
+                } else {
+                    // Pre-register operation with client's idempotency key
+                    ServiceOrder order = orderRepository.findById(request.getOrderId())
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
+                    BigDecimal amount = (request.getAmount() != null) ? request.getAmount() : order.getTotalAmount();
+                    String currency = (request.getCurrency() != null && !request.getCurrency().isBlank())
+                            ? request.getCurrency().trim().toUpperCase()
+                            : launchPolicyService.authoritativeCurrency();
+                    operationService.getOrCreate(order.getId(), amount, currency, cleanKey);
                 }
-                // Check if already captured -> Idempotent replay: return cached success response
-                if (existing.getStatus() == PaymentOperationStatus.CAPTURED) {
-                    log.info("[PAYMENT-IDEMPOTENCY] Idempotent replay detected for order #{} with key '{}'",
-                            request.getOrderId(), cleanKey);
-                    return ResponseEntity.ok(PaymentResponse.builder()
-                            .transactionId(existing.getGatewayTransactionId())
-                            .status("SUCCESS")
-                            .message("Payment captured successfully via Payment Gateway.")
-                            .build());
+
+                PaymentResponse response = paymentService.processPayment(request);
+                if ("SUCCESS".equals(response.getStatus())) {
+                    return ResponseEntity.ok(response);
+                } else {
+                    return ResponseEntity.badRequest().body(response);
                 }
-                // Check if already in progress -> Replay guard returns 409
-                if (existing.getStatus() == PaymentOperationStatus.CAPTURE_IN_PROGRESS) {
-                    log.warn("[PAYMENT-IDEMPOTENCY] Payment capture already in progress for order #{} with key '{}'",
-                            request.getOrderId(), cleanKey);
-                    return ResponseEntity.status(HttpStatus.CONFLICT).body(PaymentResponse.builder()
-                            .status("FAILED")
-                            .message("Payment capture is already in progress.")
-                            .build());
-                }
-            } else {
-                // Pre-register operation with client's idempotency key
-                ServiceOrder order = orderRepository.findById(request.getOrderId())
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
-                BigDecimal amount = (request.getAmount() != null) ? request.getAmount() : order.getTotalAmount();
-                String currency = (request.getCurrency() != null && !request.getCurrency().isBlank())
-                        ? request.getCurrency().trim().toUpperCase()
-                        : launchPolicyService.authoritativeCurrency();
-                operationService.getOrCreate(order.getId(), amount, currency, cleanKey);
             }
         }
 

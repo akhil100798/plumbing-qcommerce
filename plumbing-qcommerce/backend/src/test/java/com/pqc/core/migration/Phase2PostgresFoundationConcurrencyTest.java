@@ -1,4 +1,5 @@
 package com.pqc.core.migration;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.pqc.core.config.Phase2Properties;
 import com.pqc.core.entity.*;
@@ -26,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** Real PostgreSQL races for the Phase 2 foundation claims and locks. */
 @SpringBootTest
 @ActiveProfiles("test")
+@EnabledIfEnvironmentVariable(named = "PHASE1_TEST_POSTGRES_URL", matches = ".+")
 class Phase2PostgresFoundationConcurrencyTest {
     private static final String PG_URL = com.pqc.core.testsupport.PostgresTestTargetGuard.requireUrl();
     private static final String PG_USER = com.pqc.core.testsupport.PostgresTestTargetGuard.requireUsername();

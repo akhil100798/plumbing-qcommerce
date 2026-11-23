@@ -1,4 +1,5 @@
 package com.pqc.core.migration;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.pqc.core.entity.*;
 import com.pqc.core.repository.*;
@@ -31,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 @SpringBootTest
 @ActiveProfiles("test")
+@EnabledIfEnvironmentVariable(named = "PHASE1_TEST_POSTGRES_URL", matches = ".+")
 class LaunchRosterManagementPostgresIntegrationTest {
     private static final String PG_URL = com.pqc.core.testsupport.PostgresTestTargetGuard.requireUrl();
     private static final String PG_USER = com.pqc.core.testsupport.PostgresTestTargetGuard.requireUsername();

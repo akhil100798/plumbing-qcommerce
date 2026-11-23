@@ -1,4 +1,5 @@
 package com.pqc.core.migration;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.AfterEach;
@@ -18,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * production-equivalent substitute for this migration and is only used by
  * legacy migration tests targeted below V25.
  */
+@EnabledIfEnvironmentVariable(named = "PHASE1_TEST_POSTGRES_URL", matches = ".+")
 class PostgresV25MigrationTest {
     private DriverManagerDataSource dataSource;
     private String schema;

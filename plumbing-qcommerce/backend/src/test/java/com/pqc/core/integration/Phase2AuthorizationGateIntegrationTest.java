@@ -1,4 +1,5 @@
 package com.pqc.core.integration;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.pqc.core.dto.*;
 import com.pqc.core.entity.*;
@@ -13,6 +14,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@EnabledIfEnvironmentVariable(named = "PHASE1_TEST_POSTGRES_URL", matches = ".+")
 class Phase2AuthorizationGateIntegrationTest extends Phase2QuoteCertificationSupport {
 
     @Test

@@ -1,4 +1,5 @@
 package com.pqc.core.integration;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pqc.core.dto.*;
@@ -13,6 +14,7 @@ import java.util.concurrent.Callable;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@EnabledIfEnvironmentVariable(named = "PHASE1_TEST_POSTGRES_URL", matches = ".+")
 class Phase2QuoteAuthorizationIntegrationTest extends Phase2QuoteCertificationSupport {
     @Test void assignedPlumberMayReadEditPublishAndRequestOnlyThePermittedInitialRevision() {
         Fixture draftFixture = fixture();

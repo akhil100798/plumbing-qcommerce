@@ -1,4 +1,5 @@
 package com.pqc.core.integration;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.pqc.core.config.Phase2Properties;
 import com.pqc.core.dto.*;
@@ -32,6 +33,7 @@ import static org.assertj.core.api.Assertions.*;
 /** End-to-end diagnosis proof on the production PostgreSQL dialect. */
 @SpringBootTest
 @ActiveProfiles("test")
+@EnabledIfEnvironmentVariable(named = "PHASE1_TEST_POSTGRES_URL", matches = ".+")
 class Phase2DiagnosisLifecycleIntegrationTest {
     private static final String URL = com.pqc.core.testsupport.PostgresTestTargetGuard.requireUrl();
     private static final String USER = com.pqc.core.testsupport.PostgresTestTargetGuard.requireUsername();

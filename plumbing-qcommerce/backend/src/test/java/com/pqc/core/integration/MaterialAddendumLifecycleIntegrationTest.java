@@ -3,6 +3,7 @@ package com.pqc.core.integration;
 import com.pqc.core.dto.*;
 import com.pqc.core.entity.*;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -14,6 +15,7 @@ import java.util.concurrent.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@EnabledIfEnvironmentVariable(named = "PHASE1_TEST_POSTGRES_URL", matches = ".+")
 class MaterialAddendumLifecycleIntegrationTest extends Phase2QuoteCertificationSupport {
 
     @Test

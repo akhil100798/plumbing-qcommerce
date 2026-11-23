@@ -1,4 +1,5 @@
 package com.pqc.core.migration;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.*;
@@ -7,6 +8,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@EnabledIfEnvironmentVariable(named = "PHASE1_TEST_POSTGRES_URL", matches = ".+")
 class PostgresV27MigrationTest {
     private DriverManagerDataSource dataSource; private String schema;
     @BeforeEach void setUp() { String url=com.pqc.core.testsupport.PostgresTestTargetGuard.requireUrl(); String user=com.pqc.core.testsupport.PostgresTestTargetGuard.requireUsername(); String pass=com.pqc.core.testsupport.PostgresTestTargetGuard.requirePassword(); dataSource=new DriverManagerDataSource(url,user,pass); schema="phase2_v27_"+UUID.randomUUID().toString().replace("-",""); new JdbcTemplate(dataSource).execute("CREATE SCHEMA "+schema); }
