@@ -13,7 +13,6 @@ const Stack = createStackNavigator<AuthStackParamList>();
 export function AuthNavigator() {
   return (
     <Stack.Navigator
-      id="auth"
       id="AuthStack"
       initialRouteName="Splash"
       screenOptions={{

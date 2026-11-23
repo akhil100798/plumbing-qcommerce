@@ -41,16 +41,15 @@ export function RootNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-      id="root"
         id="RootStack"
         screenOptions={{
           headerShown: false,
         }}
       >
         {isAuthenticated && user?.profileComplete === false ? (
-          <Stack.Screen 
-            name="Auth" 
-            component={AuthNavigator} 
+          <Stack.Screen
+            name="Auth"
+            component={AuthNavigator}
             initialParams={{ screen: 'CompleteProfile' } as any}
           />
         ) : !isAuthenticated ? (
@@ -58,31 +57,31 @@ export function RootNavigator() {
         ) : (
           <>
             <Stack.Screen name="Main" component={MainTabNavigator} />
-        <Stack.Screen name="Search" component={SearchScreen} />
-        <Stack.Screen name="Categories" component={CategoryScreen} />
-        <Stack.Screen name="ProductListing" component={ProductListingScreen} />
-        <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} />
-        <Stack.Screen name="Cart" component={CartScreen} />
-        <Stack.Screen name="Address" component={AddressScreen} />
-        <Stack.Screen name="Payment" component={PaymentScreen} />
-        <Stack.Screen name="OrderDetails" component={OrderDetailsScreen} />
-        <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
-        <Stack.Screen name="BookPlumber" component={BookPlumberScreen} />
-        <Stack.Screen name="PlumberConfirmation" component={PlumberConfirmationScreen} />
-        <Stack.Screen name="PlumberTracking" component={PlumberTrackingScreen} />
-        <Stack.Screen name="ServiceDiagnosis" component={ServiceDiagnosisScreen} />
-        <Stack.Screen name="MaterialApproval" component={MaterialApprovalScreen} />
-        <Stack.Screen name="ServiceCompletion" component={ServiceCompletionScreen} />
-        <Stack.Screen name="AddressManagement" component={AddressManagementScreen} />
-        <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
-        <Stack.Screen name="Settings" component={SettingsScreen} />
-        <Stack.Screen name="Wallet" component={WalletScreen} />
-        <Stack.Screen name="Offers" component={OffersScreen} />
-        <Stack.Screen name="Support" component={SupportScreen} />
-        <Stack.Screen name="Notifications" component={NotificationsScreen} />
-        <Stack.Screen name="OrderConfirmation" component={OrderConfirmationScreen} />
-        <Stack.Screen name="StoreDetails" component={StoreDetailsScreen} />
-        <Stack.Screen name="Chat" component={ChatScreen} />
+            <Stack.Screen name="Search" component={SearchScreen} />
+            <Stack.Screen name="Categories" component={CategoryScreen} />
+            <Stack.Screen name="ProductListing" component={ProductListingScreen} />
+            <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} />
+            <Stack.Screen name="Cart" component={CartScreen} />
+            <Stack.Screen name="Address" component={AddressScreen} />
+            <Stack.Screen name="Payment" component={PaymentScreen} />
+            <Stack.Screen name="OrderDetails" component={OrderDetailsScreen} />
+            <Stack.Screen name="OrderTracking" component={OrderTrackingScreen} />
+            <Stack.Screen name="BookPlumber" component={BookPlumberScreen} />
+            <Stack.Screen name="PlumberConfirmation" component={PlumberConfirmationScreen} />
+            <Stack.Screen name="PlumberTracking" component={PlumberTrackingScreen} />
+            <Stack.Screen name="ServiceDiagnosis" component={ServiceDiagnosisScreen} />
+            <Stack.Screen name="MaterialApproval" component={MaterialApprovalScreen} />
+            <Stack.Screen name="ServiceCompletion" component={ServiceCompletionScreen} />
+            <Stack.Screen name="AddressManagement" component={AddressManagementScreen} />
+            <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="Wallet" component={WalletScreen} />
+            <Stack.Screen name="Offers" component={OffersScreen} />
+            <Stack.Screen name="Support" component={SupportScreen} />
+            <Stack.Screen name="Notifications" component={NotificationsScreen} />
+            <Stack.Screen name="OrderConfirmation" component={OrderConfirmationScreen} />
+            <Stack.Screen name="StoreDetails" component={StoreDetailsScreen} />
+            <Stack.Screen name="Chat" component={ChatScreen} />
           </>
         )}
       </Stack.Navigator>
