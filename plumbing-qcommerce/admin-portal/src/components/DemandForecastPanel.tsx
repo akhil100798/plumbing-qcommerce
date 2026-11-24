@@ -26,7 +26,7 @@ export default function DemandForecastPanel({ data, loading }: DemandForecastPan
   if (loading) {
     return (
       <div className="empty-state">
-        <span style={{ fontSize: "1.5rem" }}>⚙️</span>
+        <span style={{ fontSize: "1.2rem", fontWeight: 700, color: "#38bdf8" }}>SYNC</span>
         <span>Analysing audit logs…</span>
       </div>
     );
@@ -35,7 +35,7 @@ export default function DemandForecastPanel({ data, loading }: DemandForecastPan
   if (data.length === 0) {
     return (
       <div className="empty-state">
-        <span style={{ fontSize: "1.5rem" }}>📦</span>
+        <span style={{ fontSize: "1.2rem", fontWeight: 700, color: "#94a3b8" }}>EMPTY</span>
         <span>No inventory data available</span>
       </div>
     );

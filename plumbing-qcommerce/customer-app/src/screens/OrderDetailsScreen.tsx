@@ -15,6 +15,7 @@ import { PrimaryButton } from '../components/common/PrimaryButton';
 import { colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
 import { OrderRepository } from '../services/orders/orderRepository';
+import { SvgNavigationArrowLeft } from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'OrderDetails'>;
 
@@ -59,8 +60,8 @@ export function OrderDetailsScreen({ route, navigation }: Props) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonText}>←</Text>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.title}>Order Details</Text>
         </View>
@@ -96,8 +97,8 @@ export function OrderDetailsScreen({ route, navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.title}>Order Details</Text>
       </View>

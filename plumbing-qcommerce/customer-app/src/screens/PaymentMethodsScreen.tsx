@@ -13,6 +13,7 @@ import {
 import { canUseDevMockFallbacks } from '../services/mockPolicy';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
+import { SvgNavigationArrowLeft } from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'PaymentMethods'>;
 
@@ -23,8 +24,8 @@ export function PaymentMethodsScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>?</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.title}>Payment Methods</Text>
       </View>
@@ -37,9 +38,9 @@ export function PaymentMethodsScreen({ navigation }: Props) {
 
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Current staging behavior</Text>
-          <Text style={styles.bullet}>• Card add/remove is disabled</Text>
-          <Text style={styles.bullet}>• Wallet link/unlink is disabled</Text>
-          <Text style={styles.bullet}>• Real payment methods will appear only when backend support exists</Text>
+          <Text style={styles.bullet}>â€¢ Card add/remove is disabled</Text>
+          <Text style={styles.bullet}>â€¢ Wallet link/unlink is disabled</Text>
+          <Text style={styles.bullet}>â€¢ Real payment methods will appear only when backend support exists</Text>
         </View>
 
         {devMode && (

@@ -1,3 +1,4 @@
+import { SvgActionCall, SvgActionChat } from '../../assets/svg';
 import React from 'react';
 import {
   StyleSheet,
@@ -49,11 +50,23 @@ export function CustomerCard({
 
       {showActions && (
         <View style={styles.actions}>
-          <TouchableOpacity style={styles.iconButton} onPress={onCallPress}>
-            <Text style={styles.icon}>📞</Text>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={onCallPress}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Call customer"
+          >
+            <SvgActionCall width={18} height={18} color="#2563EB" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={onChatPress}>
-            <Text style={styles.icon}>💬</Text>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={onChatPress}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Chat with customer"
+          >
+            <SvgActionChat width={18} height={18} color="#2563EB" />
           </TouchableOpacity>
         </View>
       )}
@@ -104,9 +117,11 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    minWidth: 44,
+    minHeight: 44,
+    borderRadius: 22,
     backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',

@@ -1,0 +1,26 @@
+FROM eclipse-temurin:17-jre-alpine AS runtime
+WORKDIR /app
+
+RUN apk add --no-cache \
+    tailscale \
+    socat \
+    postgresql18-client \
+    ca-certificates \
+    curl \
+    netcat-openbsd \
+    iproute2
+
+COPY target/plumbing-core-0.0.1-SNAPSHOT.jar app.jar
+COPY entrypoint-staging.sh /app/entrypoint-staging.sh
+COPY staging-tunnel-probe.sh /app/staging-tunnel-probe.sh
+COPY verify-spring-boot-staging.sh /app/verify-spring-boot-staging.sh
+RUN chmod +x /app/entrypoint-staging.sh /app/staging-tunnel-probe.sh /app/verify-spring-boot-staging.sh
+
+EXPOSE 10000
+
+ENV PORT=10000
+ENV SPRING_PROFILES_ACTIVE=staging
+ENV DATABASE_URL=jdbc:postgresql://127.0.0.1:15432/fixkart_staging_local
+
+ENTRYPOINT ["/app/entrypoint-staging.sh"]
+CMD ["java", "-Xmx400m", "-Xms256m", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]

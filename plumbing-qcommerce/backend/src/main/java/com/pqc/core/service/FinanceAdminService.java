@@ -19,6 +19,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class FinanceAdminService {
     private static final BigDecimal STORE_COMMISSION_RATE = new BigDecimal("0.10");
     private static final BigDecimal PLUMBER_COMMISSION_RATE = new BigDecimal("0.10");

@@ -2,22 +2,19 @@ package com.pqc.core.controller;
 
 import com.pqc.core.entity.Stock;
 import com.pqc.core.entity.Store;
+import com.pqc.core.entity.StoreBusinessHours;
 import com.pqc.core.repository.StockRepository;
 import com.pqc.core.service.StoreService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/stores")
@@ -42,6 +39,23 @@ public class StoreController {
         return ResponseEntity.ok(storeService.updateStock(storeId, productId, request));
     }
 
+    @PatchMapping("/{storeId}/inventory/{productId}/threshold")
+    @PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
+    public ResponseEntity<Stock> updateLowStockThreshold(
+            @PathVariable Long storeId,
+            @PathVariable Long productId,
+            @RequestBody Map<String, Integer> body) {
+        Integer threshold = body != null ? body.get("lowStockThreshold") : 5;
+        return ResponseEntity.ok(storeService.updateLowStockThreshold(storeId, productId, threshold));
+    }
+
+    @PostMapping("/me/inventory")
+    @PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
+    public ResponseEntity<Stock> addCatalogProductToInventory(@RequestBody AddCatalogProductRequest body) {
+        return ResponseEntity.ok(storeService.addCatalogProductToInventory(
+                body.productId(), body.initialQuantity(), body.lowStockThreshold()));
+    }
+
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Store>> getAllStores() {
@@ -60,6 +74,37 @@ public class StoreController {
         return ResponseEntity.ok(storeService.updateCurrentStoreProfile(request));
     }
 
+    @GetMapping("/me/business-hours")
+    @PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
+    public ResponseEntity<List<StoreBusinessHours>> getBusinessHours() {
+        return ResponseEntity.ok(storeService.getStoreBusinessHours());
+    }
+
+    @PutMapping("/me/business-hours")
+    @PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
+    public ResponseEntity<List<StoreBusinessHours>> updateBusinessHours(@RequestBody List<StoreBusinessHours> hours) {
+        return ResponseEntity.ok(storeService.updateStoreBusinessHours(hours));
+    }
+
+    @GetMapping("/me/reports/monthly")
+    @PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
+    public ResponseEntity<Map<String, Object>> getMonthlyReport(
+            @RequestParam(defaultValue = "2026") int year,
+            @RequestParam(defaultValue = "5") int month) {
+        return ResponseEntity.ok(storeService.getMonthlyReportSummary(year, month));
+    }
+
+    @GetMapping("/me/reports/monthly/pdf")
+    @PreAuthorize("hasAnyRole('STORE_MANAGER', 'ADMIN')")
+    public ResponseEntity<byte[]> getMonthlyReportPdf(
+            @RequestParam(defaultValue = "2026") int year,
+            @RequestParam(defaultValue = "5") int month) {
+        byte[] pdf = storeService.generateMonthlyReportPdf(year, month);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=monthly-report-" + year + "-" + month + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
@@ -102,4 +147,6 @@ public class StoreController {
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return earthRadius * c;
     }
+
+    public record AddCatalogProductRequest(Long productId, Integer initialQuantity, Integer lowStockThreshold) {}
 }

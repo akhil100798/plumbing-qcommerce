@@ -1,3 +1,4 @@
+import { SvgActionCamera } from '../../assets/svg';
 import React from 'react';
 import {
   StyleSheet,
@@ -26,12 +27,12 @@ export function PhotoUploadBox({
         <View style={styles.imageWrapper}>
           <Image source={{ uri: imageUri }} style={styles.image} />
           <View style={styles.retakeBadge}>
-            <Text style={styles.retakeText}>Retake 📷</Text>
+            <Text style={styles.retakeText}>Retake</Text>
           </View>
         </View>
       ) : (
         <View style={styles.placeholder}>
-          <Text style={styles.cameraIcon}>📸</Text>
+          <SvgActionCamera width={36} height={36} color="#003BB8" />
           <Text style={styles.uploadText}>{title}</Text>
         </View>
       )}

@@ -5,7 +5,7 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { AppHeader } from '../../components/common/AppHeader';
 import { colors, spacing, typography, borderRadius, shadows } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
-import ActiveJobIcon from '../../assets/icons/active-job.svg';
+import { SvgActionCheck, SvgPlumbWrench } from '../../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'JobHistory' | any>;
 
@@ -13,60 +13,55 @@ const FILTERS = ['All', 'Completed', 'Cancelled'] as const;
 
 const JOBS = [
   {
-    id: '#JKA2315',
+    id: '#JKA3215',
     title: 'Bathroom Pipe Leakage',
     amount: 450,
     status: 'Completed',
-    time: 'Today, 12:30 PM',
+    time: 'Today, 10:45 AM',
   },
   {
     id: '#JKA2110',
     title: 'Tap Installation',
-    amount: 300,
+    amount: 350,
     status: 'Completed',
     time: 'Yesterday',
   },
   {
-    id: '#JKA3006',
+    id: '#JKA1005',
     title: 'Drain Cleaning',
-    amount: 350,
+    amount: 600,
     status: 'Completed',
     time: '2 days ago',
   },
   {
-    id: '#JKA0681',
+    id: '#JKA0888',
     title: 'Water Tank Repair',
-    amount: 900,
+    amount: 1200,
     status: 'Cancelled',
     time: '3 days ago',
   },
 ];
 
-function StatusBadge({ status }: { status: string }) {
-  const isCompleted = status === 'Completed';
+function JobRow({ job, onPress }: { job: (typeof JOBS)[0]; onPress?: () => void }) {
+  const isCompleted = job.status === 'Completed';
   return (
-    <Text style={[styles.badge, { color: isCompleted ? colors.success : colors.error }]}>{status}</Text>
-  );
-}
-
-function JobRow({ job }: { job: (typeof JOBS)[0] }) {
-  const isCancelled = job.status === 'Cancelled';
-  return (
-    <TouchableOpacity style={styles.row} activeOpacity={0.6}>
-      <View style={[styles.iconCircle, isCancelled && { backgroundColor: '#FEE2E2' }]}>
-        <ActiveJobIcon
-          width={16}
-          height={16}
-          stroke={isCancelled ? colors.error : colors.primary}
-        />
+    <TouchableOpacity style={styles.card} activeOpacity={0.7} onPress={onPress}>
+      <View style={styles.cardLeft}>
+        <View style={styles.iconCircle}>
+          <SvgPlumbWrench width={18} height={18} stroke={colors.stitchBlue} fill="none" />
+        </View>
+        <View style={styles.cardMeta}>
+          <Text style={styles.jobId}>{job.id}</Text>
+          <Text style={styles.jobTitle}>{job.title}</Text>
+          <Text style={styles.jobAmount}>₹{job.amount}</Text>
+        </View>
       </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.jobId}>{job.id}</Text>
-        <Text style={styles.jobTitle}>{job.title}</Text>
-        <Text style={styles.jobAmount}>₹{job.amount}</Text>
-      </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <StatusBadge status={job.status} />
+      <View style={styles.cardRight}>
+        <View style={[styles.statusBadge, isCompleted ? styles.badgeSuccess : styles.badgeDanger]}>
+          <Text style={[styles.statusText, isCompleted ? styles.statusSuccessText : styles.statusDangerText]}>
+            {job.status}
+          </Text>
+        </View>
         <Text style={styles.jobTime}>{job.time}</Text>
       </View>
     </TouchableOpacity>
@@ -83,18 +78,26 @@ export function JobHistoryScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <AppHeader title="Job History" onBackPress={() => navigation?.goBack()} />
+      <AppHeader
+        title="Job History"
+        variant="blue"
+        onBackPress={() => navigation?.goBack()}
+      />
 
-      <View style={styles.tabRow}>
+      {/* Stitch Category Filter Pills */}
+      <View style={styles.filterBar}>
         {FILTERS.map((f) => {
           const active = f === filter;
           return (
             <TouchableOpacity
               key={f}
-              style={[styles.tab, active && styles.tabActive]}
+              style={[styles.filterPill, active && styles.filterPillActive]}
               onPress={() => setFilter(f)}
+              activeOpacity={0.7}
             >
-              <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{f}</Text>
+              <Text style={[styles.filterPillText, active && styles.filterPillTextActive]}>
+                {f}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -103,10 +106,16 @@ export function JobHistoryScreen({ navigation }: Props) {
       <FlatList
         data={filteredJobs}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <JobRow job={item} />}
-        contentContainerStyle={styles.list}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListEmptyComponent={<Text style={styles.empty}>No jobs in this category yet.</Text>}
+        renderItem={({ item }) => (
+          <JobRow
+            job={item}
+            onPress={() => {
+              const numId = item.id.replace('#JKA', '').replace('#', '');
+              navigation?.navigate('ActiveJob', { jobId: numId });
+            }}
+          />
+        )}
+        contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
@@ -114,51 +123,121 @@ export function JobHistoryScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  tabRow: {
-    flexDirection: 'row',
-    marginHorizontal: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    padding: 4,
-    marginTop: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  tab: {
+  container: {
     flex: 1,
-    paddingVertical: 8,
-    borderRadius: borderRadius.sm,
-    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
   },
-  tabActive: { backgroundColor: colors.primary },
-  tabLabel: { fontSize: typography.fontSize.xs, color: colors.textSecondary, fontWeight: typography.fontWeight.medium },
-  tabLabelActive: { color: '#FFFFFF', fontWeight: typography.fontWeight.bold },
-  list: { padding: spacing.md, paddingBottom: spacing.xl },
-  row: {
+  filterBar: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    gap: 8,
+  },
+  filterPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: 'transparent',
+  },
+  filterPillActive: {
+    backgroundColor: colors.stitchBlue,
     ...shadows.sm,
   },
+  filterPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  filterPillTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  listContent: {
+    padding: 16,
+    gap: 12,
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    ...shadows.sm,
+  },
+  cardLeft: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    flex: 1,
+  },
   iconCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#DBEAFE',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#EFF6FF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.sm,
+    marginTop: 2,
   },
-  jobId: { fontSize: typography.fontSize.xs, color: colors.textMuted },
-  jobTitle: { fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.bold, color: colors.textPrimary, marginTop: 2 },
-  jobAmount: { fontSize: typography.fontSize.xs, color: colors.textSecondary, marginTop: 2 },
-  jobTime: { fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: 4 },
-  badge: { fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.bold },
-  separator: { height: spacing.sm },
-  empty: { fontSize: typography.fontSize.sm, color: colors.textMuted, textAlign: 'center', marginTop: spacing.xl },
+  cardMeta: {
+    flex: 1,
+  },
+  jobId: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
+  },
+  jobTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginTop: 2,
+    lineHeight: 18,
+  },
+  jobAmount: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.stitchBlue,
+    marginTop: 4,
+  },
+  cardRight: {
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  badgeSuccess: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
+  },
+  badgeDanger: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  statusSuccessText: {
+    color: '#059669',
+  },
+  statusDangerText: {
+    color: '#DC2626',
+  },
+  jobTime: {
+    fontSize: 10,
+    color: '#94A3B8',
+  },
 });

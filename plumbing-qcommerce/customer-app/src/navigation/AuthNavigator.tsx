@@ -1,4 +1,4 @@
-﻿import { createStackNavigator } from '@react-navigation/stack';
+import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
 
 import { LoginScreen } from '../screens/auth/LoginScreenGoogle';
@@ -13,6 +13,7 @@ const Stack = createStackNavigator<AuthStackParamList>();
 export function AuthNavigator() {
   return (
     <Stack.Navigator
+      id="AuthStack"
       initialRouteName="Splash"
       screenOptions={{
         headerShown: false,

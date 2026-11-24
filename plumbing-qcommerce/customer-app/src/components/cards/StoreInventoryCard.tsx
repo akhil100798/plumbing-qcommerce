@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 
 import { borderRadius, colors, spacing, typography } from '../../theme';
+import { SvgPlumbingHardwareBolt } from '../../assets/svg';
 
 interface StoreInventoryCardProps {
   id: number;
@@ -17,7 +18,7 @@ interface StoreInventoryCardProps {
   onAdd: () => void;
   onRemove: () => void;
   onPress: () => void;
-  icon?: string;
+  icon?: React.ReactNode;
 }
 
 export function StoreInventoryCard({
@@ -28,12 +29,12 @@ export function StoreInventoryCard({
   onAdd,
   onRemove,
   onPress,
-  icon = '🔩',
+  icon,
 }: StoreInventoryCardProps) {
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.imageBox}>
-        <Text style={styles.icon}>{icon}</Text>
+        icon || <SvgPlumbingHardwareBolt width={28} height={28} stroke={colors.textSecondary} />
       </View>
       <View style={styles.info}>
         <Text style={styles.category}>{categoryName}</Text>

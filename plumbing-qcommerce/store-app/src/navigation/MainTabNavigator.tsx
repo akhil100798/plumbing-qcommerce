@@ -1,6 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { DashboardScreen } from '../screens/dashboard/DashboardScreen';
 import { OrdersScreen } from '../screens/orders/OrdersScreen';
@@ -9,12 +9,7 @@ import { MaterialRequestsScreen } from '../screens/orders/MaterialRequestsScreen
 import { AccountScreen } from '../screens/profile/AccountScreen';
 import { colors, spacing, typography } from '../theme';
 import { MainTabParamList } from '../types/navigation';
-
-import HomeIcon from '../assets/icons/home.svg';
-import OrderIcon from '../assets/icons/order.svg';
-import InventoryIcon from '../assets/icons/inventory.svg';
-import MaterialRequestIcon from '../assets/icons/material-request.svg';
-import ProfileIcon from '../assets/icons/profile.svg';
+import { StoreIcon, StoreIconName } from '../components/common/StoreIcon';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -30,22 +25,22 @@ export function MainTabNavigator() {
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
         tabBarIcon: ({ color, focused }) => {
-          let IconComp = HomeIcon;
+          let iconName: StoreIconName = 'home';
           if (route.name === 'HomeTab') {
-            IconComp = HomeIcon;
+            iconName = 'home';
           } else if (route.name === 'OrdersTab') {
-            IconComp = OrderIcon;
+            iconName = 'orders';
           } else if (route.name === 'InventoryTab') {
-            IconComp = InventoryIcon;
+            iconName = 'inventory';
           } else if (route.name === 'MaterialsTab') {
-            IconComp = MaterialRequestIcon;
+            iconName = 'materials';
           } else if (route.name === 'AccountTab') {
-            IconComp = ProfileIcon;
+            iconName = 'account';
           }
 
           return (
             <View style={styles.iconWrapper}>
-              <IconComp width={20} height={20} stroke={color} />
+              <StoreIcon name={iconName} size={22} color={color} strokeWidth={focused ? 2.2 : 1.8} />
             </View>
           );
         },
@@ -82,23 +77,22 @@ export function MainTabNavigator() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: colors.card,
-    borderTopWidth: 1.5,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
     borderTopColor: colors.border,
     height: 64,
     paddingBottom: spacing.xs,
     paddingTop: spacing.xs,
   },
   tabBarLabel: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.bold,
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: -2,
   },
   iconWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tabEmoji: {
-    fontSize: 20,
-  },
 });
+
 export default MainTabNavigator;

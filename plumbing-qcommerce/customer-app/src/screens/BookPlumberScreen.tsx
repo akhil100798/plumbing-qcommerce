@@ -1,5 +1,6 @@
 import { StackScreenProps } from '@react-navigation/stack';
 import React, { useState } from 'react';
+import { Alert } from 'react-native';
 import {
   SafeAreaView,
   ScrollView,
@@ -7,45 +8,89 @@ import {
   Text,
   TouchableOpacity,
   View,
+  TextInput,
 } from 'react-native';
 
 import { PrimaryButton } from '../components/common/PrimaryButton';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
+import {
+  SvgNavigationArrowLeft,
+  SvgPlumbingCpvcElbow,
+  SvgPlumbingTapRepair,
+  SvgPlumbingDrainage,
+  SvgCategoriesWaterTanks,
+  SvgPlumbingWaterPump,
+  SvgPlumbingPlumbingTools,
+} from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'BookPlumber'>;
 
 interface IssueItem {
   id: string;
   name: string;
-  icon: string;
 }
 
 const issues: IssueItem[] = [
-  { id: 'pipe', name: 'Pipe Leakage', icon: '🚰' },
-  { id: 'tap', name: 'Tap Repair', icon: '🚿' },
-  { id: 'toilet', name: 'Toilet Blockage', icon: '🚽' },
-  { id: 'tank', name: 'Water Tank Issue', icon: '🛢️' },
-  { id: 'motor', name: 'Motor Repair', icon: '⚙️' },
-  { id: 'other', name: 'Other Issue', icon: '🛠️' },
+  { id: 'pipe', name: 'Leaking or damaged pipe' },
+  { id: 'tap', name: 'Tap or faucet problem' },
+  { id: 'toilet', name: 'Blocked or faulty toilet' },
+  { id: 'tank', name: 'Water tank problem' },
+  { id: 'motor', name: 'Water pump or motor' },
+  { id: 'other', name: 'Something else / not sure' },
 ];
+
+const renderIssueIcon = (id: string, selected: boolean) => {
+  const strokeColor = selected ? colors.primary : colors.textPrimary;
+  switch (id) {
+    case 'pipe':
+      return <SvgPlumbingCpvcElbow width={24} height={24} stroke={strokeColor} />;
+    case 'tap':
+      return <SvgPlumbingTapRepair width={24} height={24} stroke={strokeColor} />;
+    case 'toilet':
+      return <SvgPlumbingDrainage width={24} height={24} stroke={strokeColor} />;
+    case 'tank':
+      return <SvgCategoriesWaterTanks width={24} height={24} stroke={strokeColor} />;
+    case 'motor':
+      return <SvgPlumbingWaterPump width={24} height={24} stroke={strokeColor} />;
+    default:
+      return <SvgPlumbingPlumbingTools width={24} height={24} stroke={strokeColor} />;
+  }
+};
 
 export function BookPlumberScreen({ navigation }: Props) {
   const [selectedIssueId, setSelectedIssueId] = useState('pipe');
   const [scheduleOption, setScheduleOption] = useState<'now' | 'schedule'>('now');
+  const [description, setDescription] = useState('');
+  const [urgency, setUrgency] = useState<'NORMAL' | 'URGENT'>('NORMAL');
+  const [scheduledForInput, setScheduledForInput] = useState('');
 
   const handleContinue = () => {
     const selected = issues.find((i) => i.id === selectedIssueId);
+    let scheduledFor: string | null = null;
+    if (scheduleOption === 'schedule') {
+      const parsed = new Date(scheduledForInput);
+      if (!scheduledForInput || !Number.isFinite(parsed.getTime()) || parsed.getTime() <= Date.now()) {
+        Alert.alert('Choose a future time', 'Scheduled requests must use a valid future date and time.');
+        return;
+      }
+      // The backend contract uses an ISO local date-time (no fabricated timezone).
+      scheduledFor = scheduledForInput.length === 16 ? `${scheduledForInput}:00` : scheduledForInput;
+    }
     navigation.navigate('PlumberConfirmation', {
       issueType: selected ? selected.name : 'Plumbing Request',
+      issueCategory: selected?.id,
+      description,
+      urgency,
+       scheduledFor,
     });
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.title}>Book a Plumber</Text>
       </View>
@@ -63,12 +108,30 @@ export function BookPlumberScreen({ navigation }: Props) {
                 activeOpacity={0.8}
               >
                 <View style={styles.iconCircle}>
-                  <Text style={styles.emoji}>{item.icon}</Text>
+                  {renderIssueIcon(item.id, selected)}
                 </View>
                 <Text style={styles.cardLabel}>{item.name}</Text>
               </TouchableOpacity>
             );
           })}
+        </View>
+
+        <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Tell us more (optional)</Text>
+        <TextInput
+          value={description}
+          onChangeText={setDescription}
+          placeholder="What do you notice? Add details if you can."
+          multiline
+          style={styles.descriptionInput}
+        />
+
+        <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Urgency</Text>
+        <View style={styles.scheduleOptions}>
+          {(['NORMAL', 'URGENT'] as const).map((value) => (
+            <TouchableOpacity key={value} style={[styles.radioCard, urgency === value && styles.radioCardSelected]} onPress={() => setUrgency(value)}>
+              <Text style={styles.radioTitle}>{value === 'URGENT' ? 'Urgent' : 'Normal'}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>
@@ -85,10 +148,10 @@ export function BookPlumberScreen({ navigation }: Props) {
               </View>
               <View>
                 <Text style={styles.radioTitle}>Now</Text>
-                <Text style={styles.radioSub}>Within 15 mins</Text>
+                <Text style={styles.radioSub}>Request service as soon as possible</Text>
               </View>
             </View>
-            <Text style={styles.accentText}>⚡ Fast</Text>
+            <Text style={styles.accentText}>Fast</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -104,14 +167,16 @@ export function BookPlumberScreen({ navigation }: Props) {
                 <Text style={styles.radioSub}>Choose specific date & time</Text>
               </View>
             </View>
-            <Text style={styles.accentText}>📅 Plan</Text>
+            <Text style={styles.accentText}>Plan</Text>
           </TouchableOpacity>
+
+          {scheduleOption === 'schedule' ? <TextInput value={scheduledForInput} onChangeText={setScheduledForInput} placeholder="YYYY-MM-DDTHH:mm" style={styles.descriptionInput} /> : null}
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
         <PrimaryButton
-          title="Continue"
+          title="Continue to address"
           onPress={handleContinue}
           style={styles.continueBtn}
         />
@@ -136,9 +201,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44, height: 44, borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,
@@ -254,6 +317,16 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
     color: colors.primary,
+  },
+  descriptionInput: {
+    minHeight: 96,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    textAlignVertical: 'top',
+    color: colors.textPrimary,
   },
   footer: {
     padding: spacing.layout,

@@ -12,6 +12,7 @@ import {
 import { SearchBar } from '../components/common/SearchBar';
 import { colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
+import { SvgNavigationArrowLeft } from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'Search'>;
 
@@ -75,8 +76,8 @@ export function SearchScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.searchBarContainer}>
           <SearchBar
@@ -164,7 +165,7 @@ export function SearchScreen({ navigation }: Props) {
                   style={styles.trendingItem}
                   onPress={() => handleSelectSearch(item)}
                 >
-                  <Text style={styles.trendingIcon}>📈</Text>
+                  <Text style={styles.trendingIcon}>HOT</Text>
                   <Text style={styles.trendingText}>{item}</Text>
                 </TouchableOpacity>
               ))}

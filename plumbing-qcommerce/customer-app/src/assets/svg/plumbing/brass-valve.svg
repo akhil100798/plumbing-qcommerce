@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="brassBody" x1="12" y1="20" x2="52" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE68A"/>
+      <stop offset="25%" stop-color="#D97706"/>
+      <stop offset="50%" stop-color="#FBBF24"/>
+      <stop offset="75%" stop-color="#B45309"/>
+      <stop offset="100%" stop-color="#78350F"/>
+    </linearGradient>
+    <linearGradient id="leverVinyl" x1="20" y1="8" x2="52" y2="18" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#EF4444"/>
+      <stop offset="100%" stop-color="#B91C1C"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="26" width="10" height="14" rx="2" fill="url(#brassBody)"/>
+  <rect x="46" y="26" width="10" height="14" rx="2" fill="url(#brassBody)"/>
+  <circle cx="32" cy="33" r="14" fill="url(#brassBody)"/>
+  <circle cx="32" cy="33" r="8" fill="#78350F"/>
+  <circle cx="32" cy="33" r="6" fill="#FDE68A"/>
+  <rect x="29" y="16" width="6" height="8" fill="#B45309"/>
+  <path d="M26 14H48C51.3 14 54 11.3 54 8S51.3 2 48 2H28C24.7 2 22 4.7 22 8v6h4z" fill="url(#leverVinyl)"/>
+  <circle cx="32" cy="8" r="3" fill="#D97706"/>
+</svg>

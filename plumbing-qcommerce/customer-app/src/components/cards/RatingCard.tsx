@@ -5,18 +5,15 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
-
+import { SvgStatusStarFilled, SvgStatusStarOutline } from '../../assets/svg';
 interface RatingCardProps {
   rating: number;
   onRatingChange: (val: number) => void;
   selectedTip: number;
   onTipChange: (val: number) => void;
 }
-
 const tips = [20, 50, 100];
-
 export function RatingCard({
   rating,
   onRatingChange,
@@ -29,13 +26,10 @@ export function RatingCard({
       <View style={styles.starsRow}>
         {[1, 2, 3, 4, 5].map((val) => (
           <TouchableOpacity key={val} onPress={() => onRatingChange(val)}>
-            <Text style={[styles.starEmoji, rating >= val ? styles.starFilled : styles.starEmpty]}>
-              ⭐
-            </Text>
+            {rating >= val ? <SvgStatusStarFilled width={32} height={32} fill="#F59E0B" stroke="#F59E0B" /> : <SvgStatusStarOutline width={32} height={32} stroke="#CBD5E1" fill="none" />}
           </TouchableOpacity>
         ))}
       </View>
-
       <Text style={styles.tipTitle}>Add a tip for your plumber</Text>
       <View style={styles.tipsRow}>
         {tips.map((amount) => {
@@ -64,7 +58,6 @@ export function RatingCard({
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.surface,

@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, spacing, typography } from '../../theme';
+import { SvgStatusCheckCircle } from '../../assets/svg';
 
 interface TrackingStatusStepperProps {
   steps: string[];
@@ -31,7 +32,7 @@ export function TrackingStatusStepper({
                 ]}
               >
                 {isCompleted ? (
-                  <Text style={styles.checkText}>✓</Text>
+                  <SvgStatusCheckCircle width={12} height={12} stroke={colors.surface} />
                 ) : (
                   <View style={[styles.innerDot, isActive && styles.activeInnerDot]} />
                 )}

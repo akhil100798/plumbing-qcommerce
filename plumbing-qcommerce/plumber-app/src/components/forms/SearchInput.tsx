@@ -1,3 +1,4 @@
+import { SvgNavSearch } from '../../assets/svg';
 import React from 'react';
 import {
   StyleSheet,
@@ -21,7 +22,7 @@ export function SearchInput({
 }: SearchInputProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.searchIcon}>🔍</Text>
+      <SvgNavSearch width={18} height={18} color="#94A3B8" />
       <TextInput
         style={styles.input}
         placeholder={placeholder}

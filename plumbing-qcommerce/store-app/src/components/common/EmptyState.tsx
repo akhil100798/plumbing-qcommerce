@@ -1,21 +1,24 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, spacing, typography } from '../../theme';
+import { StoreIcon, StoreIconName } from './StoreIcon';
 
 interface EmptyStateProps {
-  emoji?: string;
+  iconName?: StoreIconName;
   title: string;
   description: string;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
-  emoji = '📭',
+  iconName = 'empty-state',
   title,
   description,
 }) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.emoji}>{emoji}</Text>
+      <View style={styles.iconContainer}>
+        <StoreIcon name={iconName} size={48} color={colors.textMuted} />
+      </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.description}>{description}</Text>
     </View>
@@ -29,8 +32,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.huge,
   },
-  emoji: {
-    fontSize: 48,
+  iconContainer: {
     marginBottom: spacing.md,
   },
   title: {
@@ -46,3 +48,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+export default EmptyState;

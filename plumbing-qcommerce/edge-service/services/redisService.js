@@ -14,6 +14,10 @@ const Redis = process.env.NODE_ENV === 'test' ? class MockRedis extends require(
     publish() { return Promise.resolve(); }
 } : require('ioredis');
 
+const PLUMBER_GEO_KEY = 'plumbers_location';
+const PLUMBER_HEARTBEAT_PREFIX = 'plumber:heartbeat:';
+const PLUMBER_TTL_SECONDS = 300; // 5 minutes TTL to prevent phantom dispatch
+
 // Connect to the Redis container initialized in Phase 1
 let redis;
 if (process.env.MOCK_EDGE === 'true') {
@@ -37,7 +41,7 @@ if (process.env.MOCK_EDGE === 'true') {
             return 'OK';
         },
         get: async (key) => {
-            const val = mockStore.get(key) || '1234';
+            const val = mockStore.get(key) || (key.startsWith('otp:') ? '1234' : null);
             console.log(`[MOCK REDIS] GET ${key} => ${key.startsWith('otp:') ? '[MASKED]' : val}`);
             return val;
         },
@@ -49,6 +53,13 @@ if (process.env.MOCK_EDGE === 'true') {
         zcard: async (key) => {
             console.log(`[MOCK REDIS] ZCARD ${key}`);
             return 0;
+        },
+        zrem: async (key, member) => {
+            console.log(`[MOCK REDIS] ZREM ${key} member=${member}`);
+            return 1;
+        },
+        exists: async (key) => {
+            return mockStore.has(key) ? 1 : 0;
         },
         call: async (...args) => {
             console.log(`[MOCK REDIS] CALL ${args.join(' ')}`);
@@ -65,18 +76,18 @@ if (process.env.MOCK_EDGE === 'true') {
     });
 }
 
-const PLUMBER_GEO_KEY = 'plumbers_location';
-
 /**
- * Updates a plumber's live location using Redis Geo-indexing
+ * Updates a plumber's live location using Redis Geo-indexing and companion TTL key
  */
 async function updatePlumberLocation(plumberId, longitude, latitude) {
     await redis.geoadd(PLUMBER_GEO_KEY, longitude, latitude, String(plumberId));
-    console.log(`Updated live location for Plumber ${plumberId}`);
+    // Set companion heartbeat key with 300s TTL to prevent phantom dispatch of offline plumbers
+    await redis.set(`${PLUMBER_HEARTBEAT_PREFIX}${plumberId}`, Date.now().toString(), 'EX', PLUMBER_TTL_SECONDS);
+    console.log(`Updated live location for Plumber ${plumberId} (TTL: ${PLUMBER_TTL_SECONDS}s)`);
 }
 
 /**
- * Finds all active plumbers within a certain radius
+ * Finds all active plumbers within a certain radius, evicting offline plumbers
  */
 async function findNearbyPlumbers(longitude, latitude, radiusKm = 5) {
     if (process.env.MOCK_EDGE === 'true') {
@@ -85,27 +96,66 @@ async function findNearbyPlumbers(longitude, latitude, radiusKm = 5) {
             { plumberId: '2', distance: 2.5 }
         ];
     }
-    // GEOSEARCH returns the nearest plumbers
-    const nearby = await redis.geosearch(
-        PLUMBER_GEO_KEY,
-        'FROMLONLAT',
-        longitude,
-        latitude,
-        'BYRADIUS',
-        radiusKm,
-        'km',
-        'WITHDIST',
-        'ASC'
-    );
-    
-    return nearby.map(res => ({
-        plumberId: res[0],
-        distance: parseFloat(res[1])
-    }));
+    let nearby = [];
+    try {
+        // High-throughput GEOSEARCH bounded by radiusKm
+        nearby = await redis.geosearch(
+            PLUMBER_GEO_KEY,
+            'FROMLONLAT',
+            longitude,
+            latitude,
+            'BYRADIUS',
+            radiusKm,
+            'km',
+            'WITHDIST',
+            'ASC'
+        );
+    } catch (err) {
+        // Fallback to legacy GEORADIUS if server does not support GEOSEARCH
+        try {
+            nearby = await redis.georadius(
+                PLUMBER_GEO_KEY,
+                longitude,
+                latitude,
+                radiusKm,
+                'km',
+                'WITHDIST',
+                'ASC'
+            );
+        } catch (innerErr) {
+            console.error('Redis GEO query failed:', innerErr.message);
+            return [];
+        }
+    }
+
+    if (!Array.isArray(nearby) || nearby.length === 0) {
+        return [];
+    }
+
+    // TTL Verification: Evict expired offline plumbers from geo index
+    const activePlumbers = [];
+    for (const res of nearby) {
+        const plumberId = res[0];
+        const distance = parseFloat(res[1]);
+        const heartbeatKey = `${PLUMBER_HEARTBEAT_PREFIX}${plumberId}`;
+        const isAlive = await redis.exists(heartbeatKey);
+        if (isAlive) {
+            activePlumbers.push({ plumberId, distance });
+        } else {
+            // Evict stale offline plumber
+            await redis.zrem(PLUMBER_GEO_KEY, String(plumberId)).catch(() => {});
+            console.log(`[GEO-EVICT] Evicted offline plumber ${plumberId} from ${PLUMBER_GEO_KEY}`);
+        }
+    }
+
+    return activePlumbers;
 }
 
 module.exports = {
     redis,
+    PLUMBER_GEO_KEY,
+    PLUMBER_HEARTBEAT_PREFIX,
+    PLUMBER_TTL_SECONDS,
     updatePlumberLocation,
     findNearbyPlumbers
 };

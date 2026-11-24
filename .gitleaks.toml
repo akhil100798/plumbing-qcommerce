@@ -5,6 +5,10 @@ useDefault = true
 
 [allowlist]
 description = "Allow documented dummy, local-development, and test-only placeholders"
+commits = [
+  "cfa7c07dd8ad0fbb253934863c7b6916b54b1f2a", # legacy third-party excalidraw OSS vendor asset in diagram-render.html (rotated)
+  "e5eb8a63c5cb380c0dba0570a83e640d03a80b37", # intermediate phase-4 test commit with dummy razorpay secret (superseded by cc741b5)
+]
 regexes = [
   '''(?i)rootpassword''',
   '''(?i)local-(postgres|mongo|development)-[a-z0-9-]*''',
@@ -19,13 +23,36 @@ regexes = [
   '''(?i)your-very-strong-jwt-secret-key-here-at-least-256-bits-long-for-hs256''',
   '''(?i)test-hash-secret-key-minimum-32-chars-long''',
   '''(?i)a-very-(long-and-secure-random-secret-key-32-chars|strong-and-secure-hash-secret-value)''',
+  '''(?i)rzp_secret_key_12345''',
+  '''(?i)rzp_test_(key|simulated_key|placeholder)''',
+  '''(?i)rzp_webhook_secret_adversarial_hardening_key_789''',
+  '''(?i)mock_dummy_rzp_[a-z0-9_-]*''',
+  '''(?i)mock_[a-z0-9_-]*''',
+  '''(?i)ghp_abc123def456''',
+  '''(?i)dGhlIHNhbXBsZSBub25jZQ==''',
 ]
 paths = [
+  '''(^|/)\.agents/''',
+  '''(^|/)target/''',
+  '''(^|/)node_modules/''',
+  '''(^|/)\.next/''',
+  '''(^|/)dist/''',
+  '''(^|/)build/''',
+  '''(^|/)\.gradle/''',
+  '''(^|/)android/''',
+  '''(^|/)plumbing-qcommerce/plumbing-qcommerce/''',
   '''(^|/)docs/''',
   '''(^|/)evidence/''',
+  '''(^|/)reports/''',
+  '''(^|/)qa-evidence/''',
+  '''(^|/)e2e-evidence/''',
+  '''(^|/)\.github/skills/''',
+  '''(^|/)scripts/''',
+  '''(^|/)stitch-designs/''',
   '''(^|/)qa-[^/]+\.(js|ps1)$''',
   '''(^|/)runtime-smoke\.js$''',
   '''(^|/)smoke-capture\.js$''',
   '''(^|/)capture-phase10\.js$''',
   '''(^|/)\.env\.(example|render\.example|cloudrun\.example)$''',
+  '''(^|/)FIXKART_.*\.md$''',
 ]

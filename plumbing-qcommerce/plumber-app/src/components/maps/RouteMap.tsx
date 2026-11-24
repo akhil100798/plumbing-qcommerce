@@ -1,3 +1,4 @@
+import { SvgPlumbWrench, SvgPlumbHouseBuilding } from '../../assets/svg';
 import React from 'react';
 import {
   StyleSheet,
@@ -41,7 +42,7 @@ export function RouteMap({
         
         {/* Plumber Node */}
         <View style={[styles.node, styles.plumberNode]}>
-          <Text style={styles.nodeIcon}>🔧</Text>
+          <SvgPlumbWrench width={18} height={18} color="#003BB8" />
           <Text style={styles.nodeLabel}>You</Text>
         </View>
 
@@ -50,13 +51,12 @@ export function RouteMap({
 
         {/* Customer Node */}
         <View style={[styles.node, styles.customerNode]}>
-          <Text style={styles.nodeIcon}>🏠</Text>
+          <SvgPlumbHouseBuilding width={18} height={18} color="#10B981" />
           <Text style={styles.nodeLabel}>{customerName}</Text>
         </View>
 
         <Text style={styles.metaInfo}>
-          Route: [{plumberLatitude.toFixed(4)}, {plumberLongitude.toFixed(4)}] ➜ [{customerLatitude.toFixed(4)}, {customerLongitude.toFixed(4)}]
-        </Text>
+          {"Route: [" + plumberLatitude.toFixed(4) + ", " + plumberLongitude.toFixed(4) + "] to [" + customerLatitude.toFixed(4) + ", " + customerLongitude.toFixed(4) + "]"}</Text>
       </View>
     );
   }
@@ -76,7 +76,7 @@ export function RouteMap({
   if (!MapView || !Marker || !Polyline) {
     return (
       <View style={[styles.container, styles.fallback]}>
-        <Text style={styles.fallbackText}>🗺️ GPS Route View Fallback</Text>
+        <Text style={styles.fallbackText}>GPS Route View Fallback</Text>
       </View>
     );
   }

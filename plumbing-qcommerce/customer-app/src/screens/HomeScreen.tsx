@@ -32,6 +32,7 @@ import { setActiveProductOrder, updateProductOrderStatus } from '../redux/slices
 import { AppIcon } from '../components/common/AppIcon';
 import { IconBadge } from '../components/common/IconBadge';
 import { AnimatedBanner } from '../components/common/AnimatedBanner';
+import { SvgNavigationChevronDown } from '../assets/svg';
 
 import LocationPinIcon from '../assets/icons/location-pin.svg';
 import NotificationIcon from '../assets/icons/notification.svg';
@@ -98,21 +99,34 @@ const serviceOptions: ServiceOption[] = [
   },
 ];
 
-const categories = ['Leak repair', 'Drain clean', 'Tap install', 'Bathroom', 'Motor pump'];
+interface ServiceCategoryItem {
+  id: string; // canonical backend enum: pipe, tap, toilet, tank, motor, other
+  name: string; // display label
+  iconName?: string;
+}
+
+const categories: ServiceCategoryItem[] = [
+  { id: 'pipe', name: 'Leak repair' },
+  { id: 'tap', name: 'Drain clean' },
+  { id: 'tap', name: 'Tap install' },
+  { id: 'toilet', name: 'Bathroom' },
+  { id: 'motor', name: 'Motor pump' },
+];
 
 interface HomeCategory {
   id: number;
   name: string;
   iconName: string;
+  categoryValue: string;
 }
 
 const homeCategories: HomeCategory[] = [
-  { id: 1, name: 'Pipe Leakage', iconName: 'pipe-leak' },
-  { id: 2, name: 'Tap Repair', iconName: 'tap-repair' },
-  { id: 3, name: 'Toilet Repair', iconName: 'drain-cleaning' },
-  { id: 4, name: 'Water Tank', iconName: 'water-heater' },
-  { id: 5, name: 'Motor Repair', iconName: 'repair' },
-  { id: 6, name: 'More', iconName: 'plus' },
+  { id: 1, name: 'Pipe Leakage', iconName: 'pipe-leak', categoryValue: 'pipe' },
+  { id: 2, name: 'Tap Repair', iconName: 'tap-repair', categoryValue: 'tap' },
+  { id: 3, name: 'Toilet Repair', iconName: 'drain-cleaning', categoryValue: 'toilet' },
+  { id: 4, name: 'Water Tank', iconName: 'water-heater', categoryValue: 'tank' },
+  { id: 5, name: 'Motor Repair', iconName: 'repair', categoryValue: 'motor' },
+  { id: 6, name: 'More', iconName: 'plus', categoryValue: 'other' },
 ];
 
 const getCategoryIcon = (iconName: string) => {
@@ -147,7 +161,13 @@ export function HomeScreen({ navigation }: any) {
   const isSearching = useSelector((state: RootState) => state.plumbers.isSearching);
   const activeJob = useSelector((state: RootState) => state.plumbers.activeJob);
   const selectedMode = useSelector((state: RootState) => state.plumbers.selectedMode);
-  const selectedCategory = useSelector((state: RootState) => state.plumbers.selectedCategory || categories[0]);
+  // Redux selectedCategory stores either the canonical category value (e.g. 'pipe') or display name
+  const rawSelectedCategory = useSelector((state: RootState) => state.plumbers.selectedCategory);
+  const activeCategoryItem = categories.find(
+    (c) => c.name === rawSelectedCategory || c.id === rawSelectedCategory
+  ) || categories[0];
+  const selectedCategory = activeCategoryItem.id; // always valid backend enum: 'pipe', 'tap', 'toilet', 'tank', 'motor', 'other'
+  const selectedCategoryLabel = activeCategoryItem.name;
   const currentUser = useSelector((state: RootState) => state.auth.user);
 
   // Product Catalog State
@@ -223,7 +243,7 @@ export function HomeScreen({ navigation }: any) {
       Alert.alert('Delivery Rider Assigned', `${data.deliveryPartnerName} has picked up your materials and is out for delivery!`);
     });
 
-    // Phase 3: Plumber requested parts mid-job � show payment approval card
+    // Phase 3: Plumber requested parts mid-job  show payment approval card
     newSocket.on('MATERIAL_PAYMENT_REQUIRED', (data: MaterialPaymentRequest) => {
       console.log('Received MATERIAL_PAYMENT_REQUIRED:', data);
       setMaterialPaymentRequest(data);
@@ -397,8 +417,8 @@ export function HomeScreen({ navigation }: any) {
       setIsApprovingPayment(false);
       setMaterialPaymentRequest(null);
       Alert.alert(
-        '�S& Payment Approved!',
-        'Parts are being dispatched to your plumber�"s location. Work will resume shortly.'
+        'S& Payment Approved!',
+        'Parts are being dispatched to your plumber\'s location. Work will resume shortly.'
       );
     } catch (err: any) {
       setIsApprovingPayment(false);
@@ -418,43 +438,14 @@ export function HomeScreen({ navigation }: any) {
 
     dispatch(startSearching());
     try {
-      if (!edgeServerUrl) {
-        const order = await PlumberRepository.createServiceOrder({
-          description: `${selectedCategory} - ${selectedService.title}`,
-          latitude: 17.4485,
-          longitude: 78.3741,
-          requestType:
-            selectedMode === 'store'
-              ? 'STORE_ROUTED'
-              : selectedMode === 'expert'
-              ? 'DIRECT_PLUMBER'
-              : 'NEARBY_AUTO',
-        });
-
-        dispatch(stopSearching());
-        dispatch(
-          setActiveJob({
-            plumberId: order.plumber?.id ? String(order.plumber.id) : `order_${order.id}`,
-            message: `Service order #${order.id} created. It is now visible in the plumber app.`,
-          })
-        );
-        Alert.alert(
-          'Request sent',
-          `Service order #${order.id} was created and sent to the plumber workflow.`
-        );
-        return;
-      }
-
-      const result = await PlumberRepository.requestNearbyPlumber({
-        customerId: currentUser?.id ?? 0,
-        longitude: -122.4194,
-        latitude: 37.7749,
-        requestType: selectedMode,
-        category: selectedCategory,
-      });
-
       dispatch(stopSearching());
-      Alert.alert('Broadcast Completed', result.message || 'Job broadcasted to nearby plumbers.');
+      navigation.navigate('PlumberConfirmation', {
+        issueType: `${selectedCategoryLabel} - ${selectedService.title}`,
+        issueCategory: selectedCategory,
+        description: `${selectedCategoryLabel} - ${selectedService.title}`,
+        urgency: 'URGENT',
+        scheduledFor: null,
+      });
     } catch (error: any) {
       dispatch(stopSearching());
       Alert.alert('Connection issue', error.message || 'Could not reach the dispatch service.');
@@ -470,8 +461,14 @@ export function HomeScreen({ navigation }: any) {
     if (category.name === 'More') {
       navigation.navigate('Categories');
     } else {
-      dispatch(setBookingConfig({ mode: selectedMode, category: category.name }));
-      navigation.navigate('PlumberConfirmation', { issueType: category.name });
+      dispatch(setBookingConfig({ mode: selectedMode, category: category.categoryValue }));
+      navigation.navigate('PlumberConfirmation', {
+        issueType: category.name,
+        issueCategory: category.categoryValue,
+        description: category.name,
+        urgency: 'NORMAL',
+        scheduledFor: null,
+      });
     }
   };
 
@@ -566,10 +563,10 @@ export function HomeScreen({ navigation }: any) {
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.trackingContent}>
-          {/* Phase 3: Material Payment Approval Card � floats at top if request is pending */}
+          {/* Phase 3: Material Payment Approval Card -> floats at top if request is pending */}
           {materialPaymentRequest && (
             <View style={styles.materialApprovalCard}>
-              <Text style={styles.materialApprovalEyebrow}>�x� Parts Needed by Your Plumber</Text>
+              <Text style={styles.materialApprovalEyebrow}>Parts Needed by Your Plumber</Text>
               <Text style={styles.materialApprovalTitle}>{materialPaymentRequest.plumberName} needs supplies</Text>
               <Text style={styles.materialApprovalMsg}>{materialPaymentRequest.message}</Text>
               <View style={styles.materialApprovalAmountRow}>
@@ -600,7 +597,7 @@ export function HomeScreen({ navigation }: any) {
           <View style={styles.hero}>
             <Text style={styles.brand}>PlumbCommerce</Text>
             <Text style={styles.heroTitle}>Your plumber is on the way</Text>
-            <Text style={styles.heroSub}>Live assignment for {selectedCategory.toLowerCase()}.</Text>
+            <Text style={styles.heroSub}>Live assignment for {selectedCategoryLabel.toLowerCase()}.</Text>
           </View>
 
           <View style={styles.mapPanel}>
@@ -650,7 +647,7 @@ export function HomeScreen({ navigation }: any) {
         <View style={styles.locationSelector}>
           <AppIcon icon={LocationPinIcon} size={18} color={colors.primary} />
           <Text style={styles.locationTitle}>Hyderabad</Text>
-          <Text style={styles.dropdownArrow}>��</Text>
+          <SvgNavigationChevronDown width={14} height={14} stroke={colors.textPrimary} />
         </View>
         <IconBadge count={unreadCount}>
           <TouchableOpacity
@@ -667,7 +664,7 @@ export function HomeScreen({ navigation }: any) {
           <Text style={styles.greetingText}>Good Evening,</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={styles.profileName}>Akhil</Text>
-            <Text style={[styles.greetingText, { marginLeft: 6 }]}>�x9</Text>
+            
           </View>
         </View>
 
@@ -683,6 +680,7 @@ export function HomeScreen({ navigation }: any) {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          {...({ role: 'region', 'aria-label': 'Promotions carousel' } as any)}
           style={styles.promoCarousel}
           contentContainerStyle={styles.promoCarouselContent}
         >
@@ -728,7 +726,11 @@ export function HomeScreen({ navigation }: any) {
         <View style={styles.storesSection}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Nearby Stores</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Main', { screen: 'StoreTab' })}>
+            <TouchableOpacity
+              style={styles.seeAllBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              onPress={() => navigation.navigate('Main', { screen: 'StoreTab' })}
+            >
               <Text style={styles.seeAllLink}>See all</Text>
             </TouchableOpacity>
           </View>
@@ -755,12 +757,12 @@ export function HomeScreen({ navigation }: any) {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryRail}>
           {categories.map((category) => (
             <Pressable
-              key={category}
-              style={[styles.categoryChip, selectedCategory === category && styles.categoryChipActive]}
-              onPress={() => dispatch(setBookingConfig({ mode: selectedMode, category }))}
+              key={category.name}
+              style={[styles.categoryChip, selectedCategoryLabel === category.name && styles.categoryChipActive]}
+              onPress={() => dispatch(setBookingConfig({ mode: selectedMode, category: category.name }))}
             >
-              <Text style={[styles.categoryText, selectedCategory === category && styles.categoryTextActive]}>
-                {category}
+              <Text style={[styles.categoryText, selectedCategoryLabel === category.name && styles.categoryTextActive]}>
+                {category.name}
               </Text>
             </Pressable>
           ))}
@@ -907,9 +909,11 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   notificationBell: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    minWidth: 44,
+    minHeight: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,
@@ -1044,6 +1048,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.md,
   },
+  seeAllBtn: {
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   seeAllLink: {
     fontSize: typography.fontSize.sm,
     color: colors.primary,
@@ -1053,7 +1063,17 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   categoryRail: { gap: 10, paddingBottom: 16 },
-  categoryChip: { backgroundColor: '#FFFFFF', borderRadius: 999, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: '#E5E7EB' },
+  categoryChip: { 
+    backgroundColor: '#FFFFFF', 
+    borderRadius: 999, 
+    paddingHorizontal: 16, 
+    paddingVertical: 10, 
+    minHeight: 44, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    borderWidth: 1, 
+    borderColor: '#E5E7EB' 
+  },
   categoryChipActive: { backgroundColor: '#111827', borderColor: '#111827' },
   categoryText: { color: '#374151', fontSize: 14, fontWeight: '800' },
   categoryTextActive: { color: '#FFFFFF' },
@@ -1107,14 +1127,23 @@ const styles = StyleSheet.create({
   productName: { color: '#111827', fontSize: 16, fontWeight: '800' },
   productPrice: { color: '#11A683', fontSize: 14, fontWeight: '800', marginTop: 2 },
   productCategory: { color: '#9CA3AF', fontSize: 11, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
-  addButton: { backgroundColor: '#111827', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
+  addButton: { 
+    backgroundColor: '#111827', 
+    borderRadius: 10, 
+    paddingHorizontal: 12, 
+    paddingVertical: 8, 
+    minHeight: 44, 
+    minWidth: 48, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
   addButtonText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
   otpInputContainer: { backgroundColor: '#EFF6FF', borderRadius: 18, padding: 16, marginTop: 18, borderWidth: 2, borderStyle: 'dashed', borderColor: '#3B82F6' },
   otpInputLabel: { color: '#1D4ED8', fontSize: 14, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.5 },
   otpInputSub: { color: '#4B5563', fontSize: 12, fontWeight: '700', marginVertical: 6, lineHeight: 18 },
   otpInputRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
   otpTextInput: { flex: 1, height: 52, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#BFDBFE', paddingHorizontal: 16, fontSize: 18, fontWeight: '900', color: '#1E3A8A', letterSpacing: 4, textAlign: 'center' },
-  // Phase 3 � Material Payment Approval Card
+  // Phase 3 - Material Payment Approval Card
   materialApprovalCard: { margin: 18, marginBottom: 0, backgroundColor: '#FFFBEB', borderRadius: 24, padding: 18, borderWidth: 2, borderColor: '#F59E0B' },
   materialApprovalEyebrow: { color: '#92400E', fontSize: 12, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.5 },
   materialApprovalTitle: { color: '#111827', fontSize: 20, fontWeight: '900', marginTop: 6 },
@@ -1130,6 +1159,7 @@ const styles = StyleSheet.create({
   promoCarousel: {
     marginVertical: spacing.md,
     height: 180,
+    overflow: 'hidden',
   },
   promoCarouselContent: {
     paddingHorizontal: spacing.layout,

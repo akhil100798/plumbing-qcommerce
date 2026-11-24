@@ -13,11 +13,15 @@ export const colors = {
   errorLight: '#FEE2E2',
 
   // Neutrals
+  white: '#FFFFFF',
   background: '#F8FAFC',   // Slate Background
   surface: '#FFFFFF',
+  surfaceSubtle: '#F1F5F9',
+  secondary: '#334155',
+  secondaryLight: '#E2E8F0',
   textPrimary: '#0F172A',  // Slate 900
-  textSecondary: '#64748B',// Slate 500
-  textMuted: '#94A3B8',    // Slate 400
+  textSecondary: '#334155',// Slate 700
+  textMuted: '#475569',    // Slate 600
   border: '#E2E8F0',       // Slate 200
   borderDark: '#CBD5E1',   // Slate 300
 

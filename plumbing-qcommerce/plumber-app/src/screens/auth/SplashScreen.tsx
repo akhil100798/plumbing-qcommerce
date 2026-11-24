@@ -5,28 +5,31 @@ import {
   View,
   ActivityIndicator,
   Animated,
+  Image,
+  Dimensions,
 } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
+import { useDispatch } from 'react-redux';
 
 import { colors, spacing, typography } from '../../theme';
 import { AuthStackParamList } from '../../types/navigation';
-import { useDispatch } from 'react-redux';
 import { authSuccess, logout } from '../../redux/slices/authSlice';
 import { profileService } from '../../services/profile/profileService';
 import { tokenStorage } from '../../services/api/tokenStorage';
-
-import LogoMark from '../../assets/icons/logo-mark.svg';
-import PlumberHero from '../../assets/illustrations/plumber-splash-hero.svg';
+import { MASCOT_ASSETS } from '../../assets/images/mascot';
+import { SvgPlumbWrench } from '../../assets/svg';
 import { useNativeDriver } from '../../theme/animation';
 
 type Props = StackScreenProps<AuthStackParamList, 'Splash'>;
+
+const { width } = Dimensions.get('window');
 
 export function SplashScreen({ navigation }: Props) {
   const dispatch = useDispatch();
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.75)).current;
+  const scaleAnim = useRef(new Animated.Value(0.85)).current;
   const floatAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -45,7 +48,7 @@ export function SplashScreen({ navigation }: Props) {
       }),
     ]).start();
 
-    // Floating animation
+    // Subtle mascot floating
     Animated.loop(
       Animated.sequence([
         Animated.timing(floatAnim, {
@@ -67,7 +70,6 @@ export function SplashScreen({ navigation }: Props) {
         const refreshToken = await tokenStorage.getItem('refreshToken');
 
         if (token && refreshToken) {
-          // Fetch real user info
           const profile = await profileService.fetchProfile();
           dispatch(
             authSuccess({
@@ -76,7 +78,6 @@ export function SplashScreen({ navigation }: Props) {
               refreshToken,
             })
           );
-          // Redirect to main
           navigation.replace('Main' as any);
         } else {
           dispatch(logout());
@@ -88,28 +89,50 @@ export function SplashScreen({ navigation }: Props) {
       }
     };
 
-    const timer = setTimeout(checkAuth, 3000);
+    const timer = setTimeout(checkAuth, 2500);
     return () => clearTimeout(timer);
   }, [navigation, dispatch, fadeAnim, scaleAnim, floatAnim]);
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.logoContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
-        <View style={styles.logoRow}>
-          <LogoMark width={48} height={48} stroke={colors.primary} />
-          <Text style={styles.appName}>FixKart</Text>
+      {/* Brand Header */}
+      <Animated.View style={[styles.brandSection, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+        <View style={styles.logoBadge}>
+          <SvgPlumbWrench width={38} height={38} stroke="#0B57CF" fill="none" />
         </View>
+        <Text style={styles.wordmark}>
+          Fix<Text style={styles.wordmarkHighlight}>Kart</Text>
+        </Text>
         <Text style={styles.tagline}>Fix it. Fast. Fixed with FixKart.</Text>
       </Animated.View>
 
-      <Animated.View style={[styles.heroContainer, { transform: [{ translateY: floatAnim }] }]}>
-        <PlumberHero width={240} height={160} />
+      {/* Mascot Section with City Horizon */}
+      <Animated.View style={[styles.mascotContainer, { transform: [{ translateY: floatAnim }] }]}>
+        {/* City skyline silhouette bars */}
+        <View style={styles.citySkyline}>
+          <View style={[styles.building, { height: 70, width: 28, left: 20 }]} />
+          <View style={[styles.building, { height: 95, width: 24, left: 55 }]} />
+          <View style={[styles.building, { height: 60, width: 30, left: 86 }]} />
+          <View style={[styles.building, { height: 110, width: 38, left: 122 }]} />
+          <View style={[styles.building, { height: 80, width: 26, left: 168 }]} />
+          <View style={[styles.building, { height: 100, width: 36, left: 200 }]} />
+          <View style={[styles.building, { height: 75, width: 30, left: 244 }]} />
+          <View style={[styles.building, { height: 90, width: 24, left: 280 }]} />
+        </View>
+
+        {/* 3D Character Mascot */}
+        <Image
+          source={MASCOT_ASSETS.mascot}
+          style={styles.mascotImage}
+          resizeMode="contain"
+        />
       </Animated.View>
 
+      {/* Footer Version Info */}
       <View style={styles.footer}>
-        <ActivityIndicator color={colors.primary} size="small" />
-        <Text style={styles.footerText}>Partnering in progress...</Text>
-        <Text style={styles.versionText}>Ver: 1.0.0</Text>
+        <ActivityIndicator color="#0B57CF" size="small" style={{ marginBottom: 6 }} />
+        <Text style={styles.statusText}>Partnering in progress...</Text>
+        <Text style={styles.versionText}>Ver. 1.0.0</Text>
       </View>
     </View>
   );
@@ -118,50 +141,85 @@ export function SplashScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: '#F5F9FF',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 54,
+    paddingBottom: 28,
+  },
+  brandSection: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  logoBadge: {
+    width: 72,
+    height: 72,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
+    shadowColor: '#0B57CF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 3,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: '#E1EDFB',
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginTop: spacing.giant,
-    marginBottom: spacing.xl,
+  wordmark: {
+    fontSize: 34,
+    fontWeight: '800',
+    color: '#0B57CF',
+    letterSpacing: -0.5,
   },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  appName: {
-    fontSize: 36,
-    fontWeight: typography.fontWeight.black,
-    color: colors.primary,
+  wordmarkHighlight: {
+    color: '#002B66',
   },
   tagline: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
-    marginTop: spacing.xs,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#64748B',
+    marginTop: 4,
   },
-  heroContainer: {
+  mascotContainer: {
+    width: '100%',
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     alignItems: 'center',
+    position: 'relative',
+  },
+  citySkyline: {
+    position: 'absolute',
+    bottom: 20,
+    width: '100%',
+    height: 120,
+    opacity: 0.18,
+  },
+  building: {
+    position: 'absolute',
+    bottom: 0,
+    backgroundColor: '#2563EB',
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
+  },
+  mascotImage: {
+    width: Math.min(width * 0.8, 300),
+    height: 280,
+    zIndex: 10,
   },
   footer: {
     alignItems: 'center',
-    marginBottom: spacing.giant,
-    gap: spacing.xs,
+    justifyContent: 'center',
   },
-  footerText: {
-    color: colors.textSecondary,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
+  statusText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#64748B',
   },
   versionText: {
-    color: colors.textMuted,
-    fontSize: typography.fontSize.xs,
-    marginTop: spacing.xs,
+    fontSize: 11,
+    color: '#94A3B8',
+    marginTop: 2,
   },
 });

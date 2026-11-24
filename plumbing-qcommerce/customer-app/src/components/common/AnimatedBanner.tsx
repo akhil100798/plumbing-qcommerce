@@ -127,7 +127,8 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   ctaButton: {
-    height: 38,
+    height: 44,
+    minHeight: 44,
     minWidth: 100,
     paddingVertical: 0,
     paddingHorizontal: spacing.sm,

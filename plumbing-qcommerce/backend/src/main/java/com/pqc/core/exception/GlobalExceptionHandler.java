@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.server.ResponseStatusException;
+import jakarta.validation.ConstraintViolationException;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -60,15 +61,45 @@ public class GlobalExceptionHandler {
                 Map.of());
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
-        log.error("RuntimeException occurred: ", ex);
-        String msg = ex.getMessage();
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalStateException(IllegalStateException ex) {
+        log.warn("IllegalStateException occurred: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+            "timestamp", LocalDateTime.now().toString(),
+            "status", 400,
+            "error", "Bad Request",
+            "message", ex.getMessage() != null ? ex.getMessage() : "Invalid state transition"
+        ));
+    }
+
+    @ExceptionHandler(java.util.NoSuchElementException.class)
+    public ResponseEntity<Map<String, Object>> handleNoSuchElementException(java.util.NoSuchElementException ex) {
+        log.warn("NoSuchElementException occurred: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
             "timestamp", LocalDateTime.now().toString(),
             "status", 404,
             "error", "Not Found",
-            "message", msg != null ? msg : "Not Found"
+            "message", ex.getMessage() != null ? ex.getMessage() : "Resource not found"
+        ));
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
+        log.error("RuntimeException occurred: ", ex);
+        String msg = ex.getMessage();
+        if (msg != null && msg.toLowerCase().contains("not found")) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                "timestamp", LocalDateTime.now().toString(),
+                "status", 404,
+                "error", "Not Found",
+                "message", msg
+            ));
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+            "timestamp", LocalDateTime.now().toString(),
+            "status", 500,
+            "error", "Internal Server Error",
+            "message", msg != null ? msg : "An internal server error occurred"
         ));
     }
 
@@ -92,6 +123,16 @@ public class GlobalExceptionHandler {
         ));
     }
 
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleConstraintViolation(ConstraintViolationException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+            "timestamp", LocalDateTime.now().toString(),
+            "status", 400,
+            "error", "Bad Request",
+            "message", "Address validation failed"
+        ));
+    }
+
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
@@ -108,14 +149,18 @@ public class GlobalExceptionHandler {
         ));
     }
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex) {
-        log.error("Unhandled exception occurred: ", ex);
-        String msg = ex.getMessage();
+    public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex, HttpServletRequest request) {
+        String correlationId = request != null ? request.getHeader("X-Correlation-ID") : null;
+        if (correlationId == null || correlationId.isBlank()) {
+            correlationId = UUID.randomUUID().toString();
+        }
+        log.error("[ERROR-500] CorrelationId={}: Unhandled exception occurred", correlationId, ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
             "timestamp", LocalDateTime.now().toString(),
             "status", 500,
             "error", "Internal Server Error",
-            "message", msg != null ? msg : "An unexpected error occurred."
+            "message", "Internal server error",
+            "correlationId", correlationId
         ));
     }
 }

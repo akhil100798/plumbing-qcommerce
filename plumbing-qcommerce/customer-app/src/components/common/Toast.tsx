@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { borderRadius, colors, shadows, spacing, typography } from '../../theme';
+import { SvgStatusSparkle } from '../../assets/svg';
 
 interface ToastProps {
   visible: boolean;
@@ -47,7 +48,7 @@ export function Toast({ visible, message, onHide, duration = 3000 }: ToastProps)
       ]}
     >
       <View style={styles.toastContent}>
-        <Text style={styles.toastEmoji}>✨</Text>
+        <SvgStatusSparkle width={16} height={16} stroke={colors.surface} style={{ marginRight: 8 }} />
         <Text style={styles.toastText}>{message}</Text>
       </View>
     </Animated.View>

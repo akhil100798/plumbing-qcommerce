@@ -23,19 +23,22 @@ export function IconButton({
   onPress,
   style,
   iconStyle,
-  size = 40,
+  size = 44,
 }: IconButtonProps) {
+  const effectiveSize = Math.max(size, 44);
   return (
     <Pressable
       onPress={onPress}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      accessibilityRole="button"
       style={({ pressed }) => [
         styles.button,
-        { width: size, height: size, borderRadius: size / 2 },
+        { width: effectiveSize, height: effectiveSize, borderRadius: effectiveSize / 2, minWidth: 44, minHeight: 44 },
         style,
         pressed && styles.pressed,
       ]}
     >
-      <Text style={[styles.icon, { fontSize: size * 0.45 }, iconStyle]}>
+      <Text style={[styles.icon, { fontSize: effectiveSize * 0.45 }, iconStyle]}>
         {icon}
       </Text>
     </Pressable>
@@ -44,6 +47,8 @@ export function IconButton({
 
 const styles = StyleSheet.create({
   button: {
+    minWidth: 44,
+    minHeight: 44,
     backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',

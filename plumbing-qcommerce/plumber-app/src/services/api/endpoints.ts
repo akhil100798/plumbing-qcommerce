@@ -1,6 +1,7 @@
 export const ENDPOINTS = {
   AUTH: {
     LOGIN: '/auth/login',
+    LOGOUT: '/auth/logout',
     REGISTER: '/auth/register/plumber',
     SEND_OTP: '/auth/send-otp',
     VERIFY_OTP: '/auth/verify-otp',
@@ -8,11 +9,13 @@ export const ENDPOINTS = {
   },
   ORDERS: {
     ACCEPT: (id: string | number) => `/orders/${id}/accept`,
+    REJECT: (id: string | number) => `/orders/${id}/reject`,
     ARRIVE: (id: string | number) => `/orders/${id}/arrive`,
     START: (id: string | number) => `/orders/${id}/start`,
     COMPLETE: (id: string | number) => `/orders/${id}/complete`,
     CANCEL: (id: string | number) => `/orders/${id}/cancel`,
     BY_STATUS: (status: string) => `/orders/status/${status}`,
+    OFFERS: '/orders/plumber/jobs/offers',
     GET_BY_ID: (id: string | number) => `/orders/${id}`,
     PLUMBER_ASSIGNED: '/orders/plumber',
   },

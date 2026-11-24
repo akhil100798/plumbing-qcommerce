@@ -1,29 +1,57 @@
 import React, { useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 import { View, Text, StyleSheet, SafeAreaView, Alert, ScrollView } from 'react-native';
 import { StackScreenProps } from '@react-navigation/stack';
 
 import { AppHeader } from '../../components/common/AppHeader';
 import { PhotoGrid } from '../../components/common/PhotoGrid';
 import { PrimaryButton } from '../../components/common/PrimaryButton';
-import { colors, spacing, typography } from '../../theme';
+import { colors, spacing, typography, borderRadius } from '../../theme';
 import { AppStackParamList } from '../../types/navigation';
 
-const MIN_PHOTOS = 3;
+const MIN_PHOTOS = 2;
 
 type Props = StackScreenProps<AppStackParamList, 'AfterPhotos'>;
 
 export function AfterPhotosScreen({ route, navigation }: Props) {
-  const { jobId } = route.params;
-  const [photos, setPhotos] = useState<string[]>([]);
+  const { jobId = 'JOB-1024' } = (route as any)?.params || {};
+  const [photos, setPhotos] = useState<string[]>([
+    'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=400',
+    'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&q=80&w=400',
+  ]);
 
   const handleAddPhoto = async () => {
-    const mockPhotos = [
-      'https://images.unsplash.com/photo-1542013936693-8848e574047a?auto=format&fit=crop&q=80&w=400',
-      'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?auto=format&fit=crop&q=80&w=400',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=400',
-    ];
-    const nextUri = mockPhotos[photos.length % mockPhotos.length];
-    setPhotos((prev) => [...prev, nextUri]);
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      let result;
+      if (permission.granted) {
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          quality: 0.8,
+        });
+      } else {
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          quality: 0.8,
+        });
+      }
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setPhotos((prev) => [...prev, result.assets[0].uri]);
+      }
+    } catch (err) {
+      console.warn('Camera capture error, falling back to gallery:', err);
+      try {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          quality: 0.8,
+        });
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          setPhotos((prev) => [...prev, result.assets[0].uri]);
+        }
+      } catch (galleryErr) {
+        Alert.alert('Camera Error', 'Could not open camera or image gallery.');
+      }
+    }
   };
 
   const handleRemovePhoto = (index: number) => {
@@ -42,14 +70,25 @@ export function AfterPhotosScreen({ route, navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <AppHeader title="After Photos" onBackPress={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={styles.body}>
-        <Text style={styles.heading}>Capture clear photos</Text>
-        <Text style={styles.subheading}>after completing the work.</Text>
+      <AppHeader
+        title="After Photos"
+        variant="blue"
+        onBackPress={() => navigation.goBack()}
+      />
 
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        {/* Stitch Instructions */}
+        <View style={styles.instructionWrap}>
+          <Text style={styles.heading}>Capture clear photos</Text>
+          <Text style={styles.subheading}>after completing the work</Text>
+        </View>
+
+        {/* Stitch Photo Grid with Verified Green Badges */}
         <View style={styles.gridWrapper}>
           <PhotoGrid
             photos={photos}
+            slots={4}
+            badgeType="check"
             minPhotos={MIN_PHOTOS}
             onAddPhoto={handleAddPhoto}
             onRemovePhoto={handleRemovePhoto}
@@ -57,7 +96,7 @@ export function AfterPhotosScreen({ route, navigation }: Props) {
         </View>
 
         {!canProceed && (
-          <Text style={styles.hint}>Add at least {MIN_PHOTOS} photos to continue.</Text>
+          <Text style={styles.hint}>Add at least ${MIN_PHOTOS} photos to continue.</Text>
         )}
 
         <View style={styles.spacer} />
@@ -66,7 +105,7 @@ export function AfterPhotosScreen({ route, navigation }: Props) {
           title="Next"
           onPress={handleContinue}
           disabled={!canProceed}
-          style={canProceed ? styles.nextButton : styles.nextButtonDisabled}
+          variant="blue"
         />
       </ScrollView>
     </SafeAreaView>
@@ -74,16 +113,44 @@ export function AfterPhotosScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  body: { flexGrow: 1, paddingHorizontal: spacing.layout, paddingTop: spacing.sm, paddingBottom: spacing.lg },
-  heading: { fontSize: 22, fontWeight: typography.fontWeight.black, color: colors.textPrimary, textAlign: 'center' },
-  subheading: { fontSize: typography.fontSize.sm, color: colors.textSecondary, textAlign: 'center', marginTop: 2 },
-  gridWrapper: { marginTop: spacing.lg },
-  hint: { fontSize: typography.fontSize.xs, color: colors.warning, marginTop: spacing.md, textAlign: 'center', fontWeight: typography.fontWeight.bold },
-  spacer: { flex: 1 },
-  nextButton: {
-    backgroundColor: colors.primary,
-    marginTop: spacing.xl,
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
   },
-  nextButtonDisabled: { opacity: 0.5, marginTop: spacing.xl },
+  body: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 28,
+  },
+  instructionWrap: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  heading: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E293B',
+    textAlign: 'center',
+  },
+  subheading: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  gridWrapper: {
+    marginBottom: 16,
+  },
+  hint: {
+    fontSize: 12,
+    color: '#D97706',
+    marginTop: 8,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  spacer: {
+    flex: 1,
+    minHeight: 24,
+  },
 });

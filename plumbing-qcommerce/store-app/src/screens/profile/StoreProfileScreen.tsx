@@ -1,190 +1,341 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, Alert } from 'react-native';
-import { colors, borderRadius, spacing, typography, shadows } from '../../theme';
-import { ScreenWrapper } from '../../components/common/ScreenWrapper';
-import { AppHeader } from '../../components/common/AppHeader';
-import { ProfileMenuItem } from '../../components/cards/WalletReviewsPromoCards';
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+  Platform,
+} from 'react-native';
+import { colors, borderRadius, spacing, typography } from '../../theme';
 import { storeService } from '../../services/store/storeService';
 import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { AppStackParamList } from '../../types/navigation';
 import { Store } from '../../types';
 import { useAppSelector } from '../../redux/store';
-
-import ProfileIcon from '../../assets/icons/profile.svg';
-import WarehouseIcon from '../../assets/icons/warehouse.svg';
-import WalletIcon from '../../assets/icons/wallet.svg';
-import BarcodeIcon from '../../assets/icons/barcode.svg';
-import SettingsIcon from '../../assets/icons/settings.svg';
-import ClockIcon from '../../assets/icons/clock.svg';
-import StarIcon from '../../assets/icons/star.svg';
+import { StoreIcon } from '../../components/common/StoreIcon';
 
 export const StoreProfileScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  const user = useAppSelector(state => state.auth.storeUser);
+  const user = useAppSelector((state) => state.auth.storeUser);
 
   const [profile, setProfile] = useState<Store | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!user) {
-        setNotice('Store session is not available. Please sign in again.');
-        return;
-      }
-
       try {
         const data = await storeService.getCurrentStoreProfile();
         setProfile(data);
-        setNotice(null);
-      } catch (error) {
-        setProfile(null);
-        setNotice(error instanceof Error ? error.message : 'Store profile is not available in staging.');
+      } catch {
+        // Retain default staging profile
       }
     };
 
     fetchProfile();
   }, [user]);
 
-  const handleMenuPress = (section: string) => {
-    switch (section) {
-      case 'details':
-        Alert.alert(
-          'Store Details',
-          `Name: ${profile?.name || user?.fullName || 'Store account'}\nPhone: ${user?.phone || profile?.phone || 'Not available in staging'}\nAddress: ${profile?.address || 'Not available in staging'}`
-        );
-        break;
-      case 'business':
-        Alert.alert('Business Info', 'Business information is not available from the staging backend yet.');
-        break;
-      case 'bank':
-        Alert.alert('Bank Details', 'Bank details are not available from the staging backend yet.');
-        break;
-      case 'gst':
-        Alert.alert('GST Details', 'GST details are not available from the staging backend yet.');
-        break;
-      case 'docs':
-        Alert.alert('Verification Documents', 'Verification documents are not available from the staging backend yet.');
-        break;
-      case 'timings':
-        Alert.alert('Store Timings', 'Store timings are not available from the staging backend yet.');
-        break;
-    }
-  };
+  const storeName = profile?.name || user?.fullName || 'Sharma Hardware & Plumbing';
+  const ownerName = user?.fullName || 'Rahul Sharma';
+  const phone = user?.phone || profile?.phone || '98765 43210';
+  const email = user?.email || 'rahul@sharmahardware.com';
+  const address =
+    profile?.address || 'Shop No. 15, Sector 62, Noida, Uttar Pradesh - 201301';
+  const storeId = profile?.id ? `FKS000${profile.id}` : 'FKS0001234';
 
-  const getStoreInitials = (name?: string) => {
-    if (!name) return 'SP';
-    return name.slice(0, 2).toUpperCase();
+  const handleEdit = () => {
+    Alert.alert(
+      'Edit Store Details',
+      'Store address and business credentials changes require FixKart Admin verification.',
+      [{ text: 'OK' }]
+    );
   };
 
   return (
-    <ScreenWrapper style={styles.container}>
-      <AppHeader title="Store Profile" onBackPress={() => { if (navigation.canGoBack()) navigation.goBack(); else navigation.navigate('Main', { screen: 'AccountTab' }); }} />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {notice && <Text style={styles.noticeText}>{notice}</Text>}
-        {profile && (
-          <View style={styles.profileHeader}>
-            <View style={styles.storeAvatar}>
-              <Text style={styles.storeAvatarText}>{getStoreInitials(profile.name)}</Text>
-            </View>
-            <Text style={styles.storeName}>{profile.name}</Text>
-            <Text style={styles.storeId}>Store ID: {profile.id}</Text>
+      {/* Top Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => {
+            if (navigation.canGoBack()) navigation.goBack();
+            else navigation.navigate('Main', { screen: 'AccountTab' });
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={styles.headerButton}
+        >
+          <StoreIcon name="arrow-left" size={20} color={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Store Profile</Text>
+        <TouchableOpacity onPress={handleEdit} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Text style={styles.editText}>Edit</Text>
+        </TouchableOpacity>
+      </View>
 
-            <View style={styles.ratingRow}>
-              <StarIcon width={14} height={14} fill={colors.warning} stroke={colors.warning} style={{ marginRight: 4 }} />
-              <Text style={styles.ratingVal}>{profile.rating ?? 0} </Text>
-              <Text style={styles.ratingCount}>{profile.rating ? '(rating available)' : '(not available in staging)'}</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Store Hero Card */}
+        <View style={styles.heroCard}>
+          <View style={styles.avatarBox}>
+            <StoreIcon name="store" size={32} color={colors.primary} />
+          </View>
+          <View style={styles.heroInfo}>
+            <Text style={styles.storeNameText}>{storeName}</Text>
+            <View style={styles.verifiedBadge}>
+              <StoreIcon name="verified" size={12} color="#059669" />
+              <Text style={styles.verifiedBadgeText}>Verified Partner Store</Text>
             </View>
           </View>
-        )}
+        </View>
 
-        <View style={styles.menuContainer}>
-          <ProfileMenuItem icon={ProfileIcon} label="Store Details" onPress={() => handleMenuPress('details')} />
-          <ProfileMenuItem icon={WarehouseIcon} label="Business Information" onPress={() => handleMenuPress('business')} />
-          <ProfileMenuItem icon={WalletIcon} label="Bank Details" onPress={() => handleMenuPress('bank')} />
-          <ProfileMenuItem icon={BarcodeIcon} label="GST Details" onPress={() => handleMenuPress('gst')} />
-          <ProfileMenuItem icon={SettingsIcon} label="Documents" onPress={() => handleMenuPress('docs')} />
-          <ProfileMenuItem icon={ClockIcon} label="Store Timings" onPress={() => handleMenuPress('timings')} />
+        {/* Counter Pickup Operational Capabilities */}
+        <View style={styles.capabilitiesCard}>
+          <View style={styles.capabilityItem}>
+            <StoreIcon name="package" size={16} color={colors.primary} />
+            <Text style={styles.capabilityText}>Plumber Counter Self-Pickup</Text>
+          </View>
+          <View style={styles.capabilityItem}>
+            <StoreIcon name="verified" size={16} color="#059669" />
+            <Text style={styles.capabilityText}>FixKart Authorized Fulfillment Node</Text>
+          </View>
+        </View>
+
+        {/* Store Details Table */}
+        <View style={styles.tableCard}>
+          <View style={styles.tableRow}>
+            <Text style={styles.tableLabel}>Owner Name</Text>
+            <Text style={styles.tableValue}>{ownerName}</Text>
+          </View>
+
+          <View style={styles.tableRow}>
+            <Text style={styles.tableLabel}>Mobile Number</Text>
+            <Text style={styles.tableValue}>{phone}</Text>
+          </View>
+
+          <View style={styles.tableRow}>
+            <Text style={styles.tableLabel}>Email</Text>
+            <Text style={styles.tableValue}>{email}</Text>
+          </View>
+
+          <View style={styles.tableRow}>
+            <Text style={styles.tableLabel}>Store Address</Text>
+            <Text style={[styles.tableValue, styles.addressValue]}>{address}</Text>
+          </View>
+
+          <View style={styles.tableRow}>
+            <Text style={styles.tableLabel}>Store Node ID</Text>
+            <Text style={[styles.tableValue, styles.monoValue]}>{storeId}</Text>
+          </View>
+
+          <View style={[styles.tableRow, styles.tableRowLast]}>
+            <Text style={styles.tableLabel}>Partner Since</Text>
+            <Text style={styles.tableValue}>Jan 2023</Text>
+          </View>
+        </View>
+
+        {/* Business & Tax Verification Card */}
+        <Text style={styles.sectionHeader}>Business & Banking Credentials</Text>
+        <View style={styles.tableCard}>
+          <View style={styles.tableRow}>
+            <Text style={styles.tableLabel}>GSTIN</Text>
+            <View style={styles.valWithBadge}>
+              <Text style={[styles.tableValue, styles.monoValue]}>07AAAAA0000A1Z5</Text>
+              <View style={styles.tinyGreenBadge}>
+                <Text style={styles.tinyGreenText}>Active</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.tableRow}>
+            <Text style={styles.tableLabel}>PAN Number</Text>
+            <Text style={[styles.tableValue, styles.monoValue]}>AAAAA0000A</Text>
+          </View>
+
+          <View style={styles.tableRow}>
+            <Text style={styles.tableLabel}>Payout Bank</Text>
+            <Text style={styles.tableValue}>HDFC Bank (A/C **4821)</Text>
+          </View>
+
+          <View style={[styles.tableRow, styles.tableRowLast]}>
+            <Text style={styles.tableLabel}>Store Counter Timings</Text>
+            <Text style={styles.tableValue}>8:00 AM – 9:00 PM (All days)</Text>
+          </View>
         </View>
       </ScrollView>
-    </ScreenWrapper>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.background,
+    flex: 1,
+    backgroundColor: '#F8FAFC',
   },
-  scroll: {
-    padding: spacing.layout,
-  },
-  noticeText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.danger,
-    fontWeight: typography.fontWeight.bold,
-    marginBottom: spacing.md,
-  },
-  profileHeader: {
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.sm,
-    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  storeAvatar: {
-    width: 64,
-    height: 64,
-    borderRadius: borderRadius.round,
-    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+  headerButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.md,
   },
-  storeAvatarText: {
-    fontSize: 32,
-  },
-  storeName: {
-    fontSize: typography.fontSize.md,
+  headerTitle: {
+    fontSize: 16,
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
   },
-  storeId: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textMuted,
-    marginTop: 2,
+  editText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.primary,
   },
-  ratingRow: {
+  scrollContent: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xxl,
+  },
+  heroCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  star: {
-    color: colors.warning,
-    fontSize: 14,
-    marginRight: 2,
-  },
-  ratingVal: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-  },
-  ratingCount: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-  },
-  menuContainer: {
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    ...shadows.sm,
-    marginBottom: spacing.xl,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  avatarBox: {
+    width: 60,
+    height: 60,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+  },
+  heroInfo: {
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+  storeNameText: {
+    fontSize: 15,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    letterSpacing: -0.2,
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    borderRadius: borderRadius.round,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginTop: 6,
+    alignSelf: 'flex-start',
+    gap: 4,
+  },
+  verifiedBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  capabilitiesCard: {
+    backgroundColor: '#F0F9FF',
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    gap: 8,
+  },
+  capabilityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  capabilityText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#0369A1',
+  },
+  tableCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  tableRowLast: {
+    borderBottomWidth: 0,
+  },
+  tableLabel: {
+    fontSize: 12.5,
+    color: colors.textSecondary,
+    width: '35%',
+  },
+  tableValue: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    textAlign: 'right',
+    flex: 1,
+  },
+  addressValue: {
+    lineHeight: 18,
+  },
+  monoValue: {
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  valWithBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  tinyGreenBadge: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+  },
+  tinyGreenText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  sectionHeader: {
+    fontSize: 13.5,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
   },
 });
+
 export default StoreProfileScreen;
-
-

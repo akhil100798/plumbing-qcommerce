@@ -18,6 +18,7 @@ public class SmsProperties {
     public static final String PROVIDER_NONE = "none";
     public static final String PROVIDER_LOCAL_CAPTURE = "local-capture";
     public static final String PROVIDER_DISABLED = "disabled";
+    public static final String PROVIDER_TWILIO = "twilio";
 
     private String provider = PROVIDER_NONE;
     private boolean localCaptureEnabled = false;

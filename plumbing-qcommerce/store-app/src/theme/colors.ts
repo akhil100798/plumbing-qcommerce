@@ -31,8 +31,8 @@ export const colors = {
   card: '#FFFFFF',           // Card Surface
   text: '#12141A',           // FixKart primary text
   textPrimary: '#12141A',    // Text Primary
-  textSecondary: '#6B7280',  // Text Secondary
-  textMuted: '#9CA3AF',      // Muted gray
+  textSecondary: '#374151',  // Text Secondary (Gray 700: 10.31:1 on white)
+  textMuted: '#475569',      // Slate 600 (7.58:1 on white)
   border: '#EAECEF',         // FixKart Border
   borderDark: '#CBD5E1',
 

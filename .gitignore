@@ -1,1 +1,30 @@
 .worktrees/
+node_modules/
+package-lock.json
+*.log
+*.tmp
+.vscode/
+scripts/
+stitch-designs/
+stitch_fixkart_store_partner_ui/
+plumbing-qcommerce/plumbing-qcommerce/
+*.dump
+
+# Temporary dumps & agent caches
+tmp_*.txt
+tmp/
+plumbing-qcommerce/tmp/
+plumbing-qcommerce/e2e-evidence/
+plumbing-qcommerce/backend/uploads/
+.agents/
+*.tsbuildinfo
+.next/
+dist/
+
+# Staging test photo binaries
+plumbing-qcommerce/backend/uploads/service-order-photos/*.jpg
+
+# UAT test evidence & screenshot suites
+FIXKART_*/
+!FIXKART_PHASE7_RC1_VERDICT.md
+!FIXKART_G_STACK_E2E_AUDIT_REPORT.md

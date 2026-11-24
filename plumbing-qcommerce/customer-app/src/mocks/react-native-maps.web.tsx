@@ -54,7 +54,7 @@ const MapView: React.FC<MapViewProps> = ({ style, children }) => (
     <View style={[styles.road, styles.roadVertical]} />
     {/* Label */}
     <View style={styles.labelContainer}>
-      <Text style={styles.labelEmoji}>🗺️</Text>
+      
       <Text style={styles.labelText}>Map View</Text>
       <Text style={styles.labelSub}>(Web Preview)</Text>
     </View>
@@ -65,7 +65,7 @@ const MapView: React.FC<MapViewProps> = ({ style, children }) => (
 export const Marker: React.FC<MarkerProps> = ({ title, pinColor }) => (
   <View style={styles.markerWrapper}>
     <View style={[styles.markerPin, pinColor ? { backgroundColor: pinColor } : {}]}>
-      <Text style={styles.markerText}>📍</Text>
+      <Text style={styles.markerText}>PIN</Text>
     </View>
     {title ? <Text style={styles.markerLabel}>{title}</Text> : null}
   </View>

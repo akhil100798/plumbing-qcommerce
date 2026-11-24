@@ -1,3 +1,4 @@
+import { SvgPayRupee, SvgPayWithdraw } from '../../assets/svg';
 import React from 'react';
 import {
   StyleSheet,
@@ -19,7 +20,7 @@ export function TransactionCard({ transaction }: TransactionCardProps) {
     <View style={styles.container}>
       <View style={styles.iconContainer}>
         <Text style={styles.icon}>
-          {isCredit ? '📥' : '📤'}
+          {isCredit ? <SvgPayRupee width={20} height={20} color='#10B981' /> : <SvgPayWithdraw width={20} height={20} color='#EF4444' />}
         </Text>
       </View>
 

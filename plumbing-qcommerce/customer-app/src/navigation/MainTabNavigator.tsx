@@ -20,6 +20,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 export function MainTabNavigator() {
   return (
     <Tab.Navigator
+      id="main"
       initialRouteName="HomeTab"
       screenOptions={({ route }) => ({
         headerShown: false,
@@ -86,8 +87,5 @@ const styles = StyleSheet.create({
   iconWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  tabEmoji: {
-    fontSize: 20,
   },
 });

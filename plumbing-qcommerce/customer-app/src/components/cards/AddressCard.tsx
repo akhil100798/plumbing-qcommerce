@@ -6,7 +6,8 @@ import {
   View,
 } from 'react-native';
 
-import { borderRadius, colors, spacing, typography } from '../../theme';
+import { colors, spacing, typography } from '../../theme';
+import { SvgProfileAddressHome, SvgProfileAddressOffice, SvgProfileLocationPin, SvgStatusCheckCircle } from '../../assets/svg';
 
 interface AddressCardProps {
   id: number;
@@ -26,27 +27,48 @@ export function AddressCard({
   selected,
   onSelect,
 }: AddressCardProps) {
+  const isHome = label.toLowerCase() === 'home';
+  const isOffice = label.toLowerCase() === 'office';
+
   return (
     <TouchableOpacity
       style={[styles.container, selected && styles.containerSelected]}
       onPress={onSelect}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
+      accessibilityRole="button"
     >
       <View style={styles.header}>
-        <View style={styles.labelWrapper}>
-          <Text style={styles.labelEmoji}>
-            {label === 'Home' ? '🏠' : label === 'Office' ? '🏢' : '📍'}
-          </Text>
-          <Text style={styles.labelText}>{label}</Text>
+        <View style={styles.labelSection}>
+          <View style={[styles.iconCircle, selected && styles.iconCircleSelected]}>
+            {isHome ? <SvgProfileAddressHome width={18} height={18} stroke={selected ? colors.primary : colors.textSecondary} /> : isOffice ? <SvgProfileAddressOffice width={18} height={18} stroke={selected ? colors.primary : colors.textSecondary} /> : <SvgProfileLocationPin width={18} height={18} stroke={selected ? colors.primary : colors.textSecondary} />}
+          </View>
+          <View>
+            <View style={styles.labelTitleRow}>
+              <Text style={styles.labelText}>{label}</Text>
+              {selected && (
+                <View style={styles.defaultBadge}>
+                  <Text style={styles.defaultBadgeText}>Selected</Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.contactText}>{name} • {phone}</Text>
+          </View>
         </View>
+
+        {/* Radio Indicator */}
         <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
           {selected && <View style={styles.radioInner} />}
         </View>
       </View>
 
-      <Text style={styles.name}>{name}</Text>
       <Text style={styles.addressLine}>{addressLine}</Text>
-      <Text style={styles.phone}>Phone: {phone}</Text>
+
+      <View style={styles.footerRow}>
+        <View style={styles.serviceableBadge}>
+          <SvgStatusCheckCircle width={14} height={14} stroke="#059669" style={{ marginRight: 4 }} />
+          <Text style={styles.serviceableText}>Serviceable Zone (Express 45m)</Text>
+        </View>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -55,39 +77,78 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+    borderColor: '#E2E8F0',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
   },
   containerSelected: {
     borderColor: colors.primary,
+    backgroundColor: '#FAF8FF',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: 8,
   },
-  labelWrapper: {
+  labelSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: 10,
+    flex: 1,
+  },
+  iconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconCircleSelected: {
+    backgroundColor: '#DBEAFE',
   },
   labelEmoji: {
-    fontSize: 16,
+    fontSize: 18,
+  },
+  labelTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   labelText: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
+    fontSize: 15,
+    fontWeight: '800',
     color: colors.textPrimary,
   },
+  defaultBadge: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  defaultBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  contactText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
   radioOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 2,
-    borderColor: colors.borderDark,
+    borderColor: '#CBD5E1',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -95,27 +156,37 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: colors.primary,
   },
-  name: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-    marginBottom: 2,
-  },
   addressLine: {
-    fontSize: typography.fontSize.sm,
+    fontSize: 13,
     color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
     lineHeight: 18,
-    marginBottom: spacing.xs,
+    marginTop: 2,
+    marginBottom: 8,
+    paddingLeft: 48,
   },
-  phone: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textMuted,
-    fontWeight: typography.fontWeight.bold,
+  footerRow: {
+    paddingLeft: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  serviceableBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  checkmarkIcon: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#059669',
+  },
+  serviceableText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#059669',
   },
 });

@@ -26,6 +26,10 @@ class UserRoleConstraintMigrationTest {
         Flyway.configure()
                 .dataSource(dataSource)
                 .baselineOnMigrate(true)
+                // H2 is retained for the legacy V1-V10 role-constraint check only.
+                // V25 requires PostgreSQL partial-index semantics and is verified by
+                // PostgresV25MigrationTest instead of being executed by H2.
+                .target("10")
                 .locations("classpath:db/migration")
                 .load()
                 .migrate();

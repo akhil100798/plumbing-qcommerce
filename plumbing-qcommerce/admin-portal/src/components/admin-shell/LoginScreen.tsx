@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Wrench } from "lucide-react";
 
 import { clearStoredToken, getStoredToken, setStoredToken } from "@/services/apiClient";
 import { getCurrentAdminAccess, PORTAL_ROLES } from "@/services/rbacService";
@@ -97,7 +98,9 @@ export default function LoginScreen() {
     <div className="login-screen">
       <div className="login-panel">
         <div className="login-brand">
-          <div className="admin-mark">P</div>
+          <div className="admin-mark" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Wrench size={22} strokeWidth={2.5} />
+          </div>
           <div>
             <h1 className="login-title">PlumbCommerce</h1>
             <p className="login-subtitle">Admin Portal</p>

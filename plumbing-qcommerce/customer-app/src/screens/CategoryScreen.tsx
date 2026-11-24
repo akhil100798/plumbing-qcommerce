@@ -12,25 +12,56 @@ import {
 import { CategoryCard } from '../components/cards/CategoryCard';
 import { colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
+import {
+  SvgNavigationArrowLeft,
+  SvgCategoriesPipesFittings,
+  SvgPlumbingCpvcElbow,
+  SvgCategoriesTapsFaucets,
+  SvgCategoriesBathroomFixtures,
+  SvgCategoriesWaterTanks,
+  SvgCategoriesToolsHardware,
+  SvgStatusLightning,
+  SvgPlumbingPlumbingTools,
+} from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'Categories'>;
 
 interface CategoryItem {
   id: number;
   name: string;
-  icon: string;
 }
 
 const categoriesData: CategoryItem[] = [
-  { id: 1, name: 'Pipes', icon: '🪵' },
-  { id: 2, name: 'Fittings', icon: '⚙️' },
-  { id: 3, name: 'Taps', icon: '🚰' },
-  { id: 4, name: 'Sanitaryware', icon: '🚽' },
-  { id: 5, name: 'Water Tanks', icon: '🛢️' },
-  { id: 6, name: 'Tools', icon: '🛠️' },
-  { id: 7, name: 'Electrical', icon: '🔌' },
-  { id: 8, name: 'All Categories', icon: '🗂️' },
+  { id: 1, name: 'Pipes' },
+  { id: 2, name: 'Fittings' },
+  { id: 3, name: 'Taps' },
+  { id: 4, name: 'Sanitaryware' },
+  { id: 5, name: 'Water Tanks' },
+  { id: 6, name: 'Tools' },
+  { id: 7, name: 'Electrical' },
+  { id: 8, name: 'All Categories' },
 ];
+
+const renderCategoryIcon = (id: number) => {
+  switch (id) {
+    case 1:
+      return <SvgCategoriesPipesFittings width={28} height={28} stroke={colors.primary} />;
+    case 2:
+      return <SvgPlumbingCpvcElbow width={28} height={28} stroke={colors.primary} />;
+    case 3:
+      return <SvgCategoriesTapsFaucets width={28} height={28} stroke={colors.primary} />;
+    case 4:
+      return <SvgCategoriesBathroomFixtures width={28} height={28} stroke={colors.primary} />;
+    case 5:
+      return <SvgCategoriesWaterTanks width={28} height={28} stroke={colors.primary} />;
+    case 6:
+      return <SvgCategoriesToolsHardware width={28} height={28} stroke={colors.primary} />;
+    case 7:
+      return <SvgStatusLightning width={28} height={28} stroke={colors.primary} />;
+    default:
+      return <SvgPlumbingPlumbingTools width={28} height={28} stroke={colors.primary} />;
+  }
+};
 
 export function CategoryScreen({ navigation }: Props) {
   const handleCategoryPress = (category: CategoryItem) => {
@@ -43,8 +74,8 @@ export function CategoryScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.title}>Categories</Text>
       </View>
@@ -63,7 +94,7 @@ export function CategoryScreen({ navigation }: Props) {
               activeOpacity={0.7}
             >
               <View style={styles.iconWrapper}>
-                <Text style={styles.iconText}>{item.icon}</Text>
+                {renderCategoryIcon(item.id)}
               </View>
               <Text style={styles.categoryName}>{item.name}</Text>
             </TouchableOpacity>
@@ -90,9 +121,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44, height: 44, borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,

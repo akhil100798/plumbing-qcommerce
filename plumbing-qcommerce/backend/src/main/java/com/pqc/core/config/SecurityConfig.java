@@ -1,6 +1,7 @@
 package com.pqc.core.config;
 
 import com.pqc.core.security.JwtAuthenticationFilter;
+import com.pqc.core.security.RateLimitingFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -21,6 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Configuration
 @EnableWebSecurity
@@ -29,9 +31,13 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final RateLimitingFilter rateLimitingFilter;
     private final UserDetailsService userDetailsService;
 
-    @Value("${app.cors.allowed-origins:http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:3101,http://localhost:19007,http://localhost:19008,http://localhost:19009,http://localhost:3000}")
+    private static final Pattern VERCEL_PREVIEW_PATTERN =
+            Pattern.compile("^https://(?:fixkart(?:-[a-zA-Z0-9-]+)*|admin-portal-ten-weld(?:-[a-zA-Z0-9-]+)*)(?:\\.[a-zA-Z0-9-]+)*\\.vercel\\.app$");
+
+    @Value("${app.cors.allowed-origins:http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3101,http://localhost:19007,http://localhost:19008,http://localhost:19009,http://127.0.0.1:8081,http://127.0.0.1:8082,http://127.0.0.1:8083,http://127.0.0.1:8084,http://127.0.0.1:3000,http://127.0.0.1:3001,http://127.0.0.1:3002,http://127.0.0.1:3101}")
     private String allowedOrigins;
 
     @Bean
@@ -52,12 +58,25 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(request -> {
                 org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
-                config.setAllowedOrigins(resolveAllowedOrigins());
-                config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-                config.setAllowedHeaders(java.util.List.of("*"));
+                String requestOrigin = request.getHeader("Origin");
+                if (requestOrigin != null && isOriginPermitted(requestOrigin)) {
+                    config.setAllowedOrigins(List.of(requestOrigin));
+                } else {
+                    config.setAllowedOrigins(resolveAllowedOrigins());
+                }
+                config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+                config.setAllowedHeaders(List.of("*"));
                 config.setAllowCredentials(true);
                 return config;
             }))
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.deny())
+                .contentTypeOptions(contentType -> {})
+                .referrerPolicy(referrer -> referrer.policy(
+                    org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                .contentSecurityPolicy(csp -> csp.policyDirectives(
+                    "default-src 'self'; frame-ancestors 'none';"))
+            )
             .formLogin(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -76,11 +95,14 @@ public class SecurityConfig {
                 .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.FORWARD, jakarta.servlet.DispatcherType.ERROR).permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/register/plumber", "/api/v1/auth/register/store", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/send-otp", "/api/v1/auth/verify-otp", "/api/v1/auth/google/customer").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/catalog/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/config/public", "/api/v1/support/contact").permitAll()
                 .requestMatchers("/api/v1/admin/super/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
                 .requestMatchers("/api/v1/admin/operations/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "OPERATIONS_ADMIN")
+                .requestMatchers("/api/v1/admin/service-jobs/*/reconciliation").hasAnyRole("SUPER_ADMIN", "ADMIN", "OPERATIONS_ADMIN")
                 .requestMatchers("/api/v1/admin/finance/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "FINANCE_ADMIN")
                 .requestMatchers("/api/v1/admin/support/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "SUPPORT_ADMIN")
                 .requestMatchers("/api/v1/admin/plumber-manager/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "PLUMBER_MANAGER")
+                .requestMatchers("/api/v1/admin/launch-roster/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
                 .requestMatchers("/api/v1/admin/marketing/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "MARKETING_ADMIN")
                 .requestMatchers("/api/v1/admin/rbac/me").hasAnyRole("SUPER_ADMIN", "ADMIN", "OPERATIONS_ADMIN", "PLUMBER_MANAGER", "FINANCE_ADMIN", "SUPPORT_ADMIN", "MARKETING_ADMIN", "STORE_MANAGER")
                 .requestMatchers("/api/v1/admin/rbac/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
@@ -100,9 +122,20 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
+            .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    private boolean isOriginPermitted(String origin) {
+        if (origin == null || origin.isBlank() || origin.contains("*")) {
+            return false;
+        }
+        if (resolveAllowedOrigins().contains(origin)) {
+            return true;
+        }
+        return VERCEL_PREVIEW_PATTERN.matcher(origin).matches();
     }
 
     private List<String> resolveAllowedOrigins() {

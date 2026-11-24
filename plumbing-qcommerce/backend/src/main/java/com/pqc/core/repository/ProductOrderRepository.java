@@ -10,6 +10,8 @@ import java.util.List;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
 import java.util.Collection;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 
 public interface ProductOrderRepository extends JpaRepository<ProductOrder, Long>, JpaSpecificationExecutor<ProductOrder> {
     List<ProductOrder> findByCustomerId(Long customerId);
@@ -24,6 +26,11 @@ public interface ProductOrderRepository extends JpaRepository<ProductOrder, Long
     List<ProductOrder> findByServiceOrderIdAndStatus(Long serviceOrderId, ProductOrderStatus status);
     List<ProductOrder> findByServiceOrder_Plumber_Id(Long plumberId);
     List<ProductOrder> findByServiceOrderIdAndServiceOrderCustomerId(Long serviceOrderId, Long customerId);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select o from ProductOrder o where o.id = :id")
+    java.util.Optional<ProductOrder> findByIdForUpdate(@Param("id") Long id);
+    @Query(value = "select * from product_orders where id=:id for update", nativeQuery = true)
+    java.util.Optional<ProductOrder> lockMaterialRequest(@Param("id") Long id);
     long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
     long countByCustomerId(Long customerId);
     long countByDeliveryPartnerId(Long deliveryPartnerId);

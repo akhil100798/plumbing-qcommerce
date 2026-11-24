@@ -18,6 +18,7 @@ import { ChatInput } from '../components/common/ChatInput';
 import { canUseDevMockFallbacks } from '../services/mockPolicy';
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
+import { SvgNavigationArrowLeft, SvgActionsCall } from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'Chat'>;
 
@@ -71,10 +72,14 @@ export function ChatScreen({ route, navigation }: Props) {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}>
         <View style={styles.header}>
           <View style={styles.leftRow}>
-            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}><Text style={styles.backButtonText}>?</Text></TouchableOpacity>
-            <View><Text style={styles.headerName}>{name}</Text><Text style={styles.headerSub}>{role} • {devMode ? 'Demo chat' : 'Unavailable in staging'}</Text></View>
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
+            </TouchableOpacity>
+            <View><Text style={styles.headerName}>{name}</Text><Text style={styles.headerSub}>{role} â€¢ {devMode ? 'Demo chat' : 'Unavailable in staging'}</Text></View>
           </View>
-          <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL('tel:+919876543210').catch(() => Alert.alert('Failed to initiate phone call.'))}><Text style={styles.callEmoji}>??</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL('tel:+919876543210').catch(() => Alert.alert('Failed to initiate phone call.'))} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <SvgActionsCall width={20} height={20} stroke={colors.primary} />
+          </TouchableOpacity>
         </View>
 
         {!devMode && (

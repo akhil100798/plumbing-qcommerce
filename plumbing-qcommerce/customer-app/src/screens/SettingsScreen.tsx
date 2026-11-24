@@ -11,6 +11,7 @@ import {
 
 import { borderRadius, colors, spacing, typography } from '../theme';
 import { AppStackParamList } from '../types/navigation';
+import { SvgNavigationArrowLeft, SvgNavigationArrowRight } from '../assets/svg';
 
 type Props = StackScreenProps<AppStackParamList, 'Settings'>;
 
@@ -48,8 +49,8 @@ export function SettingsScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <SvgNavigationArrowLeft width={20} height={20} stroke={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.title}>Settings</Text>
       </View>
@@ -90,12 +91,12 @@ export function SettingsScreen({ navigation }: Props) {
         <View style={styles.cardContainer}>
           <TouchableOpacity style={styles.infoRow} onPress={() => alert('Opening Terms of Service...')}>
             <Text style={styles.infoLabel}>Terms of Service</Text>
-            <Text style={styles.infoValue}>→</Text>
+            <SvgNavigationArrowRight width={16} height={16} stroke={colors.textSecondary} />
           </TouchableOpacity>
           <View style={styles.divider} />
           <TouchableOpacity style={styles.infoRow} onPress={() => alert('Opening Privacy Policy...')}>
             <Text style={styles.infoLabel}>Privacy Policy</Text>
-            <Text style={styles.infoValue}>→</Text>
+            <SvgNavigationArrowRight width={16} height={16} stroke={colors.textSecondary} />
           </TouchableOpacity>
           <View style={styles.divider} />
           <View style={styles.infoRow}>

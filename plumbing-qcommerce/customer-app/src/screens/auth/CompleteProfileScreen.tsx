@@ -95,16 +95,36 @@ export function CompleteProfileScreen({ navigation }: Props) {
       const updatedUser = await AuthRepository.completeProfile(payload);
       dispatch(updateUser(updatedUser));
 
-      Alert.alert('Success', 'Profile completed successfully!', [
-        {
-          text: 'OK',
-          onPress: () => {
-            navigation.dispatch(
+      if (Platform.OS === 'web') {
+        const parent = navigation.getParent();
+        if (parent) {
+          try {
+            parent.dispatch(
               CommonActions.reset({
                 index: 0,
                 routes: [{ name: 'Main' as any }],
               })
             );
+          } catch (_) {}
+        }
+        return;
+      }
+
+      Alert.alert('Success', 'Profile completed successfully!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            const parent = navigation.getParent();
+            if (parent) {
+              try {
+                parent.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: 'Main' as any }],
+                  })
+                );
+              } catch (_) {}
+            }
           },
         },
       ]);
@@ -257,6 +277,8 @@ export function CompleteProfileScreen({ navigation }: Props) {
             style={[styles.saveButton, loading ? styles.disabledButton : {}]}
             onPress={handleSave}
             disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel="Save and Continue"
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
